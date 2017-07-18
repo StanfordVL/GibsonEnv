@@ -104,19 +104,10 @@ class ViewDataSet3D(data.Dataset):
                 if not dist_filter is None:
                     if dist_list[1][-1] < dist_filter:
                         self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
-                    #elif dist_filter2 and dist_list[1][-1] < dist_filter2:
-                    #    label1 = meta[dist_list[self.seqlen - 1][0]][-1]
-                    #    label2 = meta[uuid][-1]
-                    #    if label1 == label2 and label1 >=0:
-                    #        #print(label1, label2)
-                    #        self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
-
+                    
                 else:
                     self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
-                #print([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
-
-
-
+                
     def __getitem__(self, index):
         #print(index)
         scene = self.select[index][0][0]
@@ -175,16 +166,6 @@ class ViewDataSet3D(data.Dataset):
 
 
         rpose = utils.transfromM(relative)
-
-        #if self.seqlen == 2:
-        #    trans = rpose[0][:3]
-        #    angle2 = rpose[1][-1]
-        #    angle = np.arctan2(-trans[1], -trans[0])
-        #    poses_relative = [torch.from_numpy(np.array([np.linalg.norm(trans),0,0,0,0,0]))]
-        #    imgs = [utils.rotateImage(item, angle) for item in imgs]
-        #    target = utils.rotateImage(target, angle + angle2)
-
-
 
         if not self.transform is None:
             imgs = [self.transform(item) for item in imgs]
