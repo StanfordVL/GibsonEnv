@@ -15,7 +15,7 @@ import utils
 import argparse
 import json
 from numpy.linalg import inv
-
+import pickle
 
 
 IMG_EXTENSIONS = [
@@ -31,7 +31,6 @@ def default_loader(path):
     ret = img.copy().convert('RGB')
     img.close()
     return ret
-
 
 
 def depth_loader(path):
@@ -196,6 +195,41 @@ class ViewDataSet3D(data.Dataset):
     def __len__(self):
         return len(self.select)
 
+    
+class Places365Dataset(data.Dataset):
+    def __init__(self, root, train=True, transform=None, loader=default_loader):
+        self.root = root
+      
+        self.train = train
+        self.fns = []
+        self.fofn = 'fofn'+str(int(train))+'.pkl'
+        self.loader = loader
+        self.transform = transform
+        if not os.path.isfile(self.fofn):
+            for subdir, dirs, files in os.walk(self.root):
+                if self.train:
+                    files = files[:len(files) / 10 * 9]
+                else:
+                    files = files[len(files) / 10 * 9:]
+                print(subdir)
+                for file in files:
+                    self.fns.append(os.path.join(subdir, file))
+            with open(self.fofn, 'wb') as fp:
+                pickle.dump(self.fns, fp)
+        else:
+            with open(self.fofn, 'rb') as fp:
+                self.fns = pickle.load(fp)
+              
+    def __len__(self):
+        return len(self.fns)
+    
+    def __getitem__(self, index):
+        path = self.fns[index]
+        img = self.loader(path)
+        if not self.transform is None:
+            img = self.transform(img)
+        return img
+    
 if __name__ == '__main__':
     print('test')
     parser = argparse.ArgumentParser()
@@ -211,3 +245,10 @@ if __name__ == '__main__':
         print(sample)
         if sample is not None:
             print('3d test passed')
+    elif opt.dataset == 'places365':
+        d = Places365Dataset(root = opt.dataroot)
+        print(len(d))
+        sample = d[0]
+        print(sample)
+        if sample is not None:
+            print('places 365 test passed')

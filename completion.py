@@ -17,7 +17,7 @@ class CompletionNet(nn.Module):
         super(CompletionNet, self).__init__()
     
         self.convs = nn.Sequential(
-            nn.Conv2d(4, 64, kernel_size = 5, stride = 1, padding = 2),
+            nn.Conv2d(3, 64, kernel_size = 5, stride = 1, padding = 2),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size = 3, stride = 2, padding = 1),
             nn.ReLU(),
@@ -94,7 +94,7 @@ class Discriminator(nn.Module):
         
         self.fc_global = nn.Linear(512 * 3 * 3, 1000)
         self.fc_local = nn.Linear(512 * 3 * 3, 1000)
-        self.fc = nn.Linear(2000, 1)
+        self.fc = nn.Linear(2000, 2)
         
     def forward(self, img, patch):
         x = self.convs_local(patch)
