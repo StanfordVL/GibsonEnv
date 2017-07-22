@@ -26,7 +26,7 @@ def main():
     parser.add_argument('--dataroot', required=True, help='path to dataset')
     parser.add_argument('--debug'  , action='store_true', help='debug mode')
     parser.add_argument('--imgsize'  ,type=int, default = 256, help='image size')
-    parser.add_argument('--batchsize'  ,type=int, default = 32, help='batchsize')
+    parser.add_argument('--batchsize'  ,type=int, default = 24, help='batchsize')
     parser.add_argument('--workers'  ,type=int, default = 6, help='number of workers')
     parser.add_argument('--nepoch'  ,type=int, default = 50, help='number of epochs')
     parser.add_argument('--lr', type=float, default=0.002, help='learning rate, default=0.002')

@@ -20,38 +20,53 @@ class CompletionNet(nn.Module):
             nn.Conv2d(3, 64, kernel_size = 5, stride = 1, padding = 2),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size = 3, stride = 2, padding = 1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(128, 128, kernel_size = 3, stride = 1, padding = 1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(128, 256, kernel_size = 3, stride = 2, padding = 1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size = 3, stride = 1, padding = 1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size = 3, stride = 1, padding = 1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             
             nn.Conv2d(256, 256, kernel_size = 3, stride = 1, dilation = 2, padding = 2),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size = 3, stride = 1, dilation = 4, padding = 4),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size = 3, stride = 1, dilation = 8, padding = 8),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size = 3, stride = 1, dilation = 16, padding = 16),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             
             nn.Conv2d(256, 256, kernel_size = 3, stride = 1, padding = 1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size = 3, stride = 1, padding = 1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             
             nn.ConvTranspose2d(256, 128, kernel_size = 4, stride = 2, padding = 1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(128, 128, kernel_size = 3, stride = 1, padding = 1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             
             nn.ConvTranspose2d(128, 64, kernel_size = 4, stride = 2, padding = 1),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.Conv2d(64, 32, kernel_size = 3, stride = 1, padding = 1),
+            nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Conv2d(32, 3, kernel_size = 3, stride = 1, padding = 1),
             nn.Sigmoid()
@@ -68,10 +83,13 @@ class Discriminator(nn.Module):
             nn.Conv2d(3, 64, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(128, 256, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 512, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.Conv2d(512, 512, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU()
@@ -81,12 +99,16 @@ class Discriminator(nn.Module):
             nn.Conv2d(3, 64, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Conv2d(128, 256, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Conv2d(256, 512, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.Conv2d(512, 512, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.Conv2d(512, 512, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU()
@@ -112,7 +134,7 @@ class Discriminator(nn.Module):
         return x
         
 if __name__ == '__main__':
-    x = Variable(torch.rand(1,4, 256, 256)).cuda()
+    x = Variable(torch.rand(1,3, 256, 256)).cuda()
     comp = CompletionNet().cuda()
     print(comp)
     print(x.size(), comp(x).size())
