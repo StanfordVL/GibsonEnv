@@ -27,17 +27,12 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
 def default_loader(path):
-    img = Image.open(path)
-    ret = img.copy().convert('RGB')
-    img.close()
-    return ret
-
+    img = Image.open(path).convert('RGB')
+    return img
 
 def depth_loader(path):
-    img = Image.open(path)
-    ret = img.copy().convert('I')
-    img.close()
-    return ret
+    img = Image.open(path).convert('I')
+    return img
 
 class ViewDataSet3D(data.Dataset):
 
