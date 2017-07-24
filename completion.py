@@ -13,11 +13,11 @@ import time
 
 class CompletionNet(nn.Module):
 
-    def __init__(self):
+    def __init__(self, with_mask = False):
         super(CompletionNet, self).__init__()
-    
+            
         self.convs = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size = 5, stride = 1, padding = 2),
+            nn.Conv2d(4, 64, kernel_size = 5, stride = 1, padding = 2),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size = 3, stride = 2, padding = 1),
             nn.BatchNorm2d(128),
@@ -71,8 +71,9 @@ class CompletionNet(nn.Module):
             nn.Conv2d(32, 3, kernel_size = 3, stride = 1, padding = 1),
             nn.Sigmoid()
         )
-    def forward(self, x):
-        return self.convs(x)
+        
+    def forward(self, x, mask):
+        return self.convs(torch.cat([x, mask], 1))
         
 class Discriminator(nn.Module):
 
@@ -134,10 +135,7 @@ class Discriminator(nn.Module):
         return x
         
 if __name__ == '__main__':
-    x = Variable(torch.rand(1,3, 256, 256)).cuda()
-    comp = CompletionNet().cuda()
-    print(comp)
-    print(x.size(), comp(x).size())
+
     
     img = Variable(torch.rand(1,3, 256, 256)).cuda()
     patch = Variable(torch.rand(1,3, 128, 128)).cuda()
@@ -145,5 +143,11 @@ if __name__ == '__main__':
     dis = Discriminator().cuda()
     cls = dis(img, patch)
     print(cls)
+    
+    x = Variable(torch.rand(1,3, 256, 256)).cuda()
+    mask = Variable(torch.rand(1,1, 256, 256)).cuda()
+    comp = CompletionNet(with_mask = True).cuda()
+    print(comp)
+    print(x.size(), comp(x, mask).size())
     
     

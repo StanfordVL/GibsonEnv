@@ -26,6 +26,43 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
+def generate_patches_position(input_imgs):
+    batchsize = input_imgs.size(0)
+    imgsize = input_imgs.size(2)
+    
+    center1 = np.zeros((batchsize, 2)).astype(np.int64)
+    center2 = np.zeros((batchsize, 2)).astype(np.int64)
+    
+    hole = np.zeros((batchsize, 2)).astype(np.int64)
+    
+    for i in range(batchsize):
+        center1[i,0] = np.random.randint(64, imgsize - 64)
+        center1[i,1] = np.random.randint(64, imgsize - 64)
+        center2[i,0] = np.random.randint(64, imgsize - 64)
+        center2[i,1] = np.random.randint(64, imgsize - 64)
+        hole[i,0] = np.random.randint(48,64 + 1)
+        hole[i,1] = np.random.randint(48,64 + 1)
+        
+    return hole, center1, center2
+
+def generate_patches(input_imgs, center):
+    batchsize = input_imgs.size(0)
+    patches = torch.zeros(batchsize, 3, 128, 128)
+    for i in range(batchsize):
+        patches[i] = input_imgs[i, :, center[i,0] - 64 : center[i,0] + 64, center[i,1] - 64 : center[i,1] + 64]
+    return patches
+
+def prepare_completion_input(input_imgs, center, hole, mean):
+    batchsize = input_imgs.size(0)
+    img_holed = input_imgs.clone()
+    mask = torch.zeros(batchsize, 1, input_imgs.size(2), input_imgs.size(3))
+    for i in range(batchsize):
+        img_holed[i, :, center[i,0] - hole[i,0] : center[i,0] + hole[i,0], center[i,1] - hole[i,1] : center[i,1] + hole[i,1]] = mean.repeat(1,hole[i,0]*2, hole[i,1]*2)
+        mask[i, :, center[i,0] - hole[i,0] : center[i,0] + hole[i,0], center[i,1] - hole[i,1] : center[i,1] + hole[i,1]] = 1
+    
+    return img_holed, mask
+    
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataroot', required=True, help='path to dataset')
@@ -36,11 +73,12 @@ def main():
     parser.add_argument('--nepoch'  ,type=int, default = 50, help='number of epochs')
     parser.add_argument('--lr', type=float, default=0.002, help='learning rate, default=0.002')
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
-    parser.add_argument('--outf', type=str, default="ae", help='output folder')
+    parser.add_argument('--outf', type=str, default="filler", help='output folder')
     parser.add_argument('--model', type=str, default="", help='model path')
 
 
-
+    mean = torch.from_numpy(np.array([ 0.45725039,  0.44777581,  0.4146058 ]).astype(np.float32))
+    
     opt = parser.parse_args()
     print(opt)
     
@@ -70,12 +108,12 @@ def main():
     
     dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = True)
     
-    img = Variable(torch.rand(opt.batchsize,3, 256, 256)).cuda()
-    patch = Variable(torch.rand(opt.batchsize,3, 128, 128)).cuda()
-    comp = CompletionNet()
+    img = Variable(torch.zeros(opt.batchsize,3, 256, 256)).cuda()
+    patch = Variable(torch.zeros(opt.batchsize,3, 128, 128)).cuda()
+    maskv = Variable(torch.zeros(opt.batchsize,1, 256, 256)).cuda()
+    comp = CompletionNet(with_mask = True)
     
     current_epoch = 0
-    
     
     
     comp =  torch.nn.DataParallel(comp).cuda()
@@ -88,27 +126,36 @@ def main():
     
     l2 = nn.MSELoss()
     optimizer = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
-
     
     for epoch in range(current_epoch, opt.nepoch):
         for i, data in enumerate(dataloader, 0):
+            step = i + epoch * len(dataloader)
             optimizer.zero_grad()
-            img.data.copy_(data)
-            recon = comp(img)
+            
+            hole, center1, center2 = generate_patches_position(data)    
+            real_patches = generate_patches(data, center2)
+            img_holed, mask = prepare_completion_input(data, center1, hole, mean)
+            
+            # MSE Loss
+            img.data.copy_(img_holed)
+            maskv.data.copy_(mask)
+            recon = comp(img, maskv)
             loss = l2(recon, img)
             loss.backward()
             optimizer.step()
-            #print(img, recon)
+            
+            # Train D:
+            
+            
+            
             print('[%d/%d][%d/%d] loss: %f' % (epoch, opt.nepoch, i, len(dataloader), loss.data[0]))
             if i%500 == 0:
-                visual = torch.cat([img.data, recon.data], 3)
-                #vutils.save_image(visual, '%s/results%d_%d.png' % (opt.outf, epoch, i), nrow=1)
-                
+                visual = torch.cat([img.data, recon.data], 3)                
                 visual = vutils.make_grid(visual, normalize=True)
-                writer.add_image('image', visual, i + epoch * len(dataloader))
+                writer.add_image('image', visual, step)
             
             if i%10 == 0:
-                writer.add_scalar('loss', loss.data[0], i + epoch * len(dataloader))
+                writer.add_scalar('loss', loss.data[0], step)
         
         torch.save(comp.state_dict(), '%s/comp_epoch%d.pth' % (opt.outf, epoch))
 
