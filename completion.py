@@ -13,7 +13,7 @@ import time
 
 class CompletionNet(nn.Module):
 
-    def __init__(self, with_mask = False):
+    def __init__(self):
         super(CompletionNet, self).__init__()
             
         self.convs = nn.Sequential(
@@ -118,7 +118,6 @@ class Discriminator(nn.Module):
         self.fc_global = nn.Linear(512 * 3 * 3, 1000)
         self.fc_local = nn.Linear(512 * 3 * 3, 1000)
         self.fc = nn.Linear(2000, 2)
-        
     def forward(self, img, patch):
         x = self.convs_local(patch)
         y = self.convs_global(img)
