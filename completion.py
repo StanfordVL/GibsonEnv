@@ -77,9 +77,9 @@ class CompletionNet(nn.Module):
         
 class Discriminator(nn.Module):
 
-    def __init__(self):
+    def __init__(self, pano = False):
         super(Discriminator, self).__init__()
-        
+        self.pano = pano
         self.convs_local = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU(),
@@ -114,8 +114,11 @@ class Discriminator(nn.Module):
             nn.Conv2d(512, 512, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU()
         )
+        if self.pano:
+            self.fc_global = nn.Linear(512 * 3 * 7, 1000)
+        else:
+            self.fc_global = nn.Linear(512 * 3 * 3, 1000)
         
-        self.fc_global = nn.Linear(512 * 3 * 3, 1000)
         self.fc_local = nn.Linear(512 * 3 * 3, 1000)
         self.fc = nn.Linear(2000, 2)
     def forward(self, img, patch):
@@ -123,7 +126,11 @@ class Discriminator(nn.Module):
         y = self.convs_global(img)
         
         x = x.view(x.size(0), 512 * 3 * 3)
-        y = y.view(y.size(0), 512 * 3 * 3)
+
+        if self.pano:
+            y = y.view(y.size(0), 512 * 3 * 7)
+        else:
+            y = y.view(y.size(0), 512 * 3 * 3)
         
         x = F.relu(self.fc_local(x))
         y = F.relu(self.fc_global(y))
