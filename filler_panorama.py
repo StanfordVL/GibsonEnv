@@ -80,7 +80,7 @@ def main():
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
     parser.add_argument('--outf', type=str, default="filler_pano", help='output folder')
     parser.add_argument('--model', type=str, default="", help='model path')
-
+    parser.add_argument('--cepoch'  ,type=int, default = 0, help='current epoch')
 
     mean = torch.from_numpy(np.array([ 0.45725039,  0.44777581,  0.4146058 ]).astype(np.float32))
 
@@ -123,7 +123,7 @@ def main():
     if opt.model != '':
         comp.load_state_dict(torch.load(opt.model))
         dis.load_state_dict(torch.load(opt.model.replace("G", "D")))
-        current_epoch = int(re.findall('^.*([0-9]+)$',opt.model.split(".")[0])[0]) + 1
+        current_epoch = opt.cepoch
 
     l2 = nn.MSELoss()
     optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
