@@ -121,6 +121,7 @@ class Discriminator(nn.Module):
         
         self.fc_local = nn.Linear(512 * 3 * 3, 1000)
         self.fc = nn.Linear(2000, 2)
+        
     def forward(self, img, patch):
         x = self.convs_local(patch)
         y = self.convs_global(img)

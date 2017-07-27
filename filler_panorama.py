@@ -32,12 +32,12 @@ def generate_patches_position(input_imgs):
     # create patch position
     batchsize = input_imgs.size(0)
     imgsize = input_imgs.size(2)
-    
+
     center1 = np.zeros((batchsize, 2)).astype(np.int64)
     center2 = np.zeros((batchsize, 2)).astype(np.int64)
-    
+
     hole = np.zeros((batchsize, 2)).astype(np.int64)
-    
+
     for i in range(batchsize):
         center1[i,0] = np.random.randint(64, imgsize - 64)
         center1[i,1] = np.random.randint(64, imgsize * 2 - 64)
@@ -45,7 +45,7 @@ def generate_patches_position(input_imgs):
         center2[i,1] = np.random.randint(64, imgsize * 2 - 64)
         hole[i,0] = np.random.randint(48,64 + 1)
         hole[i,1] = np.random.randint(48,64 + 1)
-        
+
     return hole, center1, center2
 
 def generate_patches(input_imgs, center):
@@ -64,9 +64,9 @@ def prepare_completion_input(input_imgs, center, hole, mean):
     for i in range(batchsize):
         img_holed[i, :, center[i,0] - hole[i,0] : center[i,0] + hole[i,0], center[i,1] - hole[i,1] : center[i,1] + hole[i,1]] = mean.view(3,1,1).repeat(1,hole[i,0]*2, hole[i,1]*2)
         mask[i, :, center[i,0] - hole[i,0] : center[i,0] + hole[i,0], center[i,1] - hole[i,1] : center[i,1] + hole[i,1]] = 1
-    
+
     return img_holed, mask
-    
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -83,12 +83,12 @@ def main():
 
 
     mean = torch.from_numpy(np.array([ 0.45725039,  0.44777581,  0.4146058 ]).astype(np.float32))
-    
+
     opt = parser.parse_args()
     print(opt)
-    
+
     writer = SummaryWriter(opt.outf + '/runs/'+datetime.now().strftime('%B%d  %H:%M:%S'))
-    
+
     try:
         os.makedirs(opt.outf)
     except OSError:
@@ -101,53 +101,53 @@ def main():
     ])
 
     d = ViewDataSet3D(root = opt.dataroot, transform=tf, target_transform = tf, seqlen = 2, debug=opt.debug, off_3d = True)
-    
+
     cudnn.benchmark = True
-    
+
     dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = True)
-    
+
     img = Variable(torch.zeros(opt.batchsize,3, 256, 512)).cuda()
     maskv = Variable(torch.zeros(opt.batchsize,1, 256, 512)).cuda()
     img_original = Variable(torch.zeros(opt.batchsize,3, 256, 512)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize)).cuda()
 
     comp = CompletionNet()
-    dis = Discriminator(pano = True)   
+    dis = Discriminator(pano = True)
     current_epoch = 0
-    
+
     comp =  torch.nn.DataParallel(comp).cuda()
     comp.apply(weights_init)
     dis = torch.nn.DataParallel(dis).cuda()
     dis.apply(weights_init)
-    
+
     if opt.model != '':
         comp.load_state_dict(torch.load(opt.model))
         dis.load_state_dict(torch.load(opt.model.replace("G", "D")))
         current_epoch = int(re.findall('^.*([0-9]+)$',opt.model.split(".")[0])[0]) + 1
-    
+
     l2 = nn.MSELoss()
     optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
     optimizerD = torch.optim.Adam(dis.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
 
     curriculum = (30000, 50000) # step to start D training and G training, slightly different from the paper
     alpha = 0.0004
-    
+
     errG_data = 0
     errD_data = 0
-    
+
     for epoch in range(current_epoch, opt.nepoch):
         for i, data in enumerate(dataloader, 0):
-            
+
             source, _, _ = data
             source = source[0]
-            
+
             step = i + epoch * len(dataloader)
             optimizerG.zero_grad()
-            
-            
-            hole, center1, center2 = generate_patches_position(source)    
+
+
+            hole, center1, center2 = generate_patches_position(source)
             img_holed, mask = prepare_completion_input(source, center1, hole, mean)
-            
+
             # Train G
             # MSE Loss
             img.data.copy_(img_holed)
@@ -158,7 +158,7 @@ def main():
             recon = comp(img, maskv)
             loss = l2(recon, img_original)
             loss.backward(retain_variables = True)
-            
+
             if step > curriculum[1]:
                 fake_patches = generate_patches(recon, center1)
                 label.data.fill_(1)
@@ -166,9 +166,9 @@ def main():
                 errG = alpha * F.nll_loss(output, label)
                 errG.backward()
                 errG_data = errG.data[0]
-                
+
             optimizerG.step()
-             
+
             # Train D:
             if step > curriculum[0]:
                 fake_patches = generate_patches(recon, center1)
@@ -186,26 +186,27 @@ def main():
                 errD_real.backward()
                 optimizerD.step()
                 errD_data = errD_real.data[0] + errD_fake.data[0]
-            
+
             print('[%d/%d][%d/%d] MSEloss: %f, G_loss %f D_loss %f' % (epoch, opt.nepoch, i, len(dataloader), loss.data[0], errG_data, errD_data))
-            
+
             if i%500 == 0:
-                visual = torch.cat([img_original.data, img.data, recon.data], 3)                
+                visual = torch.cat([img_original.data, img.data, recon.data], 3)
                 visual = vutils.make_grid(visual, normalize=True)
                 writer.add_image('image', visual, step)
-            
+
             if i%10 == 0:
                 writer.add_scalar('MSEloss', loss.data[0], step)
                 writer.add_scalar('G_loss', errG_data, step)
                 writer.add_scalar('D_loss', errD_data, step)
-                
-        
-        torch.save(comp.state_dict(), '%s/compG_epoch%d.pth' % (opt.outf, epoch))
-        torch.save(dis.state_dict(), '%s/compD_epoch%d.pth' % (opt.outf, epoch))
 
-    
-            
+
+            if i%10000 == 0:
+                torch.save(comp.state_dict(), '%s/compG_epoch%d_%d.pth' % (opt.outf, epoch, i))
+                torch.save(dis.state_dict(), '%s/compD_epoch%d_%d.pth' % (opt.outf, epoch, i))
+
+
+
 if __name__ == '__main__':
     main()
-    
-        
+
+
