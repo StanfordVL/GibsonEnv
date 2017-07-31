@@ -6,8 +6,6 @@
 import numpy as np
 import math
 import PIL
-from sklearn.neighbors import KDTree
-from scipy import interpolate
 
 # In[36]:
 
