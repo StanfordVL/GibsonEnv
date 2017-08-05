@@ -82,6 +82,9 @@ def showpoints(img, depth):
         elif cmd == ord('d'):
             x += 0.01    
             changed = True
+        elif cmd == ord('r'):
+            pitch,yaw,x,y,z = 0,0,0,0,0
+            changed = True
             
     
 
