@@ -36,7 +36,7 @@ def depth_loader(path):
 
 class ViewDataSet3D(data.Dataset):
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = False, dist_filter2 = None):
+    def __init__(self, root, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = False, dist_filter2 = None):
         print ('Processing the data:')
         self.root = root
         #print(self.root)
@@ -79,13 +79,11 @@ class ViewDataSet3D(data.Dataset):
         self.loader = loader
         self.seqlen = seqlen
         self.transform = transform
-        self.target_transform = target_transform
+        self.target_transform = transform
+        self.depth_trans = mist_transform
+        
         self.off_3d = off_3d
         self.select = []
-        if self.transform:
-            self.depth_trans = transforms.Compose(self.transform.transforms[:-1])
-        else:
-            self.depth_trans = None
 
         print("Indexing")
         for scene, meta in self.bar(self.meta.items()):
@@ -172,16 +170,14 @@ class ViewDataSet3D(data.Dataset):
             if not self.target_transform is None:
                 mist_target = self.depth_trans(mist_target)
 
-
-            mist_imgs = [torch.from_numpy(np.array(item).astype(np.float32)/(65536.0)) for item in mist_imgs]
-            mist_target = torch.from_numpy(np.array(mist_target).astype(np.float32)/(65536.0))
-
-
             if not self.transform is None:
                 normal_imgs = [self.transform(item) for item in normal_imgs]
             if not self.target_transform is None:
                 normal_target = self.target_transform(normal_target)
 
+        mist_imgs = [np.array(item).astype(np.float32)/65536.0 for item in mist_imgs]        
+        mist_target = np.array(mist_target).astype(np.float32)/65536.0
+                
         if self.off_3d:
             return imgs, target, poses_relative
         else:
