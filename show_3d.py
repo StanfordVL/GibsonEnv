@@ -97,6 +97,7 @@ if __name__=='__main__':
     source = d[idx][0][0]
     source_depth = d[idx][2][0]
     
+    #print(source_depth)
     print(source.shape, source_depth.shape)
     
     showpoints(source, source_depth)

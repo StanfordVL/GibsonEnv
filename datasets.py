@@ -175,8 +175,8 @@ class ViewDataSet3D(data.Dataset):
             if not self.target_transform is None:
                 normal_target = self.target_transform(normal_target)
 
-        mist_imgs = [np.array(item).astype(np.float32)/65536 for item in mist_imgs]        
-        mist_target = np.array(mist_target).astype(np.float32)/65536
+        mist_imgs = [np.array(item).astype(np.float32)/65536.0 for item in mist_imgs]        
+        mist_target = np.array(mist_target).astype(np.float32)/65536.0
                 
         if self.off_3d:
             return imgs, target, poses_relative
