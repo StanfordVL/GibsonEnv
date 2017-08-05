@@ -46,7 +46,7 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
     z = pose[2];
     alpha = pose[4];
     beta = pose[3];
-    gamma = 0;
+    gamma = pose[5];
 
     float transformation_matrix[9];
     
