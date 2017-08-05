@@ -25,7 +25,7 @@ def onmouse(*args):
 
         
     if (args[3] & cv2.EVENT_FLAG_LBUTTON):
-        pitch = org_pitch + (mousex - clickstart[0])
+        pitch = org_pitch + (mousex - clickstart[0])/10
         yaw = org_yaw + (mousey - clickstart[1])
         changed=True
         
@@ -87,13 +87,14 @@ def showpoints(img, depth):
 
 if __name__=='__main__':
     
-    idx = 0
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug'  , action='store_true', help='debug mode')
     parser.add_argument('--dataroot'  , required = True, help='dataset path')
+    parser.add_argument('--idx'  , type = int, default = 0, help='index of data')
     opt = parser.parse_args()
     d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2)
-    
+    idx = opt.idx
     source = d[idx][0][0]
     source_depth = d[idx][2][0]
     

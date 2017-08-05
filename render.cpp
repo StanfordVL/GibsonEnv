@@ -90,8 +90,8 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
     
     for (ih = 0; ih < h; ih ++ ) {
         for (iw = 0; iw < w; iw ++ ) {
-            int x = (int)((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-            int y = (int)((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
+            int x = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
+            int y = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
             //printf("%d %d\n", x, y);
             for (ic = 0; ic < 3; ic ++) {
                 render[(y * w + x) * 3 + ic] = img[(ih * w + iw) * 3 +ic];
