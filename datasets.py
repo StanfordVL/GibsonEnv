@@ -169,6 +169,7 @@ class ViewDataSet3D(data.Dataset):
             normal_imgs = [self.loader(item) for item in normal_img_paths]
             normal_target = self.loader(normal_target_path)
 
+        org_img = imgs[0].copy()
         
         if not self.transform is None:
             imgs = [self.transform(item) for item in imgs]
@@ -176,9 +177,14 @@ class ViewDataSet3D(data.Dataset):
             target = self.target_transform(target)
 
         if not self.off_3d:
-            if not self.transform is None:
+            
+            mist_imgs = [np.expand_dims(np.array(item).astype(np.float32)/65536.0, 2) for item in mist_imgs]        
+            org_mist = mist_imgs[0][:,:,0].copy()
+            mist_target = np.expand_dims(np.array(mist_target).astype(np.float32)/65536.0,2)
+            
+            if not self.depth_trans is None:
                 mist_imgs = [self.depth_trans(item) for item in mist_imgs]
-            if not self.target_transform is None:
+            if not self.depth_trans is None:
                 mist_target = self.depth_trans(mist_target)
 
             if not self.transform is None:
@@ -186,16 +192,13 @@ class ViewDataSet3D(data.Dataset):
             if not self.target_transform is None:
                 normal_target = self.target_transform(normal_target)
         
-            mist_imgs = [np.array(item).astype(np.float32)/65536.0 for item in mist_imgs]        
-            mist_target = np.array(mist_target).astype(np.float32)/65536.0
-        
         if not self.off_pc_render:
-            h,w = mist_target.shape
+            img = np.array(org_img)
+            h,w,_ = img.shape
             render=np.zeros((h,w,3),dtype='uint8')
             target_depth = np.zeros((h,w)).astype(np.float32)
-            print(h,w)
-            img = np.array(imgs[0])
-            depth = mist_imgs[0]
+            
+            depth = org_mist
             pose = poses_relative[0].numpy()
             x = -pose[1]
             y = -pose[0]
@@ -213,16 +216,14 @@ class ViewDataSet3D(data.Dataset):
                    target_depth.ctypes.data_as(ct.c_void_p)
                   ) 
             if not self.transform is None:
-                render = self.transform(render)
+                render = self.transform(Image.fromarray(render))
             if not self.depth_trans is None:
-                target_depth = self.depth_trans(target_depth)
+                target_depth = self.depth_trans(np.expand_dims(target_depth,2))
         
-        if self.off_3d and self.off_pc_render:
+        if self.off_3d:
             return imgs, target, poses_relative
-        elif self.off_pc_render and (not self.off_3d):
+        elif self.off_pc_render:
             return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target,  poses_relative
-        elif (not self.off_pc_render) and self.off_3d:
-            return imgs, target, poses_relative, render, target_depth
         else:
             return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target,  poses_relative, render, target_depth
     
