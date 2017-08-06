@@ -135,7 +135,7 @@ if __name__=='__main__':
     parser.add_argument('--dataroot'  , required = True, help='dataset path')
     parser.add_argument('--idx'  , type = int, default = 0, help='index of data')
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2)
+    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
     idx = opt.idx
     source = d[idx][0][0]
     target = d[idx][1]

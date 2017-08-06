@@ -93,6 +93,11 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
         }
     }
         
+    for (ih = 0; ih < h; ih ++ ) {
+        for (iw = 0; iw < w; iw ++ ) {
+            if (depth_render[ih * w + iw] > 1e5) depth_render[ih * w + iw] = 0;
+        }
+    }
     
     free(points3d);
     free(points3d_after);
