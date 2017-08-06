@@ -56,30 +56,35 @@ def showpoints(img, depth, pose):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
-    
+    target_depth = np.zeros((showsz,showsz * 2)).astype(np.float32)
     overlay = False
+    show_depth = False
     def render(img, depth, pose):
         dll.render(ct.c_int(img.shape[0]),
                    ct.c_int(img.shape[1]),
                    img.ctypes.data_as(ct.c_void_p),
                    depth.ctypes.data_as(ct.c_void_p),
                    pose.ctypes.data_as(ct.c_void_p),
-                   show.ctypes.data_as(ct.c_void_p)
+                   show.ctypes.data_as(ct.c_void_p),
+                   target_depth.ctypes.data_as(ct.c_void_p)
                   )
         
-    
     while True:
         
         if changed:
             render(img, depth, np.array([x,y,z,pitch,yaw,roll]).astype(np.float32))
             changed = False
                 
-        cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.cv.CV_RGB(255,0,0))
+        
         
         if overlay:
             show_out = (show/2 + target/2).astype(np.uint8)
+        elif show_depth:
+            show_out = (target_depth * 10).astype(np.uint8)
         else:
             show_out = show
+        
+        cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.cv.CV_RGB(255,255,255))
         cv2.imshow('show3d',show_out)
         
         cmd=cv2.waitKey(10)%256
@@ -113,7 +118,9 @@ def showpoints(img, depth, pose):
             roll = pose[-2] # to be verified
         elif cmd == ord('o'):
             overlay = not overlay
-            
+        elif cmd == ord('f'):
+            show_depth = not show_depth
+
     
 def show_target(target_img):
     cv2.namedWindow('target')
@@ -139,6 +146,3 @@ if __name__=='__main__':
     print(source.shape, source_depth.shape)
     show_target(target)
     showpoints(source, source_depth, pose)
-    
-    
-    
