@@ -4,6 +4,11 @@ import cv2
 import sys
 import argparse
 from datasets import ViewDataSet3D
+from completion import CompletionNet
+import torch
+from torchvision import datasets, transforms
+
+
 showsz = 256
 mousex,mousey=0.5,0.5
 changed=True
@@ -13,6 +18,9 @@ org_pitch, org_yaw, org_x, org_y, org_z = 0,0,0,0,0
 org_roll = 0
 mousedown = False
 clickstart = (0,0)
+
+dll=np.ctypeslib.load_library('render','.')
+
 
 def onmouse(*args):
     global mousex,mousey,changed
@@ -29,7 +37,6 @@ def onmouse(*args):
     if args[0] == cv2.EVENT_RBUTTONDOWN:
         org_roll = roll
         clickstart = (mousex, mousey)
-
         
     if (args[3] & cv2.EVENT_FLAG_LBUTTON):
         pitch = org_pitch + (mousex - clickstart[0])/10
@@ -46,20 +53,20 @@ def onmouse(*args):
     mousey=my/float(showsz * 2)
     
 
-cv2.namedWindow('show3d')
-cv2.moveWindow('show3d',0,0)
-cv2.setMouseCallback('show3d',onmouse)
 
-dll=np.ctypeslib.load_library('render','.')
-
-def showpoints(img, depth, pose):
+def showpoints(img, depth, pose, model):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.float32)
     overlay = False
     show_depth = False
-    def render(img, depth, pose):
+    cv2.namedWindow('show3d')
+    cv2.moveWindow('show3d',0,0)
+    cv2.setMouseCallback('show3d',onmouse)
+
+
+    def render(img, depth, pose, model):
         dll.render(ct.c_int(img.shape[0]),
                    ct.c_int(img.shape[1]),
                    img.ctypes.data_as(ct.c_void_p),
@@ -68,14 +75,18 @@ def showpoints(img, depth, pose):
                    show.ctypes.data_as(ct.c_void_p),
                    target_depth.ctypes.data_as(ct.c_void_p)
                   )
+        if model:
+            tf = transforms.ToTensor()
+            source = tf(show)
+            source_depth = tf(np.expand_dims(target_depth, 2))
+            
         
     while True:
         
         if changed:
-            render(img, depth, np.array([x,y,z,pitch,yaw,roll]).astype(np.float32))
+            render(img, depth, np.array([x,y,z,pitch,yaw,roll]).astype(np.float32), model)
             changed = False
                 
-        
         
         if overlay:
             show_out = (show/2 + target/2).astype(np.uint8)
@@ -129,11 +140,11 @@ def show_target(target_img):
 
 if __name__=='__main__':
     
-    
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug'  , action='store_true', help='debug mode')
     parser.add_argument('--dataroot'  , required = True, help='dataset path')
     parser.add_argument('--idx'  , type = int, default = 0, help='index of data')
+    parser.add_argument('--model'  , type = str, default = '', help='path of model')
     opt = parser.parse_args()
     d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
     idx = opt.idx
@@ -141,8 +152,16 @@ if __name__=='__main__':
     target = d[idx][1]
     source_depth = d[idx][2][0]
     pose = d[idx][-1][0].numpy()
+    model = None
+    if opt.model != '':
+        comp = CompletionNet()
+        comp = torch.nn.DataParallel(comp).cuda()
+        comp.load_state_dict(torch.load(opt.model))
+        model = comp.module
+    
+    print(model)
     print(pose)
     #print(source_depth)
     print(source.shape, source_depth.shape)
     show_target(target)
-    showpoints(source, source_depth, pose)
+    showpoints(source, source_depth, pose, model)
