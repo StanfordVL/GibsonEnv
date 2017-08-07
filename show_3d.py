@@ -8,7 +8,7 @@ from completion import CompletionNet
 import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-
+import time
 
 showsz = 256
 mousex,mousey=0.5,0.5
@@ -19,6 +19,7 @@ org_pitch, org_yaw, org_x, org_y, org_z = 0,0,0,0,0
 org_roll = 0
 mousedown = False
 clickstart = (0,0)
+fps = 0
 
 dll=np.ctypeslib.load_library('render','.')
 
@@ -58,6 +59,7 @@ def onmouse(*args):
 def showpoints(img, depth, pose, model):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
+    global fps
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.float32)
     overlay = False
@@ -70,6 +72,8 @@ def showpoints(img, depth, pose, model):
     maskv = Variable(torch.zeros(1,1, 256, 512)).cuda()
 
     def render(img, depth, pose, model):
+        global fps
+        t0 = time.time()
         dll.render(ct.c_int(img.shape[0]),
                    ct.c_int(img.shape[1]),
                    img.ctypes.data_as(ct.c_void_p),
@@ -92,6 +96,11 @@ def showpoints(img, depth, pose, model):
             show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
             show[:] = (show2[:] * 255).astype(np.uint8)
             
+        t1 = time.time()
+        t = t1-t0
+        fps = 1/t
+      
+        cv2.waitKey(5)%256
             
     while True:
         
@@ -108,10 +117,12 @@ def showpoints(img, depth, pose, model):
             show_out = show
         
         cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.cv.CV_RGB(255,255,255))
+        cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
+        
         show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
         cv2.imshow('show3d',show_rgb)
         
-        cmd=cv2.waitKey(10)%256
+        cmd=cv2.waitKey(5)%256
     
         if cmd==ord('q'):
             break
