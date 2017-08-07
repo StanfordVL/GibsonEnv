@@ -145,7 +145,6 @@ def main():
             source = data[-2]
             source_depth = data[-1]
             target = data[1]
-            print(source.size(),source_depth.size(),target.size())
             step = i + epoch * len(dataloader)
             
             img.data.copy_(source)
@@ -160,7 +159,7 @@ def main():
             print('[%d/%d][%d/%d] MSEloss: %f' % (epoch, opt.nepoch, i, len(dataloader), loss.data[0]))
             
             if i%500 == 0:
-                visual = torch.cat([source, target], 3)
+                visual = torch.cat([source, recon.data.cpu(), target], 3)
                 visual = vutils.make_grid(visual, normalize=True)
                 writer.add_image('image', visual, step)
                 vutils.save_image(visual, '%s/compare%d_%d.png' % (opt.outf, epoch, i), nrow=1)
