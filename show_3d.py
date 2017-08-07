@@ -7,6 +7,7 @@ from datasets import ViewDataSet3D
 from completion import CompletionNet
 import torch
 from torchvision import datasets, transforms
+from torch.autograd import Variable
 
 
 showsz = 256
@@ -64,7 +65,9 @@ def showpoints(img, depth, pose, model):
     cv2.namedWindow('show3d')
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
-
+    
+    imgv = Variable(torch.zeros(1,3, 256, 512)).cuda()
+    maskv = Variable(torch.zeros(1,1, 256, 512)).cuda()
 
     def render(img, depth, pose, model):
         dll.render(ct.c_int(img.shape[0]),
@@ -79,8 +82,17 @@ def showpoints(img, depth, pose, model):
             tf = transforms.ToTensor()
             source = tf(show)
             source_depth = tf(np.expand_dims(target_depth, 2))
-            
+            #print(source.size(), source_depth.size())
         
+            imgv.data.copy_(source)
+            maskv.data.copy_(source_depth)
+            
+            recon = model(imgv, maskv)
+            #print(recon.size())
+            show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
+            show[:] = (show2[:] * 255).astype(np.uint8)
+            
+            
     while True:
         
         if changed:
@@ -96,7 +108,8 @@ def showpoints(img, depth, pose, model):
             show_out = show
         
         cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.cv.CV_RGB(255,255,255))
-        cv2.imshow('show3d',show_out)
+        show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
+        cv2.imshow('show3d',show_rgb)
         
         cmd=cv2.waitKey(10)%256
     
@@ -104,16 +117,16 @@ def showpoints(img, depth, pose, model):
             break
             
         elif cmd == ord('w'):
-            y += 0.01
+            x -= 0.05
             changed = True
         elif cmd == ord('s'):
-            y -= 0.01
+            x += 0.05
             changed = True
         elif cmd == ord('a'):
-            x -= 0.01
+            y += 0.05
             changed = True
         elif cmd == ord('d'):
-            x += 0.01    
+            y -= 0.05    
             changed = True
         elif cmd == ord('r'):
             pitch,yaw,x,y,z = 0,0,0,0,0
@@ -136,7 +149,9 @@ def showpoints(img, depth, pose, model):
 def show_target(target_img):
     cv2.namedWindow('target')
     cv2.moveWindow('target',0,256 + 50)
-    cv2.imshow('target', target_img)
+    show_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
+
+    cv2.imshow('target', show_rgb)
 
 if __name__=='__main__':
     
