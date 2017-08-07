@@ -173,7 +173,7 @@ if __name__=='__main__':
         comp = torch.nn.DataParallel(comp).cuda()
         comp.load_state_dict(torch.load(opt.model))
         model = comp.module
-    
+        model.eval()
     print(model)
     print(pose)
     #print(source_depth)
