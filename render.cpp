@@ -6,19 +6,17 @@ using namespace std;
 
 extern "C"{
     
-void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render){
+void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, float * depth_render){
     int ih, iw, i, ic;
     
     float * points3d = (float*) malloc(sizeof(float) * h * w * 3);
     float * points3d_after = (float*) malloc(sizeof(float) * h * w * 3);
     float * points3d_polar = (float*) malloc(sizeof(float) * h * w * 3);
-    
-    float * depth_render = (float *) malloc(sizeof(float) * h * w);
-    
-    for (i = 0; i < 5; i++) {
-        printf("%f ", pose[i]);
-    }
-    printf("\n");
+        
+    //for (i = 0; i < 5; i++) {
+    //    printf("%f ", pose[i]);
+    //}
+    //printf("\n");
     for (ih = 0; ih < h; ih ++ ) {
         for (iw = 0; iw < w; iw ++ ) {
             for (ic = 0; ic < 3; ic ++) {
@@ -95,11 +93,15 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
         }
     }
         
+    for (ih = 0; ih < h; ih ++ ) {
+        for (iw = 0; iw < w; iw ++ ) {
+            if (depth_render[ih * w + iw] > 1e5) depth_render[ih * w + iw] = 0;
+        }
+    }
     
     free(points3d);
     free(points3d_after);
     free(points3d_polar);
-    free(depth_render);
 }
     
     

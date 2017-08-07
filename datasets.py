@@ -8,6 +8,7 @@ import torch
 import json
 import codecs
 import numpy as np
+import ctypes as ct
 import progressbar
 import sys
 import torchvision.transforms as transforms
@@ -36,70 +37,85 @@ def depth_loader(path):
 
 class ViewDataSet3D(data.Dataset):
 
-    def __init__(self, root, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = False, dist_filter2 = None):
+    def __init__(self, root, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
         print ('Processing the data:')
-        self.root = root
+        self.root = root.rstrip('/')
         #print(self.root)
-        self.scenes = sorted([d for d in (os.listdir(self.root)) if os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(os.path.join(self.root, d, 'sweep_locations.csv')) and os.path.isdir(os.path.join(self.root, d, 'pano'))])
-        #print(self.scenes)
-        num_scenes = len(self.scenes)
-        num_train = int(num_scenes * 0.9)
-        print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
-        if train:
-            self.scenes = self.scenes[:num_train]
-        else:
-            self.scenes = self.scenes[num_train:]
-
-
-        self.bar  = progressbar.ProgressBar(widgets=[
-                    ' [', progressbar.Timer(), '] ',
-                    progressbar.Bar(),
-                    ' (', progressbar.ETA(), ') ',
-                    ])
-
-        self.meta = {}
-        if debug:
-            last = 35
-        else:
-            last = len(self.scenes)
-
-        for scene in self.scenes[:last]:
-            posefile = os.path.join(self.root, scene, 'sweep_locations.csv')
-            with open(posefile) as f:
-                for line in f:
-                    l = line.strip().split(',')
-                    if not self.meta.has_key(scene):
-                        self.meta[scene] = {}
-                    metadata = (l[0], map(float, l[1:4]), map(float, l[4:8]))
-
-                    if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + l[0] + '.json')):
-                        self.meta[scene][metadata[0]] = metadata
-
+        self.fofn = os.path.basename(self.root) + '_fofn'+str(int(train))+'.pkl'
         self.train = train
         self.loader = loader
         self.seqlen = seqlen
         self.transform = transform
         self.target_transform = transform
         self.depth_trans = mist_transform
-        
         self.off_3d = off_3d
         self.select = []
+        self.off_pc_render = off_pc_render
+        if not self.off_pc_render:
+            self.dll=np.ctypeslib.load_library('render','.')
+        
+        print(self.fofn)
+        if not os.path.isfile(self.fofn):
+            
+            self.scenes = sorted([d for d in (os.listdir(self.root)) if os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(os.path.join(self.root, d, 'sweep_locations.csv')) and os.path.isdir(os.path.join(self.root, d, 'pano'))])
+            #print(self.scenes)
+            num_scenes = len(self.scenes)
+            num_train = int(num_scenes * 0.9)
+            print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
+            if train:
+                self.scenes = self.scenes[:num_train]
+            else:
+                self.scenes = self.scenes[num_train:]
 
-        print("Indexing")
-        for scene, meta in self.bar(self.meta.items()):
-            if len(meta) < self.seqlen:
-                continue
-            for uuid,v in meta.items():
-                dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in meta.items()]
-                dist_list = sorted(dist_list, key = lambda x:x[-1])
 
-                if not dist_filter is None:
-                    if dist_list[1][-1] < dist_filter:
-                        self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
-                    
-                else:
-                    self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
+            self.bar  = progressbar.ProgressBar(widgets=[
+                        ' [', progressbar.Timer(), '] ',
+                        progressbar.Bar(),
+                        ' (', progressbar.ETA(), ') ',
+                        ])
+
+            self.meta = {}
+            if debug:
+                last = 35
+            else:
+                last = len(self.scenes)
+
+            for scene in self.scenes[:last]:
+                posefile = os.path.join(self.root, scene, 'sweep_locations.csv')
+                with open(posefile) as f:
+                    for line in f:
+                        l = line.strip().split(',')
+                        if not self.meta.has_key(scene):
+                            self.meta[scene] = {}
+                        metadata = (l[0], map(float, l[1:4]), map(float, l[4:8]))
+
+                        if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + l[0] + '.json')):
+                            self.meta[scene][metadata[0]] = metadata
+            print("Indexing")
+        
+            for scene, meta in self.bar(self.meta.items()):
+                if len(meta) < self.seqlen:
+                    continue
+                for uuid,v in meta.items():
+                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in meta.items()]
+                    dist_list = sorted(dist_list, key = lambda x:x[-1])
+
+                    if not dist_filter is None:
+                        if dist_list[1][-1] < dist_filter:
+                            self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
+
+                    else:
+                        self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])                
+            
+            with open(self.fofn, 'wb') as fp:
+                pickle.dump([self.scenes, self.meta, self.select, num_scenes, num_train], fp)
                 
+        else:
+            with open(self.fofn, 'rb') as fp:
+                self.scenes, self.meta, self.select, num_scenes, num_train = pickle.load(fp)
+                print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
+                
+            
     def __getitem__(self, index):
         #print(index)
         scene = self.select[index][0][0]
@@ -150,50 +166,77 @@ class ViewDataSet3D(data.Dataset):
             mist_imgs = [depth_loader(item) for item in mist_img_paths]
             mist_target = depth_loader(mist_target_path)
 
-
-
-
             normal_imgs = [self.loader(item) for item in normal_img_paths]
             normal_target = self.loader(normal_target_path)
 
-
-        rpose = utils.transfromM(relative)
-
+        org_img = imgs[0].copy()
+        
         if not self.transform is None:
             imgs = [self.transform(item) for item in imgs]
         if not self.target_transform is None:
             target = self.target_transform(target)
 
         if not self.off_3d:
-            if not self.transform is None:
+            
+            mist_imgs = [np.expand_dims(np.array(item).astype(np.float32)/65536.0, 2) for item in mist_imgs]        
+            org_mist = mist_imgs[0][:,:,0].copy()
+            mist_target = np.expand_dims(np.array(mist_target).astype(np.float32)/65536.0,2)
+            
+            if not self.depth_trans is None:
                 mist_imgs = [self.depth_trans(item) for item in mist_imgs]
-            if not self.target_transform is None:
+            if not self.depth_trans is None:
                 mist_target = self.depth_trans(mist_target)
 
             if not self.transform is None:
                 normal_imgs = [self.transform(item) for item in normal_imgs]
             if not self.target_transform is None:
                 normal_target = self.target_transform(normal_target)
-
-        mist_imgs = [np.array(item).astype(np.float32)/65536.0 for item in mist_imgs]        
-        mist_target = np.array(mist_target).astype(np.float32)/65536.0
-                
+        
+        if not self.off_pc_render:
+            img = np.array(org_img)
+            h,w,_ = img.shape
+            render=np.zeros((h,w,3),dtype='uint8')
+            target_depth = np.zeros((h,w)).astype(np.float32)
+            
+            depth = org_mist
+            pose = poses_relative[0].numpy()
+            x = -pose[1]
+            y = -pose[0]
+            z = -pose[2]
+            yaw = pose[-1] + np.pi
+            pitch = pose[-3] # to be verified
+            roll = pose[-2] # to be verified
+            p = np.array([x,y,z,pitch,yaw,roll]).astype(np.float32)
+            self.dll.render(ct.c_int(img.shape[0]),
+                   ct.c_int(img.shape[1]),
+                   img.ctypes.data_as(ct.c_void_p),
+                   depth.ctypes.data_as(ct.c_void_p),
+                   p.ctypes.data_as(ct.c_void_p),
+                   render.ctypes.data_as(ct.c_void_p),
+                   target_depth.ctypes.data_as(ct.c_void_p)
+                  ) 
+            if not self.transform is None:
+                render = self.transform(Image.fromarray(render))
+            if not self.depth_trans is None:
+                target_depth = self.depth_trans(np.expand_dims(target_depth,2))
+        
         if self.off_3d:
             return imgs, target, poses_relative
-        else:
+        elif self.off_pc_render:
             return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target,  poses_relative
-
+        else:
+            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target,  poses_relative, render, target_depth
+    
     def __len__(self):
         return len(self.select)
 
     
 class Places365Dataset(data.Dataset):
     def __init__(self, root, train=True, transform=None, loader=default_loader):
-        self.root = root
-      
+        self.root = root.rstrip('/')
         self.train = train
         self.fns = []
-        self.fofn = 'fofn'+str(int(train))+'.pkl'
+        self.fofn = os.path.basename(root) + '_fofn'+str(int(train))+'.pkl'
         self.loader = loader
         self.transform = transform
         if not os.path.isfile(self.fofn):
@@ -210,7 +253,7 @@ class Places365Dataset(data.Dataset):
         else:
             with open(self.fofn, 'rb') as fp:
                 self.fns = pickle.load(fp)
-              
+
     def __len__(self):
         return len(self.fns)
     
@@ -230,7 +273,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     if opt.dataset == 'view3d':
-        d = ViewDataSet3D(root=opt.dataroot, debug=opt.debug, seqlen = 2, dist_filter = 0.8, dist_filter2 = 2.0)
+        d = ViewDataSet3D(root=opt.dataroot, debug=opt.debug, seqlen = 2, dist_filter = 0.8, off_3d = False, off_pc_render = False)
         print(len(d))
         sample = (d[1])
         print(sample)
