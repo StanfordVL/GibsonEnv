@@ -111,7 +111,7 @@ def main():
     
     cudnn.benchmark = True
     
-    dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = True)
+    dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = False)
     
     img = Variable(torch.zeros(opt.batchsize,3, 256, 256)).cuda()
     maskv = Variable(torch.zeros(opt.batchsize,1, 256, 256)).cuda()

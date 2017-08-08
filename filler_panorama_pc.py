@@ -108,7 +108,7 @@ def main():
 
     cudnn.benchmark = True
 
-    dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = True)
+    dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = False)
 
     img = Variable(torch.zeros(opt.batchsize,3, 256, 512)).cuda()
     maskv = Variable(torch.zeros(opt.batchsize,1, 256, 512)).cuda()
@@ -126,7 +126,7 @@ def main():
 
     if opt.model != '':
         comp.load_state_dict(torch.load(opt.model))
-        dis.load_state_dict(torch.load(opt.model.replace("G", "D")))
+        #dis.load_state_dict(torch.load(opt.model.replace("G", "D")))
         current_epoch = opt.cepoch
 
     l2 = nn.MSELoss()
