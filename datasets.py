@@ -155,8 +155,8 @@ class ViewDataSet3D(data.Dataset):
 
         for item in img_poses:
             relative = np.dot(item, inv(target_pose))
-            poses_relative.append(torch.from_numpy(np.concatenate(utils.transfromM(relative), 0).astype(np.float32)))
-
+            #poses_relative.append(torch.from_numpy(np.concatenate(utils.transfromM(relative), 0).astype(np.float32)))
+            poses_relative.append(torch.from_numpy(relative.flatten()))
         #print(poses_relative)
 
         imgs = [self.loader(item) for item in img_paths]

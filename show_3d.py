@@ -9,7 +9,7 @@ import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 import time
-
+from numpy import cos, sin
 showsz = 256
 mousex,mousey=0.5,0.5
 changed=True
@@ -71,6 +71,8 @@ def showpoints(img, depth, pose, model):
     imgv = Variable(torch.zeros(1,3, 256, 512)).cuda()
     maskv = Variable(torch.zeros(1,1, 256, 512)).cuda()
 
+    cpose = np.eye(4)
+    
     def render(img, depth, pose, model):
         global fps
         t0 = time.time()
@@ -105,7 +107,39 @@ def showpoints(img, depth, pose, model):
     while True:
 
         if changed:
-            render(img, depth, np.array([x,y,z,pitch,yaw,roll]).astype(np.float32), model)
+            alpha = yaw
+            beta = pitch
+            gamma = roll
+            cpose = cpose.flatten()
+            
+            cpose[0] = cos(alpha) * cos(beta);
+            cpose[1] = cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma);
+            cpose[2] = cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma);
+            cpose[3] = 0
+            
+            cpose[4] = sin(alpha) * cos(beta);
+            cpose[5] = sin(alpha) * sin(beta) * sin(gamma) + cos(alpha) * cos(gamma);
+            cpose[6] = sin(alpha) * sin(beta) * cos(gamma) - cos(alpha) * sin(gamma);
+            cpose[7] = 0
+            
+            cpose[8] = -sin(beta);
+            cpose[9] = cos(beta) * sin(gamma);
+            cpose[10] = cos(beta) * cos(gamma);
+            cpose[11] = 0
+            
+            cpose[12:16] = 0
+            cpose[15] = 1
+            
+            cpose = cpose.reshape((4,4))
+            
+            cpose2 = np.eye(4)
+            cpose2[0,3] = x
+            cpose2[1,3] = y
+            cpose2[2,3] = z
+            
+            cpose = np.dot(cpose, cpose2)
+            
+            render(img, depth, cpose.astype(np.float32), model)
             changed = False
 
 
@@ -126,7 +160,6 @@ def showpoints(img, depth, pose, model):
 
         if cmd==ord('q'):
             break
-
         elif cmd == ord('w'):
             x -= 0.05
             changed = True
@@ -139,18 +172,23 @@ def showpoints(img, depth, pose, model):
         elif cmd == ord('d'):
             y -= 0.05
             changed = True
+            
+        elif cmd == ord('z'):
+            z += 0.01
+            changed = True
+        elif cmd == ord('x'):
+            z -= 0.01
+            changed = True
+            
         elif cmd == ord('r'):
             pitch,yaw,x,y,z = 0,0,0,0,0
             roll = 0
             changed = True
         elif cmd == ord('t'):
-            changed = True
-            x = -pose[1]
-            y = -pose[0]
-            z = -pose[2]
-            yaw = pose[-1] + np.pi
-            pitch = pose[-3] # to be verified
-            roll = pose[-2] # to be verified
+            
+            cpose = pose
+            changed = True            
+            
         elif cmd == ord('o'):
             overlay = not overlay
         elif cmd == ord('f'):
