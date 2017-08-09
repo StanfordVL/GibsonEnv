@@ -155,7 +155,9 @@ class ViewDataSet3D(data.Dataset):
 
         for item in img_poses:
             relative = np.dot(item, inv(target_pose))
-            poses_relative.append(torch.from_numpy(np.concatenate(utils.transfromM(relative), 0).astype(np.float32)))
+            relative2 = np.dot(target_pose, inv(item))
+                    
+            poses_relative.append(torch.from_numpy(np.concatenate([utils.transfromM(relative)[0], utils.transfromM(relative2)[1]], 0).astype(np.float32)))
 
         #print(poses_relative)
 

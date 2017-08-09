@@ -148,9 +148,9 @@ def showpoints(img, depth, pose, model):
             x = -pose[1]
             y = -pose[0]
             z = -pose[2]
-            yaw = pose[-1] + np.pi
-            pitch = pose[-3] # to be verified
-            roll = pose[-2] # to be verified
+            yaw = -pose[-1] + np.pi
+            pitch = -pose[-3] # to be verified
+            roll = -pose[-2] # to be verified
         elif cmd == ord('o'):
             overlay = not overlay
         elif cmd == ord('f'):
