@@ -205,9 +205,9 @@ class ViewDataSet3D(data.Dataset):
             x = -pose[1]
             y = -pose[0]
             z = -pose[2]
-            yaw = pose[-1] + np.pi
-            pitch = pose[-3] # to be verified
-            roll = pose[-2] # to be verified
+            yaw = -pose[-1] + np.pi
+            pitch = -pose[-3] # to be verified
+            roll = -pose[-2] # to be verified
             p = np.array([x,y,z,pitch,yaw,roll]).astype(np.float32)
             self.dll.render(ct.c_int(img.shape[0]),
                    ct.c_int(img.shape[1]),
