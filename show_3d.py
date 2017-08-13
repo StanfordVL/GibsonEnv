@@ -9,7 +9,10 @@ import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 import time
-
+#import matplotlib
+#matplotlib.use('GTKAgg')
+import matplotlib.pyplot as plt
+from numpy import cos, sin
 showsz = 256
 mousex,mousey=0.5,0.5
 changed=True
@@ -56,21 +59,29 @@ def onmouse(*args):
     
 
 
-def showpoints(img, depth, pose, model):
+def showpoints(img, depth, pose, model, xyzs, rts):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
     global fps
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
+    minimap=np.zeros((showsz,showsz,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.float32)
     overlay = False
     show_depth = False
     cv2.namedWindow('show3d')
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
+    cv2.namedWindow('minimap')
+    cv2.moveWindow('minimap',showsz*3,0)
     
+    xs = [item[0] for item in  xyzs.values()]
+    ys = [item[1] for item in  xyzs.values()]
+
     imgv = Variable(torch.zeros(1,3, 256, 512)).cuda()
     maskv = Variable(torch.zeros(1,1, 256, 512)).cuda()
 
+    plt.ioff()
+    
     def render(img, depth, pose, model):
         global fps
         t0 = time.time()
@@ -100,14 +111,64 @@ def showpoints(img, depth, pose, model):
         t = t1-t0
         fps = 1/t
       
+        minimap[:] = 0
+        xs = [item[0] for item in  xyzs.values()]
+        ys = [item[1] for item in  xyzs.values()]
+        
+        maxx = np.max(xs)
+        minx = np.min(xs)
+        maxy = np.max(ys)
+        miny = np.min(ys)
+        
+        for i in range(len(xs)):
+            cv2.circle(minimap,(int((xs[i] - minx) * showsz / (maxx - minx)),int((ys[i] - miny) * showsz / (maxy - miny))), 5, (0,0,255), -1)
+
+        cv2.circle(minimap,(int((x - minx) * showsz / (maxx - minx)),int((y - miny) * showsz / (maxy - miny))), 5, (0,255,255), -1)
         cv2.waitKey(5)%256
-            
+        
     while True:
         
         if changed:
-            render(img, depth, np.array([x,y,z,pitch,yaw,roll]).astype(np.float32), model)
-            changed = False
+            
+            
+            current_t = np.eye(4)
+            current_t[0,-1] = x
+            current_t[1,-1] = y
+            current_t[2,-1] = z
+            
+            alpha = yaw
+            beta = pitch
+            gamma = roll
+            
+            current_r = np.array([[cos(alpha) * cos(beta), cos(alpha) * sin(beta) * sin(gamma) - sin(alpha)* cos(gamma), cos(alpha) * sin(beta) * cos(gamma) + sin(alpha)*sin(gamma), 0],
+                                 [sin(alpha)*cos(beta), sin(alpha)*sin(beta)*sin(gamma)+cos(alpha)*cos(gamma), sin(alpha)*sin(gamma)*cos(gamma) - cos(alpha)*sin(gamma), 0],
+                                 [-sin(beta), cos(beta)*sin(gamma), cos(beta)*cos(gamma),0],
+                                 [0,0,0,1]])
+            
+            
+            current_rt = np.dot(current_t, current_r)
+            dist = []
+            for i in range(len(rts)):
                 
+                rt = rts[i]
+                dist.append( np.sum(np.dot(current_rt, np.linalg.inv(rt))[0:3, -1] **2))
+            
+            
+            #print(np.dot(current_rt, np.linalg.inv(rt))[0:3, -1])
+            
+            idx = np.argmin(dist)
+            
+            img = sources[idx]
+            depth = source_depths[idx]
+            
+            
+            rt = rts[idx]
+            relative = np.dot(current_rt, np.linalg.inv(rt))
+            
+            #relative = np.linalg.inv(relative)
+            print(relative)
+            render(img, depth, relative.astype(np.float32), model)
+            changed = False
         
         if overlay:
             show_out = (show/2 + target/2).astype(np.uint8)
@@ -121,12 +182,13 @@ def showpoints(img, depth, pose, model):
         
         show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
         cv2.imshow('show3d',show_rgb)
+        cv2.imshow('minimap',minimap)
         
         cmd=cv2.waitKey(5)%256
     
         if cmd==ord('q'):
             break
-            
+        
         elif cmd == ord('w'):
             x -= 0.05
             changed = True
@@ -139,10 +201,18 @@ def showpoints(img, depth, pose, model):
         elif cmd == ord('d'):
             y -= 0.05    
             changed = True
+        elif cmd == ord('z'):
+            z += 0.05
+            changed = True
+        elif cmd == ord('x'):
+            z -= 0.05    
+            changed = True
+        
         elif cmd == ord('r'):
             pitch,yaw,x,y,z = 0,0,0,0,0
             roll = 0
             changed = True
+        
         elif cmd == ord('t'):
             changed = True
             x = -pose[1]
@@ -173,11 +243,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
     opt = parser.parse_args()
     d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
-    idx = opt.idx
-    source = d[idx][0][0]
-    target = d[idx][1]
-    source_depth = d[idx][2][0]
-    pose = d[idx][-1][0].numpy()
+    
     model = None
     if opt.model != '':
         comp = CompletionNet()
@@ -186,8 +252,30 @@ if __name__=='__main__':
         model = comp.module
         model.eval()
     print(model)
-    print(pose)
+    
+    
+    idx = opt.idx
+    uuids, xyzs, rts = d.get_scene_info(idx)
+    
+    
+    sources = []
+    source_depths = []
+    poses = []
+    
+    for k,v in uuids.items():
+        print(v)
+    
+        source = d[v][0][0]
+        source_depth = d[v][2][0]
+        pose = d[v][-1][0].numpy()
+        
+        sources.append(source)
+        source_depths.append(source_depth)
+        poses.append(pose)
+    
+    showpoints(sources, source_depths, poses, model, xyzs, rts)
+    
+    #print(pose)
     #print(source_depth)
-    print(source.shape, source_depth.shape)
-    show_target(target)
-    showpoints(source, source_depth, pose, model)
+    #show_target(target)
+    #showpoints(source, source_depth, pose, model)

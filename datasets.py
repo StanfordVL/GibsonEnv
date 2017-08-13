@@ -117,7 +117,7 @@ class ViewDataSet3D(data.Dataset):
     
     
     def get_scene_info(self, index):
-        scene = self.select[index][0][0]
+        scene = self.scenes[index]
         #print(scene)
         data = [(i,item) for i,item in enumerate(self.select) if item[0][0] == scene]
         #print(data)
@@ -134,7 +134,18 @@ class ViewDataSet3D(data.Dataset):
         xyzs = dict(xyzs)
         #print(xyzs)
         
-        return uuids, xyzs
+        pose_paths = ([os.path.join(self.root, scene, 'pano', 'points', "point_" + item + ".json") for item in uuids.keys()])
+        poses = []
+        #print(pose_paths)
+        for item in pose_paths:
+            f = open(item)
+            pose_dict = json.load(f)
+            p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
+            
+            poses.append(p)
+            f.close()
+        
+        return uuids, xyzs, poses
         
     def __getitem__(self, index):
         #print(index)
@@ -156,8 +167,7 @@ class ViewDataSet3D(data.Dataset):
             f = open(item)
             pose_dict = json.load(f)
             p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
-            #print(p,p.shape)
-
+            
             poses.append(p)
             f.close()
 
@@ -302,7 +312,9 @@ if __name__ == '__main__':
         if sample is not None:
             print('3d test passed')
             
-        d.get_scene_info(0)
+        uuids, xyzs, poses = d.get_scene_info(0)
+        print(uuids, xyzs, poses)
+        
     elif opt.dataset == 'places365':
         d = Places365Dataset(root = opt.dataroot)
         print(len(d))
