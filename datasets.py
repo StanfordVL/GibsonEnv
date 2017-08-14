@@ -121,31 +121,22 @@ class ViewDataSet3D(data.Dataset):
         #print(scene)
         data = [(i,item) for i,item in enumerate(self.select) if item[0][0] == scene]
         #print(data)
-        uuids = dict([(item[1][0][1],item[0]) for item in data])
+        uuids = ([(item[1][0][1],item[0]) for item in data])
         #print(uuids)
-        posefile = os.path.join(self.root, scene, 'sweep_locations.csv')
-        xyzs = []
-        with open(posefile) as f:
-            for line in f:
-                l = line.strip().split(',')
-                #print(l)
-                if l[0] in uuids:
-                    xyzs.append((l[0], map(float, l[1:4])))
-        xyzs = dict(xyzs)
-        #print(xyzs)
-        
-        pose_paths = ([os.path.join(self.root, scene, 'pano', 'points', "point_" + item + ".json") for item in uuids.keys()])
+
+        pose_paths = ([os.path.join(self.root, scene, 'pano', 'points', "point_" + item[0] + ".json") for item in uuids])
         poses = []
         #print(pose_paths)
         for item in pose_paths:
             f = open(item)
             pose_dict = json.load(f)
             p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
-            
+            rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+            p = np.dot(rotation, p)
             poses.append(p)
             f.close()
         
-        return uuids, xyzs, poses
+        return uuids, poses
         
     def __getitem__(self, index):
         #print(index)
@@ -167,7 +158,8 @@ class ViewDataSet3D(data.Dataset):
             f = open(item)
             pose_dict = json.load(f)
             p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
-
+            rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+            p = np.dot(rotation, p)
             poses.append(p)
             f.close()
 
@@ -188,11 +180,6 @@ class ViewDataSet3D(data.Dataset):
 
         for item in img_poses:
             relative = np.dot(target_pose, inv(item))
-            #poses_relative.append(torch.from_numpy(np.concatenate(utils.transfromM(relative), 0).astype(np.float32)))
-            rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
-            print(relative)
-            relative = np.dot(np.dot(rotation, relative), np.linalg.inv(rotation))
-            print(relative)
             poses_relative.append(torch.from_numpy(relative.flatten()))
 
         #print(poses_relative)
