@@ -114,8 +114,28 @@ class ViewDataSet3D(data.Dataset):
             with open(self.fofn, 'rb') as fp:
                 self.scenes, self.meta, self.select, num_scenes, num_train = pickle.load(fp)
                 print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
-                
-            
+    
+    
+    def get_scene_info(self, index):
+        scene = self.select[index][0][0]
+        #print(scene)
+        data = [(i,item) for i,item in enumerate(self.select) if item[0][0] == scene]
+        #print(data)
+        uuids = dict([(item[1][0][1],item[0]) for item in data])
+        #print(uuids)
+        posefile = os.path.join(self.root, scene, 'sweep_locations.csv')
+        xyzs = []
+        with open(posefile) as f:
+            for line in f:
+                l = line.strip().split(',')
+                #print(l)
+                if l[0] in uuids:
+                    xyzs.append((l[0], map(float, l[1:4])))
+        xyzs = dict(xyzs)
+        #print(xyzs)
+        
+        return uuids, xyzs
+        
     def __getitem__(self, index):
         #print(index)
         scene = self.select[index][0][0]
@@ -164,6 +184,7 @@ class ViewDataSet3D(data.Dataset):
             relative = np.dot(np.dot(rotation, relative), np.linalg.inv(rotation))
             print(relative)
             poses_relative.append(torch.from_numpy(relative.flatten()))
+
         #print(poses_relative)
 
         imgs = [self.loader(item) for item in img_paths]
@@ -210,9 +231,9 @@ class ViewDataSet3D(data.Dataset):
             x = -pose[1]
             y = -pose[0]
             z = -pose[2]
-            yaw = pose[-1] + np.pi
-            pitch = pose[-3] # to be verified
-            roll = pose[-2] # to be verified
+            yaw = -pose[-1] + np.pi
+            pitch = -pose[-3] # to be verified
+            roll = -pose[-2] # to be verified
             p = np.array([x,y,z,pitch,yaw,roll]).astype(np.float32)
             self.dll.render(ct.c_int(img.shape[0]),
                    ct.c_int(img.shape[1]),
@@ -286,6 +307,8 @@ if __name__ == '__main__':
         print(sample)
         if sample is not None:
             print('3d test passed')
+            
+        d.get_scene_info(0)
     elif opt.dataset == 'places365':
         d = Places365Dataset(root = opt.dataroot)
         print(len(d))

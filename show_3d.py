@@ -201,6 +201,7 @@ def showpoints(img, depth, pose, model):
             
             changed = True            
             
+
         elif cmd == ord('o'):
             overlay = not overlay
         elif cmd == ord('f'):

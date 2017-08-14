@@ -153,7 +153,6 @@ def main():
             recon = comp(img, maskv)
             loss = l2(recon, img_original)
             loss.backward(retain_variables = True)
-            
             optimizerG.step()
             
             print('[%d/%d][%d/%d] MSEloss: %f' % (epoch, opt.nepoch, i, len(dataloader), loss.data[0]))
