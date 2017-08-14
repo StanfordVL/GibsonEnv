@@ -32,6 +32,7 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
             //printf("%f %f\n", depth[ih * w + iw], depth_point);
             float phi = ((float)(ih) + 0.5) / float(h) * M_PI;
             float theta = ((float)(iw) + 0.5) / float(w) * 2 * M_PI + M_PI;
+
             points3d[(ih * w + iw) * 4 + 0] = depth_point * sin(phi) * cos(theta);
             points3d[(ih * w + iw) * 4 + 1] = depth_point * sin(phi) * sin(theta);
             points3d[(ih * w + iw) * 4 + 2] = depth_point * cos(phi);
@@ -39,13 +40,13 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
         }
     }
     
-    float alpha, beta, gamma, x, y, z;
-    x = pose[0];
-    y = pose[1];
-    z = pose[2];
-    alpha = pose[4];
-    beta = pose[3];
-    gamma = pose[5];
+    //float alpha, beta, gamma, x, y, z;
+    //x = pose[0];
+    //y = pose[1];
+    //z = pose[2];
+    //alpha = pose[4];
+    //beta = pose[3];
+    //gamma = pose[5];
 
     float transformation_matrix[16];
 
@@ -58,6 +59,7 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
                                                         +points3d[(ih * w + iw) * 4 + 1] * transformation_matrix[4 * ic + 1] 
                                                         +points3d[(ih * w + iw) * 4 + 2] * transformation_matrix[4 * ic + 2] 
                                                         +points3d[(ih * w + iw) * 4 + 3] * transformation_matrix[4 * ic + 3]; 
+
             }
         }
     }

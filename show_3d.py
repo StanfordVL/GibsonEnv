@@ -13,6 +13,10 @@ import time
 #matplotlib.use('GTKAgg')
 import matplotlib.pyplot as plt
 from numpy import cos, sin
+
+import utils
+
+
 showsz = 256
 mousex,mousey=0.5,0.5
 changed=True
@@ -33,7 +37,7 @@ def onmouse(*args):
     global org_pitch, org_yaw, org_x, org_y, org_z
     global org_roll, roll
     global clickstart
-    
+
     if args[0] == cv2.EVENT_LBUTTONDOWN:
         org_pitch, org_yaw, org_x, org_y, org_z =\
         pitch,yaw,x,y,z
@@ -42,21 +46,21 @@ def onmouse(*args):
     if args[0] == cv2.EVENT_RBUTTONDOWN:
         org_roll = roll
         clickstart = (mousex, mousey)
-        
+
     if (args[3] & cv2.EVENT_FLAG_LBUTTON):
         pitch = org_pitch + (mousex - clickstart[0])/10
         yaw = org_yaw + (mousey - clickstart[1])
         changed=True
-    
+
     if (args[3] & cv2.EVENT_FLAG_RBUTTON):
         roll = org_roll + (mousex - clickstart[0])/50
         changed=True
-        
+
     my=args[1]
     mx=args[2]
     mousex=mx/float(showsz)
     mousey=my/float(showsz * 2)
-    
+
 
 
 def showpoints(img, depth, pose, model, xyzs, rts):
@@ -77,10 +81,12 @@ def showpoints(img, depth, pose, model, xyzs, rts):
     xs = [item[0] for item in  xyzs.values()]
     ys = [item[1] for item in  xyzs.values()]
 
+
     imgv = Variable(torch.zeros(1,3, 256, 512)).cuda()
     maskv = Variable(torch.zeros(1,1, 256, 512)).cuda()
 
-    plt.ioff()
+
+    cpose = np.eye(4)
     
     def render(img, depth, pose, model):
         global fps
@@ -98,15 +104,15 @@ def showpoints(img, depth, pose, model, xyzs, rts):
             source = tf(show)
             source_depth = tf(np.expand_dims(target_depth, 2))
             #print(source.size(), source_depth.size())
-        
+
             imgv.data.copy_(source)
             maskv.data.copy_(source_depth)
-            
+
             recon = model(imgv, maskv)
             #print(recon.size())
             show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
             show[:] = (show2[:] * 255).astype(np.uint8)
-            
+
         t1 = time.time()
         t = t1-t0
         fps = 1/t
@@ -126,10 +132,10 @@ def showpoints(img, depth, pose, model, xyzs, rts):
         cv2.circle(minimap,(int((x - minx) * showsz / (maxx - minx)),int((y - miny) * showsz / (maxy - miny))), 5, (0,255,255), -1)
         cv2.waitKey(5)%256
         
+
     while True:
-        
-        if changed:
-            
+
+        if changed:            
             
             current_t = np.eye(4)
             current_t[0,-1] = x
@@ -170,25 +176,29 @@ def showpoints(img, depth, pose, model, xyzs, rts):
             render(img, depth, relative.astype(np.float32), model)
             changed = False
         
+
+
         if overlay:
             show_out = (show/2 + target/2).astype(np.uint8)
         elif show_depth:
             show_out = (target_depth * 10).astype(np.uint8)
         else:
             show_out = show
-        
+
         cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.cv.CV_RGB(255,255,255))
         cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
-        
+
         show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
         cv2.imshow('show3d',show_rgb)
         cv2.imshow('minimap',minimap)
         
+
+
         cmd=cv2.waitKey(5)%256
-    
+
         if cmd==ord('q'):
             break
-        
+
         elif cmd == ord('w'):
             x -= 0.05
             changed = True
@@ -199,34 +209,42 @@ def showpoints(img, depth, pose, model, xyzs, rts):
             y += 0.05
             changed = True
         elif cmd == ord('d'):
-            y -= 0.05    
+            y -= 0.05
             changed = True
+            
+
         elif cmd == ord('z'):
-            z += 0.05
+            z += 0.01
             changed = True
         elif cmd == ord('x'):
-            z -= 0.05    
+            z -= 0.01    
             changed = True
-        
+
         elif cmd == ord('r'):
             pitch,yaw,x,y,z = 0,0,0,0,0
             roll = 0
             changed = True
         
         elif cmd == ord('t'):
-            changed = True
-            x = -pose[1]
-            y = -pose[0]
-            z = -pose[2]
-            yaw = -pose[-1] + np.pi
-            pitch = -pose[-3] # to be verified
-            roll = -pose[-2] # to be verified
+            
+            RT = pose.reshape((4,4))
+            
+            R = RT[:3,:3]
+            T = RT[:3,-1]
+            
+            x,y,z = np.dot(np.linalg.inv(R),T)
+            roll, pitch, yaw = (utils.rotationMatrixToEulerAngles(R))
+            
+            
+            changed = True            
+            
+
         elif cmd == ord('o'):
             overlay = not overlay
         elif cmd == ord('f'):
             show_depth = not show_depth
 
-    
+
 def show_target(target_img):
     cv2.namedWindow('target')
     cv2.moveWindow('target',0,256 + 50)
@@ -235,7 +253,7 @@ def show_target(target_img):
     cv2.imshow('target', show_rgb)
 
 if __name__=='__main__':
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug'  , action='store_true', help='debug mode')
     parser.add_argument('--dataroot'  , required = True, help='dataset path')
@@ -243,7 +261,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
     opt = parser.parse_args()
     d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
-    
+
     model = None
     if opt.model != '':
         comp = CompletionNet()
@@ -256,7 +274,6 @@ if __name__=='__main__':
     
     idx = opt.idx
     uuids, xyzs, rts = d.get_scene_info(idx)
-    
     
     sources = []
     source_depths = []
@@ -275,7 +292,3 @@ if __name__=='__main__':
     
     showpoints(sources, source_depths, poses, model, xyzs, rts)
     
-    #print(pose)
-    #print(source_depth)
-    #show_target(target)
-    #showpoints(source, source_depth, pose, model)
