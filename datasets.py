@@ -137,10 +137,13 @@ class ViewDataSet3D(data.Dataset):
             pose_dict = json.load(f)
             p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
             #print(p,p.shape)
-
+            
             poses.append(p)
             f.close()
 
+            
+            
+        print(poses)
         img_paths = paths[1:]
         target_path = paths[0]
         img_poses = poses[1:]
@@ -154,8 +157,12 @@ class ViewDataSet3D(data.Dataset):
         poses_relative = []
 
         for item in img_poses:
-            relative = np.dot(item, inv(target_pose))
+            relative = np.dot(target_pose, inv(item))
             #poses_relative.append(torch.from_numpy(np.concatenate(utils.transfromM(relative), 0).astype(np.float32)))
+            rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+            print(relative)
+            relative = np.dot(np.dot(rotation, relative), np.linalg.inv(rotation))
+            print(relative)
             poses_relative.append(torch.from_numpy(relative.flatten()))
         #print(poses_relative)
 

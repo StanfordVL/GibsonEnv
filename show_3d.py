@@ -10,6 +10,9 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 import time
 from numpy import cos, sin
+import utils
+
+
 showsz = 256
 mousex,mousey=0.5,0.5
 changed=True
@@ -139,6 +142,7 @@ def showpoints(img, depth, pose, model):
             
             cpose = np.dot(cpose, cpose2)
             
+            print(cpose)
             render(img, depth, cpose.astype(np.float32), model)
             changed = False
 
@@ -186,7 +190,15 @@ def showpoints(img, depth, pose, model):
             changed = True
         elif cmd == ord('t'):
             
-            cpose = pose
+            RT = pose.reshape((4,4))
+            
+            R = RT[:3,:3]
+            T = RT[:3,-1]
+            
+            x,y,z = np.dot(np.linalg.inv(R),T)
+            roll, pitch, yaw = (utils.rotationMatrixToEulerAngles(R))
+            
+            
             changed = True            
             
         elif cmd == ord('o'):
@@ -212,10 +224,13 @@ if __name__=='__main__':
     opt = parser.parse_args()
     d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
     idx = opt.idx
-    source = d[idx][0][0]
-    target = d[idx][1]
-    source_depth = d[idx][2][0]
-    pose = d[idx][-1][0].numpy()
+    
+    data = d[idx]
+    
+    source = data[0][0]
+    target = data[1]
+    source_depth = data[2][0]
+    pose = data[-1][0].numpy()
     model = None
     if opt.model != '':
         comp = CompletionNet()
