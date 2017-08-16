@@ -76,9 +76,9 @@ def showpoints_full(img, depth, model, rts):
     cv2.namedWindow('show3d')
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
-    cv2.namedWindow('minimap')
-    cv2.moveWindow('minimap',showsz*3,0)
-    
+    #cv2.namedWindow('minimap')
+    #cv2.moveWindow('minimap',showsz*2,0)
+
     xs = [item[0,-1] for item in  rts]
     ys = [item[1,-1] for item in  rts]
 
@@ -86,7 +86,7 @@ def showpoints_full(img, depth, model, rts):
     maskv = Variable(torch.zeros(1,1, 256, 512)).cuda()
 
     cpose = np.eye(4)
-    
+
     def render(img, depth, pose, model, current_rt):
         global fps
         t0 = time.time()
@@ -115,51 +115,51 @@ def showpoints_full(img, depth, model, rts):
         t1 = time.time()
         t = t1-t0
         fps = 1/t
-        
+
         minimap[:] = 0
         xs = [item[0,-1] for item in  rts]
         ys = [item[1,-1] for item in  rts]
-        
+
         maxx = np.max(xs)
         minx = np.min(xs)
         maxy = np.max(ys)
         miny = np.min(ys)
-        
+
         for i in range(len(xs)):
             cv2.circle(minimap,(int((xs[i] - minx) * showsz / (maxx - minx)),int((ys[i] - miny) * showsz / (maxy - miny))), 5, (0,0,255), -1)
 
         ctrans = np.linalg.inv(current_rt[:3, :3]).dot(current_rt[:3,-1])
-        
+
         cx, cy = ctrans[0], ctrans[1]
-        
+
         cv2.circle(minimap,(int((cx - minx) * showsz / (maxx - minx)),int((cy - miny) * showsz / (maxy - miny))), 5, (0,255,255), -1)
         cv2.waitKey(30)%256
 
     while True:
 
-        if changed:            
-            
+        if changed:
+
             current_rt = utils.generate_transformation_matrix(x,y,z,yaw,pitch,roll)
-            
+
             dist = []
             for i in range(len(rts)):
                 rt = rts[i]
                 relative = np.dot(current_rt, np.linalg.inv(rt))
                 dist.append( np.sqrt(np.sum(relative[0:3, -1] **2)))
-            
+
             if showmin:
                 idx = np.argsort(dist)[0]
             else:
                 idx = np.argsort(dist)[1]
-            
+
             img = sources[idx]
             depth = source_depths[idx]
             rt = rts[idx]
             relative = np.dot(current_rt, np.linalg.inv(rt))
-            
+
             render(img, depth, relative.astype(np.float32), model, current_rt)
             changed = False
-        
+
         if overlay:
             min_idx = np.argsort(dist)[0]
             target = sources[min_idx]
@@ -174,8 +174,8 @@ def showpoints_full(img, depth, model, rts):
 
         show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
         cv2.imshow('show3d',show_rgb)
-        cv2.imshow('minimap',minimap)
-        
+        #cv2.imshow('minimap',minimap)
+
         cmd=cv2.waitKey(10)%256
 
         if cmd==ord('q'):
@@ -201,41 +201,41 @@ def showpoints_full(img, depth, model, rts):
             z += 0.02
             changed = True
         elif cmd == ord('x'):
-            z -= 0.02    
+            z -= 0.02
             changed = True
 
         elif cmd == ord('r'):
             pitch,yaw,x,y,z = 0,0,0,0,0
             roll = 0
             changed = True
-            
+
         elif cmd == ord('n'):
             dist = []
-            
+
             for i in range(len(rts)):
                 rt = rts[i]
                 relative = np.dot(current_rt, np.linalg.inv(rt))
                 dist.append( np.sqrt(np.sum(relative[0:3, -1] **2)))
-            
+
             idx = np.argmin(dist)
-            
+
             print(idx)
-            
+
             RT = rts[idx].reshape((4,4))
             rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
             RT = np.dot(np.linalg.inv(rotation), RT)
-            
+
             R = RT[:3,:3]
             T = RT[:3,-1]
-             
+
             x,y,z = np.dot(np.linalg.inv(R),T)
             roll, pitch, yaw = (utils.rotationMatrixToEulerAngles(R))
-            
-            changed = True            
+
+            changed = True
         elif cmd == ord('m'):
             showmin = not showmin
             changed = True
-            
+
         elif cmd == ord('o'):
             overlay = not overlay
 
@@ -265,10 +265,10 @@ if __name__=='__main__':
         model = comp.module
         model.eval()
     print(model)
-    
+
     idx = opt.idx
     uuids, rts = d.get_scene_info(idx)
-    
+
     sources = []
     source_depths = []
     poses = []
@@ -281,14 +281,14 @@ if __name__=='__main__':
         target_depth = data[3]
         source_depth = data[2][0]
         pose = data[-1][0].numpy()
-        
+
         targets.append(target)
         poses.append(pose)
         sources.append(target)
         source_depths.append(target_depth)
-    
+
     showpoints_full(sources, source_depths, model, rts)
     #show_target(targets[4])
     #showpoints(sources[4], source_depths[4], poses[4], model, targets[4])
     #rts[0].dot(np.linalg.inv(rts[4]))
-    
+
