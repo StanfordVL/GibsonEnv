@@ -1,3 +1,6 @@
 *.pyc
 *.pkl
 *.so
+the_matrix.egg-info/
+.DS_Store
+data/

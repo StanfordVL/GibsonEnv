@@ -6,6 +6,8 @@
 import numpy as np
 import math
 import PIL
+from numpy import cos,sin
+
 
 # In[36]:
 
@@ -70,7 +72,7 @@ def isRotationMatrix(R) :
 # of the euler angles ( x and z are swapped ).
 def rotationMatrixToEulerAngles(R) :
 
-    #assert(isRotationMatrix(R))
+    assert(isRotationMatrix(R))
 
     sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
 
@@ -131,3 +133,34 @@ def rotateImage(img, angle):
         img = np.concatenate([img[:,shift:,:], img[:, :shift, :]], 1)
 
     return PIL.Image.fromarray(img)
+
+
+def generate_transformation_matrix(x,y,z,yaw,pitch,roll):
+    current_t = np.eye(4)
+    current_t[0,-1] = x
+    current_t[1,-1] = y
+    current_t[2,-1] = z       
+    alpha = yaw
+    beta = pitch
+    gamma = roll
+    cpose = np.zeros(16) 
+    cpose[0] = cos(alpha) * cos(beta);
+    cpose[1] = cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma);
+    cpose[2] = cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma);
+    cpose[3] = 0
+    cpose[4] = sin(alpha) * cos(beta);
+    cpose[5] = sin(alpha) * sin(beta) * sin(gamma) + cos(alpha) * cos(gamma);
+    cpose[6] = sin(alpha) * sin(beta) * cos(gamma) - cos(alpha) * sin(gamma);
+    cpose[7] = 0
+    cpose[8] = -sin(beta);
+    cpose[9] = cos(beta) * sin(gamma);
+    cpose[10] = cos(beta) * cos(gamma);
+    cpose[11] = 0
+    cpose[12:16] = 0
+    cpose[15] = 1           
+    cpose = cpose.reshape((4,4))      
+    cpose = np.dot(cpose, current_t)
+    current_rt = cpose
+    rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+    current_rt = np.dot(rotation, current_rt)
+    return current_rt

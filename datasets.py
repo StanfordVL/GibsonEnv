@@ -114,8 +114,30 @@ class ViewDataSet3D(data.Dataset):
             with open(self.fofn, 'rb') as fp:
                 self.scenes, self.meta, self.select, num_scenes, num_train = pickle.load(fp)
                 print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
-                
-            
+    
+    
+    def get_scene_info(self, index):
+        scene = self.scenes[index]
+        #print(scene)
+        data = [(i,item) for i,item in enumerate(self.select) if item[0][0] == scene]
+        #print(data)
+        uuids = ([(item[1][0][1],item[0]) for item in data])
+        #print(uuids)
+
+        pose_paths = ([os.path.join(self.root, scene, 'pano', 'points', "point_" + item[0] + ".json") for item in uuids])
+        poses = []
+        #print(pose_paths)
+        for item in pose_paths:
+            f = open(item)
+            pose_dict = json.load(f)
+            p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
+            rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+            p = np.dot(rotation, p)
+            poses.append(p)
+            f.close()
+        
+        return uuids, poses
+        
     def __getitem__(self, index):
         #print(index)
         scene = self.select[index][0][0]
@@ -136,11 +158,12 @@ class ViewDataSet3D(data.Dataset):
             f = open(item)
             pose_dict = json.load(f)
             p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
-            #print(p,p.shape)
-
+            rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+            p = np.dot(rotation, p)
             poses.append(p)
             f.close()
-
+        
+        print(poses)
         img_paths = paths[1:]
         target_path = paths[0]
         img_poses = poses[1:]
@@ -154,10 +177,8 @@ class ViewDataSet3D(data.Dataset):
         poses_relative = []
 
         for item in img_poses:
-            relative = np.dot(item, inv(target_pose))
-            poses_relative.append(torch.from_numpy(np.concatenate(utils.transfromM(relative), 0).astype(np.float32)))
-
-        #print(poses_relative)
+            relative = np.dot(target_pose, inv(item))
+            poses_relative.append(torch.from_numpy(relative))
 
         imgs = [self.loader(item) for item in img_paths]
         target = self.loader(target_path)
@@ -197,24 +218,16 @@ class ViewDataSet3D(data.Dataset):
             h,w,_ = img.shape
             render=np.zeros((h,w,3),dtype='uint8')
             target_depth = np.zeros((h,w)).astype(np.float32)
-            
             depth = org_mist
             pose = poses_relative[0].numpy()
-            x = -pose[1]
-            y = -pose[0]
-            z = -pose[2]
-            yaw = pose[-1] + np.pi
-            pitch = pose[-3] # to be verified
-            roll = pose[-2] # to be verified
-            p = np.array([x,y,z,pitch,yaw,roll]).astype(np.float32)
             self.dll.render(ct.c_int(img.shape[0]),
                    ct.c_int(img.shape[1]),
                    img.ctypes.data_as(ct.c_void_p),
                    depth.ctypes.data_as(ct.c_void_p),
-                   p.ctypes.data_as(ct.c_void_p),
+                   pose.ctypes.data_as(ct.c_void_p),
                    render.ctypes.data_as(ct.c_void_p),
                    target_depth.ctypes.data_as(ct.c_void_p)
-                  ) 
+                  )
             if not self.transform is None:
                 render = self.transform(Image.fromarray(render))
             if not self.depth_trans is None:
@@ -279,6 +292,10 @@ if __name__ == '__main__':
         print(sample)
         if sample is not None:
             print('3d test passed')
+            
+        uuids, xyzs, poses = d.get_scene_info(0)
+        print(uuids, xyzs, poses)
+        
     elif opt.dataset == 'places365':
         d = Places365Dataset(root = opt.dataroot)
         print(len(d))
