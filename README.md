@@ -5,7 +5,7 @@ This is a 0.0.1 alpha release, for use in Stanford SVL only.
 ## Demo
 
 Here is a demo of a human controlled agent navigating through a virtual environment. 
-![demo](https://github.com/fxia22/realenv/blob/full_environment2/example.gif)
+![demo](https://github.com/fxia22/realenv/blob/full_environment2/misc/example.gif)
 
 ## Setup 
 
