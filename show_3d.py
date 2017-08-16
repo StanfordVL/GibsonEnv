@@ -9,13 +9,9 @@ import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 import time
-#import matplotlib
-#matplotlib.use('GTKAgg')
-import matplotlib.pyplot as plt
 from numpy import cos, sin
 
 import utils
-from show_3d2 import showpoints, show_target
 
 showsz = 256
 mousex,mousey=0.5,0.5
