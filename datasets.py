@@ -180,8 +180,6 @@ class ViewDataSet3D(data.Dataset):
             relative = np.dot(target_pose, inv(item))
             poses_relative.append(torch.from_numpy(relative))
 
-        #print(poses_relative)
-
         imgs = [self.loader(item) for item in img_paths]
         target = self.loader(target_path)
 
@@ -220,24 +218,16 @@ class ViewDataSet3D(data.Dataset):
             h,w,_ = img.shape
             render=np.zeros((h,w,3),dtype='uint8')
             target_depth = np.zeros((h,w)).astype(np.float32)
-            
             depth = org_mist
             pose = poses_relative[0].numpy()
-            x = -pose[1]
-            y = -pose[0]
-            z = -pose[2]
-            yaw = -pose[-1] + np.pi
-            pitch = -pose[-3] # to be verified
-            roll = -pose[-2] # to be verified
-            p = np.array([x,y,z,pitch,yaw,roll]).astype(np.float32)
             self.dll.render(ct.c_int(img.shape[0]),
                    ct.c_int(img.shape[1]),
                    img.ctypes.data_as(ct.c_void_p),
                    depth.ctypes.data_as(ct.c_void_p),
-                   p.ctypes.data_as(ct.c_void_p),
+                   pose.ctypes.data_as(ct.c_void_p),
                    render.ctypes.data_as(ct.c_void_p),
                    target_depth.ctypes.data_as(ct.c_void_p)
-                  ) 
+                  )
             if not self.transform is None:
                 render = self.transform(Image.fromarray(render))
             if not self.depth_trans is None:

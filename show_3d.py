@@ -87,7 +87,7 @@ def showpoints_full(img, depth, model, rts):
 
     cpose = np.eye(4)
     
-    def render(img, depth, pose, model):
+    def render(img, depth, pose, model, current_rt):
         global fps
         t0 = time.time()
         dll.render(ct.c_int(img.shape[0]),
@@ -128,45 +128,19 @@ def showpoints_full(img, depth, model, rts):
         for i in range(len(xs)):
             cv2.circle(minimap,(int((xs[i] - minx) * showsz / (maxx - minx)),int((ys[i] - miny) * showsz / (maxy - miny))), 5, (0,0,255), -1)
 
-        cv2.circle(minimap,(int((x - minx) * showsz / (maxx - minx)),int((y - miny) * showsz / (maxy - miny))), 5, (0,255,255), -1)
-        cv2.waitKey(5)%256
+        ctrans = np.linalg.inv(current_rt[:3, :3]).dot(current_rt[:3,-1])
         
+        cx, cy = ctrans[0], ctrans[1]
+        
+        cv2.circle(minimap,(int((cx - minx) * showsz / (maxx - minx)),int((cy - miny) * showsz / (maxy - miny))), 5, (0,255,255), -1)
+        cv2.waitKey(30)%256
 
     while True:
 
         if changed:            
             
-            def generate_transformation_matrix(x,y,z,yaw,pitch,roll):
-                current_t = np.eye(4)
-                current_t[0,-1] = x
-                current_t[1,-1] = y
-                current_t[2,-1] = z       
-                alpha = yaw
-                beta = pitch
-                gamma = roll
-                cpose = np.zeros(16) 
-                cpose[0] = cos(alpha) * cos(beta);
-                cpose[1] = cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma);
-                cpose[2] = cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma);
-                cpose[3] = 0
-                cpose[4] = sin(alpha) * cos(beta);
-                cpose[5] = sin(alpha) * sin(beta) * sin(gamma) + cos(alpha) * cos(gamma);
-                cpose[6] = sin(alpha) * sin(beta) * cos(gamma) - cos(alpha) * sin(gamma);
-                cpose[7] = 0
-                cpose[8] = -sin(beta);
-                cpose[9] = cos(beta) * sin(gamma);
-                cpose[10] = cos(beta) * cos(gamma);
-                cpose[11] = 0
-                cpose[12:16] = 0
-                cpose[15] = 1           
-                cpose = cpose.reshape((4,4))      
-                cpose = np.dot(cpose, current_t)
-                current_rt = cpose
-                rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
-                current_rt = np.dot(rotation, current_rt)
-                return current_rt
+            current_rt = utils.generate_transformation_matrix(x,y,z,yaw,pitch,roll)
             
-            current_rt = generate_transformation_matrix(x,y,z,yaw,pitch,roll)
             dist = []
             for i in range(len(rts)):
                 rt = rts[i]
@@ -178,16 +152,12 @@ def showpoints_full(img, depth, model, rts):
             else:
                 idx = np.argsort(dist)[1]
             
-            print(dist)
             img = sources[idx]
             depth = source_depths[idx]
             rt = rts[idx]
             relative = np.dot(current_rt, np.linalg.inv(rt))
             
-            print(idx)
-            print(relative)
-            
-            render(img, depth, relative.astype(np.float32), model)
+            render(img, depth, relative.astype(np.float32), model, current_rt)
             changed = False
         
         if overlay:
@@ -206,22 +176,26 @@ def showpoints_full(img, depth, model, rts):
         cv2.imshow('show3d',show_rgb)
         cv2.imshow('minimap',minimap)
         
-        cmd=cv2.waitKey(5)%256
+        cmd=cv2.waitKey(10)%256
 
         if cmd==ord('q'):
             break
 
-        elif cmd == ord('w'):
-            x += 0.05
-            changed = True
         elif cmd == ord('s'):
-            x -= 0.05
+            y -= 0.05 * cos(yaw)
+            x -= 0.05 * sin(yaw)
+            changed = True
+        elif cmd == ord('w'):
+            y += 0.05 * cos(yaw)
+            x += 0.05 * sin(yaw)
             changed = True
         elif cmd == ord('a'):
-            y -= 0.05
+            y -= 0.05 * cos(yaw + np.pi/2)
+            x -= 0.05 * sin(yaw + np.pi/2)
             changed = True
         elif cmd == ord('d'):
-            y += 0.05
+            y += 0.05 * cos(yaw + np.pi/2)
+            x += 0.05 * sin(yaw + np.pi/2)
             changed = True
         elif cmd == ord('z'):
             z += 0.02
@@ -234,7 +208,6 @@ def showpoints_full(img, depth, model, rts):
             pitch,yaw,x,y,z = 0,0,0,0,0
             roll = 0
             changed = True
-        
             
         elif cmd == ord('n'):
             dist = []
@@ -254,7 +227,7 @@ def showpoints_full(img, depth, model, rts):
             
             R = RT[:3,:3]
             T = RT[:3,-1]
-                        
+             
             x,y,z = np.dot(np.linalg.inv(R),T)
             roll, pitch, yaw = (utils.rotationMatrixToEulerAngles(R))
             
@@ -272,7 +245,6 @@ def show_target(target_img):
     cv2.namedWindow('target')
     cv2.moveWindow('target',0,256 + 50)
     show_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
-
     cv2.imshow('target', show_rgb)
 
 if __name__=='__main__':
@@ -316,8 +288,7 @@ if __name__=='__main__':
         source_depths.append(target_depth)
     
     showpoints_full(sources, source_depths, model, rts)
-    from IPython import embed; embed();
-    show_target(targets[4])
-    showpoints(sources[4], source_depths[4], poses[4], model, targets[4])
+    #show_target(targets[4])
+    #showpoints(sources[4], source_depths[4], poses[4], model, targets[4])
     #rts[0].dot(np.linalg.inv(rts[4]))
     
