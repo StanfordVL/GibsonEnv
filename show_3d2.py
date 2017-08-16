@@ -59,7 +59,7 @@ def onmouse(*args):
 
 
 
-def showpoints(img, depth, pose, model):
+def showpoints(img, depth, pose, model, target):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
     global fps
@@ -243,4 +243,4 @@ if __name__=='__main__':
     #print(source_depth)
     print(source.shape, source_depth.shape)
     show_target(target)
-    showpoints(source, source_depth, pose, model)
+    showpoints(source, source_depth, pose, model, target)

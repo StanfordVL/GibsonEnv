@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from numpy import cos, sin
 
 import utils
-
+from show_3d2 import showpoints, show_target
 
 showsz = 256
 mousex,mousey=0.5,0.5
@@ -63,7 +63,7 @@ def onmouse(*args):
 
 
 
-def showpoints(img, depth, model, rts):
+def showpoints_full(img, depth, model, rts):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
     global fps
@@ -136,35 +136,37 @@ def showpoints(img, depth, model, rts):
 
         if changed:            
             
-            current_t = np.eye(4)
-            current_t[0,-1] = x
-            current_t[1,-1] = y
-            current_t[2,-1] = z       
-            alpha = yaw
-            beta = pitch
-            gamma = roll
-            cpose = np.zeros(16) 
-            cpose[0] = cos(alpha) * cos(beta);
-            cpose[1] = cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma);
-            cpose[2] = cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma);
-            cpose[3] = 0
+            def generate_transformation_matrix(x,y,z,yaw,pitch,roll):
+                current_t = np.eye(4)
+                current_t[0,-1] = x
+                current_t[1,-1] = y
+                current_t[2,-1] = z       
+                alpha = yaw
+                beta = pitch
+                gamma = roll
+                cpose = np.zeros(16) 
+                cpose[0] = cos(alpha) * cos(beta);
+                cpose[1] = cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma);
+                cpose[2] = cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma);
+                cpose[3] = 0
+                cpose[4] = sin(alpha) * cos(beta);
+                cpose[5] = sin(alpha) * sin(beta) * sin(gamma) + cos(alpha) * cos(gamma);
+                cpose[6] = sin(alpha) * sin(beta) * cos(gamma) - cos(alpha) * sin(gamma);
+                cpose[7] = 0
+                cpose[8] = -sin(beta);
+                cpose[9] = cos(beta) * sin(gamma);
+                cpose[10] = cos(beta) * cos(gamma);
+                cpose[11] = 0
+                cpose[12:16] = 0
+                cpose[15] = 1           
+                cpose = cpose.reshape((4,4))      
+                cpose = np.dot(cpose, current_t)
+                current_rt = cpose
+                rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+                current_rt = np.dot(rotation, current_rt)
+                return current_rt
             
-            cpose[4] = sin(alpha) * cos(beta);
-            cpose[5] = sin(alpha) * sin(beta) * sin(gamma) + cos(alpha) * cos(gamma);
-            cpose[6] = sin(alpha) * sin(beta) * cos(gamma) - cos(alpha) * sin(gamma);
-            cpose[7] = 0
-            cpose[8] = -sin(beta);
-            cpose[9] = cos(beta) * sin(gamma);
-            cpose[10] = cos(beta) * cos(gamma);
-            cpose[11] = 0
-            cpose[12:16] = 0
-            cpose[15] = 1           
-            cpose = cpose.reshape((4,4))      
-            cpose = np.dot(cpose, current_t)
-            current_rt = cpose
-            rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
-            current_rt = np.dot(rotation, current_rt)
-            
+            current_rt = generate_transformation_matrix(x,y,z,yaw,pitch,roll)
             dist = []
             for i in range(len(rts)):
                 rt = rts[i]
@@ -175,6 +177,7 @@ def showpoints(img, depth, model, rts):
                 idx = np.argsort(dist)[0]
             else:
                 idx = np.argsort(dist)[1]
+            
             print(dist)
             img = sources[idx]
             depth = source_depths[idx]
@@ -184,10 +187,7 @@ def showpoints(img, depth, model, rts):
             print(idx)
             print(relative)
             
-            
-            
             render(img, depth, relative.astype(np.float32), model)
-            
             changed = False
         
         if overlay:
@@ -300,14 +300,24 @@ if __name__=='__main__':
     sources = []
     source_depths = []
     poses = []
-    
+    targets = []
     for k,v in uuids:
-        print(v)
+        print(k,v)
         data = d[v]
         source = data[0][0]
+        target = data[1]
+        target_depth = data[3]
         source_depth = data[2][0]
+        pose = data[-1][0].numpy()
         
-        sources.append(source)
-        source_depths.append(source_depth)
+        targets.append(target)
+        poses.append(pose)
+        sources.append(target)
+        source_depths.append(target_depth)
     
-    showpoints(sources, source_depths, model, rts)
+    showpoints_full(sources, source_depths, model, rts)
+    from IPython import embed; embed();
+    show_target(targets[4])
+    showpoints(sources[4], source_depths[4], poses[4], model, targets[4])
+    #rts[0].dot(np.linalg.inv(rts[4]))
+    

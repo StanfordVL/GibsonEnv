@@ -162,9 +162,7 @@ class ViewDataSet3D(data.Dataset):
             p = np.dot(rotation, p)
             poses.append(p)
             f.close()
-
-            
-            
+        
         print(poses)
         img_paths = paths[1:]
         target_path = paths[0]
@@ -180,7 +178,7 @@ class ViewDataSet3D(data.Dataset):
 
         for item in img_poses:
             relative = np.dot(target_pose, inv(item))
-            poses_relative.append(torch.from_numpy(relative.flatten()))
+            poses_relative.append(torch.from_numpy(relative))
 
         #print(poses_relative)
 
