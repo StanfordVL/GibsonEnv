@@ -12,7 +12,7 @@ Here is a demo of a human controlled agent navigating through a virtual environm
 
 ### Server side
 - Server side uses XVnc4 as vnc server. In order to use, first `git clone` this repository and go into root directory, then create a password first with `vncpasswd pw`.
-- You will also need a model file to render the views, contact feixia@stanford.edu to obtain the model. Replace the path in `init.sh` with path to the model.
+- You will also need a pytorch model file and a dataset to render the views, contact feixia@stanford.edu to obtain the model and the data. Replace the path in `init.sh` with path to the model and the data.
 - Build renderer with `./build.sh`
 - Run `init.sh`, this will run the rendering engine and vncserver.
 - Connect with the client to 5901 port. This can also be configured in `init.sh`.

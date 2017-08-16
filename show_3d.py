@@ -49,7 +49,7 @@ def onmouse(*args):
         changed=True
 
     if (args[3] & cv2.EVENT_FLAG_RBUTTON):
-        roll = org_roll - (mousex - clickstart[0])/50
+        roll = org_roll - (mousex - clickstart[0])/10
         changed=True
 
     my=args[1]
