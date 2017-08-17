@@ -9,6 +9,8 @@ We currently support Linux and OSX running Python 2.7.
 ```shell
 git clone https://github.com/fxia22/realenv.git
 cd realenv
+sudo apt-get install golang #- Ubuntu 16.04 install golang
+#- OSX, El Capitan or newer: "brew install golang"
 pip install -e .
 ```
 
