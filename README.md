@@ -9,7 +9,6 @@ We currently support Linux and OSX running Python 2.7.
 ```shell
 git clone https://github.com/fxia22/realenv.git
 cd realenv
-git checkout full_environment2
 pip install -e .
 ```
 
