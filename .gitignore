@@ -4,3 +4,8 @@
 *.egg-info/
 .DS_Store
 data/
+pw
+*.o
+*.ipynb
+*.out
+*.pth

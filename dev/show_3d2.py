@@ -13,7 +13,7 @@ from numpy import cos, sin
 import utils
 
 
-showsz = 256
+
 mousex,mousey=0.5,0.5
 changed=True
 pitch,yaw,x,y,z = 0,0,0,0,0
@@ -24,7 +24,7 @@ mousedown = False
 clickstart = (0,0)
 fps = 0
 
-dll=np.ctypeslib.load_library('../realenv/envs/render','.')
+dll=np.ctypeslib.load_library('render','.')
 
 
 def onmouse(*args):
@@ -54,8 +54,8 @@ def onmouse(*args):
 
     my=args[1]
     mx=args[2]
-    mousex=mx/float(showsz)
-    mousey=my/float(showsz * 2)
+    mousex=mx/float(256)
+    mousey=my/float(256 * 2)
 
 
 
@@ -63,6 +63,9 @@ def showpoints(img, depth, pose, model, target):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
     global fps
+
+    showsz = target.shape[0]
+
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.float32)
     overlay = False
@@ -71,11 +74,11 @@ def showpoints(img, depth, pose, model, target):
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
 
-    imgv = Variable(torch.zeros(1,3, 256, 512)).cuda()
-    maskv = Variable(torch.zeros(1,1, 256, 512)).cuda()
+    imgv = Variable(torch.zeros(1,3, showsz, showsz*2)).cuda()
+    maskv = Variable(torch.zeros(1,1, showsz, showsz*2)).cuda()
 
     cpose = np.eye(4)
-    
+
     def render(img, depth, pose, model):
         global fps
         t0 = time.time()
@@ -114,34 +117,34 @@ def showpoints(img, depth, pose, model, target):
             beta = pitch
             gamma = roll
             cpose = cpose.flatten()
-            
+
             cpose[0] = cos(alpha) * cos(beta);
             cpose[1] = cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma);
             cpose[2] = cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma);
             cpose[3] = 0
-            
+
             cpose[4] = sin(alpha) * cos(beta);
             cpose[5] = sin(alpha) * sin(beta) * sin(gamma) + cos(alpha) * cos(gamma);
             cpose[6] = sin(alpha) * sin(beta) * cos(gamma) - cos(alpha) * sin(gamma);
             cpose[7] = 0
-            
+
             cpose[8] = -sin(beta);
             cpose[9] = cos(beta) * sin(gamma);
             cpose[10] = cos(beta) * cos(gamma);
             cpose[11] = 0
-            
+
             cpose[12:16] = 0
             cpose[15] = 1
-            
+
             cpose = cpose.reshape((4,4))
-            
+
             cpose2 = np.eye(4)
             cpose2[0,3] = x
             cpose2[1,3] = y
             cpose2[2,3] = z
-            
+
             cpose = np.dot(cpose, cpose2)
-            
+
             print('cpose',cpose)
             render(img, depth, cpose.astype(np.float32), model)
             changed = False
@@ -175,14 +178,14 @@ def showpoints(img, depth, pose, model, target):
         elif cmd == ord('d'):
             y -= 0.05
             changed = True
-            
+
         elif cmd == ord('z'):
             z += 0.01
             changed = True
         elif cmd == ord('x'):
             z -= 0.01
             changed = True
-            
+
         elif cmd == ord('r'):
             pitch,yaw,x,y,z = 0,0,0,0,0
             roll = 0
@@ -190,16 +193,16 @@ def showpoints(img, depth, pose, model, target):
         elif cmd == ord('t'):
             print('pose', pose)
             RT = pose.reshape((4,4))
-            
+
             R = RT[:3,:3]
             T = RT[:3,-1]
-            
+
             x,y,z = np.dot(np.linalg.inv(R),T)
             roll, pitch, yaw = (utils.rotationMatrixToEulerAngles(R))
-            
-            
-            changed = True            
-            
+
+
+            changed = True
+
 
         elif cmd == ord('o'):
             overlay = not overlay
@@ -211,7 +214,6 @@ def show_target(target_img):
     cv2.namedWindow('target')
     cv2.moveWindow('target',0,256 + 50)
     show_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
-
     cv2.imshow('target', show_rgb)
 
 if __name__=='__main__':
@@ -221,12 +223,13 @@ if __name__=='__main__':
     parser.add_argument('--dataroot'  , required = True, help='dataset path')
     parser.add_argument('--idx'  , type = int, default = 0, help='index of data')
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
+
     opt = parser.parse_args()
     d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
     idx = opt.idx
-    
+
     data = d[idx]
-    
+
     source = data[0][0]
     target = data[1]
     source_depth = data[2][0]
