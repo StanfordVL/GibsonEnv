@@ -24,7 +24,7 @@ mousedown = False
 clickstart = (0,0)
 fps = 0
 
-dll=np.ctypeslib.load_library('render','.')
+dll=np.ctypeslib.load_library('../realenv/envs/render','.')
 
 
 def onmouse(*args):
