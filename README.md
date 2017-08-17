@@ -26,7 +26,7 @@ Here is a demo of a random agent trying to explore the space:
 
 This example shows how you can start training with virtually zero set up. To see it with visualization,
 ```shell
-cd realenv/agent/
+cd realenv/agents/
 python random_agent.py
 ``` 
 

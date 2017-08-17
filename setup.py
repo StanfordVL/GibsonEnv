@@ -24,7 +24,10 @@ setup(name='realenv',
 			'numpy>=1.10.4', 
 			'go-vncdriver>=0.4.19',
 			'pyglet>=1.2.0',
-			'gym>=0.9.2'
+			'gym>=0.9.2',
+			'Pillow>=3.3.0',
+          	'PyYAML>=3.12',
+          	'numpy>=1.13'
 	],
 	tests_require=[],
 	# cmdclass={
