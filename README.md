@@ -1,4 +1,4 @@
-# Real environment for semantic planning project 
+# Real Environment for Training Real World AI
 ## Note
 This is a 0.0.1 alpha release, for use in Stanford SVL only. 
 
@@ -10,18 +10,68 @@ Here is a demo of a human controlled agent navigating through a virtual environm
 Here is a demo of a random agent trying to explore the space:
 ![demo](https://github.com/fxia22/realenv/blob/full_environment2/misc/example2.gif)
 
+## Run Your First Agent
+
+
+```python
+
+import go_vncdriver
+import time
+import numpy as np
+import realenv
+from realenv import actions
+from realenv import VNCClient
+
+class RandomAgent(object):
+    def __init__(self, action_space):
+        self.action_space = action_space
+
+    def act(self, observation, reward=None):
+        return self.action_space[np.random.randint(0, len(self.action_space))]
+
+
+client = VNCClient()
+client.connect()
+
+if __name__ == '__main__':
+  agent = RandomAgent(actions)
+  ob = None
+
+  for i in range(10000):
+      action = agent.act(ob)
+      observation, infos, err = client.step(action)
+      time.sleep(0.2)
+
+
+```
+
+The example creates an `VNCClient`, connects to the virtual environment on `capri13.stanford.edu` and performs random exploration. We will soon release pre-built docker image with virtual environment, so that you can deploy it on your own server, instead of Stanford machines.
+
+You can go to `\realenv\agents\` and run `python random_agent.py` to see the above example with visualization.
+
 ## Setup 
 
+You can either train your AI in locally deployed virtual environment for debugging usage, or on a remote environment to scale up your training process (like the above example). Here are the steps you need to take:
 
-### Server side
-- Server side uses XVnc4 as vnc server. In order to use, first `git clone` this repository and go into root directory, then create a password first with `vncpasswd pw`.
-- You will also need a pytorch model file and a dataset to render the views, contact feixia@stanford.edu to obtain the model and the data. Replace the path in `init.sh` with path to the model and the data.
+### Deploying Locally
+- You will need a pytorch model file and a dataset to render the views, contact feixia@stanford.edu to obtain the model and the data. Replace the path in `init.sh` with path to the model and the data.
 - Build renderer with `./build.sh`
 - Run `init.sh`, this will run the rendering engine and vncserver.
+- If your purpose is to debug your agent locally, this is all you need to do.
+
+### Turn Your Machine into a Remote Server
+As a demo, a server is running at `capri19.stanford.edu:5901`, contact feixia@stanford.edu to obtain the password. 
+- Server uses XVnc4 as vnc server. In order to use, first `git clone` this repository and go into root directory, then create a password first with `vncpasswd pw`.
 - Connect with the client to 5901 port. This can also be configured in `init.sh`.
 
-As a demo, a server is running at capri19.stanford.edu:5901, contact feixia@stanford.edu to obtain the password. 
 
-
-### Client side
-TBA
+### Connect to Remote Server
+- We implemented a custom `VNCClient` for you, based on `go-vncdriver` by OpenAI.
+- By doing the following, your agent will be able to talk to virtual environment running anywhere else (currently you are limited to `capri19.stanford.edu:5901`)
+```python
+import realenv
+from realenv import VNCClient
+client = VNCClient()
+client.connect()
+```
+`client.step(action)` tells the remote environment to execute an action, `client.reset()` sends your agent to the nearest starting point.
