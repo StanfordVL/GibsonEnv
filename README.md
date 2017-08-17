@@ -82,3 +82,5 @@ client = VNCClient()
 client.connect()
 ```
 `client.step(action)` tells the remote environment to execute an action, `client.reset()` sends your agent to the nearest starting point.
+
+
