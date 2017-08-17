@@ -1,11 +1,13 @@
 import go_vncdriver
 import time
+import numpy as np
 import realenv
+from realenv import actions
+from realenv import VNCClient
+
+## For visualization
 from PIL import Image
 from gym.envs.classic_control import rendering
-from realenv.client.client_actions import client_actions
-
-from realenv.client.vnc_client import VNCClient
 
 
 class RandomAgent(object):
@@ -23,13 +25,14 @@ client.connect()
 viewer = rendering.SimpleImageViewer()
 
 if __name__ == '__main__':
-	agent = RandomAgent(client_actions)
+	agent = RandomAgent(actions)
 	ob = None
 
 	for i in range(10000):
+		## Hardcoded connection time
 		if (i == 15):
 			## Relocate the view to a new position
-			observation, infos, err = client.refresh()
+			observation, infos, err = client.reset()
 		else:
 			action = agent.act(ob)
 			print('action', action)

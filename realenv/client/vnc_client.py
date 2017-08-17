@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from universe.vncdriver import constants
+from realenv.client import constants
 import go_vncdriver
 import time
 import yaml
@@ -28,11 +28,10 @@ def keycode(key):
 class VNCClient:
 	def __init__(self):
 		self.vnc_session = go_vncdriver.VNCSession()
-		self.count = 0
 		self._configure()
 	
 	def _configure(self):
-		remote_file = os.path.join(os.path.dirname(__file__), '/remote.yml')
+		remote_file = os.path.join(os.path.dirname(__file__), 'remote.yml')
 		# remote_file = './remote.yml'
 		with open(remote_file) as f:
 		    spec = yaml.load(f)
@@ -53,15 +52,15 @@ class VNCClient:
 		print(self.kwargs)
 		self.vnc_session.connect(**self.kwargs)
 
+
 	def step(self, action):
-		keydown = 0 if (self.count % 2 == 0) else 1
-		observations, infos, errors = self.vnc_session.step({CONNECTION_NAME: [("KeyEvent", keycode(action), keydown)]})
-		self.count += 1
+		observations, infos, errors = self.vnc_session.step({CONNECTION_NAME: [("KeyEvent", keycode(action), 1)]})
+		observations, infos, errors = self.vnc_session.step({CONNECTION_NAME: [("KeyEvent", keycode(action), 0)]})
 
 		return observations, infos, errors
 
 
-	def refresh(self):
+	def reset(self):
 		refresh_action = client_newloc[0]
 		## Hardcoded, pressing 'n' to refresh
 		observations, infos, errors = self.vnc_session.step({CONNECTION_NAME: [("KeyEvent", keycode(refresh_action), 1)]})
