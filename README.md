@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
 ```
 
-The example creates an `VNCClient`, connects to the virtual environment on `capri13.stanford.edu` and performs random exploration. We will soon release pre-built docker image with virtual environment, so that you can deploy it on your own server, instead of Stanford machines.
+The example creates an `VNCClient`, connects to the virtual environment on `capri19.stanford.edu` and performs random exploration. We will soon release pre-built docker image with virtual environment, so that you can deploy it on your own server, instead of Stanford machines.
 
 
 ## Setup 
@@ -73,7 +73,7 @@ In addition to the above example where you train your AI on a scalable remote en
 
 ### Deploying Locally
 - You need to have `OpenCV-Python` installed on your machine. We recommend setting up a `conda environment` before you start. To install OpenCV, `conda install -c menpo opencv3 -y` does the job.
-- You will need a pytorch model file and a dataset to render the views, contact feixia@stanford.edu to obtain the model and the data. Replace the path in `init.sh` with path to the model and the data.
+- You will need a pytorch model file and a dataset to render the views, download [here](https://drive.google.com/file/d/0B93GhAQhsnjBX2RCZkEwRlBORlU/view?usp=sharing). Replace the path in `init.sh` with path to the model and the data.
 - Build renderer with `./build.sh`
 - Run `init.sh`, this will run the rendering engine and vncserver.
 - If your purpose is to debug your agent locally, this is all you need to do.
