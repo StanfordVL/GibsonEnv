@@ -4,6 +4,15 @@ You shouldn't play video games all day, same for your AI. In this project we bui
 ## Note
 This is a 0.0.1 alpha release, for use in Stanford SVL only. 
 
+### Installation
+We currently support Linux and OSX running Python 2.7.
+```shell
+git clone https://github.com/fxia22/realenv.git
+cd universe
+git checkout full_environment2
+pip install -e .
+```
+
 ## Demo
 
 Here is a demo of a human controlled agent navigating through a virtual environment. 
@@ -12,12 +21,16 @@ Here is a demo of a human controlled agent navigating through a virtual environm
 Here is a demo of a random agent trying to explore the space:
 ![demo](https://github.com/fxia22/realenv/blob/full_environment2/misc/example2.gif)
 
-### Supported System
-We currently support Linux and OSX running Python 2.7.
 
 ## Run Your First Agent
 
-This example shows how you can start training with virtually zero set up.
+This example shows how you can start training with virtually zero set up. To see it with visualization,
+```shell
+cd realenv\agent\
+python random_agent.py
+``` 
+
+We recommend following this example because it connects to a virtual environment running remotely in `capri19.stanford.edu`, and does not require you to manually set up.
 
 ```python
 
@@ -53,11 +66,10 @@ if __name__ == '__main__':
 
 The example creates an `VNCClient`, connects to the virtual environment on `capri13.stanford.edu` and performs random exploration. We will soon release pre-built docker image with virtual environment, so that you can deploy it on your own server, instead of Stanford machines.
 
-You can go to `\realenv\agents\` and run `python random_agent.py` to see the above example with visualization.
 
 ## Setup 
 
-You can either train your AI on a scalable remote environment (like the above example), or in locally deployed virtual environment for debugging usage. The later requires some set up (< 5 mins). We will soon provide you with Docker based tool kits to do this in no time. For the current being, here are the steps you need to take:
+In addition to the above example where you train your AI on a scalable remote environment, you can also do it locally for debugging usage. This requires some set up (5~10 mins). We will soon provide you with Docker based toolkits to do this in no time. For the current being, here are the steps you need to take:
 
 ### Deploying Locally
 - You need to have `OpenCV-Python` installed on your machine. We recommend setting up a `conda environment` before you start. To install OpenCV, `conda install -c menpo opencv3 -y` does the job.
