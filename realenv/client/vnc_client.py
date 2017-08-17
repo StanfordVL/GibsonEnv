@@ -55,7 +55,9 @@ class VNCClient:
 
 	def step(self, action):
 		observations, infos, errors = self.vnc_session.step({CONNECTION_NAME: [("KeyEvent", keycode(action), 1)]})
-		observations, infos, errors = self.vnc_session.step({CONNECTION_NAME: [("KeyEvent", keycode(action), 0)]})
+		# TODO: botton release causes bug here
+		# self.vnc_session.step({CONNECTION_NAME: [("KeyEvent", keycode(action), 0)]})
+		# observations, infos, errors = self.vnc_session.step({CONNECTION_NAME: [("KeyEvent", keycode(action), 0)]})
 
 		return observations, infos, errors
 

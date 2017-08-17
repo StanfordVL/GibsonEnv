@@ -1,6 +1,7 @@
 import numpy as np
 import ctypes as ct
 import cv2
+import os
 import sys
 import argparse
 from datasets import ViewDataSet3D
@@ -24,7 +25,9 @@ mousedown = False
 clickstart = (0,0)
 fps = 0
 
-dll=np.ctypeslib.load_library('render','.')
+dir_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+print(dir_path)
+dll=np.ctypeslib.load_library('render', dir_path)
 
 
 def onmouse(*args):

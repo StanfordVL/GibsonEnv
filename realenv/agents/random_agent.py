@@ -35,12 +35,11 @@ if __name__ == '__main__':
 			observation, infos, err = client.reset()
 		else:
 			action = agent.act(ob)
-			print('action', action)
 			observation, infos, err = client.step(action)
 
-			# display
+			## display
 			if any(infos[i]['stats.vnc.updates.n'] for i in infos.keys()):
+				# TODO: is network causing bottleneck here?
 				for ob in observation.keys():
-					# print(observation[ob])
 					viewer.imshow(observation[ob])
 		time.sleep(0.2)
