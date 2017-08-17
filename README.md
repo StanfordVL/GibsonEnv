@@ -1,4 +1,6 @@
 # Real Environment for Training Real World AI
+You shouldn't play video games all day, same for your AI. In this project we build a virtual environment that offers real world experience. You can think of it like [The Matrix](https://www.youtube.com/watch?v=3Ep_rnYweaI).
+
 ## Note
 This is a 0.0.1 alpha release, for use in Stanford SVL only. 
 
@@ -10,8 +12,12 @@ Here is a demo of a human controlled agent navigating through a virtual environm
 Here is a demo of a random agent trying to explore the space:
 ![demo](https://github.com/fxia22/realenv/blob/full_environment2/misc/example2.gif)
 
+### Supported System
+We currently support Linux and OSX running Python 2.7.
+
 ## Run Your First Agent
 
+This example shows how you can start training with virtually zero set up.
 
 ```python
 
@@ -51,9 +57,10 @@ You can go to `\realenv\agents\` and run `python random_agent.py` to see the abo
 
 ## Setup 
 
-You can either train your AI in locally deployed virtual environment for debugging usage, or on a remote environment to scale up your training process (like the above example). Here are the steps you need to take:
+You can either train your AI on a scalable remote environment (like the above example), or in locally deployed virtual environment for debugging usage. The later requires some set up (< 5 mins). We will soon provide you with Docker based tool kits to do this in no time. For the current being, here are the steps you need to take:
 
 ### Deploying Locally
+- You need to have `OpenCV-Python` installed on your machine. We recommend setting up a `conda environment` before you start. To install OpenCV, `conda install -c menpo opencv3 -y` does the job.
 - You will need a pytorch model file and a dataset to render the views, contact feixia@stanford.edu to obtain the model and the data. Replace the path in `init.sh` with path to the model and the data.
 - Build renderer with `./build.sh`
 - Run `init.sh`, this will run the rendering engine and vncserver.
