@@ -8,7 +8,7 @@ This is a 0.0.1 alpha release, for use in Stanford SVL only.
 We currently support Linux and OSX running Python 2.7.
 ```shell
 git clone https://github.com/fxia22/realenv.git
-cd universe
+cd realenv
 git checkout full_environment2
 pip install -e .
 ```
@@ -26,7 +26,7 @@ Here is a demo of a random agent trying to explore the space:
 
 This example shows how you can start training with virtually zero set up. To see it with visualization,
 ```shell
-cd realenv\agent\
+cd realenv/agent/
 python random_agent.py
 ``` 
 
