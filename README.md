@@ -9,9 +9,20 @@ We currently support Linux and OSX running Python 2.7.
 ```shell
 git clone https://github.com/fxia22/realenv.git
 cd realenv
-sudo apt-get install golang #- Ubuntu 16.04 install golang
-#- OSX, El Capitan or newer: "brew install golang"
 pip install -e .
+```
+If this errors out, you may be missing some required packages. Here's the list of required packages we know about so far (please let us know if you had to install any others).
+
+On Ubuntu 16.04
+```shell
+pip install numpy
+sudo apt-get install golang libjpeg-turbo8-dev make
+```
+
+On OSX, El Capitan or newer:
+```shell
+pip install numpy
+brew install golang libjpeg-turbo
 ```
 
 ## Demo
@@ -31,7 +42,7 @@ cd realenv/agents/
 python random_agent.py
 ``` 
 
-We recommend following this example because it connects to a virtual environment running remotely in `capri19.stanford.edu`, and does not require you to manually set up.
+We recommend following this example because it connects to a virtual environment running remotely in `capri19.stanford.edu` (you need to be in Stanford network to access this address), and does not require you to manually set up.
 
 ```python
 
@@ -95,5 +106,4 @@ client = VNCClient()
 client.connect()
 ```
 `client.step(action)` tells the remote environment to execute an action, `client.reset()` sends your agent to the nearest starting point.
-
 
