@@ -202,7 +202,12 @@ def showpoints_full(img, depth, model, rts):
         elif cmd == ord('x'):
             z -= 0.02
             changed = True
-
+        elif cmd == ord('j'):
+            yaw -= 0.05
+            changed = True
+        elif cmd == ord('l'):
+            yaw += 0.05
+            changed = True
         elif cmd == ord('r'):
             pitch,yaw,x,y,z = 0,0,0,0,0
             roll = 0
