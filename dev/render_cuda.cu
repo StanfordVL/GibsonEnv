@@ -9,7 +9,7 @@
 
 using namespace std;
 
-const int TILE_DIM = 32;
+const int TILE_DIM = 64;
 const int BLOCK_ROWS = 8;
 
 __global__ void copy_mem(unsigned char *source, unsigned char *render)
@@ -71,7 +71,7 @@ __global__ void to3d_point(float *depth, float *points3d)
      int ih = y + j;
      float depth_point = depth[ih*w + iw] * 128.0;
      float phi = ((float)(ih) + 0.5) / float(h) * M_PI;
-     float theta = ((float)(iw) + 0.5) / float(w) * 2 * M_PI + M_PI;
+     float theta = ((float)(iw) + 0.5) / float(w) * 2 * M_PI - M_PI;
   
       points3d[(ih * w + iw) * 4 + 0] = depth_point * sin(phi) * cos(theta);
       points3d[(ih * w + iw) * 4 + 1] = depth_point * sin(phi) * sin(theta);
@@ -122,6 +122,26 @@ __global__ void transform2d(float *points3d_after, float *points3d_polar)
 }
 
 
+__global__ void render_depth(float *points3d_polar, int * depth_render)
+{
+ int x = blockIdx.x * TILE_DIM + threadIdx.x;
+  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int w = gridDim.x * TILE_DIM;
+  int h = w /2;
+  
+  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
+  {
+     int iw = x;
+     int ih = y + j;
+     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] - M_PI)/(2*M_PI) * w - 0.5);
+     int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
+     int this_depth = (int)(100 * points3d_polar[(ih * w + iw) * 3 + 0]);
+     atomicMin(&depth_render[(ty * w + tx)] , this_depth);
+  }
+}
+
+
+
 __global__ void render_final(float *points3d_polar, int * depth_render, int * img, int * render)
 {
  int x = blockIdx.x * TILE_DIM + threadIdx.x;
@@ -133,15 +153,15 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
   {
      int iw = x;
      int ih = y + j;
-     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
+     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] - M_PI)/(2*M_PI) * w - 0.5);
      int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
      int this_depth = (int)(100 * points3d_polar[(ih * w + iw) * 3 + 0]);
-     int last_depth = atomicMin(&depth_render[(ty * w + tx)] , this_depth);
-     if (this_depth < last_depth) {
-         atomicExch(&render[(ty * w + tx)] , img[(ih * w + iw)]);
+     if (this_depth == depth_render[(ty * w + tx)]) {
+         render[(ty * w + tx)] = img[(ih * w + iw)];
      }
   }
 }
+
 
 
 
@@ -199,10 +219,10 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
     
     char_to_int <<< dimGrid, dimBlock >>> (d_img2, d_img);
     
+    render_depth <<< dimGrid, dimBlock >>> (d_3dpoint_polar, d_depth_render);
     render_final <<< dimGrid, dimBlock >>> (d_3dpoint_polar, d_depth_render, d_img2, d_render2);
     
     int_to_char <<< dimGrid, dimBlock >>> (d_render2, d_render);
-    
     cudaMemcpy(render, d_render, frame_mem_size, cudaMemcpyDeviceToHost);
     
     //float * point_polar = (float *)malloc(sizeof(float) * h * w * 4);
