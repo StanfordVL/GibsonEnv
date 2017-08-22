@@ -64,7 +64,6 @@ if __name__=='__main__':
         show, depth =  render(sources, source_depths, poses[0], poses)
         np.savez(file = "%s/data_%d.npz" % (opt.outf, idx), source = show, depth = depth, target = target)
         
-        
         #plt.figure(1)
         #plt.imshow(show)
         #plt.figure(2)
