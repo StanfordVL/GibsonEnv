@@ -59,7 +59,7 @@ def onmouse(*args):
 
 
 
-def showpoints(img, depth, pose, model, target):
+def showpoints(imgs, depths, poses, model, target):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
     global fps
@@ -67,7 +67,8 @@ def showpoints(img, depth, pose, model, target):
     showsz = target.shape[0]
 
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
-    target_depth = np.zeros((showsz,showsz * 2)).astype(np.float32)
+    target_depth = np.zeros((showsz,showsz * 2)).astype(np.uint32)
+    
     overlay = False
     show_depth = False
     cv2.namedWindow('show3d')
@@ -79,17 +80,28 @@ def showpoints(img, depth, pose, model, target):
 
     cpose = np.eye(4)
 
-    def render(img, depth, pose, model):
+    def render(imgs, depths, pose, model, poses):
         global fps
         t0 = time.time()
-        dll.render(ct.c_int(img.shape[0]),
-                   ct.c_int(img.shape[1]),
-                   img.ctypes.data_as(ct.c_void_p),
-                   depth.ctypes.data_as(ct.c_void_p),
-                   pose.ctypes.data_as(ct.c_void_p),
-                   show.ctypes.data_as(ct.c_void_p),
-                   target_depth.ctypes.data_as(ct.c_void_p)
-                  )
+        target_depth[:] = 65535
+        show[:] = 0
+        for i in range(len(imgs)):
+            print(poses[0])
+            
+            pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
+            #from IPython import embed; embed()
+            print('after',pose_after)
+            
+            dll.render(ct.c_int(imgs[i].shape[0]),
+                       ct.c_int(imgs[i].shape[1]),
+                       imgs[i].ctypes.data_as(ct.c_void_p),
+                       depths[i].ctypes.data_as(ct.c_void_p),
+                       pose_after.ctypes.data_as(ct.c_void_p),
+                       show.ctypes.data_as(ct.c_void_p),
+                       target_depth.ctypes.data_as(ct.c_void_p)
+                      )
+        
+        
         if model:
             tf = transforms.ToTensor()
             source = tf(show)
@@ -146,7 +158,7 @@ def showpoints(img, depth, pose, model, target):
             cpose = np.dot(cpose, cpose2)
 
             print('cpose',cpose)
-            render(img, depth, cpose.astype(np.float32), model)
+            render(imgs, depths, cpose.astype(np.float32), model, poses)
             changed = False
 
         if overlay:
@@ -178,7 +190,6 @@ def showpoints(img, depth, pose, model, target):
         elif cmd == ord('d'):
             y -= 0.05
             changed = True
-
         elif cmd == ord('z'):
             z += 0.01
             changed = True
@@ -191,15 +202,14 @@ def showpoints(img, depth, pose, model, target):
             roll = 0
             changed = True
         elif cmd == ord('t'):
+            pose = poses[0]
             print('pose', pose)
             RT = pose.reshape((4,4))
-
             R = RT[:3,:3]
             T = RT[:3,-1]
 
             x,y,z = np.dot(np.linalg.inv(R),T)
             roll, pitch, yaw = (utils.rotationMatrixToEulerAngles(R))
-
 
             changed = True
 
@@ -225,15 +235,16 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
+    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 3, off_3d = False)
     idx = opt.idx
 
     data = d[idx]
 
-    source = data[0][0]
+    sources = data[0]
     target = data[1]
-    source_depth = data[2][0]
-    pose = data[-1][0].numpy()
+    source_depths = data[2]
+    poses = [item.numpy() for item in data[-1]]
+    
     model = None
     if opt.model != '':
         comp = CompletionNet()
@@ -242,8 +253,8 @@ if __name__=='__main__':
         model = comp.module
         model.eval()
     print(model)
-    print(pose)
+    print(poses[0])
     #print(source_depth)
-    print(source.shape, source_depth.shape)
+    print(sources[0].shape, source_depths[0].shape)
     show_target(target)
-    showpoints(source, source_depth, pose, model, target)
+    showpoints(sources, source_depths, poses, model, target)
