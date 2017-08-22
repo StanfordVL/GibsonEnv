@@ -201,6 +201,7 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
     cudaMemcpy(d_img, img, frame_mem_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_depth, depth, depth_mem_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_render, render, frame_mem_size, cudaMemcpyHostToDevice);
+    
     cudaMemset(d_render2, 0, nx * ny * sizeof(int));
     cudaMemset(d_img2, 0, nx * ny * sizeof(int));
     

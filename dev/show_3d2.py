@@ -86,7 +86,7 @@ def showpoints(imgs, depths, poses, model, target):
         target_depth[:] = 65535
         show[:] = 0
         for i in range(len(imgs)):
-            print(poses[0])
+            #print(poses[0])
             
             pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
             #from IPython import embed; embed()
@@ -235,7 +235,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 3, off_3d = False)
+    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False)
     idx = opt.idx
 
     data = d[idx]
