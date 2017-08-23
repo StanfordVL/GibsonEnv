@@ -100,8 +100,7 @@ def main():
         transforms.ToTensor(),
     ])
 
-    d = ViewDataSet3D(root = opt.dataroot, transform=tf, target_transform = tf, seqlen = 2, debug=opt.debug, off_3d = True)
-
+    d = ViewDataSet3D(root = opt.dataroot, transform=tf, seqlen = 2, debug=opt.debug, off_3d = True, off_pc_render = True)
     cudnn.benchmark = True
 
     dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = False)
