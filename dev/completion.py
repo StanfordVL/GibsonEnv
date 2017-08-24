@@ -85,7 +85,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         alpha = 0.05
         self.pano = pano
-        nf = 32
+        nf = 12
         self.nf = nf
         self.convs_local = nn.Sequential(
             nn.Conv2d(3, nf, kernel_size = 5, stride = 2, padding = 1),
