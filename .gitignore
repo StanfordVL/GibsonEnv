@@ -9,3 +9,4 @@ pw
 *.ipynb
 *.out
 *.pth
+npz/

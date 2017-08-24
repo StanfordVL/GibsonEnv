@@ -168,8 +168,10 @@ def showpoints(imgs, depths, poses, model, target):
         else:
             show_out = show
 
-        cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.cv.CV_RGB(255,255,255))
-        cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
+        #cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.CV_RGB(255,255,255))
+        cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,(255,255,255))
+        #cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
+        cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,(255,255,255))
 
         show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
         cv2.imshow('show3d',show_rgb)
@@ -254,7 +256,7 @@ if __name__=='__main__':
         model.eval()
     print(model)
     print(poses[0])
-    #print(source_depth)
+    # print(source_depth)
     print(sources[0].shape, source_depths[0].shape)
     show_target(target)
     showpoints(sources, source_depths, poses, model, target)

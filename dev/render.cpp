@@ -15,7 +15,7 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
     float * points3d = (float*) malloc(sizeof(float) * h * w * 4);
     float * points3d_after = (float*) malloc(sizeof(float) * h * w * 3);
     float * points3d_polar = (float*) malloc(sizeof(float) * h * w * 3);
-        
+
     //for (i = 0; i < 5; i++) {
     //    printf("%f ", pose[i]);
     //}
