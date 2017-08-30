@@ -277,6 +277,52 @@ class Places365Dataset(data.Dataset):
             img = self.transform(img)
         return img
     
+    
+    
+    
+
+class PairDataset(data.Dataset):
+    def __init__(self, root, train=True, transform=None, mist_transform = None, loader=np.load):
+        self.root = root.rstrip('/')
+        self.train = train
+        self.fns = []
+        self.fofn = os.path.basename(root) + '_fofn'+str(int(train))+'.pkl'
+        self.loader = loader
+        self.transform = transform
+        self.mist_transform = mist_transform
+        if not os.path.isfile(self.fofn):
+            for subdir, dirs, files in os.walk(self.root):
+                if self.train:
+                    files = files[:len(files) / 10 * 9]
+                else:
+                    files = files[len(files) / 10 * 9:]
+                print(subdir)
+                for file in files:
+                    self.fns.append(os.path.join(subdir, file))
+            with open(self.fofn, 'wb') as fp:
+                pickle.dump(self.fns, fp)
+        else:
+            with open(self.fofn, 'rb') as fp:
+                self.fns = pickle.load(fp)
+
+    def __len__(self):
+        return len(self.fns)
+    
+    def __getitem__(self, index):
+        path = self.fns[index]
+        data = self.loader(path)
+        
+        source, depth, target = data['source'], data['depth'], data['target']
+        if not self.transform is None:
+            source = self.transform(source)
+            target = self.transform(target)
+            #depth = self.mist_transform(depth)
+            depth = torch.from_numpy(depth.astype(np.float32)/65536.0)
+        return source, depth, target
+    
+    
+    
+    
 if __name__ == '__main__':
     print('test')
     parser = argparse.ArgumentParser()
@@ -303,3 +349,11 @@ if __name__ == '__main__':
         print(sample)
         if sample is not None:
             print('places 365 test passed')
+            
+    elif opt.dataset == 'pair':
+        d = PairDataset(root = opt.dataroot)
+        print(len(d))
+        sample = d[0]
+        print(sample)
+        if sample is not None:
+            print('pair test passed')
