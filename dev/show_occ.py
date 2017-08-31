@@ -109,7 +109,7 @@ def showpoints(imgs, depths, poses, model, target):
                        pose_after.ctypes.data_as(ct.c_void_p),
                        occ.ctypes.data_as(ct.c_void_p),
                        target_depth.ctypes.data_as(ct.c_void_p)
-                      )
+                       )
             
             #print(show.shape, occ.shape)
             show[:,:,0] = (show[:,:,0] * (1-occ)).astype(np.uint8)
