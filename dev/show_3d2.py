@@ -68,7 +68,7 @@ def showpoints(imgs, depths, poses, model, target):
 
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.uint32)
-    
+
     overlay = False
     show_depth = False
     cv2.namedWindow('show3d')
@@ -87,11 +87,11 @@ def showpoints(imgs, depths, poses, model, target):
         show[:] = 0
         for i in range(len(imgs)):
             #print(poses[0])
-            
+
             pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
             #from IPython import embed; embed()
             print('after',pose_after)
-            
+
             dll.render(ct.c_int(imgs[i].shape[0]),
                        ct.c_int(imgs[i].shape[1]),
                        imgs[i].ctypes.data_as(ct.c_void_p),
@@ -100,8 +100,8 @@ def showpoints(imgs, depths, poses, model, target):
                        show.ctypes.data_as(ct.c_void_p),
                        target_depth.ctypes.data_as(ct.c_void_p)
                       )
-        
-        
+
+
         if model:
             tf = transforms.ToTensor()
             source = tf(show)
@@ -237,7 +237,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False)
+    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
     idx = opt.idx
 
     data = d[idx]
@@ -246,7 +246,7 @@ if __name__=='__main__':
     target = data[1]
     source_depths = data[2]
     poses = [item.numpy() for item in data[-1]]
-    
+
     model = None
     if opt.model != '':
         comp = CompletionNet()

@@ -46,10 +46,12 @@ def render(imgs, depths, pose, poses):
 
 ## CPU heavy
 def generate_data(args):
+   
     idx  = args[0]
     print(idx)
     d    = args[1]
     outf = args[2]
+    print(idx)
     data = d[idx]   ## This operation stalls 95% of the time, CPU heavy
     sources = data[0]
     target = data[1]
