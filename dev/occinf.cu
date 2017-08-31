@@ -143,7 +143,7 @@ __global__ void render_depth(float *points3d_polar, unsigned int * depth_render)
 
 
 
-__global__ void render_occu(float *points3d_polar, unsigned int * depth_render, bool * occu_map)
+__global__ void render_occu(float *points3d_polar, unsigned int * depth_render, bool * occu_map, float * depth)
 {
  int x = blockIdx.x * TILE_DIM + threadIdx.x;
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
@@ -156,10 +156,16 @@ __global__ void render_occu(float *points3d_polar, unsigned int * depth_render, 
      int ih = y + j;
      int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
      int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
+     
+     float depth_point = depth[ih*w + iw] * 100.0 * 128;
+     
      int this_depth = (int)(100 * points3d_polar[(ih * w + iw) * 3 + 0]);
      if ((this_depth - depth_render[(ty * w + tx)]) > 5) {
-         for (int j = -2; j < 2; j ++)
-             for (int k = -2; k < 2; k++)
+     
+         int scale = int(depth_point / float(this_depth) * 4);
+         
+         for (int j = -scale; j < scale; j ++)
+             for (int k = -scale; k < scale; k++)
                  {
                  if ((ty + j < h) && (ty + j > 0) && (tx + k > 0) && (tx + k < w))
                      occu_map[((ty+j) * w + (tx+k))] = 1;
@@ -211,7 +217,7 @@ void occinf(int h,int w, float * depth,float * pose, bool * occmap, unsigned int
     transform2d<<<dimGrid, dimBlock>>>(d_3dpoint_after, d_3dpoint_polar);
         
     render_depth <<< dimGrid, dimBlock >>> (d_3dpoint_polar, d_depth_render);
-    render_occu <<< dimGrid, dimBlock >>> (d_3dpoint_polar, d_depth_render, d_occu);
+    render_occu <<< dimGrid, dimBlock >>> (d_3dpoint_polar, d_depth_render, d_occu, d_depth);
     cudaMemcpy(occmap, d_occu, occ_map_size, cudaMemcpyDeviceToHost);
     
     
