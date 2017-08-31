@@ -47,6 +47,7 @@ def render(imgs, depths, pose, poses):
 ## CPU heavy
 def generate_data(args):
     idx  = args[0]
+    print(idx)
     d    = args[1]
     outf = args[2]
     data = d[idx]   ## This operation stalls 95% of the time, CPU heavy
@@ -73,10 +74,10 @@ if __name__=='__main__':
         pass
 
     cpu_c = cpu_count()
-    p = Pool(int(cpu_c * 1.5))
+    p = Pool(10)
 
     # On a 8 core CPU, this gives ~4.2x boost
-    p.map(generate_data, [(idx, d, opt.outf) for idx in range(100)])
+    p.map(generate_data, [(idx, d, opt.outf) for idx in range(200000,300000)])
 
 
     #plt.figure(1)

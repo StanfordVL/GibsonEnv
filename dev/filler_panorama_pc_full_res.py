@@ -93,7 +93,7 @@ def main():
     optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
     optimizerD = torch.optim.Adam(dis.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
 
-    curriculum = (30000, 50000) # step to start D training and G training, slightly different from the paper
+    curriculum = (300000, 500000) # step to start D training and G training, slightly different from the paper
     alpha = 0.0004
 
     errG_data = 0

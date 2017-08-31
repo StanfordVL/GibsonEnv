@@ -312,7 +312,16 @@ class PairDataset(data.Dataset):
         path = self.fns[index]
         data = self.loader(path)
         
-        source, depth, target = data['source'], data['depth'], data['target']
+        
+        try:
+            source, depth, target = data['source'], data['depth'], data['target']
+            #print(source.shape, depth.shape, target.shape)
+        except:
+            source = np.zeros((1024, 2048, 3)).astype(np.uint8)
+            target = np.zeros((1024, 2048, 3)).astype(np.uint8)
+            depth = np.zeros((1024, 2048)).astype(np.uint32)
+        
+        
         if not self.transform is None:
             source = self.transform(source)
             target = self.transform(target)
