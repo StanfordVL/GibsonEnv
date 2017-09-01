@@ -25,6 +25,8 @@ import matplotlib.pyplot as plt
 import torch.backends.cudnn as cudnn
 from torch import sin, cos
 import torchvision.utils as vutils
+from tensorboardX import SummaryWriter
+from datetime import datetime
 
 
 class Depth3DGridGen(nn.Module):
@@ -101,7 +103,7 @@ class PoseNet(nn.Module):
         self.nf = nf
         alpha = 0.05
         self.convs = nn.Sequential(
-            nn.Conv2d(6, nf, kernel_size = 5, stride = 2, padding = 1),
+            nn.Conv2d(8, nf, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU(),
             nn.Conv2d(nf, nf , kernel_size = 5, stride = 2, padding = 1),
             nn.BatchNorm2d(nf, momentum=alpha),
@@ -179,7 +181,23 @@ def weights_init(m):
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug'  , action='store_true', help='debug mode')
 parser.add_argument('--dataroot', required=True, help='path to dataset')
+parser.add_argument('--nepoch'  ,type=int, default = 50, help='number of epochs')
+parser.add_argument('--lr', type=float, default=0.002, help='learning rate, default=0.002')
+parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
+parser.add_argument('--outf', type=str, default="pose_adj", help='output folder')
+parser.add_argument('--model', type=str, default="", help='model path')
+
 opt = parser.parse_args(['--dataroot', '/home/fei/Downloads/highres_tiny/'])
+
+
+
+try:
+    os.makedirs(opt.outf)
+except OSError:
+    pass
+writer = SummaryWriter(opt.outf + '/runs/'+datetime.now().strftime('%B%d  %H:%M:%S'))
+
+    
 tf = transforms.Compose([
     transforms.Scale(1024, 1024 * 2),
     transforms.ToTensor(),
@@ -208,7 +226,7 @@ optimizer = torch.optim.Adam(net.parameters(), lr = 0.002, betas = (0.5, 0.999))
 for epoch in range(0, 10):
     for i, data in enumerate(dataloader, 0):
         optimizer.zero_grad()
-        
+        step = i + epoch * len(dataloader)
         source = Variable(data[0][0]).cuda()
         target = Variable(data[1]).cuda()
         depth = Variable(data[2][0]).cuda().transpose(2,1).transpose(3,2).float() * 255 * 128
@@ -238,8 +256,8 @@ for epoch in range(0, 10):
         masked_source0 = source * mask1.repeat(1,3,1,1)
         masked_source_pred0 = sample * mask1.repeat(1,3,1,1)
         before = l1(masked_source_pred0, masked_source0)
+        input_deck = torch.cat([sample, source, depth.view(1,1,1024,2048)/128.0, mask_v], 1)
         
-        input_deck = torch.cat([sample, source], 1)
         adj_pose = net(input_deck)
         pose_mat2 = mat(adj_pose)
         final_mat = torch.bmm(pose, pose_mat2)
@@ -261,6 +279,12 @@ for epoch in range(0, 10):
         if i%100 == 0:
             visual = torch.cat([sample.data, masked_source_pred.data, masked_source.data, masked_source_pred.data * 0.5 + masked_source.data * 0.5, masked_source_pred0.data * 0.5 + masked_source0.data * 0.5], 3)
             visual = vutils.make_grid(visual, normalize=True)
-            vutils.save_image(visual, 'compare%d_%d.png' % (epoch, i), nrow=1)
+            vutils.save_image(visual, '%s/compare%d_%d.png' % (opt.outf, epoch, i), nrow=1)
 
+        if i%10 == 0:
+            writer.add_scalar('loss', loss.data[0], step)
+            writer.add_scalar('before', before.data[0], step)
+            writer.add_scalar('after', after.data[0], step)
 
+        if i%10000 == 0:
+                torch.save(net.state_dict(), '%s/net_epoch%d_%d.pth' % (opt.outf, epoch, i))
