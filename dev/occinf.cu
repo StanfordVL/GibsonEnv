@@ -142,7 +142,8 @@ __global__ void render_depth(float *points3d_polar, unsigned int * depth_render)
 
 
 
-__global__ void render_final(float *points3d_polar, unsigned int * depth_render, int * img,  int * render)
+
+__global__ void render_occu(float *points3d_polar, unsigned int * depth_render, bool * occu_map, float * depth)
 {
  int x = blockIdx.x * TILE_DIM + threadIdx.x;
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
@@ -155,9 +156,20 @@ __global__ void render_final(float *points3d_polar, unsigned int * depth_render,
      int ih = y + j;
      int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
      int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
+     
+     float depth_point = depth[ih*w + iw] * 100.0 * 128;
+     
      int this_depth = (int)(100 * points3d_polar[(ih * w + iw) * 3 + 0]);
-     if (this_depth == depth_render[(ty * w + tx)]) {
-         render[(ty * w + tx)] = img[(ih * w + iw)];
+     if ((this_depth - depth_render[(ty * w + tx)]) > 5) {
+     
+         int scale = int(depth_point / float(this_depth) * 4);
+         
+         for (int j = -scale; j < scale; j ++)
+             for (int k = -scale; k < scale; k++)
+                 {
+                 if ((ty + j < h) && (ty + j > 0) && (tx + k > 0) && (tx + k < w))
+                     occu_map[((ty+j) * w + (tx+k))] = 1;
+                 };
      }
   }
 }
@@ -167,69 +179,50 @@ __global__ void render_final(float *points3d_polar, unsigned int * depth_render,
 
 extern "C"{
     
-void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, unsigned int * depth_render){
-    //int ih, iw, i, ic;
-    
+void occinf(int h,int w, float * depth,float * pose, bool * occmap, unsigned int * depth_render){
     const int nx = w;
     const int ny = h;
     const int depth_mem_size = nx*ny*sizeof(float);
-    const int frame_mem_size = nx*ny*sizeof(unsigned char) * 3;
+    const int occ_map_size = nx*ny*sizeof(bool);
+    
     
     dim3 dimGrid(nx/TILE_DIM, ny/TILE_DIM, 1);
     dim3 dimBlock(TILE_DIM, BLOCK_ROWS, 1);
     
-    unsigned char *d_img, *d_render;
     float *d_depth, *d_pose;
     unsigned int *d_depth_render;
     float *d_3dpoint, *d_3dpoint_after, *d_3dpoint_polar;
+    bool *d_occu;
     
-    int *d_render2, *d_img2;
-    
-    cudaMalloc((void **)&d_img, frame_mem_size);
-    cudaMalloc((void **)&d_render, frame_mem_size);
     cudaMalloc((void **)&d_depth, depth_mem_size);
     cudaMalloc((void **)&d_depth_render, nx * ny * sizeof(unsigned int));
     cudaMalloc((void **)&d_3dpoint, depth_mem_size * 4);
     cudaMalloc((void **)&d_3dpoint_after, depth_mem_size * 4);
     cudaMalloc((void **)&d_3dpoint_polar, depth_mem_size * 4);
     cudaMalloc((void **)&d_pose, sizeof(float) * 16);
-    cudaMalloc((void **)&d_render2, nx * ny * sizeof(int));
-    cudaMalloc((void **)&d_img2, nx * ny * sizeof(int));
+    cudaMalloc((void **)&d_occu, occ_map_size);
+
     
     cudaMemcpy(d_depth_render, depth_render, nx * ny * sizeof(unsigned int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_pose, pose, sizeof(float) * 16, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_img, img, frame_mem_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_depth, depth, depth_mem_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_render, render, frame_mem_size, cudaMemcpyHostToDevice);
     
-    cudaMemset(d_render2, 0, nx * ny * sizeof(int));
-    cudaMemset(d_img2, 0, nx * ny * sizeof(int));
-    
-    //cudaMemset(d_render, 0, frame_mem_size);
     cudaMemset(d_3dpoint, 0, depth_mem_size * 4);
     cudaMemset(d_3dpoint_after, 0, depth_mem_size * 4);
+    cudaMemset(d_occu, 0, occ_map_size);
+    
     
     to3d_point<<< dimGrid, dimBlock >>>(d_depth, d_3dpoint);
     transform<<< dimGrid, dimBlock >>>(d_3dpoint_after, d_3dpoint, d_pose);
     transform2d<<<dimGrid, dimBlock>>>(d_3dpoint_after, d_3dpoint_polar);
-    
-    char_to_int <<< dimGrid, dimBlock >>> (d_img2, d_img);
-    char_to_int <<< dimGrid, dimBlock >>> (d_render2, d_render);
-    
+        
     render_depth <<< dimGrid, dimBlock >>> (d_3dpoint_polar, d_depth_render);
-    render_final <<< dimGrid, dimBlock >>> (d_3dpoint_polar, d_depth_render, d_img2, d_render2);
-    
-    int_to_char <<< dimGrid, dimBlock >>> (d_render2, d_render);
-    
-    cudaMemcpy(render, d_render, frame_mem_size, cudaMemcpyDeviceToHost);
-    cudaMemcpy(depth_render, d_depth_render, nx * ny * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+    render_occu <<< dimGrid, dimBlock >>> (d_3dpoint_polar, d_depth_render, d_occu, d_depth);
+    cudaMemcpy(occmap, d_occu, occ_map_size, cudaMemcpyDeviceToHost);
     
     
-    cudaFree(d_img);
+    cudaFree(d_occu);
     cudaFree(d_depth);
-    cudaFree(d_render2);
-    cudaFree(d_img2);
-    cudaFree(d_render);
     cudaFree(d_depth_render);
     cudaFree(d_3dpoint);
     cudaFree(d_3dpoint_after);
