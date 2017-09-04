@@ -76,10 +76,10 @@ if __name__=='__main__':
         pass
 
     cpu_c = cpu_count()
-    p = Pool(10)
+    p = Pool(6)
 
     # On a 8 core CPU, this gives ~4.2x boost
-    p.map(generate_data, [(idx, d, opt.outf) for idx in range(200000,300000)])
+    p.map(generate_data, [(idx, d, opt.outf) for idx in range(600000,700000)])
 
 
     #plt.figure(1)

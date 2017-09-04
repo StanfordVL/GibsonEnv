@@ -27,6 +27,22 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
 
+def crop(source, source_depth, target):
+    bs = source.size(0)
+    source_cropped = Variable(torch.zeros(4*bs, 3, 256, 256)).cuda()
+    source_depth_cropped = Variable(torch.zeros(4*bs, 1, 256, 256)).cuda()
+    target_cropped = Variable(torch.zeros(4*bs, 3, 256, 256)).cuda()
+    
+    for i in range(bs):
+        for j in range(4):
+            idx = i * 4 + j
+            centerx = np.random.randint(128, 1024 - 128)
+            centery = np.random.randint(128, 1024 * 2 - 128)
+            source_cropped[idx] = source[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
+            source_depth_cropped[idx] = source_depth[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
+            target_cropped[idx] = target[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
+           
+    return source_cropped, source_depth_cropped, target_cropped, 
 
 
 def main():
@@ -110,15 +126,18 @@ def main():
             img.data.copy_(source)
             maskv.data.copy_(source_depth)
             img_original.data.copy_(target)
-            recon = comp(img, maskv)
-            loss = l2(recon, img_original)
+            
+            imgc, maskvc, img_originalc = crop(img, maskv, img_original)
+            from IPython import embed; embed()
+            recon = comp(imgc, maskvc)
+            loss = l2(recon, img_originalc)
             loss.backward(retain_variables = True)
             optimizerG.step()
             
             print('[%d/%d][%d/%d] MSEloss: %f' % (epoch, opt.nepoch, i, len(dataloader), loss.data[0]))
             
             if i%500 == 0:
-                visual = torch.cat([source, recon.data.cpu(), target], 3)
+                visual = torch.cat([imgc.data, recon.data, img_originalc.data], 3)
                 visual = vutils.make_grid(visual, normalize=True)
                 writer.add_image('image', visual, step)
                 vutils.save_image(visual, '%s/compare%d_%d.png' % (opt.outf, epoch, i), nrow=1)
