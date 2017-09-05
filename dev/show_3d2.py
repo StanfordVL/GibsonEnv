@@ -75,8 +75,8 @@ def showpoints(imgs, depths, poses, model, target):
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
 
-    imgv = Variable(torch.zeros(1,3, showsz, showsz*2)).cuda()
-    maskv = Variable(torch.zeros(1,1, showsz, showsz*2)).cuda()
+    imgv = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
+    maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
 
     cpose = np.eye(4)
 
@@ -105,16 +105,21 @@ def showpoints(imgs, depths, poses, model, target):
         if model:
             tf = transforms.ToTensor()
             source = tf(show)
-            source_depth = tf(np.expand_dims(target_depth, 2))
+            source_depth = tf(np.expand_dims(target_depth, 2).astype(np.float32)/65536 * 255)
             #print(source.size(), source_depth.size())
 
             imgv.data.copy_(source)
             maskv.data.copy_(source_depth)
 
-            recon = model(imgv, maskv)
-            #print(recon.size())
+            recon = model(imgv[:,:,:1024, :1024], maskv[:,:,:1024, :1024])
+            print(recon.size())
             show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
-            show[:] = (show2[:] * 255).astype(np.uint8)
+            show[:1024, :1024, :] = (show2[:] * 255).astype(np.uint8)
+
+            recon = model(imgv[:,:,:1024, 1024:], maskv[:,:,:1024, 1024:])
+            print(recon.size())
+            show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
+            show[:1024, 1024:, :] = (show2[:] * 255).astype(np.uint8)
 
         t1 = time.time()
         t = t1-t0
@@ -237,7 +242,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
+    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False)
     idx = opt.idx
 
     data = d[idx]
