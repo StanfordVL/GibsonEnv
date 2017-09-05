@@ -15,7 +15,7 @@ class CompletionNet(nn.Module):
 
     def __init__(self):
         super(CompletionNet, self).__init__()
-        nf = 16
+        nf = 64
         alpha = 0.05
         self.convs = nn.Sequential(
             nn.Conv2d(4, nf, kernel_size = 5, stride = 1, padding = 2),

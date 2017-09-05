@@ -51,7 +51,7 @@ def main():
     parser.add_argument('--debug'  , action='store_true', help='debug mode')
     parser.add_argument('--imgsize'  ,type=int, default = 256, help='image size')
     parser.add_argument('--batchsize'  ,type=int, default = 20, help='batchsize')
-    parser.add_argument('--workers'  ,type=int, default = 6, help='number of workers')
+    parser.add_argument('--workers'  ,type=int, default = 9, help='number of workers')
     parser.add_argument('--nepoch'  ,type=int, default = 50, help='number of epochs')
     parser.add_argument('--lr', type=float, default=0.002, help='learning rate, default=0.002')
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
@@ -128,7 +128,7 @@ def main():
             img_original.data.copy_(target)
             
             imgc, maskvc, img_originalc = crop(img, maskv, img_original)
-            from IPython import embed; embed()
+            #from IPython import embed; embed()
             recon = comp(imgc, maskvc)
             loss = l2(recon, img_originalc)
             loss.backward(retain_variables = True)

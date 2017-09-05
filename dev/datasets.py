@@ -298,7 +298,8 @@ class PairDataset(data.Dataset):
                     files = files[len(files) / 10 * 9:]
                 print(subdir)
                 for file in files:
-                    self.fns.append(os.path.join(subdir, file))
+                    if file[-3:] == 'npz':
+                        self.fns.append(os.path.join(subdir, file))
             with open(self.fofn, 'wb') as fp:
                 pickle.dump(self.fns, fp)
         else:
