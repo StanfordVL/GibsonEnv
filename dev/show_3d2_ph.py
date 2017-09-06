@@ -114,11 +114,11 @@ def showpoints(imgs, depths, poses, model, target):
             maskv.data.copy_(source_depth)
             print('Transfer time', time.time() - before)
             before = time.time()
-            recon = model(imgv, maskv)
+            recon = model(imgv[:,:,256:768, 768 : 1280], maskv[:,:,256:768, 768:1280])
             print('NNtime:', time.time() - before)
             before = time.time()
             show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
-            show[:] = (show2[:] * 255).astype(np.uint8)
+            show[256:768, 768:1280,:] = (show2[:] * 255).astype(np.uint8)
             print('Transfer to CPU time:', time.time() - before)
 
         t1 =time.time()
