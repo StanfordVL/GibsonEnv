@@ -68,17 +68,13 @@ bool loadOBJ(
 			std::string vertex1, vertex2, vertex3;
 			unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
 			char stringBuffer[500];
-			//fgets(stringBuffer, 500, file);
-			// printf("%s\n", stringBuffer);
-			int matches = fscanf(file, "%u/%u/%u %u/%u/%u %u/%u/%u\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
-
-			printf("%u/%u/%u %u/%u/%u %u/%u/%u\n",  vertexIndex[0], uvIndex[0], normalIndex[0], vertexIndex[1], uvIndex[1], normalIndex[1], vertexIndex[2], uvIndex[2], normalIndex[2] );
-			printf("%d\n", matches);
-			//int matches = sscanf(stringBuffer, "%u/%u/%u %u/%u/%u %u/%u/%u\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
+			fgets(stringBuffer, 500, file);
+			//int matches = fscanf(file, "%u/%u/%u %u/%u/%u %u/%u/%u\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
+			int matches = sscanf(stringBuffer, "%u/%u/%u %u/%u/%u %u/%u/%u\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
 			bool f_3_format = (matches == 9);
 			if (! f_3_format) {
+				// .obj file has `f v1/uv1 v2/uv2 v3/uv3` format
 				int matches = sscanf(stringBuffer, " %u/%u %u/%u %u/%u\n", &vertexIndex[0], &uvIndex[0], &vertexIndex[1], &uvIndex[1], &vertexIndex[2], &uvIndex[2] );
-				printf("%d matches \n", matches);
 
 				if (matches != 6){
 					printf("File can't be read by our simple parser :-( Try exporting with other options\n");
@@ -86,7 +82,6 @@ bool loadOBJ(
 					return false;
 				}
 			}
-			printf("Add vertex %u %u %u\n", (unsigned int) vertexIndex[0], (unsigned int) vertexIndex[1], (unsigned int) vertexIndex[2]);
 			vertexIndices.push_back(vertexIndex[0]);
 			vertexIndices.push_back(vertexIndex[1]);
 			vertexIndices.push_back(vertexIndex[2]);
@@ -112,11 +107,6 @@ bool loadOBJ(
 		// Get the indices of its attributes
 		unsigned int vertexIndex = vertexIndices[i];
 		unsigned int uvIndex = uvIndices[i];
-
-		//if (i % 3 != 2)
-		//	printf("%u ", vertexIndex);
-		//else
-		//	printf("%u\n", vertexIndex);
 
 
 		unsigned int normalIndex = -1;
@@ -168,7 +158,6 @@ bool loadOBJ(
 			out_normals[vertexIndex-1] += normal / float(vertexFaces[vertexIndex-1]);
 		}
 	}
-	printf("v_count %u\n", v_count);
 	printf("size of temp vertices %lu, vertex indices %lu out vertices %lu\n", temp_vertices.size(), vertexIndices.size(), out_vertices.size());
 	fclose(file);
 	return true;

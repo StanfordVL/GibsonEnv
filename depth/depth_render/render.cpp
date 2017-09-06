@@ -38,7 +38,7 @@ int main( void )
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1024, 768, "Tutorial 14 - Render To Texture", NULL, NULL);
+	window = glfwCreateWindow( 1024, 768, "Depth Rendering", NULL, NULL);
 	if( window == NULL ){
 		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
 		getchar();
@@ -107,8 +107,6 @@ int main( void )
 	//bool res = loadOBJ("suzanne.obj", vertices, uvs, normals);
 	bool res = loadOBJ("Q97jUzc1wSS_HIGH.obj", vertices, uvs, normals);
 	// bool res = loadOBJ("16b32add7aa946f283740b9c1c1646c0.obj", vertices, uvs, normals);
-
-	//bool res = loadAssImp("Q97jUzc1wSS_HIGH.obj", vertices, uvs, normals);
 
 	// Note: use unsigned int because of too many indices
 	std::vector<unsigned int> indices;

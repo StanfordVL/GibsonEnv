@@ -56,6 +56,7 @@ add_definitions(
 	-D_CRT_SECURE_NO_WARNINGS
 )
 
+
 # Tutorial 14
 add_executable(depth_render
 	depth_render/render.cpp
@@ -88,18 +89,11 @@ create_target_launcher(depth_render WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DI
 
 
 
-
 SOURCE_GROUP(common REGULAR_EXPRESSION ".*/common/.*" )
 SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
 
 
-if (NOT ${CMAKE_GENERATOR} MATCHES "Xcode" )
 add_custom_command(
    TARGET depth_render POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/depth_render${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
-
-elseif (${CMAKE_GENERATOR} MATCHES "Xcode" )
-
-endif (NOT ${CMAKE_GENERATOR} MATCHES "Xcode" )
-
