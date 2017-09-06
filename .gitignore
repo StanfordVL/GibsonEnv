@@ -7,3 +7,8 @@ data/
 *.pth
 src/
 Dockerfile
+pw
+*.o
+*.ipynb
+*.out
+npz/
