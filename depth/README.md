@@ -3,6 +3,13 @@ All external libraries have been included. You only need CMake on your computer 
 ![](https://github.com/fxia22/realenv/blob/depth_render/misc/depth_render.png)
 
 ### Steps
+
+Install dependencies
+```shell
+sudo apt install mesa-common-dev
+sudo apt install libglu1-mesa-dev freeglut3-dev
+```
+
 Download models
 ```shell
 cd {PROJECT_ROOT_PATH}/depth/depth_render
