@@ -111,15 +111,9 @@ def showpoints(imgs, depths, poses, model, target):
             imgv.data.copy_(source)
             maskv.data.copy_(source_depth)
 
-            recon = model(imgv[:,:,:1024, :1024], maskv[:,:,:1024, :1024])
-            print(recon.size())
+            recon = model(imgv, maskv)
             show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
-            show[:1024, :1024, :] = (show2[:] * 255).astype(np.uint8)
-
-            recon = model(imgv[:,:,:1024, 1024:], maskv[:,:,:1024, 1024:])
-            print(recon.size())
-            show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
-            show[:1024, 1024:, :] = (show2[:] * 255).astype(np.uint8)
+            show[:] = (show2[:] * 255).astype(np.uint8)
 
         t1 = time.time()
         t = t1-t0
