@@ -70,6 +70,7 @@ if __name__=='__main__':
     parser.add_argument('--debug'  , action='store_true', help='debug mode')
     parser.add_argument('--dataroot'  , required = True, help='dataset path')
     parser.add_argument('--outf'  , type = str, default = '', help='path of output folder')
+    parser.add_argument('--b', type = int, default = 0)
     opt = parser.parse_args()
     d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False)
     
@@ -82,10 +83,8 @@ if __name__=='__main__':
     p = Pool(6)
 
     # On a 8 core CPU, this gives ~4.2x boost
-    p.map(generate_data, [(idx, d, opt.outf) for idx in range(100)])
-
+    p.map(generate_data, [(idx, d, opt.outf) for idx in range(opt.b, 1000000, 20)])
 
  
-
     
     print('Total time %s', str(time.time() - time_start))

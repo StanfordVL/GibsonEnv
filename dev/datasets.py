@@ -320,14 +320,14 @@ class PairDataset(data.Dataset):
         except:
             source = np.zeros((1024, 2048, 3)).astype(np.uint8)
             target = np.zeros((1024, 2048, 3)).astype(np.uint8)
-            depth = np.zeros((1024, 2048)).astype(np.uint32)
+            depth = np.zeros((1024, 2048)).astype(np.float32)
         
         
         if not self.transform is None:
             source = self.transform(source)
             target = self.transform(target)
             #depth = self.mist_transform(depth)
-            depth = torch.from_numpy(depth.astype(np.float32)/65536.0)
+            depth = torch.from_numpy(depth.astype(np.float32))
         return source, depth, target
     
     
