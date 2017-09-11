@@ -101,37 +101,4 @@ ENV VNC_COL_DEPTH 24
 ENV VNC_RESOLUTION 1280x1024
 ENV VNC_PW vncpassword
 
-### Add all install scripts for further steps
-ENV INST_SCRIPTS $HOME/install
-ADD ./src/common/install/ $INST_SCRIPTS/
-ADD ./src/ubuntu/install/ $INST_SCRIPTS/
-RUN find $INST_SCRIPTS -name '*.sh' -exec chmod a+x {} +
-
-### Install some common tools
-RUN $INST_SCRIPTS/tools.sh
-
-ADD ./init.sh $HOME/
-
-### Install xvnc-server & noVNC - HTML5 based VNC viewer
-RUN $INST_SCRIPTS/tigervnc.sh
-RUN $INST_SCRIPTS/no_vnc.sh
-
-### Install firfox and chrome browser
-#RUN $INST_SCRIPTS/firefox.sh
-#RUN $INST_SCRIPTS/chrome.sh
-
-### Install xfce UI
-#RUN $INST_SCRIPTS/xfce_ui.sh
-#ADD ./src/common/xfce/ $HOME/
-
-
-### configure startup
-RUN $INST_SCRIPTS/libnss_wrapper.sh
-ADD ./src/common/scripts $STARTUPDIR
-RUN $INST_SCRIPTS/set_user_permission.sh $STARTUPDIR $HOME
-
-USER 1984
-
-ENTRYPOINT [ "/bin/bash", "-c" ]
-#ENTRYPOINT ["/dockerstartup/vnc_startup.sh"]
-CMD ["--tail-log"]
+RUN printf "qwertyui\nqwertyui\n\n" | vncpasswd
