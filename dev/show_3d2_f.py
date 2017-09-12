@@ -227,6 +227,8 @@ def showpoints(imgs, depths, poses, model, target, tdepth):
             overlay = not overlay
         elif cmd == ord('f'):
             show_depth = not show_depth
+        elif cmd == ord('v'):
+            cv2.imwrite('save.jpg', show_rgb)
 
 
 def show_target(target_img):
