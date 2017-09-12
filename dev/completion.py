@@ -148,6 +148,58 @@ class Discriminator(nn.Module):
 
         return x
 
+    
+    
+class Discriminator2(nn.Module):
+
+    def __init__(self, pano = False):
+        super(Discriminator2, self).__init__()
+        alpha = 0.05
+        self.pano = pano
+        nf = 64
+        self.nf = nf
+
+        self.convs_global = nn.Sequential(
+            nn.Conv2d(3, nf, kernel_size = 5, stride = 2, padding = 1),
+            nn.ReLU(),
+            nn.Conv2d(nf, nf * 2, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(nf * 2, momentum=alpha),
+            nn.ReLU(),
+            nn.Conv2d(nf * 2, nf * 4, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(nf * 4, momentum=alpha),
+            nn.ReLU(),
+            nn.Conv2d(nf * 4, nf * 8, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(nf * 8, momentum=alpha),
+            nn.ReLU(),
+            nn.Conv2d(nf * 8, nf * 8, kernel_size = 5, stride = 2, padding = 1),
+            nn.BatchNorm2d(nf * 8, momentum=alpha),
+            nn.ReLU(),
+            nn.Conv2d(nf * 8, nf * 8, kernel_size = 5, stride = 2, padding = 1),
+            nn.ReLU()
+        )
+        
+        if self.pano:
+            self.fc_global = nn.Linear(nf * 8 * 3 * 7, 1000)
+        else:
+            self.fc_global = nn.Linear(nf * 8 * 3 * 3, 1000)
+
+
+    def forward(self, img):
+        y = self.convs_global(img)
+
+        if self.pano:
+            y = y.view(y.size(0), self.nf * 8 * 3 * 7)
+        else:
+            y = y.view(y.size(0), self.nf * 8 * 3 * 3)
+
+        y = F.relu(self.fc_global(y))
+
+        x = F.log_softmax(y)
+
+        return x
+
+    
+    
 if __name__ == '__main__':
 
 
