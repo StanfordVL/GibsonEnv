@@ -2,6 +2,10 @@
 All external libraries have been included. You only need CMake on your computer in order to build
 ![](https://github.com/fxia22/realenv/blob/depth_render/misc/depth_render.png)
 
+### Install
+```shell
+sudo apt-get install libzmq3-dev
+```
 ### Steps
 Download models
 ```shell

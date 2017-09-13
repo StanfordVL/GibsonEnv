@@ -27,6 +27,8 @@ using namespace std;
 #include <common/vboindexer.hpp>
 #include "common/cmdline.h"
 
+#include <zmq.hpp>
+
 // We would expect width and height to be 1024 and 768
 int windowWidth = 512;
 int windowHeight = 512;
