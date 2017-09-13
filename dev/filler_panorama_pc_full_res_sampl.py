@@ -130,7 +130,10 @@ def main():
             source += mask2.repeat(1,3,1,1) * F.upsample(F.max_pool2d(source, 4), scale_factor=4, mode = 'nearest').data
             
             mask3 = (torch.sum(source,1)==0).float().unsqueeze(1)
-            source += mask3.repeat(1,3,1,1) * F.upsample(F.max_pool2d(source, 4), scale_factor=8, mode = 'nearest').data
+            source += mask3.repeat(1,3,1,1) * F.upsample(F.max_pool2d(source, 8), scale_factor=8, mode = 'nearest').data
+            
+            mask4 = (torch.sum(source,1)==0).float().unsqueeze(1)
+            source += mask4.repeat(1,3,1,1) * mean.view(1,3,1,1).repeat(opt.batchsize,1,1024,2048)
             
             
             #from IPython import embed; embed()
