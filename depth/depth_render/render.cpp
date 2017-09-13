@@ -25,6 +25,7 @@ using namespace std;
 #include <common/controls.hpp>
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
+#include "common/cmdline.h"
 
 // We would expect width and height to be 1024 and 768
 int windowWidth = 512;
@@ -37,35 +38,35 @@ glm::vec3 GetOGLPos(int x, int y)
     GLdouble projection[16];
     GLfloat winX, winY, winZ;
     GLdouble posX, posY, posZ;
- 
+
     glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
     glGetDoublev( GL_PROJECTION_MATRIX, projection );
     glGetIntegerv( GL_VIEWPORT, viewport );
- 
+
     winX = (float)x;
     winY = (float)viewport[3] - (float)y;
     glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
- 
+
     gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
- 
+
     return glm::vec3(posX, posY, posZ);
 }
 
 
 bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
-{	
-  // This prevents the images getting padded 
+{
+  // This prevents the images getting padded
   //when the width multiplied by 3 is not a multiple of 4
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
- 
+
   int nSize = w*h*3;
   // First let's create our buffer, 3 channels per Pixel
   unsigned short* dataBuffer = (unsigned short*)malloc(nSize*sizeof(unsigned short));
   //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
- 
+
   if (!dataBuffer) return false;
- 
-  // Let's fetch them from the backbuffer	
+
+  // Let's fetch them from the backbuffer
   // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
   glReadPixels((GLint)0, (GLint)0,
 		(GLint)w, (GLint)h,
@@ -75,7 +76,7 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
   unsigned short most = 0;
 
   glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
-  
+
   int strange_count = 0;
 
   for (int i = 0; i < nSize - 50; i++) {
@@ -85,14 +86,14 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
   }
 
   //least = least * 5000 *  65536.0f / 128.0f;
-  //most = most * 5000 * 65536.0f / 128.0f; 
+  //most = most * 5000 * 65536.0f / 128.0f;
 
   cout << filename << " " << "read least input " << least << " most input " <<  most << " strange count " << strange_count << endl;
- 
+
   //Now the file creation
   //FILE *filePtr = fopen(filename.c_str(), "wb");
   //if (!filePtr) return false;
- 
+
    /*
   unsigned char TGAheader[12]={0,0,2,0,0,0,0,0,0,0,0,0};
   unsigned char header[6] = { w%256,w/256,
@@ -119,19 +120,27 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
 
   unsigned error = lodepng::encode(filename, (unsigned char*)dataBuffer, w, h, LCT_RGB, 16);
   //if(!error) lodepng::save_file(png, filename.c_str());
-  
+
   //lodepng::lodepng_encode24(unsigned char** out, size_t* outsize,
   //                      const unsigned char* image, unsigned w, unsigned h);
- 
+
   free(dataBuffer);
- 
+
   return true;
 }
 
 
 
-int main( void )
+int main( int argc, char * argv[] )
 {
+
+    cmdline::parser cmdp;
+    cmdp.add<std::string>("obj", 'b', "obj file name", true, "");
+    cmdp.parse_check(argc, argv);
+    std::string name_obj = cmdp.get<std::string>("obj");
+
+
+
 	// Initialise GLFW
 	if( !glfwInit() )
 	{
@@ -173,7 +182,7 @@ int main( void )
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     // Hide the mouse and enable unlimited mouvement
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    
+
     // Set the mouse at the center of the screen
     glfwPollEvents();
     glfwSetCursorPos(window, windowWidth/2, windowHeight/2);
@@ -181,11 +190,11 @@ int main( void )
 
 	// Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
- 
+
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
-	glDepthFunc(GL_LESS); 
+	glDepthFunc(GL_LESS);
 
 	// Cull triangles which normal is not towards the camera
 	glEnable(GL_CULL_FACE);
@@ -204,7 +213,7 @@ int main( void )
 
 	// Load the texture
 	GLuint Texture = loadDDS("uvmap.DDS");
-	
+
 	// Get a handle for our "myTextureSampler" uniform
 	GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
@@ -212,10 +221,7 @@ int main( void )
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
-	//bool res = loadOBJ("suzanne.obj", vertices, uvs, normals);
-	//bool res = loadOBJ("Q97jUzc1wSS_HIGH.obj", vertices, uvs, normals);
-	bool res = loadOBJ("1CzjpjNF8qk_HIGH.obj", vertices, uvs, normals);
-	// bool res = loadOBJ("16b32add7aa946f283740b9c1c1646c0.obj", vertices, uvs, normals);
+	bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
 
 	// Note: use unsigned int because of too many indices
 	std::vector<unsigned int> indices;
@@ -265,7 +271,7 @@ int main( void )
 	// The texture we're going to render to
 	GLuint renderedTexture;
 	glGenTextures(1, &renderedTexture);
-	
+
 	// "Bind" the newly created texture : all future texture functions will modify this texture
 	glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
@@ -274,7 +280,7 @@ int main( void )
 
 	// Poor filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -299,7 +305,7 @@ int main( void )
 	// Set "renderedTexture" as our colour attachement #0
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
 
-	//// Depth texture alternative : 
+	//// Depth texture alternative :
 	// ER: Duplicate this six times
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
 
@@ -316,7 +322,7 @@ int main( void )
 
 
 	// The fullscreen quad's FBO
-	static const GLfloat g_quad_vertex_buffer_data[] = { 
+	static const GLfloat g_quad_vertex_buffer_data[] = {
 		-1.0f, -1.0f, 0.0f,
 		 1.0f, -1.0f, 0.0f,
 		-1.0f,  1.0f, 0.0f,
@@ -334,11 +340,11 @@ int main( void )
 	GLuint quad_programID = LoadShaders( "Passthrough.vertexshader", "WobblyTexture.fragmentshader" );
 	GLuint texID = glGetUniformLocation(quad_programID, "renderedTexture");
 	GLuint timeID = glGetUniformLocation(quad_programID, "time");
-   
+
    	double lastTime = glfwGetTime();
-	int nbFrames = 0; 
+	int nbFrames = 0;
 	bool screenshot = false;
-	
+
 	do{
 
 		// Measure speed
@@ -372,7 +378,7 @@ int main( void )
 		printf("Before ");
 		for (int i = 0; i < 16; i++)
 			printf("%f ", ProjectionMatrix[i / 4][i % 4]);
-	
+
 		printf("\n");
 		//BuildPerspProjMat(ProjectionMatrix, 1.0489180166567196, 1.0, 0.0, 128.0);
 		printf("After ");
@@ -384,7 +390,7 @@ int main( void )
 
 		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
-		// Send our transformation to the currently bound shader, 
+		// Send our transformation to the currently bound shader,
 		// in the "MVP" uniform
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
@@ -538,7 +544,7 @@ int main( void )
 	return 0;
 }
 
-void BuildPerspProjMat(glm::mat4 &m, float fov, float aspect, 
+void BuildPerspProjMat(glm::mat4 &m, float fov, float aspect,
 	float znear, float zfar) {
   float xymax = znear * tan(fov/2);
   float ymin = -xymax;

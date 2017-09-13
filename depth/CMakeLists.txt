@@ -75,6 +75,7 @@ add_executable(depth_render
 	common/vboindexer.hpp
 	common/text2D.hpp
 	common/text2D.cpp
+    common/cmdline.h
 	
 	external/lodepng/lodepng.h
 	external/lodepng/lodepng.cpp
