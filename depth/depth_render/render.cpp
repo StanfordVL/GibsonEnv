@@ -2,9 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <string>
+#include <iostream>
+
+#include <FreeImage.h>
+//#include <FreeImageIO.h>
 
 // Include GLEW
 #include <GL/glew.h>
+#include <GL/glut.h>
+#include "lodepng.h"
 
 // Include GLFW
 #include <glfw3.h>
@@ -14,12 +21,117 @@ GLFWwindow* window;
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 using namespace glm;
+using namespace std;
 
 #include <common/shader.hpp>
 #include <common/texture.hpp>
 #include <common/controls.hpp>
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
+
+// We would expect width and height to be 1024 and 768
+int windowWidth = 512;
+int windowHeight = 512;
+
+glm::vec3 GetOGLPos(int x, int y)
+{
+    GLint viewport[4];
+    GLdouble modelview[16];
+    GLdouble projection[16];
+    GLfloat winX, winY, winZ;
+    GLdouble posX, posY, posZ;
+ 
+    glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+    glGetDoublev( GL_PROJECTION_MATRIX, projection );
+    glGetIntegerv( GL_VIEWPORT, viewport );
+ 
+    winX = (float)x;
+    winY = (float)viewport[3] - (float)y;
+    glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
+ 
+    gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+ 
+    return glm::vec3(posX, posY, posZ);
+}
+
+
+bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
+{	
+  // This prevents the images getting padded 
+  //when the width multiplied by 3 is not a multiple of 4
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+ 
+  int nSize = w*h*3;
+  // First let's create our buffer, 3 channels per Pixel
+  unsigned short* dataBuffer = (unsigned short*)malloc(nSize*sizeof(unsigned short));
+  //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
+ 
+  if (!dataBuffer) return false;
+ 
+  // Let's fetch them from the backbuffer	
+  // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
+  glReadPixels((GLint)0, (GLint)0,
+		(GLint)w, (GLint)h,
+		 GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
+
+  unsigned short least = 65535;
+  unsigned short most = 0;
+
+  glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
+  
+  int strange_count = 0;
+
+  for (int i = 0; i < nSize - 50; i++) {
+  	if (dataBuffer[i] < least) least = dataBuffer[i];
+  	if (dataBuffer[i] > most) most = dataBuffer[i];
+  	if (dataBuffer[i] == 26214) strange_count++;
+  }
+
+  //least = least * 5000 *  65536.0f / 128.0f;
+  //most = most * 5000 * 65536.0f / 128.0f; 
+
+  cout << filename << " " << "read least input " << least << " most input " <<  most << " strange count " << strange_count << endl;
+ 
+  //Now the file creation
+  //FILE *filePtr = fopen(filename.c_str(), "wb");
+  //if (!filePtr) return false;
+ 
+   /*
+  unsigned char TGAheader[12]={0,0,2,0,0,0,0,0,0,0,0,0};
+  unsigned char header[6] = { w%256,w/256,
+			       h%256,h/256,
+			       24,0};
+  // We write the headers
+  fwrite(TGAheader,	sizeof(unsigned char),	12,	filePtr);
+  fwrite(header,	sizeof(unsigned char),	6,	filePtr);
+  // And finally our image data
+  //fwrite(dataBuffer,	sizeof(GLushort),	nSize,	filePtr);
+  fwrite(dataBuffer,	sizeof(unsigned short),	nSize,	filePtr);
+  */
+  //fclose(filePtr);
+
+  // Convert little endian (default) to big endian
+  for (int i = 0; i < nSize * 2 / 2; i++) {
+  	char* arr = (char*)dataBuffer;
+  	char tmp = arr[i * 2 + 1];
+  	arr[i * 2 + 1] = arr[i * 2];
+  	arr[i * 2] = tmp;
+  }
+
+  std::vector<unsigned char> png;
+
+  unsigned error = lodepng::encode(filename, (unsigned char*)dataBuffer, w, h, LCT_RGB, 16);
+  //if(!error) lodepng::save_file(png, filename.c_str());
+  
+  //lodepng::lodepng_encode24(unsigned char** out, size_t* outsize,
+  //                      const unsigned char* image, unsigned w, unsigned h);
+ 
+  free(dataBuffer);
+ 
+  return true;
+}
+
+
 
 int main( void )
 {
@@ -37,8 +149,9 @@ int main( void )
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1024, 768, "Depth Rendering", NULL, NULL);
+	window = glfwCreateWindow( windowWidth, windowHeight, "Depth Rendering", NULL, NULL);
 	if( window == NULL ){
 		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
 		getchar();
@@ -46,10 +159,7 @@ int main( void )
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-    
-    // We would expect width and height to be 1024 and 768
-    int windowWidth = 1024;
-    int windowHeight = 768;
+
     // But on MacOS X with a retina screen it'll be 1024*2 and 768*2, so we get the actual framebuffer size:
     glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
 
@@ -69,11 +179,12 @@ int main( void )
     
     // Set the mouse at the center of the screen
     glfwPollEvents();
-    glfwSetCursorPos(window, 1024/2, 768/2);
+    glfwSetCursorPos(window, windowWidth/2, windowHeight/2);
+
 
 	// Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-
+ 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
@@ -82,7 +193,7 @@ int main( void )
 	// Cull triangles which normal is not towards the camera
 	glEnable(GL_CULL_FACE);
 
-	GLuint VertexArrayID;
+	GLuint VertexArrayID;     // VAO
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
 
@@ -105,7 +216,8 @@ int main( void )
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
 	//bool res = loadOBJ("suzanne.obj", vertices, uvs, normals);
-	bool res = loadOBJ("Q97jUzc1wSS_HIGH.obj", vertices, uvs, normals);
+	//bool res = loadOBJ("Q97jUzc1wSS_HIGH.obj", vertices, uvs, normals);
+	bool res = loadOBJ("1CzjpjNF8qk_HIGH.obj", vertices, uvs, normals);
 	// bool res = loadOBJ("16b32add7aa946f283740b9c1c1646c0.obj", vertices, uvs, normals);
 
 	// Note: use unsigned int because of too many indices
@@ -148,6 +260,7 @@ int main( void )
 	// ---------------------------------------------
 
 	// The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+	// ER: Duplicate this six times
 	GLuint FramebufferName = 0;
 	glGenFramebuffers(1, &FramebufferName);
 	glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
@@ -157,16 +270,16 @@ int main( void )
 	glGenTextures(1, &renderedTexture);
 	
 	// "Bind" the newly created texture : all future texture functions will modify this texture
-	// glBindTexture(GL_TEXTURE_2D, renderedTexture);
+	glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
 	// Give an empty image to OpenGL ( the last "0" means "empty" )
-	// glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, windowWidth, windowHeight, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB32F, windowWidth, windowHeight, 0,GL_RGB, GL_FLOAT, 0);
 
 	// Poor filtering
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	// The depth buffer
 	GLuint depthrenderbuffer;
@@ -176,32 +289,35 @@ int main( void )
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
 	//// Alternative : Depth texture. Slower, but you can sample it later in your shader
+	// ER: Duplicate this six times
 	GLuint depthTexture;
 	glGenTextures(1, &depthTexture);
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT24, 1024, 768, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT16, windowWidth, windowHeight, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	// Set "renderedTexture" as our colour attachement #0
-	// glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
 
 	//// Depth texture alternative : 
+	// ER: Duplicate this six times
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
 
 
 	// Set the list of draw buffers.
 	// GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-	GLenum DrawBuffers[1] = {GL_DEPTH_ATTACHMENT};
-	glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+	// Pipeline: makes sure that output from 1st pass goes to 2nd pass
+	GLenum DrawBuffers[2] = {GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT};
+	glDrawBuffers(2, DrawBuffers); // "1" is the size of DrawBuffers
 
 	// Always check that our framebuffer is ok
 	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		return false;
 
-	
+
 	// The fullscreen quad's FBO
 	static const GLfloat g_quad_vertex_buffer_data[] = { 
 		-1.0f, -1.0f, 0.0f,
@@ -224,6 +340,7 @@ int main( void )
    
    	double lastTime = glfwGetTime();
 	int nbFrames = 0; 
+	bool screenshot = false;
 	
 	do{
 
@@ -248,10 +365,26 @@ int main( void )
 		glUseProgram(programID);
 
 		// Compute the MVP matrix from keyboard and mouse input
-		computeMatricesFromInputs();
+		char filename[50];
+		bool do_screenshot = computeMatricesFromInputs(filename);
 		glm::mat4 ProjectionMatrix = getProjectionMatrix();
 		glm::mat4 ViewMatrix = getViewMatrix();
 		glm::mat4 ModelMatrix = glm::mat4(1.0);
+
+		/*
+		printf("Before ");
+		for (int i = 0; i < 16; i++)
+			printf("%f ", ProjectionMatrix[i / 4][i % 4]);
+	
+		printf("\n");
+		//BuildPerspProjMat(ProjectionMatrix, 1.0489180166567196, 1.0, 0.0, 128.0);
+		printf("After ");
+		for (int i = 0; i < 16; i++)
+			printf("%f ", ProjectionMatrix[i / 4][i % 4]);
+
+		printf("\n");
+		*/
+
 		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 		// Send our transformation to the currently bound shader, 
@@ -335,8 +468,8 @@ int main( void )
 
 		// Bind our texture in Texture Unit 0
 		glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, renderedTexture);
-		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glBindTexture(GL_TEXTURE_2D, renderedTexture);
+		//glBindTexture(GL_TEXTURE_2D, depthTexture);
 		// Set our "renderedTexture" sampler to use Texture Unit 0
 		glUniform1i(texID, 0);
 
@@ -359,6 +492,25 @@ int main( void )
 
 		glDisableVertexAttribArray(0);
 
+
+		if (false) {
+			printf("screenshot\n");
+			char buffer[100];
+			sprintf(buffer, "/home/jerry/Pictures/%s", filename);
+			printf("saving screenshot to %s", buffer);
+			save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
+			screenshot = true;
+		}
+
+		if (do_screenshot) {
+			char buffer[100];
+			printf("before: %s\n", buffer);
+			sprintf(buffer, "/home/jerry/Pictures/%s_mist.png", filename);
+			printf("after: %s\n", buffer);
+			printf("file name is %s\n", filename);
+			printf("saving screenshot to %s\n", buffer);
+			save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
+		}
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -389,3 +541,40 @@ int main( void )
 	return 0;
 }
 
+void BuildPerspProjMat(glm::mat4 &m, float fov, float aspect, 
+	float znear, float zfar) {
+  float xymax = znear * tan(fov/2);
+  float ymin = -xymax;
+  float xmin = -xymax;
+
+  float width = xymax - xmin;
+  float height = xymax - ymin;
+
+  float depth = zfar - znear;
+  float q = -(zfar + znear) / depth;
+  float qn = -2 * (zfar * znear) / depth;
+
+  float w = 2 * znear / (width + 0.000001);
+  w = w / aspect;
+  float h = 2 * znear / (height + 0.000001);
+
+  //m[0][0]  = w;
+  m[0][1]  = (float) 0.0;
+  m[0][2]  = (float) 0.0;
+  m[0][3]  = (float) 0.0;
+
+  m[1][0]  = (float) 0.0;
+  //m[1][1]  = h;
+  m[1][2]  = (float) 0.0;
+  m[1][3]  = (float) 0.0;
+
+  m[2][0]  = (float) 0.0;
+  m[2][1]  = (float) 0.0;
+  m[2][2] = q;
+  m[2][3] = (float) -1.0;
+
+  m[3][0] = (float) 0.0;
+  m[3][1] = (float) 0.0;
+  //m[3][2] = qn;
+  m[3][3] = (float) 0.0;
+}

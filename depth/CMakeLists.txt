@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.0)
 project (Tutorials)
 
 find_package(OpenGL REQUIRED)
-
+find_package(GLUT REQUIRED)
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
     message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
@@ -39,12 +39,16 @@ include_directories(
 	external/glew-1.13.0/include/
 	external/assimp-3.0.1270/include/
 	external/bullet-2.81-rev2613/src/
+	external/FreeImage/Source/
+	external/lodepng/
+	${GLUT_INCLUDE_DIRS}
 	.
 )
 
 set(ALL_LIBS
 	${OPENGL_LIBRARY}
 	glfw
+	${freeimage}
 	GLEW_1130
 )
 
@@ -73,6 +77,9 @@ add_executable(depth_render
 	common/text2D.hpp
 	common/text2D.cpp
 	
+	external/lodepng/lodepng.h
+	external/lodepng/lodepng.cpp
+
 	depth_render/StandardShadingRTT.vertexshader
 	depth_render/StandardShadingRTT.fragmentshader
 	depth_render/Passthrough.vertexshader
@@ -80,6 +87,7 @@ add_executable(depth_render
 )
 target_link_libraries(depth_render
 	${ALL_LIBS}
+	${GLUT_LIBRARY}
 )
 # Xcode and Visual working directories
 set_target_properties(depth_render PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")

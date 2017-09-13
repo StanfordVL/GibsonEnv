@@ -53,7 +53,10 @@ bool loadOBJ(
 		if ( strcmp( lineHeader, "v" ) == 0 ){
 			v_count ++;
 			glm::vec3 vertex;
-			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
+			//fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
+			// opengl = blender rotate around x at 90
+			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.z, &vertex.y);
+			vertex.y = -vertex.y;
 			temp_vertices.push_back(vertex);
 		}else if ( strcmp( lineHeader, "vt" ) == 0 ){
 			glm::vec2 uv;
