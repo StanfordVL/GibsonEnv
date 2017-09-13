@@ -30,25 +30,25 @@ glm::mat4 getProjectionMatrix(){
 
 // Initial position : on +Z
 // point 0 view 1
-//glm::vec3 position = glm::vec3( 0.033474, 1.53312, 0.002227 );
-// Location: rotate by 90 along x
+// glm::vec3 position = glm::vec3( 0.033474, 1.53312, 0.002227 );
+// opengl location = blender rotate by 90 along x
 // original (blender): 0.033474, -0.002227, 1.53312
+
 // point 0 view 2
-//glm::vec3 position = glm::vec3( -1.096474, 1.535375, -0.124639 ); // point 0 view 2 adapted
+// glm::vec3 position = glm::vec3( -1.096474, 1.535375, -0.124639 ); // point 0 view 2 adapted
 // original (blender): -1.096474, 0.124639, 1.535375
+
 glm::vec3 position = glm::vec3(-1.096474, 0.124639, 1.535375); // point 0 view 2 original (blender):
 
 // Point 6 view 0
 //glm::vec3 position = glm::vec3( -1.096474, 1.535375, -0.124639 );
 
-//glm::rotateX(position, glm::radians(90.0f)); 
-//glm::rotateX(position, glm::radians(90.0f));
+
+
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
 float verticalAngle = 0.0f;
-// Initial Field of View
-float initialFoV = 45.0f;
 
 float speed = 3.0f; // 3 units / second
 float mouseSpeed = 0.005f;
@@ -56,6 +56,9 @@ float mouseSpeed = 0.005f;
 float currentPoseStartTime = 0;
 int currentPoseRotCount = 0;
 
+
+// Automatically load all poses of a model, and render corresponding pngs
+// Useful for diagnostics
 void getPositionRotation(glm::vec3 &position, float& rotX, float& rotY, float& rotZ, char* filename) {
 	// Change position, rotation and Z value
 	printf("Updating position rotation\n");
@@ -150,15 +153,8 @@ bool computeMatricesFromInputs(char* filename){
 		position -= right * deltaTime * speed;
 	}
 
-	float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
-	// TODO: control here
-	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-	// ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
-	// BuildPerspProjMat(ProjectionMatrix, 1.0489180166567196, 1.0, 0.0, 128.0);
-	
-	//ProjectionMatrix = glm::perspective(1.0489180166567196f, 1.0f, 0.1f, 5000.0f);
-	//ProjectionMatrix = glm::perspective(1.0489180166567196f, 1.0f, 0.0f, 128.0f);
+	// Hardcoded pose information
 	// Camera matrix
 	// Point 0 view 1
 	/*float rotationX = 1.2462860345840454;
@@ -169,8 +165,9 @@ bool computeMatricesFromInputs(char* filename){
 	float rotationX = 1.3605239391326904;
 	float rotationY = -0.009078502655029297;
 	float rotationZ = -1.441698670387268;
+	float fov 		= 0.9698680134771724f
 
-	ProjectionMatrix = glm::perspective(0.9698680134771724f, 1.0f, 0.1f, 5000.0f);
+	ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
 
 	// Point 6 view 0
 	//float rotationX = 1.4468656778335571;
@@ -179,62 +176,15 @@ bool computeMatricesFromInputs(char* filename){
 
 
 	if (currentTime - currentPoseStartTime > 1) {
-		getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
+		// UNCOMMENT THIS, in order to render png at a new position every second
+		//getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
 		currentPoseStartTime = currentTime;
 		currentPoseRotCount += 1;
 		do_screenshot = true;
 	}
 
-	//glm::vec3 pose_direction = glm::vec3( 0.856556 -0.241792 -0.4559042); 
-	// blender  Vector((0.9129738807678223, 0.2546083927154541, -0.31883105635643005))
-	// Blender initial camera direction: (0, 0, -1)
-	glm::vec4 pose_d = glm::vec4(0.0, 0.0, -1.0, 1.0);
-	
-	glm::mat4 pose_trans = glm::mat4(1.0);
 
-	pose_trans = glm::rotate(pose_trans, -rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
-	pose_trans = glm::rotate(pose_trans, -rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
-	pose_trans = glm::rotate(pose_trans, -rotationZ, glm::vec3(0.0f, 0.0f, 1.0f));
-
-	pose_d = pose_trans * pose_d;
-	up4    = pose_trans * up4;
-	
-	//pose_d[1] = - pose_d[1];
-	//glm::mat4 pose_trans = glm::mat4(1.0);
-
-	/*
-	pose_trans = glm::rotate(pose_trans, rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
-	pose_d = pose_trans * pose_d;
-	pose_trans = glm::mat4(1.0);
-	pose_trans = glm::rotate(pose_trans, rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
-	pose_d = pose_trans * pose_d;
-	pose_trans = glm::mat4(1.0);
-	pose_trans = glm::rotate(pose_trans, rotationZ, glm::vec3(0.0f, 0.0f, 1.0f));
-	pose_d = pose_trans * pose_d;
-
-	*/
-	// pose_d[1] = - pose_d[1];
-
-	glm::vec3 pose_direction(pose_d);
-	glm::vec3 up(up4);
-	//printf("pose direction %f %f %f %f\n", pose_d[0], pose_d[1], pose_d[2], pose_d[3]);
-	// printf("pose direction %f %f %f\n", pose_direction[0], pose_direction[1], pose_direction[2]);
-	//printf("     direction %f %f %f\n", direction[0], direction[1], direction[2]);
-
-	//direction = glm::vec3( 0.912973, -0.2546083, -0.3188310); 
-
-	// pose_direction = glm::rotateX(pose_direction, rotationX);
-	//pose_direction = glm::rotateY(pose_direction, rotationY);
-	//pose_direction = glm::rotateZ(pose_direction, rotationZ);
-
-	//glm::vec3 pose_direction = glm::vec3(-0.094399, 0.601198, -0.793505);
-
-	// printf("moved direction %f %f %f\n", direction[0], direction[1], direction[2]);
-
-	// printf("final direction %f %f %f\n", pose_direction[0], pose_direction[1], pose_direction[2]);
-
-	// First way: lookAt function
-	
+	// First way (deprecated) : lookAt function
 	/*
 	ViewMatrix       = glm::lookAt(
 								position,           // Camera is here
@@ -247,17 +197,35 @@ bool computeMatricesFromInputs(char* filename){
 	for (int i = 0; i < 4; ++i) {
 		printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
 	}
-	*/
-	
-	/*
 	printf("Current view matrix\n");
 	for (int i = 0; i < 4; ++i) {
 		printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
 	}
+	printf("Up  vector: %f %f %f\n", up[0], up[1], up[2]);
+	printf("pos vector: %f %f %f\n", position[0], position[1], position[2]);
+	*/
+
+
+	/* Second way (deprecated): manually construct up direction
+	glm::vec4 pose_d = glm::vec4(0.0, 0.0, -1.0, 1.0);
+	
+	glm::mat4 pose_trans = glm::mat4(1.0);
+
+	pose_trans = glm::rotate(pose_trans, -rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
+	pose_trans = glm::rotate(pose_trans, -rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+	pose_trans = glm::rotate(pose_trans, -rotationZ, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	pose_d = pose_trans * pose_d;
+	up4    = pose_trans * up4;
+
+
+	glm::vec3 pose_direction(pose_d);
+	glm::vec3 up(up4);
+	//printf("pose direction %f %f %f %f\n", pose_d[0], pose_d[1], pose_d[2], pose_d[3]);
+	//printf("pose direction %f %f %f\n", pose_direction[0], pose_direction[1], pose_direction[2]);
+	//printf("     direction %f %f %f\n", direction[0], direction[1], direction[2]);
 	*/
 	
-	//printf("Up  vector: %f %f %f\n", up[0], up[1], up[2]);
-	//printf("pos vector: %f %f %f\n", position[0], position[1], position[2]);
 	
 	// Third way
 	glm::quat viewDirection;
@@ -265,7 +233,6 @@ bool computeMatricesFromInputs(char* filename){
 	viewDirection = glm::quat(viewDirectionEuler);
 
 	ViewMatrix = glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
-	//ViewMatrix = glm::toMat4(-viewDirection) * glm::translate(glm::mat4(1.0), -position);
 	
 	/*printf("Third   view matrix\n");
 	for (int i = 0; i < 4; ++i) {

@@ -5,9 +5,6 @@
 #include <string>
 #include <iostream>
 
-#include <FreeImage.h>
-//#include <FreeImageIO.h>
-
 // Include GLEW
 #include <GL/glew.h>
 #include <GL/glut.h>
