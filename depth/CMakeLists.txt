@@ -65,7 +65,6 @@ include_directories(
 	external/glfw-3.1.2/include/GLFW/
 	external/glm-0.9.7.1/
     ${GLEW_INCLUDE_DIRS}
-	external/bullet-2.81-rev2613/src/
 	external/lodepng/
 	${GLUT_INCLUDE_DIRS}
 	.
