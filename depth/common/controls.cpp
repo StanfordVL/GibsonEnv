@@ -79,7 +79,7 @@ void getPositionRotation(glm::vec3 &position, float& rotX, float& rotY, float& r
 		int count = fscanf(file, "%f %f %f %f %f %f %s\n", &pos[0], &pos[1], &pos[2], &rot[0], &rot[1], &rot[2], namebuf );
 		// printf("current count: %d %s\n", count, namebuf);
 		assert(count == 7);
-		
+
 		//fgets(filename, 30, file);
 		//printf("current count: %d %s\n", count, filename);
 		i ++;
@@ -120,18 +120,18 @@ bool computeMatricesFromInputs(char* filename){
 
 	// Direction : Spherical coordinates to Cartesian coordinates conversion
 	glm::vec3 direction(
-		cos(verticalAngle) * sin(horizontalAngle), 
+		cos(verticalAngle) * sin(horizontalAngle),
 		sin(verticalAngle),
 		cos(verticalAngle) * cos(horizontalAngle)
 	);
-	
+
 	// Right vector
 	glm::vec3 right = glm::vec3(
-		sin(horizontalAngle - 3.14f/2.0f), 
+		sin(horizontalAngle - 3.14f/2.0f),
 		0,
 		cos(horizontalAngle - 3.14f/2.0f)
 	);
-	
+
 	// Up vector
 	// glm::vec3 up = glm::cross( right, direction );
 	glm::vec4 up4 = glm::vec4(0.0, 1.0, 0.0, 1.0);
@@ -165,7 +165,7 @@ bool computeMatricesFromInputs(char* filename){
 	float rotationX = 1.3605239391326904;
 	float rotationY = -0.009078502655029297;
 	float rotationZ = -1.441698670387268;
-	float fov 		= 0.9698680134771724f
+	float fov 		= 0.9698680134771724;
 
 	ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
 
@@ -208,7 +208,7 @@ bool computeMatricesFromInputs(char* filename){
 
 	/* Second way (deprecated): manually construct up direction
 	glm::vec4 pose_d = glm::vec4(0.0, 0.0, -1.0, 1.0);
-	
+
 	glm::mat4 pose_trans = glm::mat4(1.0);
 
 	pose_trans = glm::rotate(pose_trans, -rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -225,15 +225,15 @@ bool computeMatricesFromInputs(char* filename){
 	//printf("pose direction %f %f %f\n", pose_direction[0], pose_direction[1], pose_direction[2]);
 	//printf("     direction %f %f %f\n", direction[0], direction[1], direction[2]);
 	*/
-	
-	
+
+
 	// Third way
 	glm::quat viewDirection;
 	glm::vec3 viewDirectionEuler(rotationX, rotationY, rotationZ);
 	viewDirection = glm::quat(viewDirectionEuler);
 
 	ViewMatrix = glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
-	
+
 	/*printf("Third   view matrix\n");
 	for (int i = 0; i < 4; ++i) {
 		printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
