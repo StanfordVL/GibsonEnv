@@ -124,7 +124,15 @@ def main():
             step = i + epoch * len(dataloader)
             
             mask = (torch.sum(source,1)==0).float().unsqueeze(1)
-            source += mask.repeat(1,3,1,1) * mean.view(1,3,1,1).repeat(opt.batchsize,1,1024,2048)
+            source += mask.repeat(1,3,1,1) * F.upsample(F.max_pool2d(source, 2), scale_factor=2, mode = 'nearest').data
+            
+            mask2 = (torch.sum(source,1)==0).float().unsqueeze(1)
+            source += mask2.repeat(1,3,1,1) * F.upsample(F.max_pool2d(source, 4), scale_factor=4, mode = 'nearest').data
+            
+            mask3 = (torch.sum(source,1)==0).float().unsqueeze(1)
+            source += mask3.repeat(1,3,1,1) * F.upsample(F.max_pool2d(source, 4), scale_factor=8, mode = 'nearest').data
+            
+            
             #from IPython import embed; embed()
             
             source_depth = source_depth[:,:,:,0].unsqueeze(1)
