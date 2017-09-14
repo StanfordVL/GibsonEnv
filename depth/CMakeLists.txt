@@ -36,7 +36,11 @@ find_library(ZeroMQ_LIBRARY
 find_package(GLEW REQUIRED)
 if (GLEW_FOUND)
     include_directories(${GLEW_INCLUDE_DIRS})
-    #link_libraries(${GLEW_LIBRARIES})
+    link_libraries(${GLEW_LIBRARIES})
+    add_definitions(${GLEW_DEFINITIONS})
+    message(${GLEW_LIBRARIES})
+else()
+    message("GLEW NOT FOUND")
 endif()
 
 find_package(ASSIMP REQUIRED)
@@ -50,26 +54,31 @@ add_subdirectory (external)
 
 # On Visual 2005 and above, this module can set the debug working directory
 
-if(INCLUDE_DISTRIB)
-	add_subdirectory(distrib)
-endif(INCLUDE_DISTRIB)
+find_package(glfw REQUIRED)
+
+message("GLFW" ${GLFW3_INCLUDE_DIR}/GLFW)
+message("GLFW lib" ${GLFW3_LIBRARY})
 
 
 
 include_directories(
-	external/glfw-3.1.2/include/GLFW/
     ${GLEW_INCLUDE_DIRS}
+    ${GLFW3_INCLUDE_DIR}/GLFW
 	external/lodepng/
 	${GLUT_INCLUDE_DIRS}
 	.
     ${ZeroMQ_INCLUDE_DIR}
 )
 
+
 set(ALL_LIBS
 	${OPENGL_LIBRARY}
-	glfw
 	${freeimage}
-	GLEW_1130
+    ${GLEW_LIBRARY}
+    GLEW_1130
+	${GLUT_LIBRARY}
+    ${ZeroMQ_LIBRARY}
+    ${GLFW3_LIBRARY}
 )
 
 add_definitions(
@@ -108,9 +117,6 @@ add_executable(depth_render
 )
 target_link_libraries(depth_render
 	${ALL_LIBS}
-	${GLUT_LIBRARY}
-    ${ZeroMQ_LIBRARY}
-    ${GLEW_LIBRARIES}
 )
 # Xcode and Visual working directories
 set_target_properties(depth_render PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
