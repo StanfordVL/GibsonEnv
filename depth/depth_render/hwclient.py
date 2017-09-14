@@ -33,8 +33,9 @@ for request in range(10):
     print(data.shape)
 
     #data = np.log(data / 256 * (256/np.log(256))).astype(np.uint8) 
-    data = (data % 256).astype(np.uint8) 
-
+    #data = (data % 256).astype(np.uint8) 
+    data = (data / 256.0).astype(np.uint8) * 12
+    print(np.max(data), np.min(data))
 
     # todo: debug
     data = data[:][::-1][:]

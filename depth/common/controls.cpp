@@ -58,10 +58,10 @@ int currentPoseRotCount = 0;
 
 glm::quat initialDirections[] = {
 	glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)),
-	glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
 	glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
-	glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f)),
-	glm::quat(glm::vec3(0.0f, glm::radians(270.0f), 0.0f)),
+	glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(-90.0f), 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(-180.0f), 0.0f)),
 	//glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
 	//glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f)),
 	//glm::quat(glm::vec3(0.0f, glm::radians(270.0f), 0.0f)),
