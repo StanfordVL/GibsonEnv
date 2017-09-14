@@ -56,6 +56,18 @@ float mouseSpeed = 0.005f;
 float currentPoseStartTime = 0;
 int currentPoseRotCount = 0;
 
+glm::quat initialDirections[] = {
+	glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)),
+	glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(270.0f), 0.0f)),
+	//glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
+	//glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f)),
+	//glm::quat(glm::vec3(0.0f, glm::radians(270.0f), 0.0f)),
+	glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f))
+};
+
 
 // Automatically load all poses of a model, and render corresponding pngs
 // Useful for diagnostics
@@ -94,6 +106,8 @@ void getPositionRotation(glm::vec3 &position, float& rotX, float& rotY, float& r
 	printf("Successfully read pose file line %d\n", currentPoseRotCount);
 	fclose(file);
 }
+
+
 
 
 bool computeMatricesFromInputs(char* filename){
@@ -167,7 +181,9 @@ bool computeMatricesFromInputs(char* filename){
 	float rotationX = 1.3605239391326904;
 	float rotationY = -0.009078502655029297;
 	float rotationZ = -1.441698670387268;
-	float fov 		= 0.9698680134771724;
+	//float fov 		= 0.9698680134771724;
+	float fov 		= glm::radians(90.0f);
+
 
 	ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
 
@@ -179,7 +195,9 @@ bool computeMatricesFromInputs(char* filename){
 
 	//if (currentTime - currentPoseStartTime > 1) {
 		// UNCOMMENT THIS, in order to render png at a new position every second
-		getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
+		//getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
+		glm::quat initial = initialDirections[currentPoseRotCount];
+		//convertRotation(rotationX, rotationY, rotationZ, currentPoseRotCount);
 		currentPoseStartTime = currentTime;
 		currentPoseRotCount += 1;
 		do_screenshot = true;
@@ -232,7 +250,7 @@ bool computeMatricesFromInputs(char* filename){
 	// Third way
 	glm::quat viewDirection;
 	glm::vec3 viewDirectionEuler(rotationX, rotationY, rotationZ);
-	viewDirection = glm::quat(viewDirectionEuler);
+	viewDirection = glm::quat(viewDirectionEuler) * initial;
 
 	ViewMatrix = glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
 
