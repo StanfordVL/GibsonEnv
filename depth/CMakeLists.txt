@@ -90,7 +90,6 @@ add_definitions(
 )
 
 
-# Tutorial 14
 add_executable(depth_render
 	depth_render/render.cpp
 	common/shader.cpp

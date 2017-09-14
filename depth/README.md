@@ -5,6 +5,8 @@ All external libraries have been included. You only need CMake on your computer 
 ### Install
 ```shell
 sudo apt-get install libzmq3-dev
+sudo apt-get install libglew-dev
+sudo apt-get install libglm-dev
 ```
 ### Steps
 Download models
