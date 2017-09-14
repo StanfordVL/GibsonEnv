@@ -4,10 +4,12 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <X11/Xlib.h>
 
 // Include GLEW
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include <GL/glx.h>
 #include "lodepng.h"
 
 // Include GLFW
@@ -30,6 +32,12 @@ using namespace std;
 // We would expect width and height to be 1024 and 768
 int windowWidth = 512;
 int windowHeight = 512;
+
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
+static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
+static glXMakeContextCurrentARBProc   glXMakeContextCurrentARB   = NULL;
+
 
 glm::vec3 GetOGLPos(int x, int y)
 {
@@ -130,18 +138,97 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
 }
 
 
+void error_callback(int error, const char* description)
+{
+	cout << "Error callback" << endl;
+    puts(description);
+    printf("%X\n", error);
+}
 
 int main( int argc, char * argv[] )
 {
 
-    cmdline::parser cmdp;
-    cmdp.add<std::string>("obj", 'b', "obj file name", true, "");
-    cmdp.parse_check(argc, argv);
-    std::string name_obj = cmdp.get<std::string>("obj");
+    //cmdline::parser cmdp;
+    //cmdp.add<std::string>("obj", 'b', "obj file name", true, "");
+    //cmdp.parse_check(argc, argv);
+    //std::string name_obj = cmdp.get<std::string>("obj");
+
+    glfwSetErrorCallback(error_callback);
+
+    const char *displayName = NULL;
+	Display* display = XOpenDisplay( displayName );
+
+	if (display == NULL) {
+		printf("Failed to properly open the display\n");
+		return -1;	
+	}
+
+	printf("opened this display, default %i\n", DefaultScreen(display));
+
+	glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+	glXMakeContextCurrentARB   = (glXMakeContextCurrentARBProc)   glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent"      );
+
+
+	static int visualAttribs[] = { None };
+	int numberOfFramebufferConfigurations = 0;
+
+	int err = glxewInit();
+
+
+	printf("starting from this point %d\n", err );
+	GLXFBConfig* fbConfigs = glXChooseFBConfig( display, 0/*DefaultScreen(display)*/, glAttrs, &numberOfFramebufferConfigurations );
+
+	if (fbConfigs == NULL) {
+		printf("Failed to properly set up frame buffer configurations\n");
+		return -1;
+	}
+
+	int context_attribs[] = {
+	    GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
+	    GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+	    GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+	    GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+	    None
+	};
+
+
+	printf("Running up to this point %X\n", (char *)fbConfigs);
+	 
+	// This breaks if DISPLAY is not set as 0
+	GLXContext openGLContext = glXCreateContextAttribsARB( display, fbConfigs[0], 0, True, context_attribs);
 
 
 
+	std::string name_obj = "1CzjpjNF8qk_HIGH.obj";
+    cout << name_obj << endl;
+	
 	// Initialise GLFW
+
+
+	int pbufferAttribs[] = {
+	    GLX_PBUFFER_WIDTH,  32,
+	    GLX_PBUFFER_HEIGHT, 32,
+	    None
+	};
+	GLXPbuffer pbuffer = glXCreatePbuffer( display, fbConfigs[0], pbufferAttribs );
+
+
+	// clean up:
+	XFree( fbConfigs );
+	XSync( display, False );
+	 
+
+	if ( !glXMakeContextCurrent( display, pbuffer, pbuffer, openGLContext ) )
+	{
+	    printf("Something is wrong\n");
+	    return -1;
+	    // something went wrong
+	}
+
+
+    printf("Does it make it to this point\n");
+
+    
 	if( !glfwInit() )
 	{
 		fprintf( stderr, "Failed to initialize GLFW\n" );
@@ -149,47 +236,60 @@ int main( int argc, char * argv[] )
 		return -1;
 	}
 
+    /*
+	glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+	*/
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( windowWidth, windowHeight, "Depth Rendering", NULL, NULL);
+	
+	
+	//window = glfwCreateWindow( windowWidth, windowHeight, "Depth Rendering", NULL, NULL);
+	/*
 	if( window == NULL ){
 		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
 		getchar();
 		glfwTerminate();
 		return -1;
 	}
-	glfwMakeContextCurrent(window);
+	*/
+	
+	//glfwMakeContextCurrent(window);
+	
 
     // But on MacOS X with a retina screen it'll be 1024*2 and 768*2, so we get the actual framebuffer size:
-    glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+    //glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
 
 	// Initialize GLEW
+	
+
 	glewExperimental = true; // Needed for core profile
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
+	GLenum err = glewInit();
+	if ( err!= GLEW_OK) {
+		printf("Glew error %d\n", err);
+		fprintf(stderr, "Failed to initialize GLEW %s\n", glewGetErrorString(err));
 		getchar();
-		glfwTerminate();
+		//glfwTerminate();
 		return -1;
 	}
 
 	// Ensure we can capture the escape key being pressed below
-	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	//glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     // Hide the mouse and enable unlimited mouvement
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    
     // Set the mouse at the center of the screen
-    glfwPollEvents();
-    glfwSetCursorPos(window, windowWidth/2, windowHeight/2);
+    //glfwPollEvents();
+    //glfwSetCursorPos(window, windowWidth/2, windowHeight/2);
 
 
 	// Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
@@ -341,14 +441,22 @@ int main( int argc, char * argv[] )
 	GLuint texID = glGetUniformLocation(quad_programID, "renderedTexture");
 	GLuint timeID = glGetUniformLocation(quad_programID, "time");
 
-   	double lastTime = glfwGetTime();
+   	//double lastTime = glfwGetTime();
+	double lastTime = 0;
 	int nbFrames = 0;
 	bool screenshot = false;
+
+	int i = 0;
+
 
 	do{
 
 		// Measure speed
-		double currentTime = glfwGetTime();
+		//double currentTime = glfwGetTime();
+
+		double currentTime = 0;
+
+		printf("Running main render loop %f\n");
 		nbFrames++;
 		if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1sec ago
 			// printf and reset
@@ -387,6 +495,8 @@ int main( int argc, char * argv[] )
 
 		printf("\n");
 		*/
+
+
 
 		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
@@ -456,8 +566,7 @@ int main( int argc, char * argv[] )
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
 
-
-
+		/*
 		// Render to the screen
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // Render on the whole framebuffer, complete from the lower left corner to the upper right
@@ -494,7 +603,7 @@ int main( int argc, char * argv[] )
 		glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
 
 		glDisableVertexAttribArray(0);
-
+		*/
 
 		if (false) {
 			printf("screenshot\n");
@@ -507,21 +616,23 @@ int main( int argc, char * argv[] )
 
 		if (do_screenshot) {
 			char buffer[100];
-			printf("before: %s\n", buffer);
+			//printf("before: %s\n", buffer);
 			sprintf(buffer, "/home/jerry/Pictures/%s_mist.png", filename);
-			printf("after: %s\n", buffer);
-			printf("file name is %s\n", filename);
-			printf("saving screenshot to %s\n", buffer);
+			//printf("after: %s\n", buffer);
+			//printf("file name is %s\n", filename);
+			//printf("saving screenshot to %s\n", buffer);
 			save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
 		}
 
 		// Swap buffers
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		//glfwSwapBuffers(window);
+		//glfwPollEvents();
+		i ++;
 
-	} // Check if the ESC key was pressed or the window was closed
-	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-		   glfwWindowShouldClose(window) == 0 );
+	} while (true);
+	// Check if the ESC key was pressed or the window was closed
+	//while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+	//	   glfwWindowShouldClose(window) == 0 );
 
 	// Cleanup VBO and shader
 	glDeleteBuffers(1, &vertexbuffer);
@@ -539,7 +650,7 @@ int main( int argc, char * argv[] )
 
 
 	// Close OpenGL window and terminate GLFW
-	glfwTerminate();
+	//glfwTerminate();
 
 	return 0;
 }

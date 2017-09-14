@@ -14,3 +14,4 @@ OpenGL-tutorial_v*
 build/
 distrib/
 *.obj
+depth_render

@@ -98,7 +98,7 @@ void getPositionRotation(glm::vec3 &position, float& rotX, float& rotY, float& r
 
 bool computeMatricesFromInputs(char* filename){
 
-	bool do_screenshot = false;
+	bool do_screenshot = true;
 
 	// glfwGetTime is called only once, the first time this function is called
 	static double lastTime = glfwGetTime();
@@ -109,10 +109,10 @@ bool computeMatricesFromInputs(char* filename){
 
 	// Get mouse position
 	double xpos, ypos;
-	glfwGetCursorPos(window, &xpos, &ypos);
+	//glfwGetCursorPos(window, &xpos, &ypos);
 
-	// Reset mouse position for next frame
-	glfwSetCursorPos(window, 512/2, 512/2);
+	// Reset mouse position for next framAze
+	//glfwSetCursorPos(window, 512/2, 512/2);
 
 	// Compute new orientation
 	horizontalAngle += mouseSpeed * float( 512/2 - xpos );
@@ -136,6 +136,7 @@ bool computeMatricesFromInputs(char* filename){
 	// glm::vec3 up = glm::cross( right, direction );
 	glm::vec4 up4 = glm::vec4(0.0, 1.0, 0.0, 1.0);
 
+	/*
 	// Move forward
 	if (glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
 		position += direction * deltaTime * speed;
@@ -152,6 +153,7 @@ bool computeMatricesFromInputs(char* filename){
 	if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS){
 		position -= right * deltaTime * speed;
 	}
+	*/
 
 
 	// Hardcoded pose information
@@ -175,13 +177,13 @@ bool computeMatricesFromInputs(char* filename){
 	//float rotationZ = -0.22472861409187317;
 
 
-	if (currentTime - currentPoseStartTime > 1) {
+	//if (currentTime - currentPoseStartTime > 1) {
 		// UNCOMMENT THIS, in order to render png at a new position every second
-		//getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
+		getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
 		currentPoseStartTime = currentTime;
 		currentPoseRotCount += 1;
 		do_screenshot = true;
-	}
+	//}
 
 
 	// First way (deprecated) : lookAt function
