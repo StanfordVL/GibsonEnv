@@ -7,12 +7,12 @@
 import zmq
 import numpy as np
 import PIL
-from PIL import Image 
+from PIL import Image
 import scipy.misc
 
 context = zmq.Context()
 
-img_path  = "/home/jerry/Pictures/hwclient"
+img_path  = "./"
 
 #  Socket to talk to server
 print("Connecting to hello world server...")

@@ -62,7 +62,7 @@ int currentPoseRotCount = 0;
 void getPositionRotation(glm::vec3 &position, float& rotX, float& rotY, float& rotZ, char* filename) {
 	// Change position, rotation and Z value
 	printf("Updating position rotation\n");
-	const char * path = "/home/jerry/Desktop/view3d/realenv/depth/posefile";
+	const char * path = "posefile";
 	FILE * file = fopen(path, "r");
 	if( file == NULL ){
 		printf("Impossible to open the file !\n");
