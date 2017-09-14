@@ -49,10 +49,6 @@ endif()
 add_subdirectory (external)
 
 # On Visual 2005 and above, this module can set the debug working directory
-cmake_policy(SET CMP0026 OLD)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/rpavlik-cmake-modules-fe2273")
-include(CreateLaunchers)
-include(MSVCMultipleProcessCompile) # /MP
 
 if(INCLUDE_DISTRIB)
 	add_subdirectory(distrib)
@@ -120,8 +116,6 @@ target_link_libraries(depth_render
 )
 # Xcode and Visual working directories
 set_target_properties(depth_render PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
-create_target_launcher(depth_render WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
-
 
 
 
