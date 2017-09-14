@@ -78,7 +78,8 @@ set(ALL_LIBS
     GLEW_1130
 	${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
-    ${GLFW3_LIBRARY}
+    #${GLFW3_LIBRARY}
+    glfw
 )
 
 add_definitions(
@@ -158,10 +159,6 @@ target_link_libraries(demo
 
 # Xcode and Visual working directories
 set_target_properties(demo PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
-
-
-
-
 
 
 add_executable(hwclient
