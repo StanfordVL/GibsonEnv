@@ -15,16 +15,40 @@ if( CMAKE_BINARY_DIR MATCHES " " )
 	message( "Your Build Directory contains spaces. If you experience problems when compiling, this can be the cause." )
 endif()
 
+## use this to globally use C++11 with in our project
+set(CMAKE_CXX_STANDARD 11)
+## load in pkg-config support
+find_package(PkgConfig)
+## use pkg-config to get hints for 0mq locations
+pkg_check_modules(PC_ZeroMQ QUIET zmq)
+## use the hint from above to find where 'zmq.hpp' is located
+find_path(ZeroMQ_INCLUDE_DIR
+        NAMES zmq.hpp
+        PATHS ${PC_ZeroMQ_INCLUDE_DIRS}
+        )
+
+## use the hint from about to find the location of libzmq
+find_library(ZeroMQ_LIBRARY
+        NAMES zmq
+        PATHS ${PC_ZeroMQ_LIBRARY_DIRS}
+        )
+
+find_package(GLEW REQUIRED)
+if (GLEW_FOUND)
+    include_directories(${GLEW_INCLUDE_DIRS})
+    #link_libraries(${GLEW_LIBRARIES})
+endif()
+
+find_package(ASSIMP REQUIRED)
+if(ASSIMP_FOUND)
+    include_directories(${ASSIMP_INCLUDE_DIR})
+endif() 
 
 
 # Compile external dependencies 
 add_subdirectory (external)
 
 # On Visual 2005 and above, this module can set the debug working directory
-cmake_policy(SET CMP0026 OLD)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/rpavlik-cmake-modules-fe2273")
-include(CreateLaunchers)
-include(MSVCMultipleProcessCompile) # /MP
 
 if(INCLUDE_DISTRIB)
 	add_subdirectory(distrib)
@@ -33,14 +57,12 @@ endif(INCLUDE_DISTRIB)
 
 
 include_directories(
-	external/AntTweakBar-1.16/include/
 	external/glfw-3.1.2/include/GLFW/
-	external/glm-0.9.7.1/
-	external/glew-1.13.0/include/
-	external/bullet-2.81-rev2613/src/
+    ${GLEW_INCLUDE_DIRS}
 	external/lodepng/
 	${GLUT_INCLUDE_DIRS}
 	.
+    ${ZeroMQ_INCLUDE_DIR}
 )
 
 set(ALL_LIBS
@@ -86,11 +108,11 @@ add_executable(depth_render
 target_link_libraries(depth_render
 	${ALL_LIBS}
 	${GLUT_LIBRARY}
+    ${ZeroMQ_LIBRARY}
+    ${GLEW_LIBRARIES}
 )
 # Xcode and Visual working directories
 set_target_properties(depth_render PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
-create_target_launcher(depth_render WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
-
 
 
 
@@ -103,3 +125,5 @@ add_custom_command(
    TARGET depth_render POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/depth_render${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
+
+
