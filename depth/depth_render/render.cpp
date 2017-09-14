@@ -31,6 +31,16 @@ using namespace std;
 
 #include <zmq.hpp>
 
+#ifndef _WIN32
+#include <unistd.h>
+#else
+#include <windows.h>
+
+#define sleep(n)    Sleep(n)
+#endif
+
+
+
 // We would expect width and height to be 1024 and 768
 int windowWidth = 512;
 int windowHeight = 512;
@@ -449,7 +459,24 @@ int main( int argc, char * argv[] )
 	int i = 0;
 
 
+
+	zmq::context_t context (1);
+    zmq::socket_t socket (context, ZMQ_REP);
+    socket.bind ("tcp://*:5555");
+
+
+
 	do{
+
+		zmq::message_t request;
+
+		std::cout << "Waiting for incoming task" << std::endl;
+
+        //  Wait for next request from client
+        socket.recv (&request);
+        std::cout << "Received Hello " << request.data() << std::endl;
+
+        printf("%s\n", request.data());
 
 		// Measure speed
 		//double currentTime = glfwGetTime();
@@ -605,16 +632,8 @@ int main( int argc, char * argv[] )
 		glDisableVertexAttribArray(0);
 		*/
 
-		if (false) {
-			printf("screenshot\n");
-			char buffer[100];
-			sprintf(buffer, "/home/jerry/Pictures/%s", filename);
-			printf("saving screenshot to %s", buffer);
-			save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
-			screenshot = true;
-		}
 
-		if (do_screenshot) {
+		if (false) {
 			char buffer[100];
 			//printf("before: %s\n", buffer);
 			sprintf(buffer, "/home/jerry/Pictures/%s_mist.png", filename);
@@ -628,6 +647,31 @@ int main( int argc, char * argv[] )
 		//glfwSwapBuffers(window);
 		//glfwPollEvents();
 		i ++;
+
+
+		int nSize = windowWidth*windowHeight*3;
+		int nByte = nSize*sizeof(unsigned short);
+		// First let's create our buffer, 3 channels per Pixel
+		unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
+		//char* dataBuffer = (char*)malloc(nSize*sizeof(char));
+
+		if (!dataBuffer) return false;
+
+		// Let's fetch them from the backbuffer
+		// We request the pixels in GL_BGR format, thanks to Berzeger for the tip
+		glReadPixels((GLint)0, (GLint)0,
+			(GLint)windowWidth, (GLint)windowHeight,
+			 GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
+
+		glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
+
+
+
+		zmq::message_t reply (nByte);
+        memcpy (reply.data (), (unsigned char*)dataBuffer, nByte);
+        socket.send (reply);
+
+        free(dataBuffer);
 
 	} while (true);
 	// Check if the ESC key was pressed or the window was closed
