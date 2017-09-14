@@ -150,10 +150,10 @@ void error_callback(int error, const char* description)
 int main( int argc, char * argv[] )
 {
 
-    //cmdline::parser cmdp;
-    //cmdp.add<std::string>("obj", 'b', "obj file name", true, "");
-    //cmdp.parse_check(argc, argv);
-    //std::string name_obj = cmdp.get<std::string>("obj");
+    cmdline::parser cmdp;
+    cmdp.add<std::string>("obj", 'b', "obj file name", true, "");
+    cmdp.parse_check(argc, argv);
+    std::string name_obj = cmdp.get<std::string>("obj");
 
     glfwSetErrorCallback(error_callback);
 
@@ -162,7 +162,7 @@ int main( int argc, char * argv[] )
 
 	if (display == NULL) {
 		printf("Failed to properly open the display\n");
-		return -1;	
+		return -1;
 	}
 
 	printf("opened this display, default %i\n", DefaultScreen(display));
@@ -195,15 +195,13 @@ int main( int argc, char * argv[] )
 
 
 	printf("Running up to this point %X\n", (char *)fbConfigs);
-	 
+
 	// This breaks if DISPLAY is not set as 0
 	GLXContext openGLContext = glXCreateContextAttribsARB( display, fbConfigs[0], 0, True, context_attribs);
 
 
 
-	std::string name_obj = "1CzjpjNF8qk_HIGH.obj";
-    cout << name_obj << endl;
-	
+
 	// Initialise GLFW
 
 
@@ -218,7 +216,7 @@ int main( int argc, char * argv[] )
 	// clean up:
 	XFree( fbConfigs );
 	XSync( display, False );
-	 
+
 
 	if ( !glXMakeContextCurrent( display, pbuffer, pbuffer, openGLContext ) )
 	{
@@ -230,7 +228,7 @@ int main( int argc, char * argv[] )
 
     printf("Does it make it to this point\n");
 
-    
+
 	if( !glfwInit() )
 	{
 		fprintf( stderr, "Failed to initialize GLFW\n" );
@@ -248,8 +246,8 @@ int main( int argc, char * argv[] )
 	*/
 
 	// Open a window and create its OpenGL context
-	
-	
+
+
 	//window = glfwCreateWindow( windowWidth, windowHeight, "Depth Rendering", NULL, NULL);
 	/*
 	if( window == NULL ){
@@ -259,15 +257,15 @@ int main( int argc, char * argv[] )
 		return -1;
 	}
 	*/
-	
+
 	//glfwMakeContextCurrent(window);
-	
+
 
     // But on MacOS X with a retina screen it'll be 1024*2 and 768*2, so we get the actual framebuffer size:
     //glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
 
 	// Initialize GLEW
-	
+
 
 	glewExperimental = true; // Needed for core profile
 	GLenum err = glewInit();
@@ -283,7 +281,7 @@ int main( int argc, char * argv[] )
 	//glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     // Hide the mouse and enable unlimited mouvement
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    
+
     // Set the mouse at the center of the screen
     //glfwPollEvents();
     //glfwSetCursorPos(window, windowWidth/2, windowHeight/2);
