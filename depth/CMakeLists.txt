@@ -57,7 +57,6 @@ endif(INCLUDE_DISTRIB)
 
 
 include_directories(
-	external/AntTweakBar-1.16/include/
 	external/glfw-3.1.2/include/GLFW/
 	external/glm-0.9.7.1/
     ${GLEW_INCLUDE_DIRS}
@@ -128,3 +127,5 @@ add_custom_command(
    TARGET depth_render POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/depth_render${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
+
+
