@@ -190,17 +190,17 @@ if __name__ == '__main__':
         data = data[::-1,::-1,:]
         img_array.append(data)
 
-        
-        
-        
-        
+
+
+
+
         #data = np.log(data / 256 * (256/np.log(256))).astype(np.uint8)
         #data = (data % 256).astype(np.uint8)
         #data = (data / 256.0).astype(np.uint8) * 12
         print(np.max(data), np.min(data))
 
         # todo: debug
-        
+
         #img = Image.fromarray(data)
         #img.save(img_path + str(request) + ".tiff")
         #scipy.misc.imsave(img_path + str(request) + ".png", data, 'L', bits=16)
