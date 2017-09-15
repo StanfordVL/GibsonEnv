@@ -367,7 +367,7 @@ int main( int argc, char * argv[] )
 
 		// Compute the MVP matrix from keyboard and mouse input
 		char filename[50];
-		bool do_screenshot = computeMatricesFromInputs(filename);
+		bool do_screenshot = computeMatricesFromInputs();
 		glm::mat4 ProjectionMatrix = getProjectionMatrix();
 		glm::mat4 ViewMatrix = getViewMatrix();
 		glm::mat4 ModelMatrix = glm::mat4(1.0);

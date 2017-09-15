@@ -161,9 +161,22 @@ int main( int argc, char * argv[] )
 {
 
     cmdline::parser cmdp;
-    cmdp.add<std::string>("obj", 'b', "obj file name", true, "");
+    cmdp.add<std::string>("datapath", 'd', "data model directory", true, "");
+
+    cmdp.add<std::string>("model", 'm', "model id", true, "");
+
     cmdp.parse_check(argc, argv);
-    std::string name_obj = cmdp.get<std::string>("obj");
+
+    std::string name_path = cmdp.get<std::string>("datapath");
+
+    std::string model_id = cmdp.get<std::string>("model");
+
+    std::string name_obj = name_path + "/" + model_id + "/" + model_id + "_HIGH.obj";
+	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.csv";
+
+
+    //std::string name_ply = "out_res.ply";
+
 
     glfwSetErrorCallback(error_callback);
 
@@ -334,11 +347,17 @@ int main( int argc, char * argv[] )
 	bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
 
 	// Note: use unsigned int because of too many indices
+	//std::vector<short unsigned int> short_indices;
+	//bool res = loadAssImp(name_ply.c_str(), short_indices, vertices, uvs, normals);
+	
 	std::vector<unsigned int> indices;
+	
 	std::vector<glm::vec3> indexed_vertices;
 	std::vector<glm::vec2> indexed_uvs;
 	std::vector<glm::vec3> indexed_normals;
 	indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+	
+
 
 	// Load it into a VBO
 
@@ -503,25 +522,11 @@ int main( int argc, char * argv[] )
 		glUseProgram(programID);
 
 		// Compute the MVP matrix from keyboard and mouse input
-		char filename[50];
-		bool do_screenshot = computeMatricesFromInputs(filename);
+		computeMatricesFromFile(name_loc);
 		glm::mat4 ProjectionMatrix = getProjectionMatrix();
 		glm::mat4 ViewMatrix = getViewMatrix();
 		glm::mat4 ModelMatrix = glm::mat4(1.0);
 
-		/*
-		printf("Before ");
-		for (int i = 0; i < 16; i++)
-			printf("%f ", ProjectionMatrix[i / 4][i % 4]);
-
-		printf("\n");
-		//BuildPerspProjMat(ProjectionMatrix, 1.0489180166567196, 1.0, 0.0, 128.0);
-		printf("After ");
-		for (int i = 0; i < 16; i++)
-			printf("%f ", ProjectionMatrix[i / 4][i % 4]);
-
-		printf("\n");
-		*/
 
 
 
@@ -633,6 +638,7 @@ int main( int argc, char * argv[] )
 		*/
 
 
+		/*
 		if (false) {
 			char buffer[100];
 			//printf("before: %s\n", buffer);
@@ -642,6 +648,7 @@ int main( int argc, char * argv[] )
 			//printf("saving screenshot to %s\n", buffer);
 			save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
 		}
+		*/
 
 		// Swap buffers
 		//glfwSwapBuffers(window);
@@ -697,42 +704,4 @@ int main( int argc, char * argv[] )
 	//glfwTerminate();
 
 	return 0;
-}
-
-void BuildPerspProjMat(glm::mat4 &m, float fov, float aspect,
-	float znear, float zfar) {
-  float xymax = znear * tan(fov/2);
-  float ymin = -xymax;
-  float xmin = -xymax;
-
-  float width = xymax - xmin;
-  float height = xymax - ymin;
-
-  float depth = zfar - znear;
-  float q = -(zfar + znear) / depth;
-  float qn = -2 * (zfar * znear) / depth;
-
-  float w = 2 * znear / (width + 0.000001);
-  w = w / aspect;
-  float h = 2 * znear / (height + 0.000001);
-
-  //m[0][0]  = w;
-  m[0][1]  = (float) 0.0;
-  m[0][2]  = (float) 0.0;
-  m[0][3]  = (float) 0.0;
-
-  m[1][0]  = (float) 0.0;
-  //m[1][1]  = h;
-  m[1][2]  = (float) 0.0;
-  m[1][3]  = (float) 0.0;
-
-  m[2][0]  = (float) 0.0;
-  m[2][1]  = (float) 0.0;
-  m[2][2] = q;
-  m[2][3] = (float) -1.0;
-
-  m[3][0] = (float) 0.0;
-  m[3][1] = (float) 0.0;
-  //m[3][2] = qn;
-  m[3][3] = (float) 0.0;
 }

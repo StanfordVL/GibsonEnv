@@ -15,5 +15,5 @@ def transfer2(unsigned char [:,:,:,:] in_img, int [:,:,:]coords, int h, int w):
             corrx = coords[ycoord, xcoord, 1]
             corry = coords[ycoord, xcoord, 2]  
             for c in range(3):
-                out_img[ycoord, xcoord, c] =  in_img[ind, corrx, corry, c]
+                out_img[ycoord, xcoord, c] =  in_img[ind, corry, corrx, c]
     return np.array(out_img)

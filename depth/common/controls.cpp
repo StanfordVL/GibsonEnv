@@ -13,6 +13,7 @@ extern GLFWwindow* window; // The "extern" keyword here is to access the variabl
 #include <cassert>
 #include <cstring>
 
+
 using namespace glm;
 
 #include "controls.hpp"
@@ -110,7 +111,7 @@ void getPositionRotation(glm::vec3 &position, float& rotX, float& rotY, float& r
 
 
 
-bool computeMatricesFromInputs(char* filename){
+bool computeMatricesFromInputs(){
 
 	bool do_screenshot = true;
 
@@ -204,50 +205,7 @@ bool computeMatricesFromInputs(char* filename){
 	//}
 
 
-	// First way (deprecated) : lookAt function
-	/*
-	ViewMatrix       = glm::lookAt(
-								position,           // Camera is here
-								position+pose_direction, // and looks here : at the same position, plus "direction"
-								up                  // Head is up (set to 0,-1,0 to look upside-down)
-						   );
 
-
-	printf("First   view matrix (no translate)\n");
-	for (int i = 0; i < 4; ++i) {
-		printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
-	}
-	printf("Current view matrix\n");
-	for (int i = 0; i < 4; ++i) {
-		printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
-	}
-	printf("Up  vector: %f %f %f\n", up[0], up[1], up[2]);
-	printf("pos vector: %f %f %f\n", position[0], position[1], position[2]);
-	*/
-
-
-	/* Second way (deprecated): manually construct up direction
-	glm::vec4 pose_d = glm::vec4(0.0, 0.0, -1.0, 1.0);
-
-	glm::mat4 pose_trans = glm::mat4(1.0);
-
-	pose_trans = glm::rotate(pose_trans, -rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
-	pose_trans = glm::rotate(pose_trans, -rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
-	pose_trans = glm::rotate(pose_trans, -rotationZ, glm::vec3(0.0f, 0.0f, 1.0f));
-
-	pose_d = pose_trans * pose_d;
-	up4    = pose_trans * up4;
-
-
-	glm::vec3 pose_direction(pose_d);
-	glm::vec3 up(up4);
-	//printf("pose direction %f %f %f %f\n", pose_d[0], pose_d[1], pose_d[2], pose_d[3]);
-	//printf("pose direction %f %f %f\n", pose_direction[0], pose_direction[1], pose_direction[2]);
-	//printf("     direction %f %f %f\n", direction[0], direction[1], direction[2]);
-	*/
-
-
-	// Third way
 	glm::quat viewDirection;
 	glm::vec3 viewDirectionEuler(rotationX, rotationY, rotationZ);
 	viewDirection = glm::quat(viewDirectionEuler) * initial;
@@ -264,3 +222,101 @@ bool computeMatricesFromInputs(char* filename){
 
 	return do_screenshot;
 }
+
+
+bool computeMatricesFromFile(std::string filename){
+
+	bool do_screenshot = true;
+
+
+	// glfwGetTime is called only once, the first time this function is called
+	static double lastTime = glfwGetTime();
+
+	// Compute time difference between current and last frame
+	double currentTime = glfwGetTime();
+	float deltaTime = float(currentTime - lastTime);
+
+	// Get mouse position
+	double xpos, ypos;
+
+
+	// Compute new orientation
+	horizontalAngle += mouseSpeed * float( 512/2 - xpos );
+	verticalAngle   += mouseSpeed * float( 512/2 - ypos );
+
+	// Direction : Spherical coordinates to Cartesian coordinates conversion
+	glm::vec3 direction(
+		cos(verticalAngle) * sin(horizontalAngle),
+		sin(verticalAngle),
+		cos(verticalAngle) * cos(horizontalAngle)
+	);
+
+	// Hardcoded pose information
+	// Camera matrix
+	// Point 0 view 1
+	/*float rotationX = 1.2462860345840454;
+	float rotationY = -0.009244712069630623;
+	float rotationZ = -1.2957184314727783;
+	*/
+	// Point 0 view 2
+	//float rotationX = 1.3605239391326904;
+	//float rotationY = -0.009078502655029297;
+	//float rotationZ = -1.441698670387268;
+	//float fov 		= 0.9698680134771724;
+	float fov 		= glm::radians(90.0f);
+
+	float posX = 0;
+	float posY = 0;
+	float posZ = 0;
+
+	float rotW = 0;
+	float rotX = 0;
+	float rotY = 0;
+	float rotZ = 0;
+
+	float junk[2];
+
+	FILE * file = fopen(filename.c_str(), "r");
+	if( file == NULL ){
+		printf("Impossible to open pose file %s!\n", filename.c_str());
+	}
+
+	char namebuf[50];
+
+	int count = fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", namebuf, &posX, &posY, &posZ, &rotW, &rotX, &rotY, &rotZ, &junk[0], &junk[1] );
+	
+	printf("Loading pose file count: %d, namebuf: %s, rot count %d\n", count, namebuf, currentPoseRotCount);
+
+	assert(count == 10);
+
+	rotY = -rotY;
+
+	position = glm::vec3(posX, posY, posZ);
+
+	ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
+
+
+	//if (currentTime - currentPoseStartTime > 1) {
+		// UNCOMMENT THIS, in order to render png at a new position every second
+		//getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
+		glm::quat initial = initialDirections[currentPoseRotCount];
+		//convertRotation(rotationX, rotationY, rotationZ, currentPoseRotCount);
+		currentPoseStartTime = currentTime;
+		currentPoseRotCount += 1;
+		do_screenshot = true;
+	//}
+
+
+	glm::quat viewDirection;
+	//glm::vec3 viewDirectionEuler(rotationX, rotationY, rotationZ);
+	viewDirection = glm::quat(rotW, rotX, rotY, rotZ) * initial;
+	//viewDirection = glm::quat(viewDirectionEuler) * initial;
+
+	ViewMatrix = glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
+
+	// For the next frame, the "last time" will be "now"
+	lastTime = currentTime;
+
+	return do_screenshot;
+}
+

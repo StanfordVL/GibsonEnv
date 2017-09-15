@@ -41,9 +41,9 @@ for request in range(6):
 
     # todo: debug
     data = data[:][::-1][:]
-    #img = Image.fromarray(data[0])
-    #img.save(img_path + str(request) + ".tiff")
-    scipy.misc.imsave(img_path + str(request) + ".tiff", data)
+    img = Image.fromarray(data)
+    img.save(img_path + str(request) + ".tiff")
+    #scipy.misc.imsave(img_path + str(request) + ".png", data, 'L', bits=16)
     print("Received reply %s [ %s ]" % (request, data))
 
 
