@@ -522,6 +522,7 @@ int main( int argc, char * argv[] )
 		glUseProgram(programID);
 
 		// Compute the MVP matrix from keyboard and mouse input
+		//computeMatricesFromInputs();
 		computeMatricesFromFile(name_loc);
 		glm::mat4 ProjectionMatrix = getProjectionMatrix();
 		glm::mat4 ViewMatrix = getViewMatrix();

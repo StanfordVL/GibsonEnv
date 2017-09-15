@@ -283,7 +283,7 @@ bool computeMatricesFromFile(std::string filename){
 
 	char namebuf[50];
 
-	int count = fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", namebuf, &posX, &posY, &posZ, &rotW, &rotX, &rotY, &rotZ, &junk[0], &junk[1] );
+	int count = fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", namebuf, &posX, &posY, &posZ, &rotW, &rotY, &rotX, &rotZ, &junk[0], &junk[1] );
 	
 	printf("Loading pose file count: %d, namebuf: %s, rot count %d\n", count, namebuf, currentPoseRotCount);
 
@@ -309,7 +309,8 @@ bool computeMatricesFromFile(std::string filename){
 
 	glm::quat viewDirection;
 	//glm::vec3 viewDirectionEuler(rotationX, rotationY, rotationZ);
-	viewDirection = glm::quat(rotW, rotX, rotY, rotZ) * initial;
+	glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
+	viewDirection = rotateX_90 * glm::quat(rotW, rotX, rotY, rotZ) * initial;
 	//viewDirection = glm::quat(viewDirectionEuler) * initial;
 
 	ViewMatrix = glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));

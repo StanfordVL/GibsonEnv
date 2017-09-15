@@ -94,7 +94,10 @@ def convert_img():
     
     
     # For each pixel in output image find colour value from input image
-    outimg = transfer2(in_imgs, coords, h, w)
+    print(outimg.shape)
+
+    # todo: for some reason the image is flipped 180 degrees
+    outimg = transfer2(in_imgs, coords, h, w)[::-1, ::-1, ::]
     
     
 
