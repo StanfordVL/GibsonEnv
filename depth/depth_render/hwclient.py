@@ -117,7 +117,7 @@ def convert_array(img_array):
     print(outimg.shape)
 
     # todo: for some reason the image is flipped 180 degrees
-    outimg = transfer2(in_imgs, coords, h, w)[::-1, :, ::]
+    outimg = transfer2(in_imgs, coords, h, w)[:, ::-1, :]
 
     return outimg
 
@@ -197,8 +197,10 @@ def read_pose_from_json(root, model_id, idx):
     p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
     
     trans = -np.dot(p[:3, :3].T, p[:3, -1])
-    rotation = np.array([[0,0,-1],[0,-1,0],[1,0,0]])
-    rot = np.dot(np.dot(rotation, p[:3, :3]), rotation)
+    #rotation = np.array([[0,0,-1],[0,-1,0],[1,0,0]])
+    #rot = np.dot(np.dot(rotation, p[:3, :3]), rotation)
+    
+    rot = np.dot(np.array([[-1,0,0],[0,-1,0],[0,0,1]]),  np.linalg.inv(p[:3, :3]))
     
     p2 = np.eye(4)
     
@@ -220,7 +222,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataroot'  , required = True, help='dataset path')
-    #parser.add_argument('--idx'  , type = int, default = 0, help='index of data')
+    parser.add_argument('--idx'  , type = int, default = 0, help='index of data')
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
@@ -228,7 +230,7 @@ if __name__ == '__main__':
     root     = opt.dataroot
     model_id = opt.model
 
-    pose_idx = 0
+    pose_idx = opt.idx
 
     #pose_list, pose_str = read_pose_from_csv(root, model_id, 0)
     #print('parsed pose str', pose_str)
