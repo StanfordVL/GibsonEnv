@@ -511,9 +511,11 @@ int main( int argc, char * argv[] )
 
 	zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
-    socket.bind ("tcp://*:5555");
+    socket.bind ("tcp://127.0.0.1:5555");
 
     int pose_idx = 0;
+    
+    
 
 	do{
 
@@ -532,7 +534,7 @@ int main( int argc, char * argv[] )
         std::cout << "Finished cast" << std::endl;
         std::cout << request_str << std::endl;
 
-        glm::mat4 viewMat = glm::inverse(str_to_mat(request_str));
+        glm::mat4 viewMat = str_to_mat(request_str);
         debug_mat(viewMat, "json");
 
 		// Measure speed
@@ -550,13 +552,24 @@ int main( int argc, char * argv[] )
 		}
 
         zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short) * 6);
+        glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+        glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+        
+        int nSize = windowWidth*windowHeight*3;
+        int nByte = nSize*sizeof(unsigned short);
+        // First let's create our buffer, 3 channels per Pixel
+        unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
+        //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
+
+        unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
+        if (!dataBuffer) return false;
+        if (!dataBuffer_c) return false;
+
         
         for (int k = 0; k < 6; k ++ )
         {
             // Render to our framebuffer
-            glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-            glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-
+            
             // Clear the screen
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -566,8 +579,9 @@ int main( int argc, char * argv[] )
             // Compute the MVP matrix from keyboard and mouse input
             //computeMatricesFromInputs();
             computeMatricesFromFile(name_loc);
-            glm::mat4 ProjectionMatrix = getProjectionMatrix();
-            glm::mat4 ViewMatrix =  getViewMatrix();
+            float fov = glm::radians(90.0f);
+            glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
+            glm::mat4 ViewMatrix =  getView(viewMat, k);
             glm::mat4 ModelMatrix = glm::mat4(1.0);
 
             pose_idx ++;
@@ -682,7 +696,6 @@ int main( int argc, char * argv[] )
             glDisableVertexAttribArray(0);
             */
 
-
             /*
             if (false) {
                 char buffer[100];
@@ -699,14 +712,7 @@ int main( int argc, char * argv[] )
             //glfwSwapBuffers(window);
             //glfwPollEvents();
 
-            int nSize = windowWidth*windowHeight*3;
-            int nByte = nSize*sizeof(unsigned short);
-            // First let's create our buffer, 3 channels per Pixel
-            unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
-            //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
-
-            if (!dataBuffer) return false;
-
+            
             // Let's fetch them from the backbuffer
             // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
             glReadPixels((GLint)0, (GLint)0,
@@ -715,21 +721,20 @@ int main( int argc, char * argv[] )
 
             glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
 
-            unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
+            
             for (int i = 0; i < windowWidth * windowHeight; i++) 
                 dataBuffer_c[i] = dataBuffer[3*i];
             
             memcpy (reply.data () + windowWidth*windowHeight*sizeof(unsigned short) * k, (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
             
-            free(dataBuffer);
-            free(dataBuffer_c);
+            
 
         }
 
-        
-        
         socket.send (reply);
 
+        free(dataBuffer);
+        free(dataBuffer_c);
         //free(dataBuffer);
         //free(dataBuffer_c);
         

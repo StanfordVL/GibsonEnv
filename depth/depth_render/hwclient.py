@@ -190,18 +190,24 @@ def read_pose_from_json(root, model_id, idx):
     posedir = os.path.join(root, model_id, 'pano', 'points')
     pose_i  = os.listdir(posedir)[idx]
     item    = os.path.join(root, model_id, 'pano', 'points', pose_i)
-
+    print(item)
+    
     f = open(item)
     pose_dict = json.load(f)
     p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
-    rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,-1,0],[0,0,0,1]])
-    p = np.dot(rotation, p)
-
-    print(p)
-    p[:3, 3] = np.linalg.inv(p[:3, :3]).dot(p[:3, 3])
-    print(p)
-    print(mat_to_str(p))
-    return mat_to_str(p)
+    
+    trans = -np.dot(p[:3, :3].T, p[:3, -1])
+    rotation = np.array([[0,0,-1],[0,-1,0],[1,0,0]])
+    rot = np.dot(np.dot(rotation, p[:3, :3]), rotation)
+    
+    p2 = np.eye(4)
+    
+    p2[:3, :3] = rot
+    p2[:3, -1] = trans
+    
+    print(p2)
+    
+    return mat_to_str(p2)
 
 def mat_to_str(matrix):
     s = ""

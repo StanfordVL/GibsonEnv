@@ -1,3 +1,4 @@
+#cython: boundscheck=False, wraparound=False, nonecheck=False
 import numpy as np
 
 def transfer2(unsigned short [:,:,:,:] in_img, int [:,:,:]coords, int h, int w):

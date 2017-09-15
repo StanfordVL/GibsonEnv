@@ -63,12 +63,17 @@ glm::quat initialDirections[] = {
 	glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
 	glm::quat(glm::vec3(0.0f, glm::radians(-90.0f), 0.0f)),
 	glm::quat(glm::vec3(0.0f, glm::radians(-180.0f), 0.0f)),
-	//glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
-	//glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f)),
-	//glm::quat(glm::vec3(0.0f, glm::radians(270.0f), 0.0f)),
 	glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f))
 };
 
+glm::mat4 getView(glm::mat4 source, int k){
+    glm::quat initial = initialDirections[k];
+	glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
+	glm::quat viewDirection = rotateX_90 * initial;
+	glm::mat4 v = glm::inverse(source * glm::toMat4(viewDirection));
+        //glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
+    return v;
+}
 
 // Automatically load all poses of a model, and render corresponding pngs
 // Useful for diagnostics
