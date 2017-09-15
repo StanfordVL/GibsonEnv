@@ -28,6 +28,7 @@ void main(){
 	
 	// Vector that goes from the vertex to the camera, in camera space.
 	// In camera space, the camera is at the origin (0,0,0).
+	// Positive z
 	EyeDirection_cameraspace = vec3(0,0,0) - ( V * M * vec4(vertexPosition_modelspace,1)).xyz;
 
 	// Vector that goes from the vertex to the light, in camera space
