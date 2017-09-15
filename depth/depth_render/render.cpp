@@ -14,12 +14,12 @@
 
 // Include GLFW
 #include <glfw3.h>
-//GLFWwindow* window;
+GLFWwindow* window;
 
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-using namespace glm;
+//using namespace glm;
 using namespace std;
 
 #include <common/shader.hpp>
@@ -49,6 +49,19 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXC
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
 static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
 static glXMakeContextCurrentARBProc   glXMakeContextCurrentARB   = NULL;
+
+
+glm::quat initialDirections[] = {
+	glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
+	glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(-90.0f), 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(-180.0f), 0.0f)),
+	//glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
+	//glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f)),
+	//glm::quat(glm::vec3(0.0f, glm::radians(270.0f), 0.0f)),
+	glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f))
+};
 
 
 glm::vec3 GetOGLPos(int x, int y)
@@ -157,6 +170,35 @@ void error_callback(int error, const char* description)
     printf("%X\n", error);
 }
 
+glm::mat4 str_to_mat(std::string str) {
+	glm::mat4 mat = glm::mat4();
+	std::string delimiter = " ";
+
+	//std::cout << "Inside str_to_mat" << str << std::endl;
+
+	size_t pos = 0;
+	size_t idx = 0;
+	std::string token;
+	while ((pos = str.find(delimiter)) != std::string::npos) {
+	    token = str.substr(0, pos);
+	    //std::cout << token <<  std::endl;
+	    mat[idx % 4][idx / 4] = std::stof(token);
+	    //std::cout << "after " << std::stof(token) << " "  << idx % 4 << " " << idx / 4 <<  std::endl;
+	    str.erase(0, pos + delimiter.length());
+	    idx += 1;
+	}
+	mat[idx % 4][idx / 4] = std::stof(str);
+	
+	return mat;
+}
+
+void debug_mat(glm::mat4 mat, std::string name) {
+	std::cout << "Debugging matrix " << name << std::endl;
+	for (int i = 0; i < 4; i++) {
+		std::cout << mat[0][i] << " " << mat[1][i] << " " << mat[2][i] << " " << mat[3][i] << " " << std::endl;
+	}
+}
+
 int main( int argc, char * argv[] )
 {
 
@@ -172,7 +214,7 @@ int main( int argc, char * argv[] )
     std::string model_id = cmdp.get<std::string>("model");
 
     std::string name_obj = name_path + "/" + model_id + "/" + model_id + "_HIGH.obj";
-	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.csv";
+	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.c";
 
 
     //std::string name_ply = "out_res.ply";
@@ -349,14 +391,14 @@ int main( int argc, char * argv[] )
 	// Note: use unsigned int because of too many indices
 	//std::vector<short unsigned int> short_indices;
 	//bool res = loadAssImp(name_ply.c_str(), short_indices, vertices, uvs, normals);
-
+	
 	std::vector<unsigned int> indices;
-
+	
 	std::vector<glm::vec3> indexed_vertices;
 	std::vector<glm::vec2> indexed_uvs;
 	std::vector<glm::vec3> indexed_normals;
 	indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
-
+	
 
 
 	// Load it into a VBO
@@ -483,7 +525,7 @@ int main( int argc, char * argv[] )
     zmq::socket_t socket (context, ZMQ_REP);
     socket.bind ("tcp://*:5555");
 
-
+    int pose_idx = 0;
 
 	do{
 
@@ -495,7 +537,15 @@ int main( int argc, char * argv[] )
         socket.recv (&request);
         std::cout << "Received Hello " << request.data() << std::endl;
 
-        printf("%s\n", request.data());
+        //printf("%s\n", request.data());
+
+        std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
+
+        std::cout << "Finished cast" << std::endl;
+        std::cout << request_str << std::endl;
+
+        glm::mat4 viewMat = glm::inverse(str_to_mat(request_str));
+        debug_mat(viewMat, "json");
 
 		// Measure speed
 		//double currentTime = glfwGetTime();
@@ -525,9 +575,13 @@ int main( int argc, char * argv[] )
 		//computeMatricesFromInputs();
 		computeMatricesFromFile(name_loc);
 		glm::mat4 ProjectionMatrix = getProjectionMatrix();
-		glm::mat4 ViewMatrix = getViewMatrix();
+		glm::mat4 ViewMatrix = viewMat * initialDirections[pose_idx]; // getViewMatrix();
 		glm::mat4 ModelMatrix = glm::mat4(1.0);
 
+		pose_idx ++;
+
+		glm::mat4 tempMat = getViewMatrix();
+		debug_mat(tempMat, "csv");
 
 
 
@@ -656,7 +710,6 @@ int main( int argc, char * argv[] )
 		//glfwPollEvents();
 		i ++;
 
-
 		int nSize = windowWidth*windowHeight*3;
 		int nByte = nSize*sizeof(unsigned short);
 		// First let's create our buffer, 3 channels per Pixel
@@ -685,6 +738,7 @@ int main( int argc, char * argv[] )
 
         free(dataBuffer);
         free(dataBuffer_c);
+
 
 	} while (true);
 	// Check if the ESC key was pressed or the window was closed

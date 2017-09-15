@@ -13,6 +13,9 @@ import os
 from cube2equi import find_corresponding_pixel
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+import argparse
+import json
+#import transform3d
 
 from transfer import transfer2
 
@@ -55,7 +58,7 @@ def convert_img():
     print("Received image array", len(in_imgs))
 
     if not os.path.isfile('coord.npy'):
-        coords = np.zeros((h,w,3)).astype(np.int32)
+        coords = np.zeros((h,w,1)).astype(np.int32)
 
         for ycoord in range(0, h):
             for xcoord in range(0, w):
@@ -99,7 +102,7 @@ def convert_array(img_array):
     in_imgs = img_array
 
     if not os.path.isfile('coord.npy'):
-        coords = np.zeros((h,w,1)).astype(np.int32)
+        coords = np.zeros((h,w,3)).astype(np.int32)
 
         for ycoord in range(0, h):
             for xcoord in range(0, w):
@@ -169,20 +172,76 @@ def plot_histogram(opengl_arr):
     plt.show()
 
 
+def read_pose_from_csv(root, model_id, idx):
+    posefile = os.path.join(root, model_id, 'sweep_locations.csv')
+    line_i = 0
+    l_list  = []
+    l_str   = ""
+    with open(posefile) as f:
+        for line in f:
+            l_list = line.strip().split(',')
+            l_str  = ' '.join(l_list[1:])
+            if line_i == idx:
+                break
+            line_i += 1
+    return l_list, l_str
+
+def read_pose_from_json(root, model_id, idx):
+    posedir = os.path.join(root, model_id, 'pano', 'points')
+    pose_i  = os.listdir(posedir)[idx]
+    item    = os.path.join(root, model_id, 'pano', 'points', pose_i)
+
+    f = open(item)
+    pose_dict = json.load(f)
+    p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
+    rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,-1,0],[0,0,0,1]])
+    p = np.dot(rotation, p)
+
+    print(p)
+    p[:3, 3] = np.linalg.inv(p[:3, :3]).dot(p[:3, 3])
+    print(p)
+    print(mat_to_str(p))
+    return mat_to_str(p)
+
+def mat_to_str(matrix):
+    s = ""
+    for row in range(4):
+        for col in range(4): 
+            s = s + " " + str(matrix[row][col])
+    return s.strip()
 
 if __name__ == '__main__':
-    context = zmq.Context()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataroot'  , required = True, help='dataset path')
+    #parser.add_argument('--idx'  , type = int, default = 0, help='index of data')
+    parser.add_argument('--model'  , type = str, default = '', help='path of model')
+
+    opt = parser.parse_args()
+
+    root     = opt.dataroot
+    model_id = opt.model
+
+    pose_idx = 0
+
+    #pose_list, pose_str = read_pose_from_csv(root, model_id, 0)
+    #print('parsed pose str', pose_str)
+
+    mat_str = read_pose_from_json(root, model_id, pose_idx)
+
     #  Socket to talk to server
+    context = zmq.Context()
     print("Connecting to hello world server...")
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
 
     img_array = []
 
-    #  Do 6 requests, waiting each time for a response
+    #  Do 10 requests, waiting each time for a response
     for request in range(6):
         print("Sending request %s ..." % request)
-        socket.send(b"Hello")
+        #socket.send(b"Hello")
+        socket.send(mat_str)
 
         #  Get the reply.
         message = socket.recv()
@@ -197,8 +256,7 @@ if __name__ == '__main__':
         #data = np.log(data / 256 * (256/np.log(256))).astype(np.uint8)
         #data = (data % 256).astype(np.uint8)
         #data = (data / 256.0).astype(np.uint8) * 12
-        print(np.max(data), np.min(data))
-
+        
         # todo: debug
 
         #img = Image.fromarray(data)

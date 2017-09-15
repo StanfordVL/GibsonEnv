@@ -287,7 +287,7 @@ bool computeMatricesFromFile(std::string filename){
 
 	printf("Loading pose file count: %d, namebuf: %s, rot count %d\n", count, namebuf, currentPoseRotCount);
 
-	assert(count == 10);
+	//assert(count == 10);
 
 	rotY = -rotY;
 
