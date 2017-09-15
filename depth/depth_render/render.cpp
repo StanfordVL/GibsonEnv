@@ -14,7 +14,7 @@
 
 // Include GLFW
 #include <glfw3.h>
-GLFWwindow* window;
+//GLFWwindow* window;
 
 // Include GLM
 #include <glm/glm.hpp>
@@ -42,8 +42,8 @@ using namespace std;
 
 
 // We would expect width and height to be 1024 and 768
-int windowWidth = 512;
-int windowHeight = 512;
+int windowWidth = 768;
+int windowHeight = 768;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
@@ -349,14 +349,14 @@ int main( int argc, char * argv[] )
 	// Note: use unsigned int because of too many indices
 	//std::vector<short unsigned int> short_indices;
 	//bool res = loadAssImp(name_ply.c_str(), short_indices, vertices, uvs, normals);
-	
+
 	std::vector<unsigned int> indices;
-	
+
 	std::vector<glm::vec3> indexed_vertices;
 	std::vector<glm::vec2> indexed_uvs;
 	std::vector<glm::vec3> indexed_normals;
 	indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
-	
+
 
 
 	// Load it into a VBO
@@ -673,13 +673,18 @@ int main( int argc, char * argv[] )
 
 		glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
 
+        unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
+        for (int i = 0; i < windowWidth * windowHeight; i++) 
+            dataBuffer_c[i] = dataBuffer[3*i];
+        
+        
 
-
-		zmq::message_t reply (nByte);
-        memcpy (reply.data (), (unsigned char*)dataBuffer, nByte);
+		zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short));
+        memcpy (reply.data (), (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
         socket.send (reply);
 
         free(dataBuffer);
+        free(dataBuffer_c);
 
 	} while (true);
 	// Check if the ESC key was pressed or the window was closed

@@ -130,8 +130,8 @@ bool computeMatricesFromInputs(){
 	//glfwSetCursorPos(window, 512/2, 512/2);
 
 	// Compute new orientation
-	horizontalAngle += mouseSpeed * float( 512/2 - xpos );
-	verticalAngle   += mouseSpeed * float( 512/2 - ypos );
+	horizontalAngle += mouseSpeed * float( 768/2 - xpos );
+	verticalAngle   += mouseSpeed * float( 768/2 - ypos );
 
 	// Direction : Spherical coordinates to Cartesian coordinates conversion
 	glm::vec3 direction(
@@ -284,7 +284,7 @@ bool computeMatricesFromFile(std::string filename){
 	char namebuf[50];
 
 	int count = fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", namebuf, &posX, &posY, &posZ, &rotW, &rotY, &rotX, &rotZ, &junk[0], &junk[1] );
-	
+
 	printf("Loading pose file count: %d, namebuf: %s, rot count %d\n", count, namebuf, currentPoseRotCount);
 
 	assert(count == 10);
