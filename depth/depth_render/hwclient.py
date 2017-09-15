@@ -204,4 +204,4 @@ if __name__ == '__main__':
 
     print("max value", np.max(data[0]))
     opengl_arr = convert_array(np.array(img_array))
-    plot_histogram(opengl_arr)
+    #plot_histogram(opengl_arr)
