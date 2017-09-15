@@ -238,19 +238,18 @@ if __name__ == '__main__':
     img_array = []
 
     #  Do 10 requests, waiting each time for a response
-    for request in range(6):
-        print("Sending request %s ..." % request)
-        #socket.send(b"Hello")
-        socket.send(mat_str)
+    
+    print("Sending request ..." )
+    #socket.send(b"Hello")
+    socket.send(mat_str)
 
-        #  Get the reply.
-        message = socket.recv()
-        data = np.array(np.frombuffer(message, dtype=np.uint16)).reshape((768, 768, 1))
-        data = data[::-1,::-1,:]
-        img_array.append(data)
-
-
-
+    #  Get the reply.
+    message = socket.recv()
+    data = np.array(np.frombuffer(message, dtype=np.uint16)).reshape((6, 768, 768, 1))
+    data = data[:, ::-1,::-1,:]
+    
+    for i in range(6):
+        img_array.append(data[i])
 
 
         #data = np.log(data / 256 * (256/np.log(256))).astype(np.uint8)

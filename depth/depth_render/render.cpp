@@ -51,18 +51,6 @@ static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
 static glXMakeContextCurrentARBProc   glXMakeContextCurrentARB   = NULL;
 
 
-glm::quat initialDirections[] = {
-	glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)),
-	glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
-	glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
-	glm::quat(glm::vec3(0.0f, glm::radians(-90.0f), 0.0f)),
-	glm::quat(glm::vec3(0.0f, glm::radians(-180.0f), 0.0f)),
-	//glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
-	//glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f)),
-	//glm::quat(glm::vec3(0.0f, glm::radians(270.0f), 0.0f)),
-	glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f))
-};
-
 
 glm::vec3 GetOGLPos(int x, int y)
 {
@@ -214,7 +202,7 @@ int main( int argc, char * argv[] )
     std::string model_id = cmdp.get<std::string>("model");
 
     std::string name_obj = name_path + "/" + model_id + "/" + model_id + "_HIGH.obj";
-	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.c";
+	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.csv";
 
 
     //std::string name_ply = "out_res.ply";
@@ -561,183 +549,190 @@ int main( int argc, char * argv[] )
 			lastTime += 1.0;
 		}
 
-		// Render to our framebuffer
-		glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-		glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+        zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short) * 6);
+        
+        for (int k = 0; k < 6; k ++ )
+        {
+            // Render to our framebuffer
+            glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+            glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
-		// Clear the screen
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // Clear the screen
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Use our shader
-		glUseProgram(programID);
+            // Use our shader
+            glUseProgram(programID);
 
-		// Compute the MVP matrix from keyboard and mouse input
-		//computeMatricesFromInputs();
-		computeMatricesFromFile(name_loc);
-		glm::mat4 ProjectionMatrix = getProjectionMatrix();
-		glm::mat4 ViewMatrix = viewMat * initialDirections[pose_idx]; // getViewMatrix();
-		glm::mat4 ModelMatrix = glm::mat4(1.0);
+            // Compute the MVP matrix from keyboard and mouse input
+            //computeMatricesFromInputs();
+            computeMatricesFromFile(name_loc);
+            glm::mat4 ProjectionMatrix = getProjectionMatrix();
+            glm::mat4 ViewMatrix =  getViewMatrix();
+            glm::mat4 ModelMatrix = glm::mat4(1.0);
 
-		pose_idx ++;
+            pose_idx ++;
 
-		glm::mat4 tempMat = getViewMatrix();
-		debug_mat(tempMat, "csv");
+            glm::mat4 tempMat = getViewMatrix();
+            debug_mat(tempMat, "csv");
 
+            glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
+            // Send our transformation to the currently bound shader,
+            // in the "MVP" uniform
+            glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+            glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+            glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 
-		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+            glm::vec3 lightPos = glm::vec3(4,4,4);
+            glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
-		// Send our transformation to the currently bound shader,
-		// in the "MVP" uniform
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+            // Bind our texture in Texture Unit 0
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, Texture);
+            // Set our "myTextureSampler" sampler to use Texture Unit 0
+            glUniform1i(TextureID, 0);
 
-		glm::vec3 lightPos = glm::vec3(4,4,4);
-		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+            // 1rst attribute buffer : vertices
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+            glVertexAttribPointer(
+                0,                  // attribute
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+            );
 
-		// Bind our texture in Texture Unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		// Set our "myTextureSampler" sampler to use Texture Unit 0
-		glUniform1i(TextureID, 0);
+            // 2nd attribute buffer : UVs
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+            glVertexAttribPointer(
+                1,                                // attribute
+                2,                                // size
+                GL_FLOAT,                         // type
+                GL_FALSE,                         // normalized?
+                0,                                // stride
+                (void*)0                          // array buffer offset
+            );
 
-		// 1rst attribute buffer : vertices
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-		glVertexAttribPointer(
-			0,                  // attribute
-			3,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
-		);
+            // 3rd attribute buffer : normals
+            glEnableVertexAttribArray(2);
+            glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+            glVertexAttribPointer(
+                2,                                // attribute
+                3,                                // size
+                GL_FLOAT,                         // type
+                GL_FALSE,                         // normalized?
+                0,                                // stride
+                (void*)0                          // array buffer offset
+            );
 
-		// 2nd attribute buffer : UVs
-		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-		glVertexAttribPointer(
-			1,                                // attribute
-			2,                                // size
-			GL_FLOAT,                         // type
-			GL_FALSE,                         // normalized?
-			0,                                // stride
-			(void*)0                          // array buffer offset
-		);
+            // Index buffer
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
-		// 3rd attribute buffer : normals
-		glEnableVertexAttribArray(2);
-		glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-		glVertexAttribPointer(
-			2,                                // attribute
-			3,                                // size
-			GL_FLOAT,                         // type
-			GL_FALSE,                         // normalized?
-			0,                                // stride
-			(void*)0                          // array buffer offset
-		);
+            // Draw the triangles !
+            glDrawElements(
+                GL_TRIANGLES,      // mode
+                indices.size(),    // count
+                GL_UNSIGNED_INT,   // type
+                (void*)0           // element array buffer offset
+            );
 
-		// Index buffer
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
+            glDisableVertexAttribArray(2);
 
-		// Draw the triangles !
-		glDrawElements(
-			GL_TRIANGLES,      // mode
-			indices.size(),    // count
-			GL_UNSIGNED_INT,   // type
-			(void*)0           // element array buffer offset
-		);
+            /*
+            // Render to the screen
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            // Render on the whole framebuffer, complete from the lower left corner to the upper right
+            glViewport(0,0,windowWidth,windowHeight);
 
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
-		glDisableVertexAttribArray(2);
+            // Clear the screen
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		/*
-		// Render to the screen
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // Render on the whole framebuffer, complete from the lower left corner to the upper right
-		glViewport(0,0,windowWidth,windowHeight);
+            // Use our shader
+            glUseProgram(quad_programID);
 
-		// Clear the screen
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // Bind our texture in Texture Unit 0
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, renderedTexture);
+            //glBindTexture(GL_TEXTURE_2D, depthTexture);
+            // Set our "renderedTexture" sampler to use Texture Unit 0
+            glUniform1i(texID, 0);
 
-		// Use our shader
-		glUseProgram(quad_programID);
+            glUniform1f(timeID, (float)(glfwGetTime()*10.0f) );
 
-		// Bind our texture in Texture Unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, renderedTexture);
-		//glBindTexture(GL_TEXTURE_2D, depthTexture);
-		// Set our "renderedTexture" sampler to use Texture Unit 0
-		glUniform1i(texID, 0);
+            // 1rst attribute buffer : vertices
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
+            glVertexAttribPointer(
+                0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+            );
 
-		glUniform1f(timeID, (float)(glfwGetTime()*10.0f) );
+            // Draw the triangles !
+            glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
 
-		// 1rst attribute buffer : vertices
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
-		glVertexAttribPointer(
-			0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-			3,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
-		);
-
-		// Draw the triangles !
-		glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
-
-		glDisableVertexAttribArray(0);
-		*/
+            glDisableVertexAttribArray(0);
+            */
 
 
-		/*
-		if (false) {
-			char buffer[100];
-			//printf("before: %s\n", buffer);
-			sprintf(buffer, "/home/jerry/Pictures/%s_mist.png", filename);
-			//printf("after: %s\n", buffer);
-			//printf("file name is %s\n", filename);
-			//printf("saving screenshot to %s\n", buffer);
-			save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
-		}
-		*/
+            /*
+            if (false) {
+                char buffer[100];
+                //printf("before: %s\n", buffer);
+                sprintf(buffer, "/home/jerry/Pictures/%s_mist.png", filename);
+                //printf("after: %s\n", buffer);
+                //printf("file name is %s\n", filename);
+                //printf("saving screenshot to %s\n", buffer);
+                save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
+            }
+            */
 
-		// Swap buffers
-		//glfwSwapBuffers(window);
-		//glfwPollEvents();
-		i ++;
+            // Swap buffers
+            //glfwSwapBuffers(window);
+            //glfwPollEvents();
 
-		int nSize = windowWidth*windowHeight*3;
-		int nByte = nSize*sizeof(unsigned short);
-		// First let's create our buffer, 3 channels per Pixel
-		unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
-		//char* dataBuffer = (char*)malloc(nSize*sizeof(char));
+            int nSize = windowWidth*windowHeight*3;
+            int nByte = nSize*sizeof(unsigned short);
+            // First let's create our buffer, 3 channels per Pixel
+            unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
+            //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
 
-		if (!dataBuffer) return false;
+            if (!dataBuffer) return false;
 
-		// Let's fetch them from the backbuffer
-		// We request the pixels in GL_BGR format, thanks to Berzeger for the tip
-		glReadPixels((GLint)0, (GLint)0,
-			(GLint)windowWidth, (GLint)windowHeight,
-			 GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
+            // Let's fetch them from the backbuffer
+            // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
+            glReadPixels((GLint)0, (GLint)0,
+                (GLint)windowWidth, (GLint)windowHeight,
+                 GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
 
-		glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
+            glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
 
-        unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
-        for (int i = 0; i < windowWidth * windowHeight; i++) 
-            dataBuffer_c[i] = dataBuffer[3*i];
+            unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
+            for (int i = 0; i < windowWidth * windowHeight; i++) 
+                dataBuffer_c[i] = dataBuffer[3*i];
+            
+            memcpy (reply.data () + windowWidth*windowHeight*sizeof(unsigned short) * k, (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
+            
+            free(dataBuffer);
+            free(dataBuffer_c);
+
+        }
+
         
         
-
-		zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short));
-        memcpy (reply.data (), (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
         socket.send (reply);
 
-        free(dataBuffer);
-        free(dataBuffer_c);
+        //free(dataBuffer);
+        //free(dataBuffer_c);
+        
 
 
 	} while (true);
