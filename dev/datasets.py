@@ -154,10 +154,11 @@ class ViewDataSet3D(data.Dataset):
         #print(paths)
         poses = []
         #print(pose_paths)
-        for item in pose_paths:
+        for i, item in enumerate(pose_paths):
             f = open(item)
             pose_dict = json.load(f)
             p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
+            print('org p', i, p)
             rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
             p = np.dot(rotation, p)
             poses.append(p)

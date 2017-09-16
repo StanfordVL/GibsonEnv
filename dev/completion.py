@@ -18,7 +18,7 @@ class CompletionNet(nn.Module):
         nf = 64
         alpha = 0.05
         self.convs = nn.Sequential(
-            nn.Conv2d(5, nf, kernel_size = 5, stride = 1, padding = 2),
+            nn.Conv2d(4, nf, kernel_size = 5, stride = 1, padding = 2),
             nn.ReLU(),
             nn.Conv2d(nf, nf*2, kernel_size = 3, stride = 2, padding = 1),
             nn.BatchNorm2d(nf*2, momentum=alpha),
@@ -148,8 +148,8 @@ class Discriminator(nn.Module):
 
         return x
 
-    
-    
+
+
 class Discriminator2(nn.Module):
 
     def __init__(self, pano = False):
@@ -177,7 +177,7 @@ class Discriminator2(nn.Module):
             nn.Conv2d(nf * 8, nf * 8, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU()
         )
-        
+
         if self.pano:
             self.fc_global = nn.Linear(nf * 8 * 3 * 7, 1000)
         else:
@@ -198,8 +198,8 @@ class Discriminator2(nn.Module):
 
         return x
 
-    
-    
+
+
 if __name__ == '__main__':
 
 

@@ -12,6 +12,31 @@ import time
 from numpy import cos, sin
 import utils
 
+import zmq
+from cube2equi import find_corresponding_pixel
+from transfer import transfer2
+
+
+
+class InImg(object):
+    def __init__(self):
+        self.grid = 768
+
+    def getpixel(self, key):
+        corrx, corry = key[0], key[1]
+
+        indx = int(corrx / self.grid)
+        indy = int(corry / self.grid)
+
+        remx = int(corrx % self.grid)
+        remy = int(corry % self.grid)
+
+        if (indy == 0):
+            return (0, remx, remy)
+        elif (indy == 2):
+            return (5, remx, remy)
+        else:
+            return (indx + 1, remx, remy)
 
 
 mousex,mousey=0.5,0.5
@@ -57,23 +82,66 @@ def onmouse(*args):
     mousex=mx/float(256)
     mousey=my/float(256 * 2)
 
+    
+def mat_to_str(matrix):
+    s = ""
+    for row in range(4):
+        for col in range(4): 
+            s = s + " " + str(matrix[row][col])
+    return s.strip()
+
+coords = np.load('coord.npy')
+
+def convert_array(img_array):
+    inimg = InImg()
+
+    wo, ho = inimg.grid * 4, inimg.grid * 3
+
+    # Calculate height and width of output image, and size of each square face
+    h = wo/3
+    w = 2*h
+    n = ho/3
+
+    # Create new image with width w, and height h
+    outimg = np.zeros((h,w,1)) #.astype(np.uint8)
+
+    in_imgs = None
+    print("converting images", len(img_array))
+
+    print("Passed in image array", len(img_array), np.max(img_array[0]))
+    in_imgs = img_array
+
+    # For each pixel in output image find colour value from input image
+    print(outimg.shape)
+
+    # todo: for some reason the image is flipped 180 degrees
+    outimg = transfer2(in_imgs, coords, h, w)[:, ::-1, :]
+
+    return outimg
 
 
-def showpoints(imgs, depths, poses, model, target, tdepth):
+
+def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
     global mousex,mousey,changed
     global pitch,yaw,x,y,z,roll
     global fps
 
     showsz = target.shape[0]
-
+    rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+    target_pose2 = rotation.dot(target_pose)
+    print('target pose', target_pose)
+    
+    
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.int32)
 
-    target_depth[:] = (tdepth[:,:,0] * 12800).astype(np.int32)
+    #target_depth[:] = (tdepth[:,:,0] * 12800).astype(np.int32)
     #from IPython import embed; embed()
     overlay = False
     show_depth = False
     cv2.namedWindow('show3d')
+    cv2.namedWindow('target depth')
+    
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
 
@@ -86,6 +154,43 @@ def showpoints(imgs, depths, poses, model, target, tdepth):
         global fps
         t0 = time.time()
         #target_depth[:] = 65535
+        #get target depth
+        
+        p = pose.dot(np.linalg.inv(poses[0])).dot(target_pose)
+        
+        p = rotation.dot(p)
+        
+        print("Sending request ..." , p)
+        
+        
+        trans = -np.dot(p[:3, :3].T, p[:3, -1])
+        rot = np.dot(np.array([[-1,0,0],[0,-1,0],[0,0,1]]),  np.linalg.inv(p[:3, :3]))
+        p2 = np.eye(4)
+        p2[:3, :3] = rot
+        p2[:3, -1] = trans
+        s = mat_to_str(p2)
+        socket.send(s)
+        message = socket.recv()
+        
+        data = np.array(np.frombuffer(message, dtype=np.uint16)).reshape((6, 768, 768, 1))
+        data = data[:, ::-1,::-1,:]
+        img_array = []
+        for i in range(6):
+            img_array.append(data[i])
+        
+        img_array2 = [img_array[0], img_array[3], img_array[2], img_array[1], img_array[4], img_array[5]]
+        print("max value", np.max(data[0]))
+        opengl_arr = convert_array(np.array(img_array2))
+        #plot_histogram(opengl_arr)
+        opengl_arr_show = (opengl_arr / 25).astype(np.uint8)
+        print('arr shape', opengl_arr_show.shape)
+        
+        cv2.imshow('target depth',opengl_arr_show)
+        
+        #from IPython import embed; embed()
+        target_depth[:] = (opengl_arr[:,:,0].astype(np.float32) / 65536.0 * 12800).astype(np.int32)
+        
+        
         show[:] = 0
         before = time.time()
         for i in range(len(imgs)):
@@ -103,6 +208,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth):
                        show.ctypes.data_as(ct.c_void_p),
                        target_depth.ctypes.data_as(ct.c_void_p)
                       )
+            
 
         print('PC render time:', time.time() - before)
 
@@ -246,7 +352,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False)
+    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False, train = False)
     idx = opt.idx
 
     data = d[idx]
@@ -269,5 +375,15 @@ if __name__=='__main__':
     print(poses[0])
     # print(source_depth)
     print(sources[0].shape, source_depths[0].shape)
+    
+    
+    context = zmq.Context()
+    print("Connecting to hello world server...")
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
+    
+    uuids, rts = d.get_scene_info(0)
+    print(uuids[idx])
+    
     show_target(target)
-    showpoints(sources, source_depths, poses, model, target, target_depth)
+    showpoints(sources, source_depths, poses, model, target, target_depth, rts[idx])

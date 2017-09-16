@@ -260,17 +260,6 @@ if __name__ == '__main__':
         img_array.append(data[i])
 
 
-        #data = np.log(data / 256 * (256/np.log(256))).astype(np.uint8)
-        #data = (data % 256).astype(np.uint8)
-        #data = (data / 256.0).astype(np.uint8) * 12
-        
-        # todo: debug
-
-        #img = Image.fromarray(data)
-        #img.save(img_path + str(request) + ".tiff")
-        #scipy.misc.imsave(img_path + str(request) + ".png", data, 'L', bits=16)
-        #print("Received reply %s [ %s ]" % (request, data))
-
     img_array2 = [img_array[0], img_array[3], img_array[2], img_array[1], img_array[4], img_array[5]]
     print("max value", np.max(data[0]))
     opengl_arr = convert_array(np.array(img_array2))

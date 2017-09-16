@@ -578,7 +578,7 @@ int main( int argc, char * argv[] )
 
             // Compute the MVP matrix from keyboard and mouse input
             //computeMatricesFromInputs();
-            computeMatricesFromFile(name_loc);
+            //computeMatricesFromFile(name_loc);
             float fov = glm::radians(90.0f);
             glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
             glm::mat4 ViewMatrix =  getView(viewMat, k);
@@ -586,8 +586,8 @@ int main( int argc, char * argv[] )
 
             pose_idx ++;
 
-            glm::mat4 tempMat = getViewMatrix();
-            debug_mat(tempMat, "csv");
+            //glm::mat4 tempMat = getViewMatrix();
+            //debug_mat(tempMat, "csv");
 
             glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
