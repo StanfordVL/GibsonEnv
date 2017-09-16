@@ -159,23 +159,23 @@ def showpoints_full(img, depth, model, rts):
             render(img, depth, relative.astype(np.float32), model, current_rt)
             changed = False
 
-        if overlay:
-            min_idx = np.argsort(dist)[0]
-            target = sources[min_idx]
-            show_out = (show/2 + target/2).astype(np.uint8)
-        elif show_depth:
-            show_out = (target_depth * 10).astype(np.uint8)
-        else:
-            show_out = show
+            if overlay:
+                min_idx = np.argsort(dist)[0]
+                target = sources[min_idx]
+                show_out = (show/2 + target/2).astype(np.uint8)
+            elif show_depth:
+                show_out = (target_depth * 10).astype(np.uint8)
+            else:
+                show_out = show
 
-        cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.cv.CV_RGB(255,255,255))
-        cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
+            cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.cv.CV_RGB(255,255,255))
+            cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
 
-        show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
-        cv2.imshow('show3d',show_rgb)
-        #cv2.imshow('minimap',minimap)
+            show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
+            cv2.imshow('show3d',show_rgb)
+            #cv2.imshow('minimap',minimap)
 
-        cmd=cv2.waitKey(10)%256
+        cmd=cv2.waitKey(30)%256
 
         if cmd==ord('q'):
             break

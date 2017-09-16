@@ -4,3 +4,11 @@
 *.egg-info/
 .DS_Store
 data/
+*.pth
+src/
+Dockerfile
+pw
+*.o
+*.ipynb
+*.out
+npz/
