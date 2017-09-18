@@ -14,6 +14,8 @@ from tensorboard import SummaryWriter
 from datetime import datetime
 import vision_utils
 import torch.nn.functional as F
+import torchvision.models as models
+
 
 
 def weights_init(m):
@@ -114,6 +116,13 @@ def main():
 
     errG_data = 0
     errD_data = 0
+    
+    vgg16 = models.vgg16(pretrained = False)
+    vgg16.load_state_dict(torch.load('vgg16-397923af.pth'))
+    feat = torch.nn.DataParallel(vgg16.features).cuda()
+    feat.eval()
+    
+    
 
     for epoch in range(current_epoch, opt.nepoch):
         for i, data in enumerate(dataloader, 0):
@@ -139,7 +148,7 @@ def main():
             imgc, maskvc, img_originalc = crop(img, maskv, img_original)
             #from IPython import embed; embed()
             recon = comp(imgc, maskvc)
-            loss = l2(recon, img_originalc)
+            loss = l2(feat(recon), feat(img_originalc).detach()) + l2(recon, img_originalc)
             loss.backward(retain_variables = True)
             
             
