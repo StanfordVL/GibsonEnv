@@ -103,8 +103,7 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
   for (int i = 0; i < nSize - 50; i++) {
   	if (dataBuffer[i] < least) least = dataBuffer[i];
   	if (dataBuffer[i] > most) most = dataBuffer[i];
-  	if (dataBuffer[i] == 26214) strange_count++;
-  }
+ }
 
   //least = least * 5000 *  65536.0f / 128.0f;
   //most = most * 5000 * 65536.0f / 128.0f;
