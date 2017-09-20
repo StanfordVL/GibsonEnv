@@ -58,7 +58,7 @@ class ViewDataSet3D(data.Dataset):
         if not os.path.isfile(self.fofn):
             
             self.scenes = sorted([d for d in (os.listdir(self.root)) if os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(os.path.join(self.root, d, 'sweep_locations.csv')) and os.path.isdir(os.path.join(self.root, d, 'pano'))])
-            #print(self.scenes)
+            
             num_scenes = len(self.scenes)
             num_train = int(num_scenes * 0.9)
             print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
@@ -92,7 +92,7 @@ class ViewDataSet3D(data.Dataset):
                         if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + l[0] + '.json')):
                             self.meta[scene][metadata[0]] = metadata
             print("Indexing")
-        
+            
             for scene, meta in self.bar(self.meta.items()):
                 if len(meta) < self.seqlen:
                     continue
@@ -114,7 +114,7 @@ class ViewDataSet3D(data.Dataset):
             with open(self.fofn, 'rb') as fp:
                 self.scenes, self.meta, self.select, num_scenes, num_train = pickle.load(fp)
                 print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
-    
+
     
     def get_scene_info(self, index):
         scene = self.scenes[index]
@@ -131,6 +131,9 @@ class ViewDataSet3D(data.Dataset):
             f = open(item)
             pose_dict = json.load(f)
             p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
+            #rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+            ## DEPTH DEBUG
+            #p = p #np.dot(rotation, p)
             rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
             p = np.dot(rotation, p)
             poses.append(p)
@@ -159,6 +162,9 @@ class ViewDataSet3D(data.Dataset):
             pose_dict = json.load(f)
             p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
             print('org p', i, p)
+            ## DEPTH DEBUG
+            #rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
+            #p = p#np.dot(rotation, p)
             rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
             p = np.dot(rotation, p)
             poses.append(p)

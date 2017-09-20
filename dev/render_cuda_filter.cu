@@ -160,9 +160,10 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
      
      //printf("%d %d\n", this_depth, depth_render[(ty * w + tx)]);
      
-     if ((delta > -10) && (delta < 10) && (this_depth < 10000)) {
-         render[(ty * w + tx)] = img[(ih * w + iw)];
-     }
+     //if ((delta > -10) && (delta < 10) && (this_depth < 10000)) {
+      //if (delta > -30) {
+           render[(ty * w + tx)] = img[(ih * w + iw)];
+     //}
   }
 }
 

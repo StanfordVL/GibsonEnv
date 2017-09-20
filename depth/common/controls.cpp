@@ -70,8 +70,22 @@ glm::mat4 getView(glm::mat4 source, int k){
     glm::quat initial = initialDirections[k];
 	glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
 	glm::quat viewDirection = rotateX_90 * initial;
+	//glm::quat viewDirection = initial;
+	
+	//DEPTH DEBUG
+	//viewDirection = initial;
+	// original
 	glm::mat4 v = glm::inverse(source * glm::toMat4(viewDirection));
-        //glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
+	// Debug 2
+	//glm::mat4 v = source * glm::toMat4(initial);
+	//v[3][0] = source[3][0];
+	//v[3][1] = source[3][1];
+	//v[3][2] = source[3][2];
+	//glm::mat4 viewMat = glm::inverse(v);
+	
+	// original
+    //glm::mat4 v = glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
+    //return viewMat;
     return v;
 }
 
@@ -288,13 +302,13 @@ bool computeMatricesFromFile(std::string filename){
 
 	char namebuf[50];
 
-	int count = fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", namebuf, &posX, &posY, &posZ, &rotW, &rotY, &rotX, &rotZ, &junk[0], &junk[1] );
+	int count = fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", namebuf, &posX, &posY, &posZ, &rotX, &rotY, &rotZ, &rotW, &junk[0], &junk[1] );
 
-	printf("Loading pose file count: %d, namebuf: %s, rot count %d\n", count, namebuf, currentPoseRotCount);
+	//printf("Loading pose file count: %d, namebuf: %s, rot count %d\n", count, namebuf, currentPoseRotCount);
 
 	//assert(count == 10);
 
-	rotY = -rotY;
+	//rotY = -rotY;
 
 	position = glm::vec3(posX, posY, posZ);
 
@@ -304,7 +318,7 @@ bool computeMatricesFromFile(std::string filename){
 	//if (currentTime - currentPoseStartTime > 1) {
 		// UNCOMMENT THIS, in order to render png at a new position every second
 		//getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
-		glm::quat initial = initialDirections[currentPoseRotCount];
+		glm::quat initial = initialDirections[currentPoseRotCount % 6];
 		//convertRotation(rotationX, rotationY, rotationZ, currentPoseRotCount);
 		currentPoseStartTime = currentTime;
 		currentPoseRotCount += 1;
@@ -315,7 +329,8 @@ bool computeMatricesFromFile(std::string filename){
 	glm::quat viewDirection;
 	//glm::vec3 viewDirectionEuler(rotationX, rotationY, rotationZ);
 	glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
-	viewDirection = rotateX_90 * glm::quat(rotW, rotX, rotY, rotZ) * initial;
+	//viewDirection = rotateX_90 * glm::quat(rotW, rotX, rotY, rotZ) * initial;
+	viewDirection = glm::quat(rotW, rotX, rotY, rotZ) * initial;
 	//viewDirection = glm::quat(viewDirectionEuler) * initial;
 
 	ViewMatrix = glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
