@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import ctypes as ct
 import cv2
@@ -115,7 +116,7 @@ def convert_array(img_array):
     print(outimg.shape)
 
     # todo: for some reason the image is flipped 180 degrees
-    outimg = transfer2(in_imgs, coords, h, w)[:, ::-1, :]
+    outimg = transfer2(in_imgs, coords, h, w)[:, ::, :]
 
     return outimg
 
@@ -153,24 +154,9 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
     def render(imgs, depths, pose, model, poses):
         global fps
         t0 = time.time()
-        #target_depth[:] = 65535
-        #get target depth
         
-        '''
-        print("before temp", pose)
-        pose_temp = np.copy(pose)
-        pose_temp[0][1] = -pose_temp[0][1]
-        pose_temp[0][2] = -pose_temp[0][2]
-        pose_temp[1][0] = -pose_temp[1][0]
-        pose_temp[2][0] = -pose_temp[2][0]
-        
-        print("after temp", pose)
-        p = pose_temp.dot(np.linalg.inv(poses[0])).dot(target_pose)
-        '''
         v_cam2world = np.linalg.inv(poses[0]).dot(target_pose)
         p = pose.dot(v_cam2world)
-        p = rotation.dot(p)
-        
         
         trans = -np.dot(p[:3, :3].T, p[:3, -1])
         rot = np.dot(np.array([[-1,0,0],[0,-1,0],[0,0,1]]),  np.linalg.inv(p[:3, :3]))
@@ -178,8 +164,16 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         p2[:3, :3] = rot
         p2[:3, -1] = trans
 
-        print("Sending request ..." , p2)
-        s = mat_to_str(p2)
+
+
+
+        print("Sending request ...")
+        #print(v_cam2world)
+        print('current viewer pose', pose)
+        print("camera pose", p)
+        print("target pose", target_pose)
+        #s = mat_to_str(p2)
+        s = mat_to_str(p)#v_cam2world)
         
         '''
         p = pose.dot(np.linalg.inv(poses[0])) #.dot(target_pose)
@@ -201,15 +195,18 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         print("Received messages")
         
         data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
-        data = data[:, ::-1,::-1,:]
+        ## For some reason, the img passed back from opengl is upside down.
+        ## This is still yet to be debugged
+        data = data[:, ::-1,::,:]
         img_array = []
         for i in range(6):
             img_array.append(data[i])
         
-        img_array2 = [img_array[0], img_array[3], img_array[2], img_array[1], img_array[4], img_array[5]]
+        img_array2 = [img_array[0], img_array[1], img_array[2], img_array[3], img_array[4], img_array[5]]
         print("max value", np.max(data[0]), "shape", np.array(img_array2).shape)
 
         opengl_arr = convert_array(np.array(img_array2))
+        opengl_arr = opengl_arr[::, ::]
         
         print("opengl array shape", opengl_arr.shape)
         #plot_histogram(opengl_arr)
@@ -228,7 +225,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         cv2.imshow('target depth',opengl_arr_show)
         
         #from IPython import embed; embed()
-        target_depth[:] = (opengl_arr[:,:,0] / 128.0 * 65536).astype(np.int32)
+        target_depth[:] = (opengl_arr[:,:,0] * 100).astype(np.int32)
         
         
         show[:] = 0
@@ -237,8 +234,12 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             #print(poses[0])
 
             pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
+            if i == 0:
+                print('First pose after')
+                print(pose_after)
             #from IPython import embed; embed()
-            print('after',pose_after)
+            #print('Received pose ' + str(i))
+            #print(pose_after)
 
             dll.render(ct.c_int(imgs[i].shape[0]),
                        ct.c_int(imgs[i].shape[1]),
@@ -248,6 +249,8 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
                        show.ctypes.data_as(ct.c_void_p),
                        target_depth.ctypes.data_as(ct.c_void_p)
                       )
+            if i == 0:
+                print(np.sum(show - imgs[0]))
             
 
         print('PC render time:', time.time() - before)
@@ -412,7 +415,8 @@ if __name__=='__main__':
         model = comp.module
         model.eval()
     print(model)
-    print(poses[0])
+    print('target', poses, poses[0])
+    print('no.1 pose', poses, poses[1])
     # print(source_depth)
     print(sources[0].shape, source_depths[0].shape)
     
@@ -423,7 +427,9 @@ if __name__=='__main__':
     socket.connect("tcp://localhost:5555")
     
     uuids, rts = d.get_scene_info(0)
+    #print(uuids, rts)
     print(uuids[idx])
     
     show_target(target)
+
     showpoints(sources, source_depths, poses, model, target, target_depth, rts[idx])

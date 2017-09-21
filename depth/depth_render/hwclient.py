@@ -122,7 +122,7 @@ def convert_array(img_array):
     #print(outimg.shape)
 
     # todo: for some reason the image is flipped 180 degrees
-    outimg = transfer2(in_imgs, coords, h, w)[:, ::-1, :]
+    outimg = transfer2(in_imgs, coords, h, w)[:, ::, :]
 
     return outimg
 
@@ -216,22 +216,13 @@ def read_pose_from_json(root, model_id, idx):
     
     f = open(item)
     pose_dict = json.load(f)
-    p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
-    
-    trans = -np.dot(p[:3, :3].T, p[:3, -1])
-    #rotation = np.array([[0,0,-1],[0,-1,0],[1,0,0]])
-    #rot = np.dot(np.dot(rotation, p[:3, :3]), rotation)
-    
-    rot = np.dot(np.array([[-1,0,0],[0,-1,0],[0,0,1]]),  np.linalg.inv(p[:3, :3]))
-    
-    p2 = np.eye(4)
-    
-    p2[:3, :3] = rot
-    p2[:3, -1] = trans
-    
-    #print(p2)
-    
-    return mat_to_str(p2), pose_i[:pose_i.index(".")]
+    p = np.concatenate(np.array(pose_dict[1][u'camera_rt_matrix'])).astype(np.float32).reshape((4,4))
+   
+    print("Newly read p", pose_i)
+    trans = p[:3, -1]
+
+    return mat_to_str(p), pose_i[:pose_i.index(".")]
+
 
 def mat_to_str(matrix):
     s = ""
@@ -360,19 +351,21 @@ if __name__ == '__main__':
 
     all_opengl_images = []
 
-    num_samples = 5
-    diff_caps = [0.02, 0.04, 0.06, 0.08, 0.1, 0.12]
+    num_samples = 1
+    diff_caps = [0.5] #[0.02, 0.04, 0.06, 0.08, 0.1, 0.12]
 
     all_cosine_values = []
     all_error_values = []
     all_mist_values = []
 
 
-    for pose_idx in range(6, 6 + num_samples):
+    for pose_idx in range(5, 5 + num_samples):
         #pose_list, pose_str = read_pose_from_csv(root, model_id, 0)
         #print('parsed pose str', pose_str)
 
         mat_str, pose_i = read_pose_from_json(root, model_id, pose_idx)
+
+        
         img_array = []
 
 
@@ -381,7 +374,7 @@ if __name__ == '__main__':
         print("Connecting to hello world server...", mat_str)
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
-        print("Sending request ..." )
+        print("Sending request ..." , pose_i)
         socket.send(mat_str)
 
         #  Get the reply.
@@ -391,18 +384,21 @@ if __name__ == '__main__':
         ## 32bit float seems precise enough for receiver
         data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
         
-        data = data[:, ::-1,::-1,:]
+        data = data[:, ::-1,::,:]
         
         for i in range(6):
             img_array.append(data[i])
 
-        img_array2 = [img_array[0], img_array[3], img_array[2], img_array[1], img_array[4], img_array[5]]
+        img_array2 = [img_array[0], img_array[1], img_array[2], img_array[3], img_array[4], img_array[5]]
+
         print("(Incoming array) opengl max", np.max(np.array(img_array2)), "opengl mean", np.mean(np.array(img_array2)))
         
         #opengl_arr = convert_array(np.array(255 * np.array(img_array2), dtype = np.uint16))
         #opengl_arr = convert_array(np.array(img_array2, dtype=np.uint16))
         opengl_arr = convert_array(np.array(img_array2))
         
+        opengl_arr = opengl_arr[::, ::]
+
         #plot_histogram(opengl_arr)
         blender_arr = find_blender_output(root, model_id, pose_i)
 
@@ -413,18 +409,18 @@ if __name__ == '__main__':
         opengl_arr_float = np.array(opengl_arr[:, :, 0]).astype(float)
         blender_arr_float = np.array(blender_arr).astype(float) * 128 / 65535
         #print("(Incoming array) blender max", np.max(blender_arr_float), "blender mean", np.mean(blender_arr_float))
-        #error_map = np.array(opengl_arr_float - blender_arr_float)
+        error_map = np.array(opengl_arr_float - blender_arr_float)
         ## Compare error with neighboring pixels
-        error_map = compare_err_neighbors(opengl_arr_float, blender_arr_float, 2048, 1024)
+        #error_map = compare_err_neighbors(opengl_arr_float, blender_arr_float, 2048, 1024)
 
-        cosine_arr = find_cosine_output(root, model_id, pose_i)
+        #cosine_arr = find_cosine_output(root, model_id, pose_i)
         #print(error_map.shape, cosine_arr.shape)
-        print("(Incoming array) cosine max", np.max(cosine_arr), "cosine mean", np.mean(cosine_arr))
+        #print("(Incoming array) cosine max", np.max(cosine_arr), "cosine mean", np.mean(cosine_arr))
         
 
         #if (len(all_error_values) == 0):
         all_error_values  = all_error_values  + error_map.reshape((1, -1))[0].tolist()
-        all_cosine_values = all_cosine_values + cosine_arr.reshape((1, -1))[0].tolist()
+        #all_cosine_values = all_cosine_values + cosine_arr.reshape((1, -1))[0].tolist()
         all_mist_values  = all_mist_values  + opengl_arr_float.reshape((1, -1))[0].tolist()
         
         
@@ -448,9 +444,9 @@ if __name__ == '__main__':
             
             opengl_arr_save = (opengl_arr * 100).astype(np.uint8)
             print("(Saving image array) opengl max", np.max(opengl_arr_save), "opengl mean", np.mean(opengl_arr_save[:, :, 0]))
-            opengl_arr_save[np.abs(error_map) > diff_cap] = 255
+            #opengl_arr_save[np.abs(error_map) > diff_cap] = 255
             outimg = Image.fromarray(opengl_arr_save)
-            opengl_name = 'output_opengl_' + str(pose_i) + '_' + str(diff_cap) + '.png'
+            opengl_name = str(pose_i) + '_output_opengl_' + str(diff_cap) + '.png'
             outimg.save(opengl_name, 'PNG')
             
             target_opengl = os.path.join('/home', 'jerry', 'Dropbox', opengl_name)
@@ -462,9 +458,9 @@ if __name__ == '__main__':
             blender_arr_save = (blender_arr * 100).astype(np.uint8)
             #blender_arr_save = (blender_arr * 256).astype(np.uint8)
             #print("mean opengl cosine", np.mean(opengl_arr_save), "max blender cosine", np.max(blender_arr_save))
-            blender_arr_save[np.abs(error_map) > diff_cap] = 255
+            #blender_arr_save[np.abs(error_map) > diff_cap] = 255
             blender_img = Image.fromarray(blender_arr_save)
-            blender_name = 'output_blender_' + str(pose_i) + '_' + str(diff_cap) + '.png'
+            blender_name =  str(pose_i) + '_output_blender_' + str(diff_cap) + '.png'
             blender_img.save(blender_name, 'PNG')
             target_blender = os.path.join('/home', 'jerry', 'Dropbox', blender_name)
             #copy2(blender_name, target_blender)
@@ -473,5 +469,5 @@ if __name__ == '__main__':
 
     #plot_error_vs_alpha(all_cosine_values, all_error_values)
     #plot_error_vs_mist(all_mist_values, all_error_values)
-    plot_error_histogram(all_error_values, 0.05)
-    save_concatenated_images([2048, 1024], 5, all_opengl_images, "cosine.png", num_samples, len(diff_caps))
+    plot_error_histogram(all_error_values, 0.1)
+    save_concatenated_images([2048, 1024], 5, all_opengl_images, "test_non_identity.png", num_samples, len(diff_caps))

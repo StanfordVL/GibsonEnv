@@ -85,12 +85,16 @@ class ViewDataSet3D(data.Dataset):
                 with open(posefile) as f:
                     for line in f:
                         l = line.strip().split(',')
+                        uuid = l[0]
+                        xyz  = map(float, l[1:4])
+                        quat = map(float, l[4:8])
                         if not self.meta.has_key(scene):
                             self.meta[scene] = {}
-                        metadata = (l[0], map(float, l[1:4]), map(float, l[4:8]))
+                        metadata = (uuid, xyz, quat)
+                        print(uuid, xyz)
 
-                        if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + l[0] + '.json')):
-                            self.meta[scene][metadata[0]] = metadata
+                        if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + uuid + '.json')):
+                            self.meta[scene][uuid] = metadata
             print("Indexing")
             
             for scene, meta in self.bar(self.meta.items()):
@@ -130,12 +134,19 @@ class ViewDataSet3D(data.Dataset):
         for item in pose_paths:
             f = open(item)
             pose_dict = json.load(f)
-            p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
+            
+            ## Due to an issue of the generation code we're using, camera_rt_matrix of pose_dict[0] has pitch value of pi/2
+            ## (due to panorama stitching). IMPORTANT: use pose_dict[1] here. In bash script, always set NUM_POINTS_NEEDED
+            ## to be greater than 1
+            #p = np.concatenate(np.array(pose_dict[1][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
+            p = np.concatenate(np.array(pose_dict[1][u'camera_rt_matrix'])).astype(np.float32).reshape((4,4))
+            
+            #p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
             #rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
             ## DEPTH DEBUG
             #p = p #np.dot(rotation, p)
             rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
-            p = np.dot(rotation, p)
+            p = p #np.dot(rotation, p)
             poses.append(p)
             f.close()
         
@@ -160,13 +171,15 @@ class ViewDataSet3D(data.Dataset):
         for i, item in enumerate(pose_paths):
             f = open(item)
             pose_dict = json.load(f)
-            p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
-            print('org p', i, p)
+            #p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
+            p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'])).astype(np.float32).reshape((4,4))
+            print("from json", np.array(pose_dict[0][u'camera_rt_matrix']))
+            #print('org p', i, p)
             ## DEPTH DEBUG
             #rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
             #p = p#np.dot(rotation, p)
             rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
-            p = np.dot(rotation, p)
+            p = p # np.dot(rotation, p)
             poses.append(p)
             f.close()
         
@@ -183,7 +196,11 @@ class ViewDataSet3D(data.Dataset):
         normal_target_path = normal_paths[0]
         poses_relative = []
 
+        pose_i = 0
         for item in img_poses:
+            print(item)
+            print(img_paths[pose_i])
+            pose_i = pose_i + 1
             relative = np.dot(target_pose, inv(item))
             poses_relative.append(torch.from_numpy(relative))
 

@@ -13,6 +13,7 @@ pw
 *.out
 npz/
 11HB6XZSh1Q/
-11HB6XZSh1Q_fei/
+11HB6XZSh1Q*/
 coord.npy
 dev/transfer.c
+*.jpg

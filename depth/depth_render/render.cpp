@@ -19,6 +19,9 @@ GLFWwindow* window;
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 //using namespace glm;
 using namespace std;
 
@@ -349,6 +352,8 @@ int main( int argc, char * argv[] )
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
+	//glDepthRange(1.0f, 0.0f);
+
 
 	// Cull triangles which normal is not towards the camera
 	glEnable(GL_CULL_FACE);
@@ -588,11 +593,14 @@ int main( int argc, char * argv[] )
             float fov = glm::radians(90.0f);
             glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
             glm::mat4 ViewMatrix =  getView(viewMat, k);
-            printf("View matrix for skybox %d\n", k);
-            for (int i = 0; i < 4; ++i) {
-				printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
-			}
             //glm::mat4 ViewMatrix = getViewMatrix();
+            glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
+            printf("View (pose) matrix for skybox %d\n", k);
+            for (int i = 0; i < 4; ++i) {
+				printf("\t %f %f %f %f\n", viewMatPose[0][i], viewMatPose[1][i], viewMatPose[2][i], viewMatPose[3][i]);
+				//printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
+			}
+            
             glm::mat4 ModelMatrix = glm::mat4(1.0);
 
             pose_idx ++;
@@ -600,6 +608,12 @@ int main( int argc, char * argv[] )
             //glm::mat4 tempMat = getViewMatrix();
             //debug_mat(tempMat, "csv");
 
+            glm::mat4 revertZ = glm::mat4();
+            revertZ[2][2] = -1;
+            glm::quat rotateZ_N90 = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(-90.0f)));
+			glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f));
+
+            //glm::mat4 MVP = ProjectionMatrix * ViewMatrix * revertZ * ModelMatrix;
             glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
             // Send our transformation to the currently bound shader,
@@ -730,9 +744,9 @@ int main( int argc, char * argv[] )
             //glReadPixels((GLint)0, (GLint)0,
             //    (GLint)windowWidth, (GLint)windowHeight,
             //     GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
-            glReadPixels((GLint)0, (GLint)0,
-                (GLint)windowWidth, (GLint)windowHeight,
-                 GL_BGR, GL_FLOAT, dataBuffer);
+            //glReadPixels((GLint)0, (GLint)0,
+            //    (GLint)windowWidth, (GLint)windowHeight,
+            //     GL_BGR, GL_FLOAT, dataBuffer);
 
             //glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
             glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, nSize*sizeof(float), dataBuffer);
