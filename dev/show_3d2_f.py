@@ -156,20 +156,14 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         t0 = time.time()
         
         v_cam2world = np.linalg.inv(poses[0]).dot(target_pose)
-        p = pose.dot(v_cam2world)
-        
-        trans = -np.dot(p[:3, :3].T, p[:3, -1])
-        rot = np.dot(np.array([[-1,0,0],[0,-1,0],[0,0,1]]),  np.linalg.inv(p[:3, :3]))
-        p2 = np.eye(4)
-        p2[:3, :3] = rot
-        p2[:3, -1] = trans
-
+        p = v_cam2world.dot(pose)
 
 
 
         print("Sending request ...")
         #print(v_cam2world)
-        print('current viewer pose', pose)
+        #print('current viewer pose', pose)
+        print("current camera matrix", p)
         print("camera pose", p)
         print("target pose", target_pose)
         #s = mat_to_str(p2)
@@ -177,15 +171,6 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         
         '''
         p = pose.dot(np.linalg.inv(poses[0])) #.dot(target_pose)
-
-        trans = -pose[:3, -1]
-        rot = np.linalg.inv(pose[:3, :3])
-
-
-        p2 = np.eye(4)
-        p2[:3, :3] = rot
-        p2[:3, -1] = trans
-
 
         s = mat_to_str(poses[0] * p2)
         '''
@@ -234,9 +219,9 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             #print(poses[0])
 
             pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
-            if i == 0:
-                print('First pose after')
-                print(pose_after)
+            #if i == 0:
+                #print('First pose after')
+                #print(pose_after)
             #from IPython import embed; embed()
             #print('Received pose ' + str(i))
             #print(pose_after)
@@ -308,7 +293,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
             cpose2 = np.eye(4)
             cpose2[0,3] = x
-            cpose2[1,3] = y
+            cpose2[1,3] = -y
             cpose2[2,3] = z
 
             cpose = np.dot(cpose, cpose2)
@@ -336,23 +321,27 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
         if cmd==ord('q'):
             break
+        ## z > 0: moves outward from screen
+        ## z < 0: moves inward to screen
+        ## y > 0: moves downward
+        ## y < 0: moves upward
         elif cmd == ord('w'):
-            x -= 0.05
+            z += 0.05
             changed = True
         elif cmd == ord('s'):
-            x += 0.05
+            z -= 0.05
             changed = True
         elif cmd == ord('a'):
-            y += 0.05
+            x -= 0.05
             changed = True
         elif cmd == ord('d'):
-            y -= 0.05
+            x += 0.05
             changed = True
         elif cmd == ord('z'):
-            z += 0.01
+            y += 0.03
             changed = True
         elif cmd == ord('x'):
-            z -= 0.01
+            y -= 0.03
             changed = True
 
         elif cmd == ord('r'):

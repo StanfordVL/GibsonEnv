@@ -531,7 +531,7 @@ int main( int argc, char * argv[] )
 
         //  Wait for next request from client
         socket.recv (&request);
-        std::cout << "Received Hello " << request.data() << std::endl;
+        std::cout << "Received data " << request.data() << std::endl;
 
         //printf("%s\n", request.data());
 
@@ -541,7 +541,7 @@ int main( int argc, char * argv[] )
         //std::cout << request_str << std::endl;
 
         glm::mat4 viewMat = str_to_mat(request_str);
-        debug_mat(viewMat, "json");
+        debug_mat(viewMat, "receive");
 
 		// Measure speed
 		//double currentTime = glfwGetTime();
@@ -589,7 +589,7 @@ int main( int argc, char * argv[] )
 
             // Compute the MVP matrix from keyboard and mouse input
             //computeMatricesFromInputs();
-            computeMatricesFromFile(name_loc);
+            //computeMatricesFromFile(name_loc);
             float fov = glm::radians(90.0f);
             glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
             glm::mat4 ViewMatrix =  getView(viewMat, k);
