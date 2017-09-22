@@ -88,10 +88,13 @@ def generate_data(args):
     
     for i in range(4):
         final += show[i] * np.expand_dims(m == i, 2)
+        
+    final = final.astype(np.uint8)
+    target = target.astype(np.uint8)
     
     np.savez(file = "%s/data_%d.npz" % (outf, idx), source = show, depth = target_depth, target = target)
     
-    Image.fromarray(final.astype(np.uint8)).save("%s/data_%d.jpg"%(outf, idx))
+    #Image.fromarray(final.astype(np.uint8)).save("%s/data_%d.jpg"%(outf, idx))
     
     
     
