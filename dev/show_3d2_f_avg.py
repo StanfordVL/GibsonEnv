@@ -4,7 +4,7 @@ import cv2
 import sys
 import argparse
 from datasets import ViewDataSet3D
-from completion import CompletionNet
+from completion2 import CompletionNet2
 import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
@@ -270,7 +270,7 @@ if __name__=='__main__':
 
     model = None
     if opt.model != '':
-        comp = CompletionNet()
+        comp = CompletionNet2()
         comp = torch.nn.DataParallel(comp).cuda()
         comp.load_state_dict(torch.load(opt.model))
         model = comp.module
