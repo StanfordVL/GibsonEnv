@@ -1,0 +1,27 @@
+{
+  "name": "decodejs",
+  "version": "0.1.0",
+  "description": "Transforming matterport .dam file to .obj format",
+  "contributors": [
+    "Zhiyang He <hzyjerry@gmail.com>"
+  ],
+  "homepage": "https://github.com/dcodeIO/protobuf.js",
+  "keywords": [
+    "buffer",
+    "protobuf",
+    "bytebuffer"
+  ],
+  "dependencies": {
+    "bytebuffer": "~5"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=0.8"
+  },
+  "browser": {
+    "fs": false,
+    "path": false
+  },
+  "scripts": {
+  }
+}
