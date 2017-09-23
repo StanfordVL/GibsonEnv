@@ -19,7 +19,6 @@ sys.path.append( os.path.dirname( os.path.realpath(__file__) ) )
 from activate_env import add_on_path
 sys.path.append(add_on_path)
 
-import _cycles
 import bpy
 import logging
 import math
@@ -442,7 +441,6 @@ def set_use_of_gpu_to_render_scene( use=True, compute_device='CUDA_0' ):
   bpy.context.scene.cycles.device = 'GPU' if use else 'CPU'
   bpy.context.user_preferences.system.compute_device_type = 'CUDA'
   bpy.context.user_preferences.system.compute_device = 'CUDA_0'
-  print("Available compute devices: " + str(_cycles.available_devices()))
   print("Default CUDA device: " + bpy.context.user_preferences.system.compute_device)
   print("Default cycles device: " + bpy.context.scene.cycles.device)
 
