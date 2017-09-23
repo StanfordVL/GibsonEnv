@@ -9,7 +9,8 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 import torchvision.utils as vutils
 from datasets import PairDataset
-from completion import CompletionNet, Discriminator2
+from completion import Discriminator2
+from completion2 import CompletionNet2, identity_init, Perceptual
 from tensorboard import SummaryWriter
 from datetime import datetime
 import vision_utils
@@ -55,7 +56,7 @@ def main():
     parser.add_argument('--batchsize'  ,type=int, default = 20, help='batchsize')
     parser.add_argument('--workers'  ,type=int, default = 9, help='number of workers')
     parser.add_argument('--nepoch'  ,type=int, default = 50, help='number of epochs')
-    parser.add_argument('--lr', type=float, default=0.002, help='learning rate, default=0.002')
+    parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.002')
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
     parser.add_argument('--outf', type=str, default="filler_pano_pc_full", help='output folder')
     parser.add_argument('--model', type=str, default="", help='model path')
@@ -81,7 +82,6 @@ def main():
         transforms.ToTensor(),
     ])
     
-    
     d = PairDataset(root = opt.dataroot, transform=tf, mist_transform = mist_tf)
 
     cudnn.benchmark = True
@@ -93,14 +93,16 @@ def main():
     img_original = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
-    comp = CompletionNet()
+    comp = CompletionNet2()
     dis = Discriminator2(pano = False)
     current_epoch = opt.cepoch
 
     comp =  torch.nn.DataParallel(comp).cuda()
-    comp.apply(weights_init)
+    comp.apply(identity_init)
     dis = torch.nn.DataParallel(dis).cuda()
     dis.apply(weights_init)
+
+    
 
     if opt.model != '':
         comp.load_state_dict(torch.load(opt.model))
@@ -111,7 +113,7 @@ def main():
     optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
     optimizerD = torch.optim.Adam(dis.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
 
-    curriculum = (20000, 30000) # step to start D training and G training, slightly different from the paper
+    curriculum = (200000, 300000) # step to start D training and G training, slightly different from the paper
     alpha = 0.0004
 
     errG_data = 0
@@ -119,8 +121,8 @@ def main():
     
     vgg16 = models.vgg16(pretrained = False)
     vgg16.load_state_dict(torch.load('vgg16-397923af.pth'))
-    feat = torch.nn.DataParallel(vgg16.features).cuda()
-    feat.eval()
+    feat = vgg16.features
+    p = torch.nn.DataParallel(Perceptual(feat)).cuda()
     
     
 
@@ -133,10 +135,11 @@ def main():
             step = i + epoch * len(dataloader)
             
             mask = (torch.sum(source,1)==0).float().unsqueeze(1)
-            img_mean =torch.sum(torch.sum(source, 2),2) / torch.sum(torch.sum(mask, 2),2).view(3,1)
-            source += mask.repeat(1,3,1,1) * img_mean.view(3,3,1,1).repeat(1,1,1024,2048)
             
             #from IPython import embed; embed()
+            img_mean =torch.sum(torch.sum(source, 2),2) / torch.sum(torch.sum(mask, 2),2).view(3,1)
+
+            source += mask.repeat(1,3,1,1) * img_mean.view(3,3,1,1).repeat(1,1,1024,2048)
             
             source_depth = source_depth[:,:,:,0].unsqueeze(1)
             
@@ -150,7 +153,7 @@ def main():
             imgc, maskvc, img_originalc = crop(img, maskv, img_original)
             #from IPython import embed; embed()
             recon = comp(imgc, maskvc)
-            loss = l2(recon, img_originalc)
+            loss = l2(p(recon), p(img_originalc).detach())
             loss.backward(retain_variables = True)
             
             
@@ -183,7 +186,7 @@ def main():
             
             print('[%d/%d][%d/%d] %d MSEloss: %f G_loss %f D_loss %f' % (epoch, opt.nepoch, i, len(dataloader), step, loss.data[0], errG_data, errD_data))
             
-            if i%500 == 0:
+            if i%200 == 0:
                 visual = torch.cat([imgc.data, recon.data, img_originalc.data], 3)
                 visual = vutils.make_grid(visual, normalize=True)
                 writer.add_image('image', visual, step)

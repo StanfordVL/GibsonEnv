@@ -92,7 +92,7 @@ def generate_data(args):
     final = final.astype(np.uint8)
     target = target.astype(np.uint8)
     
-    np.savez(file = "%s/data_%d.npz" % (outf, idx), source = show, depth = target_depth, target = target)
+    np.savez(file = "%s/data_%d.npz" % (outf, idx), source = final, depth = target_depth, target = target)
     
     #Image.fromarray(final.astype(np.uint8)).save("%s/data_%d.jpg"%(outf, idx))
     

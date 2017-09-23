@@ -126,3 +126,48 @@ def identity_init(m):
     elif classname.find('BatchNorm') != -1:
         m.weight.data.fill_(1)
         m.bias.data.fill_(0)
+
+        
+
+class Perceptual(nn.Module):
+    def __init__(self, features):
+        super(Perceptual, self).__init__()
+        self.features = features
+        
+    def forward(self, x):
+        bs = x.size(0)
+        x = self.features[0](x)
+        x = self.features[1](x)
+        x = self.features[2](x)
+        x0 = x.view(bs,-1,1)
+        x = F.relu(x)
+        x = self.features[4](x)
+        x = self.features[5](x)
+        x = self.features[6](x)
+        x = self.features[7](x)
+        x1 = x.view(bs, -1, 1)
+        x = F.relu(x)
+        x = self.features[9](x)
+        x = self.features[10](x)
+        x = self.features[11](x)
+        x = self.features[12](x)
+        x2 = x.view(bs, -1, 1)
+        x = F.relu(x)
+        x = self.features[14](x)
+        x = self.features[15](x)
+        x = self.features[16](x)
+        x = self.features[17](x)
+        x = self.features[18](x)
+        x = self.features[19](x)
+        x3 = x.view(bs, -1, 1)
+        x = F.relu(x)
+        x = self.features[21](x)
+        x = self.features[22](x)
+        x = self.features[23](x)
+        x = self.features[24](x)
+        x = self.features[25](x)
+        x = self.features[26](x)
+        x4 = x.view(bs, -1, 1)
+        
+        perfeat = torch.cat([x0, x1, x2, x3, x4], 1)
+        return perfeat
