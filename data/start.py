@@ -29,7 +29,6 @@
 from __future__ import print_function
 from datatasks import DataTasks
 import argparse
-import shutil
 import os
 
 def model_finished(model_path, model_id):
@@ -38,16 +37,15 @@ def model_finished(model_path, model_id):
 	#check point.json
 	return False
 
-def model_process(model_path, model_id):
-	pano_dir = os.path.join(model_path, "pano")
-	dt = DataTasks(".", model_path, model_id)
+def model_process(model_root, model_id):
+	pano_dir = os.path.join(model_root, model_id, "pano")
+	dt = DataTasks(".", model_root, model_id)
 	dt.generate_points(2, 1, 1)
 	dt.create_obj_file()
 	dt.create_rgb_images()
 	dt.create_mist_images()
 	dt.create_normal_images()
-	shutil.move(os.path.join(model_path, "points"), os.path.join(model_path, "pano", "points"))
-	## move point folder
+	dt.move_point_folder()
 	return
 
 if __name__ == "__main__":

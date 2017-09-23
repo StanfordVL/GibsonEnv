@@ -1,4 +1,5 @@
 from subprocess import call
+import shutil
 import os
 
 class DataTasks:
@@ -60,3 +61,9 @@ class DataTasks:
 		os.chdir(self.code_dir)
 		print("Finished: %s create normal images" % self.model_id)
 		return True
+
+	def move_point_folder(self):
+		old_folder = os.path.join(self.model_path, "points")
+		new_folder = os.path.join(self.model_path, "pano", "points")
+		 
+		shutil.move(old_folder, new_folder)
