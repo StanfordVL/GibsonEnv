@@ -3,7 +3,6 @@
 *.so
 *.egg-info/
 .DS_Store
-data/
 *.pth
 src/
 Dockerfile
@@ -12,3 +11,8 @@ pw
 *.ipynb
 *.out
 npz/
+11HB6XZSh1Q/
+11HB6XZSh1Q*/
+coord.npy
+dev/transfer.c
+*.jpg

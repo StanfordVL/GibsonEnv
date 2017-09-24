@@ -1,9 +1,9 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False
 import numpy as np
 
-def transfer2(unsigned short [:,:,:,:] in_img, int [:,:,:]coords, int h, int w):
+def transfer2(float [:,:,:,:] in_img, int [:,:,:]coords, int h, int w):
     
-    cdef unsigned short [:,:,:] out_img = np.zeros((h,w,3)).astype(np.uint16)
+    cdef double [:,:,:] out_img = np.zeros((h,w,3))
     
     cdef int xcoord, ycoord
     cdef int ind, corrx, corry

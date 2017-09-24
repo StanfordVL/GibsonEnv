@@ -19,6 +19,9 @@ GLFWwindow* window;
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 //using namespace glm;
 using namespace std;
 
@@ -201,6 +204,7 @@ int main( int argc, char * argv[] )
     std::string model_id = cmdp.get<std::string>("model");
 
     std::string name_obj = name_path + "/" + model_id + "/" + model_id + "_HIGH.obj";
+    //std::string name_obj = name_path + "/" + model_id + "/modeldata/out_res.obj";
 	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.csv";
 
 
@@ -347,6 +351,8 @@ int main( int argc, char * argv[] )
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
+	//glDepthRange(1.0f, 0.0f);
+
 
 	// Cull triangles which normal is not towards the camera
 	glEnable(GL_CULL_FACE);
@@ -530,8 +536,8 @@ int main( int argc, char * argv[] )
 
         std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
 
-        std::cout << "Finished cast" << std::endl;
-        std::cout << request_str << std::endl;
+        std::cout << "\nFinished cast" << std::endl;
+        //std::cout << request_str << std::endl;
 
         glm::mat4 viewMat = str_to_mat(request_str);
         debug_mat(viewMat, "json");
@@ -550,17 +556,22 @@ int main( int argc, char * argv[] )
 			lastTime += 1.0;
 		}
 
-        zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short) * 6);
+        //zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short) * 6);
+        zmq::message_t reply (windowWidth*windowHeight*sizeof(float) * 6);
+        //std::cout << "message reply size " <<  windowWidth*windowHeight*sizeof(float) * 6 << std::endl;
+     
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
         glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
         
         int nSize = windowWidth*windowHeight*3;
-        int nByte = nSize*sizeof(unsigned short);
+        //int nByte = nSize*sizeof(unsigned short);
+        int nByte = nSize*sizeof(float);
+        
         // First let's create our buffer, 3 channels per Pixel
-        unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
+        float* dataBuffer = (float*)malloc(nByte);
         //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
 
-        unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
+        float * dataBuffer_c = (float * ) malloc(windowWidth*windowHeight * sizeof(float));
         if (!dataBuffer) return false;
         if (!dataBuffer_c) return false;
 
@@ -577,10 +588,18 @@ int main( int argc, char * argv[] )
 
             // Compute the MVP matrix from keyboard and mouse input
             //computeMatricesFromInputs();
-            //computeMatricesFromFile(name_loc);
+            computeMatricesFromFile(name_loc);
             float fov = glm::radians(90.0f);
             glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
             glm::mat4 ViewMatrix =  getView(viewMat, k);
+            //glm::mat4 ViewMatrix = getViewMatrix();
+            glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
+            printf("View (pose) matrix for skybox %d\n", k);
+            for (int i = 0; i < 4; ++i) {
+				printf("\t %f %f %f %f\n", viewMatPose[0][i], viewMatPose[1][i], viewMatPose[2][i], viewMatPose[3][i]);
+				//printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
+			}
+            
             glm::mat4 ModelMatrix = glm::mat4(1.0);
 
             pose_idx ++;
@@ -588,6 +607,12 @@ int main( int argc, char * argv[] )
             //glm::mat4 tempMat = getViewMatrix();
             //debug_mat(tempMat, "csv");
 
+            glm::mat4 revertZ = glm::mat4();
+            revertZ[2][2] = -1;
+            glm::quat rotateZ_N90 = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(-90.0f)));
+			glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f));
+
+            //glm::mat4 MVP = ProjectionMatrix * ViewMatrix * revertZ * ModelMatrix;
             glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
             // Send our transformation to the currently bound shader,
@@ -714,17 +739,24 @@ int main( int argc, char * argv[] )
             
             // Let's fetch them from the backbuffer
             // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
-            glReadPixels((GLint)0, (GLint)0,
-                (GLint)windowWidth, (GLint)windowHeight,
-                 GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
+            
+            //glReadPixels((GLint)0, (GLint)0,
+            //    (GLint)windowWidth, (GLint)windowHeight,
+            //     GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
+            //glReadPixels((GLint)0, (GLint)0,
+            //    (GLint)windowWidth, (GLint)windowHeight,
+            //     GL_BGR, GL_FLOAT, dataBuffer);
 
-            glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
+            //glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
+            glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, nSize*sizeof(float), dataBuffer);
 
             
-            for (int i = 0; i < windowWidth * windowHeight; i++) 
-                dataBuffer_c[i] = dataBuffer[3*i];
+            for (int i = 0; i < windowWidth * windowHeight; i++) {
+                dataBuffer_c[i] = (float) dataBuffer[3*i];
+            }
             
-            memcpy (reply.data () + windowWidth*windowHeight*sizeof(unsigned short) * k, (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
+            //memcpy (reply.data () + windowWidth*windowHeight*sizeof(unsigned short) * k, (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
+            memcpy (reply.data () + windowWidth*windowHeight*sizeof(float) * k, (float*)dataBuffer_c, windowWidth*windowHeight*sizeof(float));
             
             
 
