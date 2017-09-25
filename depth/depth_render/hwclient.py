@@ -17,14 +17,16 @@ import matplotlib.pyplot as plt
 import argparse
 import json
 from shutil import copy2
-#import transform3d
-
 from transfer import transfer2
 
-
-
-img_path  = "./"
-blender_path = "./point_29b9558f6a244ca493d2bf52709684e2_view_equirectangular_domain_mist.png"
+## Number of views to visualize pose matching result,
+## range(opt.idx, opt.idx + num_samples)
+##   num_samples == number of columns in final image 
+num_samples = 5
+## List of values to cap errors (unit: meters)
+## Pixels with depth error greater than the cap will be marked white
+##   len(diff_caps) == number of rows in final image
+diff_caps = [0.02, 0.04, 0.06, 0.08, 0.1, 0.12]
 
 
 
@@ -150,13 +152,11 @@ class InImg(object):
             return (indx + 1, remx, remy)
 
 
-
-def plot_histogram(opengl_arr):
+def plot_histogram(opengl_arr, blender_path):
     blender_img = Image.open(blender_path)
     blender_arr = np.asarray(blender_img)
 
     print("blender", blender_arr.shape, "opengl", opengl_arr.shape)
-
 
     blender_arr = blender_arr.reshape((-1, 1))
     ## TODO: blender array has 65535 elements
@@ -176,6 +176,7 @@ def plot_histogram(opengl_arr):
     plt.legend(loc='upper right')
     plt.show()
 
+## Side-by-side comparison of opengl & blender array
 def plot_2_histogram(opengl_arr, blender_arr):
     blender_arr_tmp = blender_arr.reshape((-1, 1))
     ## TODO: blender array has 65535 elements
@@ -347,25 +348,20 @@ if __name__ == '__main__':
     root     = opt.dataroot
     model_id = opt.model
 
-    pose_idx = opt.idx
+    if not os.path.isdir("debug"):
+        os.mkdir("debug")
 
     all_opengl_images = []
-
-    num_samples = 1
-    diff_caps = [0.5] #[0.02, 0.04, 0.06, 0.08, 0.1, 0.12]
-
     all_cosine_values = []
     all_error_values = []
     all_mist_values = []
 
 
-    for pose_idx in range(5, 5 + num_samples):
+    for pose_idx in range(opt.idx, opt.idx + num_samples):
         #pose_list, pose_str = read_pose_from_csv(root, model_id, 0)
         #print('parsed pose str', pose_str)
-
         mat_str, pose_i = read_pose_from_json(root, model_id, pose_idx)
 
-        
         img_array = []
 
 
@@ -377,60 +373,43 @@ if __name__ == '__main__':
         print("Sending request ..." , pose_i)
         socket.send(mat_str)
 
-        #  Get the reply.
+        ## Process and format the response.
         message = socket.recv()
-        #data = np.array(np.frombuffer(message, dtype=np.uint16)).reshape((6, 768, 768, 1))
-
         ## 32bit float seems precise enough for receiver
         data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
-        
+        # data = np.array(np.frombuffer(message, dtype=np.uint16)).reshape((6, 768, 768, 1))
         data = data[:, ::-1,::,:]
         
         for i in range(6):
             img_array.append(data[i])
 
         img_array2 = [img_array[0], img_array[1], img_array[2], img_array[3], img_array[4], img_array[5]]
-
-        print("(Incoming array) opengl max", np.max(np.array(img_array2)), "opengl mean", np.mean(np.array(img_array2)))
         
-        #opengl_arr = convert_array(np.array(255 * np.array(img_array2), dtype = np.uint16))
-        #opengl_arr = convert_array(np.array(img_array2, dtype=np.uint16))
+        ## opengl_arr is float-formatted
         opengl_arr = convert_array(np.array(img_array2))
-        
-        opengl_arr = opengl_arr[::, ::]
-
-        #plot_histogram(opengl_arr)
         blender_arr = find_blender_output(root, model_id, pose_i)
-
+        
         #plot_2_histogram(opengl_arr, blender_arr)
+        #plot_histogram(opengl_arr, "point_29b9558f6a244ca493d2bf52709684e2_view_equirectangular_domain_mist.png")
 
-        blender_arr[blender_arr == 65535] = 0 
-        #print("(Incoming array) opengl max", np.max(opengl_arr), "opengl mean", np.mean(opengl_arr))
+        blender_arr[blender_arr == 65535] = 0
+
+        ## Only keep first one of three channels
         opengl_arr_float = np.array(opengl_arr[:, :, 0]).astype(float)
         blender_arr_float = np.array(blender_arr).astype(float) * 128 / 65535
-        #print("(Incoming array) blender max", np.max(blender_arr_float), "blender mean", np.mean(blender_arr_float))
+
         error_map = np.array(opengl_arr_float - blender_arr_float)
+
         ## Compare error with neighboring pixels
         #error_map = compare_err_neighbors(opengl_arr_float, blender_arr_float, 2048, 1024)
 
         #cosine_arr = find_cosine_output(root, model_id, pose_i)
-        #print(error_map.shape, cosine_arr.shape)
-        #print("(Incoming array) cosine max", np.max(cosine_arr), "cosine mean", np.mean(cosine_arr))
-        
 
-        #if (len(all_error_values) == 0):
+
+        ## Stats for error histogra
         all_error_values  = all_error_values  + error_map.reshape((1, -1))[0].tolist()
-        #all_cosine_values = all_cosine_values + cosine_arr.reshape((1, -1))[0].tolist()
-        all_mist_values  = all_mist_values  + opengl_arr_float.reshape((1, -1))[0].tolist()
+        all_mist_values   = all_mist_values  + opengl_arr_float.reshape((1, -1))[0].tolist()
         
-        
-
-        #print("Error map max min", np.max(error_map), np.min(error_map))
-        #print("(Incoming array) Blender max min", np.max(blender_arr), np.min(blender_arr))
-        #print("(Incoming array) Opengl max min", np.max(opengl_arr[:, :, 0]), np.min(opengl_arr[:, :, 0]))
-        #error_map = (error_map / 65535) * 12800
-        print("(Error array) max", np.max(np.abs(error_map)), "std", np.std(error_map), "mean", np.mean(error_map))
-
         #plot_heat_map(error_map)
         
 
@@ -438,36 +417,32 @@ if __name__ == '__main__':
 
 
         for diff_cap in diff_caps:
-            #opengl_arr_save = (opengl_arr / 10).astype(np.uint8)
-            #opengl_arr_save = (opengl_arr * 255).astype(np.uint8)
-            #print("(Before Saving image array) opengl max", opengl_arr.dtype, np.max(opengl_arr), "opengl mean", np.mean(opengl_arr))
-            
+            ## Handling of opengl image saving
             opengl_arr_save = (opengl_arr * 100).astype(np.uint8)
-            print("(Saving image array) opengl max", np.max(opengl_arr_save), "opengl mean", np.mean(opengl_arr_save[:, :, 0]))
-            #opengl_arr_save[np.abs(error_map) > diff_cap] = 255
+            opengl_arr_save[np.abs(error_map) > diff_cap] = 255
             outimg = Image.fromarray(opengl_arr_save)
-            opengl_name = str(pose_i) + '_output_opengl_' + str(diff_cap) + '.png'
+            opengl_name = os.path.join("debug", str(pose_i) + '_output_opengl_' + str(diff_cap) + '.png')
             outimg.save(opengl_name, 'PNG')
             
-            target_opengl = os.path.join('/home', 'jerry', 'Dropbox', opengl_name)
-            #print(target_opengl)
+            #target_opengl = os.path.join('/home', 'jerry', 'Dropbox', opengl_name)
             #copy2(opengl_name, target_opengl)
 
             curr_opengl_images.append(opengl_name)
 
+
+            ## Handling of blender image saving
             blender_arr_save = (blender_arr * 100).astype(np.uint8)
-            #blender_arr_save = (blender_arr * 256).astype(np.uint8)
-            #print("mean opengl cosine", np.mean(opengl_arr_save), "max blender cosine", np.max(blender_arr_save))
-            #blender_arr_save[np.abs(error_map) > diff_cap] = 255
+            blender_arr_save[np.abs(error_map) > diff_cap] = 255
             blender_img = Image.fromarray(blender_arr_save)
-            blender_name =  str(pose_i) + '_output_blender_' + str(diff_cap) + '.png'
-            blender_img.save(blender_name, 'PNG')
-            target_blender = os.path.join('/home', 'jerry', 'Dropbox', blender_name)
+            blender_name = os.path.join("debug", str(pose_i) + '_output_blender_' + str(diff_cap) + '.png')
+            #blender_img.save(blender_name, 'PNG')
+            
+            #target_blender = os.path.join('/home', 'jerry', 'Dropbox', blender_name)
             #copy2(blender_name, target_blender)
         
         all_opengl_images.append(curr_opengl_images)
 
     #plot_error_vs_alpha(all_cosine_values, all_error_values)
     #plot_error_vs_mist(all_mist_values, all_error_values)
-    plot_error_histogram(all_error_values, 0.1)
-    save_concatenated_images([2048, 1024], 5, all_opengl_images, "test_non_identity.png", num_samples, len(diff_caps))
+    #plot_error_histogram(all_error_values, 0.1)
+    save_concatenated_images([2048, 1024], 5, all_opengl_images, "pose_match_%s_%s.png" %(opt.idx, num_samples), num_samples, len(diff_caps))
