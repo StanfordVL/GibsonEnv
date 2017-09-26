@@ -46,8 +46,8 @@ parser.add_argument('--MIN_VIEWS', type=int, required=True,
                     help='The minimum number of views per point')
 parser.add_argument('--MAX_VIEWS', type=int, required=True,
                     help='The maximum number of views per point (-1 to disable)')
-
-basepath = os.getcwd()
+parser.add_argument('--BASEPATH', type=str, required=True,
+                    help='The (absolute) base path of the current model')
 
 TASK_NAME = 'points'
 
@@ -61,6 +61,9 @@ def main():
   logger = io_utils.create_logger( __name__ )  
 #   io_utils.load_settings( remaining_args )
 #   utils.validate_blender_settings( settings )
+
+  assert(args.BASEPATH)
+  basepath = args.BASEPATH
   
   assert(args.NUM_POINTS_NEEDED > 1)
   utils.delete_all_objects_in_context()

@@ -39,6 +39,7 @@ def start_logging():
 #   global logger
   logger = io_utils.create_logger( __name__ )  
   utils.set_random_seed()
+  ## TODO: need to change, no longer rely on getcwd()
   basepath = os.getcwd()
   return logger, basepath
 
