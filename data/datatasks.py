@@ -1,4 +1,4 @@
-from subprocess import call
+from subprocess import call, Popen
 import shutil
 import os
 
@@ -17,34 +17,48 @@ class DataTasks:
 		command_str  = "%s %s --" % (self.blender_py, code_point)
 		print(command_str)
 		command_list = command_str.split()
-		call(command_list + ["--NUM_POINTS_NEEDED", str(num_needed), "--MIN_VIEWS", str(min_view), "--MAX_VIEWS", str(max_view), "--BASEPATH", self.model_root])
-		print("Finished: %s point generation" % self.model_id)
+		try:
+			proc = Popen(command_list + ["--NUM_POINTS_NEEDED", str(num_needed), "--MIN_VIEWS", str(min_view), "--MAX_VIEWS", str(max_view), "--BASEPATH", self.model_root])
+			print("Finished: %s point generation" % self.model_id)
+			proc.wait()
+		except KeyboardInterrupt:
+			proc.kill()
 		return True
 
 	def create_obj_file(self):
 		code_obj     = os.path.join(self.code_dir, 'decode', 'decode.js')
 		command_str  = "node %s --rootdir=%s --model=%s" % (code_obj, self.model_root, self.model_id)
 		command_list = command_str.split()
-		call(command_list)
-		print("Finished: %s object creation" % self.model_id)
+		try:
+			proc = Popen(command_list)
+			print("Finished: %s object creation" % self.model_id)
+			proc.wait()
+		except KeyboardInterrupt:
+			proc.kill()
 		return True
 
 	def create_rgb_images(self):
 		code_rgb     = os.path.join(self.code_dir, "create_rgb_images.py")
 		command_str  = "%s %s --" % (self.blender_py, code_rgb)
 		command_list = command_str.split()
-		call(command_list + ["--BASEPATH", self.model_root])
-		print("Finished: %s create rgb images" % self.model_id)
+		try:
+			proc = Popen(command_list + ["--BASEPATH", self.model_root])
+			print("Finished: %s create rgb images" % self.model_id)
+			proc.wait()
+		except KeyboardInterrupt:
+			proc.kill()
 		return True
 
 	def create_mist_images(self):
-		os.chdir(self.model_root)
 		code_mist    = os.path.join(self.code_dir, "create_mist_images.py")
 		command_str  = "%s %s --" % (self.blender_py, code_mist)
 		command_list = command_str.split()
-		call(command_list + ["--BASEPATH", self.model_root])
-		os.chdir(self.code_dir)
-		print("Finished: %s create mist images" % self.model_id)
+		try:
+			proc = Popen(command_list + ["--BASEPATH", self.model_root])
+			print("Finished: %s create mist images" % self.model_id)
+			proc.wait()
+		except KeyboardInterrupt:
+			proc.kill()
 		return True
 
 
@@ -52,8 +66,9 @@ class DataTasks:
 		code_normal  = os.path.join(self.code_dir, "create_normal_images.py")
 		command_str  = "%s %s --" % (self.blender_py, code_normal)
 		command_list = command_str.split()
-		call(command_list + ["--BASEPATH", self.model_root])
+		proc = Popen(command_list + ["--BASEPATH", self.model_root])
 		print("Finished: %s create normal images" % self.model_id)
+		proc.wait()
 		return True
 
 

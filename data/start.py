@@ -41,13 +41,13 @@ def model_finished(model_root):
 def model_process(model_root, model_dest, model_id):
 	pano_dir = os.path.join(model_root, model_id, "pano")
 	dt = DataTasks(model_root, model_dest, model_id)
-	#dt.generate_points(2, 1, 1)
+	dt.generate_points(2, 1, 1)
 	dt.create_obj_file()
-	#dt.create_rgb_images()
+	dt.create_rgb_images()
 	#dt.create_mist_images()
 	#dt.create_normal_images()
 	#dt.move_point_folder()
-	dt.move_model_to_dest()
+	#dt.move_model_to_dest()
 	return
 
 if __name__ == "__main__":
