@@ -65,5 +65,6 @@ class DataTasks:
 	def move_point_folder(self):
 		old_folder = os.path.join(self.model_path, "points")
 		new_folder = os.path.join(self.model_path, "pano", "points")
-		 
+		if os.isdir(new_folder):
+			shutil.rmtree(new_folder)
 		shutil.move(old_folder, new_folder)
