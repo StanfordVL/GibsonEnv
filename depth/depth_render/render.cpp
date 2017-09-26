@@ -178,7 +178,7 @@ glm::mat4 str_to_mat(std::string str) {
 	    idx += 1;
 	}
 	mat[idx % 4][idx / 4] = std::stof(str);
-	
+
 	return mat;
 }
 
@@ -384,14 +384,14 @@ int main( int argc, char * argv[] )
 	// Note: use unsigned int because of too many indices
 	//std::vector<short unsigned int> short_indices;
 	//bool res = loadAssImp(name_ply.c_str(), short_indices, vertices, uvs, normals);
-	
+
 	std::vector<unsigned int> indices;
-	
+
 	std::vector<glm::vec3> indexed_vertices;
 	std::vector<glm::vec2> indexed_uvs;
 	std::vector<glm::vec3> indexed_normals;
 	indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
-	
+
 
 
 	// Load it into a VBO
@@ -519,8 +519,8 @@ int main( int argc, char * argv[] )
     socket.bind ("tcp://127.0.0.1:5555");
 
     int pose_idx = 0;
-    
-    
+
+
 
 	do{
 
@@ -559,14 +559,14 @@ int main( int argc, char * argv[] )
         //zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short) * 6);
         zmq::message_t reply (windowWidth*windowHeight*sizeof(float) * 6);
         //std::cout << "message reply size " <<  windowWidth*windowHeight*sizeof(float) * 6 << std::endl;
-     
+
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
         glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-        
+
         int nSize = windowWidth*windowHeight*3;
         //int nByte = nSize*sizeof(unsigned short);
         int nByte = nSize*sizeof(float);
-        
+
         // First let's create our buffer, 3 channels per Pixel
         float* dataBuffer = (float*)malloc(nByte);
         //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
@@ -575,11 +575,11 @@ int main( int argc, char * argv[] )
         if (!dataBuffer) return false;
         if (!dataBuffer_c) return false;
 
-        
+
         for (int k = 0; k < 6; k ++ )
         {
             // Render to our framebuffer
-            
+
             // Clear the screen
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -588,7 +588,7 @@ int main( int argc, char * argv[] )
 
             // Compute the MVP matrix from keyboard and mouse input
             //computeMatricesFromInputs();
-            computeMatricesFromFile(name_loc);
+            //computeMatricesFromFile(name_loc);
             float fov = glm::radians(90.0f);
             glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
             glm::mat4 ViewMatrix =  getView(viewMat, k);
@@ -599,7 +599,7 @@ int main( int argc, char * argv[] )
 				printf("\t %f %f %f %f\n", viewMatPose[0][i], viewMatPose[1][i], viewMatPose[2][i], viewMatPose[3][i]);
 				//printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
 			}
-            
+
             glm::mat4 ModelMatrix = glm::mat4(1.0);
 
             pose_idx ++;
@@ -736,10 +736,10 @@ int main( int argc, char * argv[] )
             //glfwSwapBuffers(window);
             //glfwPollEvents();
 
-            
+
             // Let's fetch them from the backbuffer
             // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
-            
+
             //glReadPixels((GLint)0, (GLint)0,
             //    (GLint)windowWidth, (GLint)windowHeight,
             //     GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
@@ -750,15 +750,15 @@ int main( int argc, char * argv[] )
             //glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
             glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, nSize*sizeof(float), dataBuffer);
 
-            
+
             for (int i = 0; i < windowWidth * windowHeight; i++) {
                 dataBuffer_c[i] = (float) dataBuffer[3*i];
             }
-            
+
             //memcpy (reply.data () + windowWidth*windowHeight*sizeof(unsigned short) * k, (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
             memcpy (reply.data () + windowWidth*windowHeight*sizeof(float) * k, (float*)dataBuffer_c, windowWidth*windowHeight*sizeof(float));
-            
-            
+
+
 
         }
 
@@ -768,7 +768,7 @@ int main( int argc, char * argv[] )
         free(dataBuffer_c);
         //free(dataBuffer);
         //free(dataBuffer_c);
-        
+
 
 
 	} while (true);

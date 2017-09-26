@@ -11,7 +11,9 @@ from torch.autograd import Variable
 import time
 from numpy import cos, sin
 import utils
-
+from scipy.signal import convolve2d
+import scipy
+from PIL import Image
 
 
 mousex,mousey=0.5,0.5
@@ -57,6 +59,14 @@ def onmouse(*args):
     mousex=mx/float(256)
     mousey=my/float(256 * 2)
 
+def gkern(kernlen=10, nsig=2):
+    """Returns a 2D Gaussian kernel array."""
+    interval = (2*nsig+1.)/(kernlen)
+    x = np.linspace(-nsig-interval/2., nsig+interval/2., kernlen+1)
+    kern1d = np.diff(scipy.stats.norm.cdf(x))
+    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
+    kernel = kernel_raw/kernel_raw.sum()
+    return kernel
 
 
 def showpoints(imgs, depths, poses, model, target, tdepth):
@@ -65,8 +75,8 @@ def showpoints(imgs, depths, poses, model, target, tdepth):
     global fps
 
     showsz = target.shape[0]
-
-    show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
+    global show
+    show = np.zeros((showsz,showsz * 2,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.int32)
 
     target_depth[:] = (tdepth[:,:,0] * 12800).astype(np.int32)
@@ -83,9 +93,12 @@ def showpoints(imgs, depths, poses, model, target, tdepth):
     cpose = np.eye(4)
 
     def render(imgs, depths, pose, model, poses):
-        global fps
+        global fps, show
         t0 = time.time()
         #target_depth[:] = 65535
+        
+        show_org=np.zeros((4, showsz,showsz * 2,3),dtype='uint8')
+        
         show[:] = 0
         before = time.time()
         for i in range(len(imgs)):
@@ -100,9 +113,31 @@ def showpoints(imgs, depths, poses, model, target, tdepth):
                        imgs[i].ctypes.data_as(ct.c_void_p),
                        depths[i].ctypes.data_as(ct.c_void_p),
                        pose_after.ctypes.data_as(ct.c_void_p),
-                       show.ctypes.data_as(ct.c_void_p),
+                       show_org[i].ctypes.data_as(ct.c_void_p),
                        target_depth.ctypes.data_as(ct.c_void_p)
                       )
+            
+            
+        density = np.zeros((4, 1024, 2048))
+        for i in range(4):
+            #print(i)
+            mask = np.sum(show_org[i], axis=2) > 0
+            density[i] = convolve2d(mask, gkern(), mode = 'same')
+            density[i] = convolve2d(density[i], gkern(), mode = 'same')
+            density[i] = convolve2d(density[i], gkern(), mode = 'same')
+    
+
+        m = np.argmax(density, axis = 0)
+        final = np.zeros((1024, 2048, 3))
+    
+        for i in range(4):
+            final += show_org[i] * np.expand_dims(m == i, 2)
+
+        final = final.astype(np.uint8)
+        show[:] = final[:]
+        show = show.astype(np.uint8)
+                
+        Image.fromarray(final).save('probe.png')
 
         print('PC render time:', time.time() - before)
 
@@ -115,8 +150,16 @@ def showpoints(imgs, depths, poses, model, target, tdepth):
             mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
             mask = (torch.sum(source,0)==0).float().unsqueeze(0)
+            
+            
+            print(source.size(), mask.size())
+            img_mean = (torch.sum(torch.sum(source, 1),1) / torch.sum(torch.sum(mask, 1),1)).view(3,1)
+            print(img_mean)
+            
+            
+            
             print(source.size(), mask.size(), mean.size())
-            source += mask.repeat(3,1,1) * mean.view(3,1,1).repeat(1,1024,2048)
+            source += mask.repeat(3,1,1) * img_mean.view(3,1,1).repeat(1,1024,2048)
             print(source_depth.size())
             print(mask.size())
             source_depth = torch.cat([source_depth, mask], 0)
