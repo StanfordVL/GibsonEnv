@@ -29,7 +29,7 @@ DamLoader.prototype = {
     constructor: DamLoader,
     load: function(id, mtlName, meshUrl) {
         self = this;
-        var damPath = self.inputDB + '/' + id + '/dam';
+        var damPath = self.inputDB + '/dam';
         fs.readFile(self.selectDam(damPath), function read(err, data) {
             if (err) {
                 throw err;
@@ -155,10 +155,10 @@ DamLoader.prototype = {
     },
     saveFile: function(content, id, name) {
         if (self.outputDB !== "") {
-            if (!fs.existsSync(self.outputDB + '/' + id)){
-                fs.mkdirSync(self.outputDB + '/' + id);
+            if (!fs.existsSync(self.outputDB)){
+                fs.mkdirSync(self.outputDB);
             }
-            var filePath = self.outputDB + '/' + id + '/modeldata/' + name
+            var filePath = self.outputDB + '/modeldata/' + name
             fs.writeFileSync(filePath, content)
         }
     }
