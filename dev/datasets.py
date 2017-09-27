@@ -91,7 +91,7 @@ class ViewDataSet3D(data.Dataset):
                         if not self.meta.has_key(scene):
                             self.meta[scene] = {}
                         metadata = (uuid, xyz, quat)
-                        print(uuid, xyz)
+                        #print(uuid, xyz)
 
                         if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + uuid + '.json')):
                             self.meta[scene][uuid] = metadata
