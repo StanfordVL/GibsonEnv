@@ -19,6 +19,7 @@ import argparse
 sys.path.append( os.path.dirname( os.path.realpath(__file__) ) )
 from activate_env import add_on_path
 sys.path.append(add_on_path)
+sys.path.append('/cvgl2/u/feixia/anaconda3/envs/python35/lib/python3.5/site-packages')
 
 from   load_settings import settings
 import create_images_utils
