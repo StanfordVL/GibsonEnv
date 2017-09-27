@@ -13,11 +13,13 @@
 import os
 import sys
 import bpy
+import argparse
 
 # Import remaining packages
 sys.path.append( os.path.dirname( os.path.realpath(__file__) ) )
 from activate_env import add_on_path
 sys.path.append(add_on_path)
+sys.path.append('/cvgl2/u/feixia/anaconda3/envs/python35/lib/python3.5/site-packages')
 
 from   load_settings import settings
 import create_images_utils
@@ -25,14 +27,26 @@ import utils
 
 TASK_NAME = 'normal'
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--BASEPATH', type=str, required=True,
+                    help='The (absolute) base path of the current model')
+
+def parse_local_args( args ):
+  local_args = args[ args.index( '--' ) + 1: ]
+  return parser.parse_known_args( local_args )
+
 def main():
+    args, remaining_args = parse_local_args( sys.argv )
+    assert(args.BASEPATH)
+    basepath = args.BASEPATH
+    
     apply_texture_fn = None
     if settings.CREATE_PANOS:
         apply_texture_fn = apply_normals_texture
     create_images_utils.run( 
         set_scene_render_settings, 
         setup_nodetree_for_render, 
-        model_dir=os.getcwd(),
+        model_dir=basepath,
         task_name=TASK_NAME, 
         apply_texture_fn=apply_texture_fn )
 

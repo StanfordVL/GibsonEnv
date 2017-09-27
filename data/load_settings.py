@@ -116,8 +116,8 @@ def validate_blender_settings( settings_ns ):
     logger.debug( "Python version: {}".format( sys.version ) )
     logger.debug( "Blender version: {}".format( bpy.app.version ) )
 
-    if ( bpy.app.version[1] != 79 ): 
-        raise RuntimeError( 'Blender version must be 2.78, but is {}.'.format( bpy.app.version ) )
+    #if ( bpy.app.version[1] != 79 ): 
+    #    raise RuntimeError( 'Blender version must be 2.78, but is {}.'.format( bpy.app.version ) )
 
     if ( settings_ns.CREATE_PANOS and settings_ns.CREATE_FIXATED ) or \
        ( settings_ns.CREATE_PANOS and settings_ns.CREATE_NONFIXATED ):

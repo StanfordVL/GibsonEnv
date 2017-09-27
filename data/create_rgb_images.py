@@ -14,6 +14,7 @@ import sys
 sys.path.append( os.path.dirname( os.path.realpath(__file__) ) )
 from activate_env import add_on_path
 sys.path.append(add_on_path)
+sys.path.append('/cvgl2/u/feixia/anaconda3/envs/python35/lib/python3.5/site-packages')
 
 from   load_settings import settings
 from   create_images_utils import get_number_imgs
@@ -23,6 +24,7 @@ from   utils import Profiler
 
 import bmesh
 
+import argparse
 import bpy
 from   collections import defaultdict
 import glob
@@ -34,7 +36,16 @@ from   PIL import Image
 import re
 import shutil
 
+parser = argparse.ArgumentParser()
 
+parser.add_argument('--BASEPATH', type=str, required=True,
+                    help='The (absolute) base path of the current model')
+
+TASK_NAME = 'points'
+
+def parse_local_args( args ):
+  local_args = args[ args.index( '--' ) + 1: ]
+  return parser.parse_known_args( local_args )
 
 
 ORIGIN = (0.0, 0.0, 0.0)
@@ -44,13 +55,16 @@ DEFAULT_ROTATION_FOR_INITIAL_SKYBOX.rotate_axis( 'X', math.pi / 2 )
 TASK = "rgb"
 
 CUBE_SIZE = 1.0 # Sasha: I think this shouldn't matter
-basepath = os.getcwd()
 utils.set_random_seed()
 
 def main():
   global logger
   logger = io_utils.create_logger( __name__ )
   utils.delete_all_objects_in_context()
+
+  args, remaining_args = parse_local_args( sys.argv )
+  assert(args.BASEPATH)
+  basepath = args.BASEPATH
 
   # Create the cube
   create_cube( radius=CUBE_SIZE, location=ORIGIN )
@@ -90,7 +104,7 @@ def main():
                     initial_camera_rotation_in_real_world, 
                     DEFAULT_ROTATION_FOR_INITIAL_SKYBOX )
 
-            wrap_material_around_cube( view_of_point[ "camera_uuid" ], mesh, os.path.join("img", "high"), ".jpg" )
+            wrap_material_around_cube( view_of_point[ "camera_uuid" ], mesh, os.path.join(basepath, "img", "high"), ".jpg" )
             if settings.CREATE_PANOS:
                 utils.make_camera_data_pano( camera_data )
                 save_path = io_utils.get_file_name_for( 
@@ -101,7 +115,7 @@ def main():
                     task=TASK, 
                     ext=io_utils.img_format_to_ext[ settings.PREFERRED_IMG_EXT.lower() ] )
                 set_render_settings( scene, save_path )    
-                quiet_render( image_number, n_images, pflr )
+                quiet_render( image_number, n_images, pflr, basepath )
                 image_number += 1
                 break # Only want one pano/sweep
 
@@ -121,7 +135,7 @@ def main():
                         task=TASK + "_nonfixated", 
                         ext=io_utils.img_format_to_ext[ settings.PREFERRED_IMG_EXT.lower() ] )
                 set_render_settings( scene, rgb_non_fixated_path )    
-                quiet_render( image_number, n_images, pflr )
+                quiet_render( image_number, n_images, pflr, basepath )
                 image_number += 1
 
             if settings.CREATE_FIXATED: # Render fixated image
@@ -140,7 +154,7 @@ def main():
                     task=TASK + "_fixated", 
                     ext=io_utils.img_format_to_ext[ settings.PREFERRED_IMG_EXT.lower() ] )
                 set_render_settings( scene, rgb_render_path )
-                quiet_render( image_number, n_images, pflr )
+                quiet_render( image_number, n_images, pflr, basepath )
                 image_number += 1
 
             if debug_at == ( point_number, view_num ): 
@@ -397,9 +411,9 @@ def wrap_material_around_cube(uuid, mesh, img_dir, ext):
     cube.material_slots[cube_face_idx].material = material  
     f.material_index = cube_face_idx  
 
-def quiet_render( img_number, n_images, pflr ):
+def quiet_render( img_number, n_images, pflr, basepath ):
         # redirect output to log file
-        logfile = 'blender_render.log'
+        logfile = os.path.join(basepath, 'blender_render.log')
         open(logfile, 'a').close()
         old = os.dup(1)
         sys.stdout.flush()

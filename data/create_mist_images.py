@@ -12,23 +12,38 @@
 import bpy
 import os
 import sys
+import argparse
 
 sys.path.append( os.path.dirname( os.path.realpath(__file__) ) )
 from activate_env import add_on_path
 sys.path.append(add_on_path)
+sys.path.append('/cvgl2/u/feixia/anaconda3/envs/python35/lib/python3.5/site-packages')
 
 from   load_settings import settings
 import create_images_utils
 import utils
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--BASEPATH', type=str, required=True,
+                    help='The (absolute) base path of the current model')
+
 TASK_NAME = 'mist'
 
+def parse_local_args( args ):
+  local_args = args[ args.index( '--' ) + 1: ]
+  return parser.parse_known_args( local_args )
+
 def main():
+    args, remaining_args = parse_local_args( sys.argv )
+    assert(args.BASEPATH)
+    basepath = args.BASEPATH
+    
     apply_texture_fn = None
     create_images_utils.run( 
         set_render_settings, 
         setup_nodetree_for_render, 
-        model_dir=os.getcwd(),
+        model_dir=basepath,
         task_name=TASK_NAME, 
         apply_texture_fn=apply_texture_fn )
 
