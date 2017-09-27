@@ -64,7 +64,13 @@ def generate_data(args):
     idx  = args[0]
     print(idx)
     d    = args[1]
-    #outf = args[2]
+    outf = args[2]
+    convs = args[3]
+    convs2 = args[4]
+    conv_mask = args[5]
+    nlayer = 15
+    
+    
     print(idx)
     data = d[idx]   ## This operation stalls 95% of the time, CPU heavy
     sources = data[0]
@@ -73,7 +79,56 @@ def generate_data(args):
     target_depth = data[3]
     poses = [item.numpy() for item in data[-1]]
     show, _ =  render(sources, source_depths, poses[0], poses, target_depth)
-    #np.savez(file = "%s/data_%d.npz" % (outf, idx), source = show, depth = depth, target = target)
+    
+    
+    
+    show_tensor = torch.zeros(4,3,1024,2048)
+    tf = transforms.ToTensor()
+    for i in range(4):
+        show_tensor[i, :, :, :] = tf(show[i])
+
+    show_tensor_v = Variable(show_tensor.cuda())
+    mask = (torch.sum(show_tensor_v, 1, keepdim = True) > 0).float().repeat(1,3,1,1)
+    
+    
+    conved = convs(show_tensor_v)
+    conved_mask = convs(mask)
+    i = nlayer - 1
+    for c in range(3):
+        conved_mask[:, i + c * nlayer, :, :] = convs2(convs2(conved_mask[:, i + c * nlayer, :, :].contiguous().view(-1,1,1024,2048)))
+        conved[:, i + c * nlayer, :, :] = convs2(convs2(conved[:, i + c * nlayer, :, :].contiguous().view(-1,1,1024,2048)))
+
+
+    avg = conved / conved_mask
+    avg[avg != avg] = 0
+    avg = avg.view(4,3,nlayer,1024,2048)
+    avg.size()
+    img = Variable(torch.zeros(4,3,1024,2048)).cuda()
+    for i in range(nlayer):
+        img[img == 0] = avg[:,:,i,:,:][img == 0]
+
+    
+    density = conv_mask(conv_mask(conv_mask(mask[:,0:1,:,:])))
+
+
+
+    selection = F.softmax(5 * density.view(4,1024 * 2048).transpose(1,0)).transpose(1,0).contiguous().view(4, 1024, 2048)
+    occu = (torch.sum(img,1)>0).float()
+    selection[occu == 0] = 0
+    selection = (selection / torch.sum(selection, 0, keepdim = True)).view(4,1,1024,2048).repeat(1,3,1,1)
+
+    img_combined = torch.sum(img * selection, 0)
+
+
+
+    img_numpy = (img_combined.cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
+    Image.fromarray(img_numpy).save('%s/interpolated%d.png' % (outf, idx))
+
+    sel = (selection[:,0,:,:].cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
+    #print(img_numpy.shape, sel.shape)
+    source_data = np.concatenate([img_numpy, sel], 2)
+    
+    np.savez(file = "%s/data_%d.npz" % (outf, idx), source = source_data, depth = target_depth, target = target)
     
     return show, target_depth, target
 
@@ -84,60 +139,26 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--debug'  , action='store_true', help='debug mode')
 parser.add_argument('--dataroot'  , required = True, help='dataset path')
 parser.add_argument('--outf'  , type = str, default = '', help='path of output folder')
-opt = parser.parse_args(['--dataroot', '/home/fei/Downloads/highres_tiny', '--outf', '.'])
+opt = parser.parse_args()
+
+
 d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False)
 
-
-# In[9]:
-
-idx = 210
-show, depth, target = generate_data([idx, d])
-
-
-# In[10]:
-
-
-
-# In[11]:
-
-
-show_tensor = torch.zeros(4,3,1024,2048)
-tf = transforms.ToTensor()
-for i in range(4):
-    show_tensor[i, :, :, :] = tf(show[i])
-    
-show_tensor_v = Variable(show_tensor.cuda())
-mask = (torch.sum(show_tensor_v, 1, keepdim = True) > 0).float().repeat(1,3,1,1)
-
-
-# In[13]:
-
-nlayer = 11
+nlayer = 15
 convs = torch.nn.Conv2d(3, nlayer*3, nlayer, padding=nlayer//2).cuda()
 convs.bias.data.fill_(0)
 convs.weight.data.fill_(0)
+
+convs2 = torch.nn.Conv2d(1, 1, nlayer, padding=nlayer//2).cuda()
+convs2.weight.data.fill_(1)
+convs2.bias.data.fill_(0)
 
 print(convs.weight.data.size())
 for i in range(nlayer):
     radius = i // 2
     for c in range(3):
         convs.weight.data[i + c * nlayer, c, nlayer//2-radius:nlayer//2+radius + 1, nlayer//2-radius:nlayer//2+radius + 1] = 1
-
-
-# In[14]:
-
-conved = convs(show_tensor_v)
-conved_mask = convs(mask)
-avg = conved / conved_mask
-avg[avg != avg] = 0
-avg = avg.view(4,3,nlayer,1024,2048)
-avg.size()
-img = Variable(torch.zeros(4,3,1024,2048)).cuda()
-for i in range(nlayer):
-    img[img == 0] = avg[:,:,i,:,:][img == 0]
-
-
-# In[15]:
+        convs.bias.data.fill_(0)
 
 def gkern(kernlen=11, nsig=2):
     """Returns a 2D Gaussian kernel array."""
@@ -148,29 +169,12 @@ def gkern(kernlen=11, nsig=2):
     kernel = kernel_raw/kernel_raw.sum()
     return kernel
 
-
-# In[16]:
-
 conv_mask = torch.nn.Conv2d(1, 1, 11, padding=5).cuda()
 conv_mask.bias.data.fill_(0)
 conv_mask.weight.data[0,0,:,:] = torch.from_numpy(gkern())
-density = conv_mask(conv_mask(conv_mask(mask[:,0:1,:,:])))
 
 
-# In[17]:
-
-selection = F.softmax(5 * density.view(4,1024 * 2048).transpose(1,0)).transpose(1,0).contiguous().view(4, 1024, 2048)
-occu = (torch.sum(img,1)>0).float()
-selection[occu == 0] = 0
-selection = (selection / torch.sum(selection, 0, keepdim = True)).view(4,1,1024,2048).repeat(1,3,1,1)
-
-img_combined = torch.sum(img * selection, 0)
-
-
-# In[18]:
-
-img_numpy = (img_combined.cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
-Image.fromarray(img_numpy).save('interpolated%d.png' % idx)
-
+for i in range(len(d)):
+    generate_data([i, d, opt.outf, convs, convs2, conv_mask])
 
 

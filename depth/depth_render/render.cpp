@@ -203,7 +203,7 @@ int main( int argc, char * argv[] )
 
     std::string model_id = cmdp.get<std::string>("model");
 
-    std::string name_obj = name_path + "/" + model_id + "/" + model_id + "_HIGH.obj";
+    std::string name_obj = name_path + "/" + model_id + "/" + "modeldata/out_res.obj";
     //std::string name_obj = name_path + "/" + model_id + "/modeldata/out_res.obj";
 	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.csv";
 
