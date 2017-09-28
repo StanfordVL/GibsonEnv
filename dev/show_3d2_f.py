@@ -12,6 +12,7 @@ from torch.autograd import Variable
 import time
 from numpy import cos, sin
 import utils
+import transforms3d
 
 import zmq
 from cube2equi import find_corresponding_pixel
@@ -107,19 +108,39 @@ def convert_array(img_array):
     outimg = np.zeros((h,w,1)) #.astype(np.uint8)
 
     in_imgs = None
-    print("converting images", len(img_array))
+    #print("converting images", len(img_array))
 
-    print("Passed in image array", len(img_array), np.max(img_array[0]))
+    #print("Passed in image array", len(img_array), np.max(img_array[0]))
     in_imgs = img_array
 
     # For each pixel in output image find colour value from input image
-    print(outimg.shape)
+    #print(outimg.shape)
 
     # todo: for some reason the image is flipped 180 degrees
     outimg = transfer2(in_imgs, coords, h, w)[:, ::, :]
 
     return outimg
 
+def mat_to_posi(cpose):
+    return cpose[0:3, -1]
+
+def mat_to_quat(cpose):
+    rot = cpose[0:3, 0:3]
+    return transforms3d.quaternions.mat2quat(rot)
+
+## Talking to physics simulation
+## New state: [x, y, z, r_w, r_x, r_y, r_z]
+def hasNoCollision(new_state):
+    ## Change quaternion basis
+    #print("new_state 0", new_state)
+    #print("new temp st", [new_state[4], new_state[5], new_state[6], new_state[3]],  transforms3d.euler.euler2quat(-np.pi/2, 0, 0))
+    new_state[3:] =  transforms3d.quaternions.qmult(transforms3d.euler.euler2quat(0, 0, -np.pi/2), [new_state[4], new_state[5], new_state[6], new_state[3]])
+    ## URDF file uses z-up as front, so we need to rotate new_state around z for -90
+    #print("new_state 1", new_state)
+    socket_phys.send(" ".join(map(str, new_state)))
+    collisions_count = int(socket_phys.recv().decode("utf-8"))
+    print("collisions", collisions_count)
+    return collisions_count == 0
 
 
 def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
@@ -149,6 +170,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
     maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
 
     cpose = np.eye(4)
+    old_state = [x, y, z, roll, pitch, yaw]
 
     def render(imgs, depths, pose, model, poses):
         global fps
@@ -158,11 +180,11 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         p = (v_cam2world).dot(np.linalg.inv(pose))
         p = p.dot(np.linalg.inv(rotation))
 
-        print("Sending request ...")
-        print("s0", v_cam2world)
-        print('current viewer pose', pose)
+        #print("Sending request ...")
+        #print(v_cam2world)
+        #print('current viewer pose', pose)
         print("camera pose", p)
-        print("target pose", target_pose)
+        #print("target pose", target_pose)
         #s = mat_to_str(p2)
         s = mat_to_str(p)#v_cam2world)
 
@@ -181,10 +203,9 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         s = mat_to_str(poses[0] * p2)
         '''
 
-        socket.send(s)
-        message = socket.recv()
-        print("Received messages")
-
+        socket_mist.send(s)
+        message = socket_mist.recv()
+        #print("Received messages")
         data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
         ## For some reason, the img passed back from opengl is upside down.
         ## This is still yet to be debugged
@@ -194,23 +215,25 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             img_array.append(data[i])
 
         img_array2 = [img_array[0], img_array[1], img_array[2], img_array[3], img_array[4], img_array[5]]
-        print("max value", np.max(data[0]), "shape", np.array(img_array2).shape)
+        #print("max value", np.max(data[0]), "shape", np.array(img_array2).shape)
 
         opengl_arr = convert_array(np.array(img_array2))
         opengl_arr = opengl_arr[::, ::]
 
-        print("opengl array shape", opengl_arr.shape)
+        
+        #print("opengl array shape", opengl_arr.shape)
         #plot_histogram(opengl_arr)
-        print("zero values", np.sum(opengl_arr[:, :, 0] == 0), np.sum(opengl_arr[:, :, 1] == 0), np.sum(opengl_arr[:, :, 2] == 0))
-
-        print("opengl min", np.min(opengl_arr), "opengl max", np.max(opengl_arr))
+        #print("zero values", np.sum(opengl_arr[:, :, 0] == 0), np.sum(opengl_arr[:, :, 1] == 0), np.sum(opengl_arr[:, :, 2] == 0))
+        
+        #print("opengl min", np.min(opengl_arr), "opengl max", np.max(opengl_arr))
         opengl_arr_err  = opengl_arr == 0
 
         #opengl_arr = np.maximum(opengl_arr + 30, opengl_arr)
 
         opengl_arr_show = (opengl_arr * 3500.0 / 128).astype(np.uint8)
-        print('arr shape', opengl_arr_show.shape, "max", np.max(opengl_arr_show), "total number of errors", np.sum(opengl_arr_err))
 
+        #print('arr shape', opengl_arr_show.shape, "max", np.max(opengl_arr_show), "total number of errors", np.sum(opengl_arr_err))
+       
         opengl_arr_show[opengl_arr_err[:, :, 0], 1:3] = 0
         opengl_arr_show[opengl_arr_err[:, :, 0], 0] = 255
         cv2.imshow('target depth',opengl_arr_show)
@@ -225,9 +248,9 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             #print(poses[0])
 
             pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
-            if i == 0:
-                print('First pose after')
-                print(pose_after)
+            #if i == 0:
+                #print('First pose after')
+                #print(pose_after)
             #from IPython import embed; embed()
             #print('Received pose ' + str(i))
             #print(pose_after)
@@ -240,11 +263,12 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
                        show.ctypes.data_as(ct.c_void_p),
                        target_depth.ctypes.data_as(ct.c_void_p)
                       )
-            if i == 0:
-                print(np.sum(show - imgs[0]))
 
+            #if i == 0:
+            #    print(np.sum(show - imgs[0]))
+            
 
-        print('PC render time:', time.time() - before)
+        #print('PC render time:', time.time() - before)
 
         if model:
             tf = transforms.ToTensor()
@@ -275,6 +299,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             alpha = yaw
             beta = pitch
             gamma = roll
+            old_cpose = np.copy(cpose)
             cpose = cpose.flatten()
 
             cpose[0] = cos(alpha) * cos(beta);
@@ -302,10 +327,36 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             cpose2[1,3] = y
             cpose2[2,3] = z
 
+
             cpose = np.dot(cpose, cpose2)
 
-            print('cpose',cpose)
-            render(imgs, depths, cpose.astype(np.float32), model, poses)
+            #print('new_cpose', cpose)
+
+
+
+            v_cam2world = target_pose.dot(poses[0])
+            world_cpose = (v_cam2world).dot(np.linalg.inv(cpose))
+            world_cpose = world_cpose.dot(np.linalg.inv(rotation))
+            print("world pose", world_cpose)
+            #world_cpose = cpose.dot(v_cam2world)
+
+            #old_quat = mat_to_quat(old_cpose)
+            #old_posi = mat_to_posi(old_cpose)
+            new_quat = mat_to_quat(world_cpose)
+            new_posi = mat_to_posi(world_cpose)
+
+            
+            if hasNoCollision(np.append(new_posi, new_quat)):
+                print("no collisions")
+                render(imgs, depths, cpose.astype(np.float32), model, poses)
+                old_state = [x, y, z, roll, pitch, yaw]
+            else:
+                print("has collisions")
+                x, y, z, roll, pitch, yaw = old_state
+                cpose = old_cpose
+            
+            #render(imgs, depths, cpose.astype(np.float32), model, poses)
+            #old_state = [x, y, z, roll, pitch, yaw]
             changed = False
 
         if overlay:
@@ -317,6 +368,8 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
         #cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.CV_RGB(255,255,255))
         cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,(255,255,255))
+        #print("roll %f pitch %f yaw %f" % (roll, pitch, yaw))
+        
         #cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
         cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,(255,255,255))
 
@@ -325,25 +378,34 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
         cmd=cv2.waitKey(5)%256
 
+        ## delta = [x, y, z, roll, pitch, yaw]
+        #delta = [0, 0, 0, 0, 0, 0]
+
         if cmd==ord('q'):
             break
         elif cmd == ord('w'):
             x -= 0.05
+            #delta = [-0.05, 0, 0, 0, 0, 0]
             changed = True
         elif cmd == ord('s'):
             x += 0.05
+            #delta = [0.05, 0, 0, 0, 0, 0]
             changed = True
         elif cmd == ord('a'):
             y += 0.05
+            #delta = [0, 0.05, 0, 0, 0, 0]
             changed = True
         elif cmd == ord('d'):
             y -= 0.05
+            #delta = [0, -0.05, 0, 0, 0, 0]
             changed = True
         elif cmd == ord('z'):
             z += 0.01
+            #delta = [0, 0, 0, 0, 0, 0.01]
             changed = True
         elif cmd == ord('x'):
             z -= 0.01
+            #delta = [0, 0, 0, 0, 0, -0.01]
             changed = True
 
         elif cmd == ord('r'):
@@ -370,6 +432,17 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         elif cmd == ord('v'):
             cv2.imwrite('save.jpg', show_rgb)
 
+        '''
+        state = [x, y, z, roll, pitch, yaw]
+        if (hasNoCollision(state, delta)):
+            x = x + delta[0]
+            y = y + delta[1]
+            z = z + delta[2]
+            roll  = roll + delta[3]
+            pitch = pitch + delta[4]
+            yaw   = yaw + delta[5]
+        '''
+        #print("roll %d pitch %d yaw %d" % (roll, pitch, yaw))
 
 def show_target(target_img):
     cv2.namedWindow('target')
@@ -386,7 +459,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False, train = False)
+    d = ViewDataSet3D(root=opt.datapath, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False, train = False)
     idx = opt.idx
 
     data = d[idx]
@@ -410,13 +483,17 @@ if __name__=='__main__':
     #print('no.1 pose', poses, poses[1])
     # print(source_depth)
     print(sources[0].shape, source_depths[0].shape)
-
-
-    context = zmq.Context()
+    
+    context_mist = zmq.Context()
     print("Connecting to hello world server...")
-    socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5555")
+    socket_mist = context_mist.socket(zmq.REQ)
+    socket_mist.connect("tcp://localhost:5555")
 
+    context_phys = zmq.Context()
+    socket_phys = context_phys.socket(zmq.REQ)
+    socket_phys.connect("tcp://localhost:5556")
+
+        
     uuids, rts = d.get_scene_info(0)
     #print(uuids, rts)
     print(uuids[idx])

@@ -1,5 +1,5 @@
 ## Physics Simulation Engine for Real Env
-## Zhiyang He
+Zhiyang He
 
 ### Requirements
 Python 3 environment (technically pybullet builds on python2, but I haven't been able to get it working)
