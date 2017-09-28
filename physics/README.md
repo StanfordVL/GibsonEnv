@@ -3,7 +3,7 @@ Zhiyang He
 
 ### Requirements
 Python 3 environment (technically pybullet builds on python2, but I haven't been able to get it working)
-```
+
 Create necessary environment
 ```shell
 conda create -n (env_name) python=3.5
