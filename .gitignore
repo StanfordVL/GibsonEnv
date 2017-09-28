@@ -19,3 +19,10 @@ dev/transfer.c
 *.bmp
 *.bak
 *.zip
+
+
+# Physics
+physics/*.txt
+
+# Data
+data/*.log

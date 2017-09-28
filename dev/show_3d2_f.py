@@ -381,7 +381,7 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug'  , action='store_true', help='debug mode')
-    parser.add_argument('--dataroot'  , required = True, help='dataset path')
+    parser.add_argument('--datapath'  , required = True, help='dataset path')
     parser.add_argument('--idx'  , type = int, default = 0, help='index of data')
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
