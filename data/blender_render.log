@@ -1,0 +1,98 @@
+Fra:1 Mem:127.05M (0.00M, Peak 127.05M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, RenderLayer | Synchronizing object | RENDER_CAMERA
+Fra:1 Mem:127.05M (0.00M, Peak 127.05M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, RenderLayer | Synchronizing object | chunk102_group001
+Fra:1 Mem:142.56M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, RenderLayer | Initializing
+Fra:1 Mem:142.56M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, RenderLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:142.56M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, RenderLayer | Waiting for render to start
+Fra:1 Mem:142.56M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, RenderLayer | Updating Scene
+Fra:1 Mem:142.56M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, RenderLayer | Updating Shaders
+Fra:1 Mem:142.82M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Background
+Fra:1 Mem:142.82M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Camera
+Fra:1 Mem:142.82M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Meshes Flags
+Fra:1 Mem:142.82M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Objects
+Fra:1 Mem:142.82M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:142.82M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:142.82M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Meshes
+Fra:1 Mem:146.31M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:146.31M (0.00M, Peak 175.17M) | Time:00:00.04 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:146.31M (0.00M, Peak 175.17M) | Time:00:00.05 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Scene BVH | Building
+Fra:1 Mem:146.31M (0.00M, Peak 175.17M) | Time:00:00.05 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:159.39M (0.00M, Peak 175.17M) | Time:00:00.10 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Scene BVH | Packing BVH triangles and strands
+Fra:1 Mem:171.60M (0.00M, Peak 175.17M) | Time:00:00.10 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Scene BVH | Packing BVH nodes
+Fra:1 Mem:164.65M (0.00M, Peak 175.17M) | Time:00:00.11 | Mem:0.01M, Peak:0.01M | Scene, RenderLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:165.52M (0.00M, Peak 175.17M) | Time:00:00.11 | Mem:18.35M, Peak:18.35M | Scene, RenderLayer | Updating Mesh | Computing normals
+Fra:1 Mem:176.34M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:18.35M, Peak:18.35M | Scene, RenderLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.16M, Peak:29.16M | Scene, RenderLayer | Updating Objects Flags
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.16M, Peak:29.16M | Scene, RenderLayer | Updating Images
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.16M, Peak:29.16M | Scene, RenderLayer | Updating Camera Volume
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.16M, Peak:29.16M | Scene, RenderLayer | Updating Hair Systems
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.16M, Peak:29.16M | Scene, RenderLayer | Updating Hair settings | Copying Hair settings to device
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.16M, Peak:29.16M | Scene, RenderLayer | Updating Lookup Tables
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.41M, Peak:29.41M | Scene, RenderLayer | Updating Lights
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.41M, Peak:29.41M | Scene, RenderLayer | Updating Lights | Computing distribution
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.41M, Peak:29.41M | Scene, RenderLayer | Updating Particle Systems
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.41M, Peak:29.41M | Scene, RenderLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:175.46M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.41M, Peak:29.41M | Scene, RenderLayer | Updating Integrator
+Fra:1 Mem:175.49M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.44M, Peak:29.44M | Scene, RenderLayer | Updating Film
+Fra:1 Mem:175.49M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.44M, Peak:29.44M | Scene, RenderLayer | Updating Lookup Tables
+Fra:1 Mem:175.49M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.44M, Peak:29.44M | Scene, RenderLayer | Updating Baking
+Fra:1 Mem:175.49M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.44M, Peak:29.44M | Scene, RenderLayer | Updating Device | Writing constant memory
+Fra:1 Mem:175.49M (0.00M, Peak 176.34M) | Time:00:00.12 | Mem:29.44M, Peak:29.44M | Scene, RenderLayer | Path Tracing Tile 0/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.16 | Remaining:00:02.68 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 1/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.16 | Remaining:00:01.79 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 2/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.16 | Remaining:00:01.81 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 3/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.16 | Remaining:00:01.36 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 4/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.16 | Remaining:00:00.78 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 5/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.16 | Remaining:00:00.78 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 6/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.16 | Remaining:00:00.79 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 7/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.17 | Remaining:00:00.73 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 8/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.20 | Remaining:00:01.13 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 9/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.20 | Remaining:00:01.02 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 10/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.21 | Remaining:00:00.94 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 11/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.21 | Remaining:00:00.86 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 12/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.21 | Remaining:00:00.79 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 13/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.21 | Remaining:00:00.76 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 14/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.21 | Remaining:00:00.71 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 15/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.21 | Remaining:00:00.66 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 16/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.25 | Remaining:00:00.80 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 17/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.25 | Remaining:00:00.80 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 18/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.25 | Remaining:00:00.72 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 19/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.25 | Remaining:00:00.72 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 20/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.25 | Remaining:00:00.68 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 21/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.26 | Remaining:00:00.66 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 22/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.26 | Remaining:00:00.63 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 23/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.26 | Remaining:00:00.60 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 24/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.29 | Remaining:00:00.69 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 25/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.29 | Remaining:00:00.69 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 26/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.30 | Remaining:00:00.67 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 27/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.30 | Remaining:00:00.64 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 28/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.30 | Remaining:00:00.62 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 29/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.30 | Remaining:00:00.60 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 30/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.31 | Remaining:00:00.58 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 31/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.31 | Remaining:00:00.58 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 32/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.33 | Remaining:00:00.61 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 33/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.33 | Remaining:00:00.59 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 34/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.34 | Remaining:00:00.59 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 35/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.35 | Remaining:00:00.58 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 36/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.35 | Remaining:00:00.56 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 37/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.35 | Remaining:00:00.52 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 38/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.35 | Remaining:00:00.52 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 39/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.36 | Remaining:00:00.52 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 40/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.38 | Remaining:00:00.54 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 41/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.38 | Remaining:00:00.53 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 42/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.39 | Remaining:00:00.53 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 43/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.39 | Remaining:00:00.52 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 44/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.39 | Remaining:00:00.50 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 45/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.39 | Remaining:00:00.49 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 46/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.40 | Remaining:00:00.47 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 47/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.40 | Remaining:00:00.46 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 48/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.40 | Remaining:00:00.45 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 49/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.42 | Remaining:00:00.46 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 50/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.44 | Remaining:00:00.48 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 51/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.44 | Remaining:00:00.45 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 52/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.44 | Remaining:00:00.43 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 53/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.44 | Remaining:00:00.43 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 54/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.44 | Remaining:00:00.42 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 55/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.44 | Remaining:00:00.41 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 56/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.44 | Remaining:00:00.40 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 57/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.46 | Remaining:00:00.41 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 58/128
+Fra:1 Mem:179.43M (0.00M, Peak 180.56M) | Time:00:00.47 | Remaining:00:00.41 | Mem:33.40M, Peak:33.96M | Scene, RenderLayer | Path Tracing Tile 59/128
