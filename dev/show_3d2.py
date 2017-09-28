@@ -242,7 +242,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False)
+    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False, train = False)
     idx = opt.idx
 
     data = d[idx]

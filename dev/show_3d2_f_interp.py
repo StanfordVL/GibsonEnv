@@ -5,7 +5,7 @@ import cv2
 import sys
 import argparse
 from datasets import ViewDataSet3D
-from completion import CompletionNet
+from completion2 import CompletionNet2
 import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
@@ -16,8 +16,8 @@ import utils
 import zmq
 from cube2equi import find_corresponding_pixel
 from transfer import transfer2
-
-
+import scipy.stats
+import torch.nn.functional as F
 
 class InImg(object):
     def __init__(self):
@@ -51,6 +51,40 @@ clickstart = (0,0)
 fps = 0
 
 dll=np.ctypeslib.load_library('render_cuda_f','.')
+
+
+nlayer = 15
+convs = torch.nn.Conv2d(3, nlayer*3, nlayer, padding=nlayer//2).cuda()
+convs.bias.data.fill_(0)
+convs.weight.data.fill_(0)
+
+convs2 = torch.nn.Conv2d(1, 1, nlayer, padding=nlayer//2).cuda()
+convs2.weight.data.fill_(1)
+convs2.bias.data.fill_(0)
+
+print(convs.weight.data.size())
+for i in range(nlayer):
+    radius = i // 2
+    for c in range(3):
+        convs.weight.data[i + c * nlayer, c, nlayer//2-radius:nlayer//2+radius + 1, nlayer//2-radius:nlayer//2+radius + 1] = 1
+        convs.bias.data.fill_(0)
+
+def gkern(kernlen=11, nsig=2):
+    """Returns a 2D Gaussian kernel array."""
+    interval = (2*nsig+1.)/(kernlen)
+    x = np.linspace(-nsig-interval/2., nsig+interval/2., kernlen+1)
+    kern1d = np.diff(scipy.stats.norm.cdf(x))
+    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
+    kernel = kernel_raw/kernel_raw.sum()
+    return kernel
+
+conv_mask = torch.nn.Conv2d(1, 1, 11, padding=5).cuda()
+conv_mask.bias.data.fill_(0)
+conv_mask.weight.data[0,0,:,:] = torch.from_numpy(gkern())
+
+
+
+
 
 
 def onmouse(*args):
@@ -131,7 +165,6 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
     rotation = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
     print('target pose', target_pose)
 
-
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.int32)
 
@@ -145,8 +178,8 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
 
-    imgv = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
-    maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
+    imgv = Variable(torch.zeros(1,7, showsz, showsz*2), volatile=True).cuda()
+    maskv = Variable(torch.zeros(1,2, showsz, showsz*2), volatile=True).cuda()
 
     cpose = np.eye(4)
 
@@ -220,6 +253,10 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
 
         show[:] = 0
+        nimgs = len(imgs)
+        show_array=np.zeros((nimgs, showsz,showsz * 2,3),dtype='uint8')
+        
+        
         before = time.time()
         for i in range(len(imgs)):
             #print(poses[0])
@@ -237,7 +274,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
                        imgs[i].ctypes.data_as(ct.c_void_p),
                        depths[i].ctypes.data_as(ct.c_void_p),
                        pose_after.ctypes.data_as(ct.c_void_p),
-                       show.ctypes.data_as(ct.c_void_p),
+                       show_array[i].ctypes.data_as(ct.c_void_p),
                        target_depth.ctypes.data_as(ct.c_void_p)
                       )
             if i == 0:
@@ -245,15 +282,70 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
 
         print('PC render time:', time.time() - before)
+        
+        
+        
+        show_tensor = torch.zeros(4,3,1024,2048)
+        tf = transforms.ToTensor()
+        for i in range(4):
+            show_tensor[i, :, :, :] = tf(show_array[i])
+
+        show_tensor_v = Variable(show_tensor.cuda())
+        
+        
+        mask = (torch.sum(show_tensor_v, 1, keepdim = True) > 0).float().repeat(1,3,1,1)
+
+        conved = convs(show_tensor_v)
+        conved_mask = convs(mask)
+        i = nlayer - 1
+        for c in range(3):
+            conved_mask[:, i + c * nlayer, :, :] = convs2(convs2(conved_mask[:, i + c * nlayer, :, :].contiguous().view(-1,1,1024,2048)))
+            conved[:, i + c * nlayer, :, :] = convs2(convs2(conved[:, i + c * nlayer, :, :].contiguous().view(-1,1,1024,2048)))
+
+
+        avg = conved / conved_mask
+        avg[avg != avg] = 0
+        avg = avg.view(4,3,nlayer,1024,2048)
+        avg.size()
+        img = Variable(torch.zeros(4,3,1024,2048)).cuda()
+        for i in range(nlayer):
+            img[img == 0] = avg[:,:,i,:,:][img == 0]
+
+
+        density = conv_mask(conv_mask(conv_mask(mask[:,0:1,:,:])))
+
+
+        selection = F.softmax(5 * density.view(4,1024 * 2048).transpose(1,0)).transpose(1,0).contiguous().view(4, 1024, 2048)
+        occu = (torch.sum(img,1)>0).float()
+        selection[occu == 0] = 0
+        selection = (selection / torch.sum(selection, 0, keepdim = True)).view(4,1,1024,2048).repeat(1,3,1,1)
+
+        img_combined = torch.sum(img * selection, 0)
+        
+        
+        show[:] = (img_combined.cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
+        sel = (selection[:,0,:,:].cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
+        
 
         if model:
             tf = transforms.ToTensor()
             before = time.time()
-            source = tf(show)
+            source = tf(np.concatenate([show, sel], 2))
+            source = source.unsqueeze(0)
+            
             source_depth = tf(np.expand_dims(target_depth, 2).astype(np.float32)/65536 * 255)
-            #print(source.size(), source_depth.size())
+            source_depth = source_depth.unsqueeze(0)
+
+            mask_source = (torch.sum(source[:,:3,:,:],1)>0).float().unsqueeze(1)
+            print(source.size(), source_depth.size(), mask.size())
+            
+            
+            img_mean = torch.sum(torch.sum(source[:,:3,:,:], 2),2) / torch.sum(torch.sum(mask_source, 2),2).view(1,1)
+            source[:,:3,:,:] += (1-mask_source.repeat(1,3,1,1)) * img_mean.view(1,3,1,1).repeat(1,1,1024,2048)
+            
+            
             imgv.data.copy_(source)
-            maskv.data.copy_(source_depth)
+            maskv.data.copy_( torch.cat([source_depth, mask_source], 1))
             print('Transfer time', time.time() - before)
             before = time.time()
             recon = model(imgv, maskv)
@@ -400,7 +492,7 @@ if __name__=='__main__':
 
     model = None
     if opt.model != '':
-        comp = CompletionNet()
+        comp = CompletionNet2()
         comp = torch.nn.DataParallel(comp).cuda()
         comp.load_state_dict(torch.load(opt.model))
         model = comp.module

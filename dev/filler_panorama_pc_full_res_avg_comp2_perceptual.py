@@ -9,13 +9,13 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 import torchvision.utils as vutils
 from datasets import PairDataset
-from completion import CompletionNet, Discriminator2
+from completion import Discriminator2
+from completion2 import CompletionNet2, identity_init, Perceptual
 from tensorboard import SummaryWriter
 from datetime import datetime
 import vision_utils
 import torch.nn.functional as F
 import torchvision.models as models
-
 
 
 def weights_init(m):
@@ -31,20 +31,21 @@ def weights_init(m):
 
 def crop(source, source_depth, target):
     bs = source.size(0)
-    source_cropped = Variable(torch.zeros(4*bs, 3, 256, 256)).cuda()
+    source_cropped = Variable(torch.zeros(4*bs, 3 + 4, 256, 256)).cuda()
     source_depth_cropped = Variable(torch.zeros(4*bs, 2, 256, 256)).cuda()
     target_cropped = Variable(torch.zeros(4*bs, 3, 256, 256)).cuda()
     
     for i in range(bs):
         for j in range(4):
             idx = i * 4 + j
-            centerx = np.random.randint(128, 1024 - 128)
+            blurry_margin = 1024 / 8 
+            centerx = np.random.randint(blurry_margin + 128, 1024  - blurry_margin - 128)
             centery = np.random.randint(128, 1024 * 2 - 128)
             source_cropped[idx] = source[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
             source_depth_cropped[idx] = source_depth[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
             target_cropped[idx] = target[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
            
-    return source_cropped, source_depth_cropped, target_cropped, 
+    return source_cropped, source_depth_cropped, target_cropped
 
 
 def main():
@@ -55,12 +56,15 @@ def main():
     parser.add_argument('--batchsize'  ,type=int, default = 20, help='batchsize')
     parser.add_argument('--workers'  ,type=int, default = 9, help='number of workers')
     parser.add_argument('--nepoch'  ,type=int, default = 50, help='number of epochs')
-    parser.add_argument('--lr', type=float, default=0.002, help='learning rate, default=0.002')
+    parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.002')
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
     parser.add_argument('--outf', type=str, default="filler_pano_pc_full", help='output folder')
     parser.add_argument('--model', type=str, default="", help='model path')
     parser.add_argument('--cepoch'  ,type=int, default = 0, help='current epoch')
-
+    parser.add_argument('--l1'  , action='store_true', help='l1 only')
+    parser.add_argument('--iden'  , action='store_true', help='iden init')
+    
+    
     mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
     opt = parser.parse_args()
@@ -81,24 +85,26 @@ def main():
         transforms.ToTensor(),
     ])
     
-    
     d = PairDataset(root = opt.dataroot, transform=tf, mist_transform = mist_tf)
 
     cudnn.benchmark = True
 
     dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = False)
 
-    img = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
+    img = Variable(torch.zeros(opt.batchsize,3 + 4, 1024, 2048)).cuda()
     maskv = Variable(torch.zeros(opt.batchsize,2, 1024, 2048)).cuda()
     img_original = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
-    comp = CompletionNet()
+    comp = CompletionNet2()
     dis = Discriminator2(pano = False)
     current_epoch = opt.cepoch
 
     comp =  torch.nn.DataParallel(comp).cuda()
-    comp.apply(weights_init)
+    if opt.iden:
+        comp.apply(identity_init)
+    else:
+        comp.apply(weights_init)
     dis = torch.nn.DataParallel(dis).cuda()
     dis.apply(weights_init)
 
@@ -111,7 +117,7 @@ def main():
     optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
     optimizerD = torch.optim.Adam(dis.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
 
-    curriculum = (20000, 30000) # step to start D training and G training, slightly different from the paper
+    curriculum = (200000, 300000) # step to start D training and G training, slightly different from the paper
     alpha = 0.0004
 
     errG_data = 0
@@ -119,11 +125,12 @@ def main():
     
     vgg16 = models.vgg16(pretrained = False)
     vgg16.load_state_dict(torch.load('vgg16-397923af.pth'))
-    feat = torch.nn.DataParallel(vgg16.features).cuda()
-    feat.eval()
+    feat = vgg16.features
+    p = torch.nn.DataParallel(Perceptual(feat)).cuda()
     
+    for param in p.parameters():
+        param.requires_grad = False
     
-
     for epoch in range(current_epoch, opt.nepoch):
         for i, data in enumerate(dataloader, 0):
             optimizerG.zero_grad()
@@ -132,11 +139,11 @@ def main():
             target = data[2]
             step = i + epoch * len(dataloader)
             
-            mask = (torch.sum(source,1)==0).float().unsqueeze(1)
-            img_mean =torch.sum(torch.sum(source, 2),2) / torch.sum(torch.sum(mask, 2),2).view(3,1)
-            source += mask.repeat(1,3,1,1) * img_mean.view(3,3,1,1).repeat(1,1,1024,2048)
+            mask = (torch.sum(source[:,:3,:,:],1)>0).float().unsqueeze(1)
             
-            #from IPython import embed; embed()
+            img_mean = torch.sum(torch.sum(source[:,:3,:,:], 2),2) / torch.sum(torch.sum(mask, 2),2).view(opt.batchsize,1)
+
+            source[:,:3,:,:] += (1-mask.repeat(1,3,1,1)) * img_mean.view(opt.batchsize,3,1,1).repeat(1,1,1024,2048)
             
             source_depth = source_depth[:,:,:,0].unsqueeze(1)
             
@@ -150,8 +157,12 @@ def main():
             imgc, maskvc, img_originalc = crop(img, maskv, img_original)
             #from IPython import embed; embed()
             recon = comp(imgc, maskvc)
-            loss = l2(recon, img_originalc)
-            loss.backward(retain_variables = True)
+            if opt.l1:
+                loss = l2(recon, img_originalc)
+            else:
+                loss = l2(p(recon), p(img_originalc).detach())
+            
+            loss.backward(retain_graph = True)
             
             
             if step > curriculum[1]:
@@ -160,7 +171,6 @@ def main():
                 errG = alpha * F.nll_loss(output, label)
                 errG.backward()
                 errG_data = errG.data[0]
-                
             optimizerG.step()
              
             # Train D:
@@ -170,7 +180,7 @@ def main():
                 output = dis(recon.detach())
                 #print(output)
                 errD_fake = alpha * F.nll_loss(output, label)
-                errD_fake.backward(retain_variables = True)
+                errD_fake.backward(retain_graph = True)
 
                 output = dis(img_originalc)
                 #print(output)
@@ -183,8 +193,8 @@ def main():
             
             print('[%d/%d][%d/%d] %d MSEloss: %f G_loss %f D_loss %f' % (epoch, opt.nepoch, i, len(dataloader), step, loss.data[0], errG_data, errD_data))
             
-            if i%500 == 0:
-                visual = torch.cat([imgc.data, recon.data, img_originalc.data], 3)
+            if i%200 == 0:
+                visual = torch.cat([imgc.data[:,:3,:,:], recon.data, img_originalc.data], 3)
                 visual = vutils.make_grid(visual, normalize=True)
                 writer.add_image('image', visual, step)
                 vutils.save_image(visual, '%s/compare%d_%d.png' % (opt.outf, epoch, i), nrow=1)

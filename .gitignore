@@ -3,10 +3,8 @@
 *.so
 *.egg-info/
 .DS_Store
-data/
 *.pth
 src/
-Dockerfile
 pw
 *.o
 *.ipynb
@@ -14,6 +12,10 @@ pw
 npz/
 11HB6XZSh1Q/
 11HB6XZSh1Q*/
-coord.npy
+*.npy
 dev/transfer.c
 *.jpg
+*.png
+*.bmp
+*.bak
+*.zip
