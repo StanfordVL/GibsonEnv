@@ -18,7 +18,7 @@ class CompletionNet(nn.Module):
         nf = 64
         alpha = 0.05
         self.convs = nn.Sequential(
-            nn.Conv2d(4, nf, kernel_size = 5, stride = 1, padding = 2),
+            nn.Conv2d(5, nf, kernel_size = 5, stride = 1, padding = 2),
             nn.ReLU(),
             nn.Conv2d(nf, nf*2, kernel_size = 3, stride = 2, padding = 1),
             nn.BatchNorm2d(nf*2, momentum=alpha),
