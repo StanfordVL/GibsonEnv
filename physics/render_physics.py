@@ -4,6 +4,7 @@ import random
 import zmq
 import argparse
 import os
+import json
 
 
 def getUpdateFromKeyboard():
@@ -48,14 +49,32 @@ def getCollisionFromUpdate():
 	p.resetBasePositionAndOrientation(objectUid, [x, y, z], [r_w, r_x, r_y, r_z])
 	#p.resetBasePositionAndOrientation(objectUid, [0, 0, 0], [r_w, r_x, r_y, r_z])
 	p.stepSimulation()
+	print("step simulation done")
 	collisions = p.getContactPoints(boundaryUid, objectUid)
 	if len(collisions) == 0:
+	#if True:
 		print("No collisions")
 	else:
 		print("Collisions!")
-	#print("collision length", len(collisions))
+	print("collision length", len(collisions))
 	socket.send_string(str(len(collisions)))
+	#socket.send_string(str(0))
 	return
+
+
+def synchronizeWithViewPort():
+	#step
+	view_pose = json.loads(socket.recv().decode("utf-8"))
+	changed = view_pose['changed']
+	pos, rot = p.getBasePositionAndOrientation(objectUid)
+	print(changed, pos, rot)
+	if changed:
+		## Apply the changes
+		new_pos = view_pose['pos']
+		new_quat = view_pose['quat']
+		p.resetBasePositionAndOrientation(objectUid, new_pos, new_quat)
+	socket.send_string(json.dumps([pos, rot]))
+	
 
 
 if __name__ == '__main__':
@@ -107,6 +126,9 @@ if __name__ == '__main__':
 
 	#p.setGravity(0,0,-10)
 	p.setRealTimeSimulation(1)
+	
+	## same as cv.waitKey(5) in viewPort
+	#p.setTimeStep(1)
 
 
 	context = zmq.Context()
@@ -114,6 +136,12 @@ if __name__ == '__main__':
 	socket.bind("tcp://*:5556")
 	while (1):
 		#getUpdateFromKeyboard()
-		getCollisionFromUpdate()
-		time.sleep(0.1)
+		
+		## Visual-first simulation
+		#getCollisionFromUpdate()
+
+		## Physics-first simulation
+		synchronizeWithViewPort()
+		#p.stepSimulation()
+		#time.sleep(0.05)
 		

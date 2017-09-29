@@ -13,12 +13,14 @@ import time
 from numpy import cos, sin
 import utils
 import transforms3d
+import json
 
 import zmq
 from cube2equi import find_corresponding_pixel
 from transfer import transfer2
 
 
+PHYSICS_FIRST = True
 
 class InImg(object):
     def __init__(self):
@@ -122,11 +124,22 @@ def convert_array(img_array):
     return outimg
 
 def mat_to_posi(cpose):
-    return cpose[0:3, -1]
+    return cpose[:3, -1]
 
 def mat_to_quat(cpose):
-    rot = cpose[0:3, 0:3]
-    return transforms3d.quaternions.mat2quat(rot)
+    rot = cpose[:3, :3]
+    ## Return: [r_x, r_y, r_z, r_w]
+    wxyz = transforms3d.quaternions.mat2quat(rot)
+    return np.concatenate((wxyz[1:], wxyz[:1]))
+
+def quat_pos_to_mat(pos, quat):
+    r_x, r_y, r_z, r_w = quat
+    print("quat", r_w, r_x, r_y, r_z)
+    mat = np.eye(4)
+    mat[:3, :3] = transforms3d.quaternions.quat2mat([r_w, r_x, r_y, r_z])
+    mat[:3, -1] = pos
+    # Return: roll, pitch, yaw
+    return mat
 
 ## Talking to physics simulation
 ## New state: [x, y, z, r_w, r_x, r_y, r_z]
@@ -141,6 +154,11 @@ def hasNoCollision(new_state):
     collisions_count = int(socket_phys.recv().decode("utf-8"))
     print("collisions", collisions_count)
     return collisions_count == 0
+
+def getNewPoseFromPhysics(view_pose):
+    socket_phys.send(json.dumps(view_pose))
+    new_pos, new_quat = json.loads(socket_phys.recv().decode("utf-8"))
+    return new_pos, new_quat
 
 
 def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
@@ -172,6 +190,42 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
     cpose = np.eye(4)
     old_state = [x, y, z, roll, pitch, yaw]
 
+    def getViewerCpose(cpose):
+        alpha = yaw
+        beta = pitch
+        gamma = roll
+        old_cpose = np.copy(cpose)
+        cpose = cpose.flatten()
+
+        cpose[0] = cos(alpha) * cos(beta);
+        cpose[1] = cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma);
+        cpose[2] = cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma);
+        cpose[3] = 0
+
+        cpose[4] = sin(alpha) * cos(beta);
+        cpose[5] = sin(alpha) * sin(beta) * sin(gamma) + cos(alpha) * cos(gamma);
+        cpose[6] = sin(alpha) * sin(beta) * cos(gamma) - cos(alpha) * sin(gamma);
+        cpose[7] = 0
+
+        cpose[8] = -sin(beta);
+        cpose[9] = cos(beta) * sin(gamma);
+        cpose[10] = cos(beta) * cos(gamma);
+        cpose[11] = 0
+
+        cpose[12:16] = 0
+        cpose[15] = 1
+
+        cpose = cpose.reshape((4,4))
+
+        cpose2 = np.eye(4)
+        cpose2[0,3] = x
+        cpose2[1,3] = y
+        cpose2[2,3] = z
+
+        cpose = np.dot(cpose, cpose2)
+        return cpose
+        #print('new_cpose', cpose)
+
     def render(imgs, depths, pose, model, poses):
         global fps
         t0 = time.time()
@@ -183,25 +237,10 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         #print("Sending request ...")
         #print(v_cam2world)
         #print('current viewer pose', pose)
-        print("camera pose", p)
+        #print("camera pose", p)
         #print("target pose", target_pose)
-        #s = mat_to_str(p2)
-        s = mat_to_str(p)#v_cam2world)
+        s = mat_to_str(p)
 
-        '''
-        p = pose.dot(np.linalg.inv(poses[0])) #.dot(target_pose)
-
-        trans = -pose[:3, -1]
-        rot = np.linalg.inv(pose[:3, :3])
-
-
-        p2 = np.eye(4)
-        p2[:3, :3] = rot
-        p2[:3, -1] = trans
-
-
-        s = mat_to_str(poses[0] * p2)
-        '''
 
         socket_mist.send(s)
         message = socket_mist.recv()
@@ -291,53 +330,32 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         t = t1-t0
         fps = 1/t
 
-        cv2.waitKey(5)%256
+        #cv2.waitKey(5)%256
 
     while True:
+        cpose = getViewerCpose(cpose)
+        v_cam2world = target_pose.dot(poses[0])
+        world_cpose = (v_cam2world).dot(np.linalg.inv(cpose)).dot(np.linalg.inv(rotation))
+        #print("world pose", world_cpose)
+
+
+        ## Query physics engine to get [x, y, z, roll, pitch, yaw]
+        if PHYSICS_FIRST:
+            pos  = mat_to_posi(world_cpose).tolist()
+            quat = mat_to_quat(world_cpose).tolist()
+            new_pos, new_quat = getNewPoseFromPhysics({
+                    'changed': changed,
+                    'pos': pos, 
+                    'quat': quat
+                })
+            world_cpose = quat_pos_to_mat(new_pos, new_quat)
+            try:
+                cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(world_cpose).dot(rotation))
+            except:
+                continue
+            changed = True
 
         if changed:
-            alpha = yaw
-            beta = pitch
-            gamma = roll
-            old_cpose = np.copy(cpose)
-            cpose = cpose.flatten()
-
-            cpose[0] = cos(alpha) * cos(beta);
-            cpose[1] = cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma);
-            cpose[2] = cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma);
-            cpose[3] = 0
-
-            cpose[4] = sin(alpha) * cos(beta);
-            cpose[5] = sin(alpha) * sin(beta) * sin(gamma) + cos(alpha) * cos(gamma);
-            cpose[6] = sin(alpha) * sin(beta) * cos(gamma) - cos(alpha) * sin(gamma);
-            cpose[7] = 0
-
-            cpose[8] = -sin(beta);
-            cpose[9] = cos(beta) * sin(gamma);
-            cpose[10] = cos(beta) * cos(gamma);
-            cpose[11] = 0
-
-            cpose[12:16] = 0
-            cpose[15] = 1
-
-            cpose = cpose.reshape((4,4))
-
-            cpose2 = np.eye(4)
-            cpose2[0,3] = x
-            cpose2[1,3] = y
-            cpose2[2,3] = z
-
-
-            cpose = np.dot(cpose, cpose2)
-
-            #print('new_cpose', cpose)
-
-
-
-            v_cam2world = target_pose.dot(poses[0])
-            world_cpose = (v_cam2world).dot(np.linalg.inv(cpose))
-            world_cpose = world_cpose.dot(np.linalg.inv(rotation))
-            print("world pose", world_cpose)
             #world_cpose = cpose.dot(v_cam2world)
 
             #old_quat = mat_to_quat(old_cpose)
@@ -345,8 +363,10 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             new_quat = mat_to_quat(world_cpose)
             new_posi = mat_to_posi(world_cpose)
 
-            
-            if hasNoCollision(np.append(new_posi, new_quat)):
+            ## Entry point for change of view 
+            ## If PHYSICS_FIRST mode, then collision is already handled
+            ##   inside physics simulator
+            if PHYSICS_FIRST or hasNoCollision(np.append(new_posi, new_quat)):
                 print("no collisions")
                 render(imgs, depths, cpose.astype(np.float32), model, poses)
                 old_state = [x, y, z, roll, pitch, yaw]
@@ -366,7 +386,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         else:
             show_out = show
 
-        #cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,cv2.CV_RGB(255,255,255))
+        
         cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,(255,255,255))
         #print("roll %f pitch %f yaw %f" % (roll, pitch, yaw))
         
@@ -376,7 +396,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
         cv2.imshow('show3d',show_rgb)
 
-        cmd=cv2.waitKey(5)%256
+        cmd=cv2.waitKey(1)%256
 
         ## delta = [x, y, z, roll, pitch, yaw]
         #delta = [0, 0, 0, 0, 0, 0]
