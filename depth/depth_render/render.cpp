@@ -28,6 +28,7 @@ using namespace std;
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
 #include "common/cmdline.h"
+#include <boost/timer.hpp>
 
 #include <zmq.hpp>
 
@@ -512,7 +513,6 @@ int main( int argc, char * argv[] )
 	zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
     socket.bind ("tcp://127.0.0.1:5555");
-
     int pose_idx = 0;
     
     
@@ -520,12 +520,12 @@ int main( int argc, char * argv[] )
 	do{
 
 		zmq::message_t request;
+		
+		std::cout << "\n\nWaiting for incoming task" << std::endl;
 
-		std::cout << "Waiting for incoming task" << std::endl;
-
-        //  Wait for next request from client
+		//  Wait for next request from client
         socket.recv (&request);
-        std::cout << "Received Hello " << request.data() << std::endl;
+		std::cout << "Received request " << request.data() << std::endl;
 
         //printf("%s\n", request.data());
 
@@ -534,8 +534,9 @@ int main( int argc, char * argv[] )
         std::cout << "Finished cast" << std::endl;
         std::cout << request_str << std::endl;
 
-        glm::mat4 viewMat = str_to_mat(request_str);
-        debug_mat(viewMat, "json");
+		glm::mat4 viewMat = str_to_mat(request_str);
+		// boost::timer t;		
+        // debug_mat(viewMat, "json");
 
 		// Measure speed
 		//double currentTime = glfwGetTime();
@@ -558,14 +559,14 @@ int main( int argc, char * argv[] )
         int nSize = windowWidth*windowHeight*3;
         int nByte = nSize*sizeof(unsigned short);
         // First let's create our buffer, 3 channels per Pixel
-        unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
+        // unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
         //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
 
-        unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
-        if (!dataBuffer) return false;
-        if (!dataBuffer_c) return false;
+        // unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
+        // if (!dataBuffer) return false;
+        // if (!dataBuffer_c) return false;
 
-        
+		boost::timer t;				
         for (int k = 0; k < 6; k ++ )
         {
             // Render to our framebuffer
@@ -657,86 +658,19 @@ int main( int argc, char * argv[] )
             glDisableVertexAttribArray(1);
             glDisableVertexAttribArray(2);
 
-            /*
-            // Render to the screen
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            // Render on the whole framebuffer, complete from the lower left corner to the upper right
-            glViewport(0,0,windowWidth,windowHeight);
-
-            // Clear the screen
-            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            // Use our shader
-            glUseProgram(quad_programID);
-
-            // Bind our texture in Texture Unit 0
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, renderedTexture);
-            //glBindTexture(GL_TEXTURE_2D, depthTexture);
-            // Set our "renderedTexture" sampler to use Texture Unit 0
-            glUniform1i(texID, 0);
-
-            glUniform1f(timeID, (float)(glfwGetTime()*10.0f) );
-
-            // 1rst attribute buffer : vertices
-            glEnableVertexAttribArray(0);
-            glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
-            glVertexAttribPointer(
-                0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-                3,                  // size
-                GL_FLOAT,           // type
-                GL_FALSE,           // normalized?
-                0,                  // stride
-                (void*)0            // array buffer offset
-            );
-
-            // Draw the triangles !
-            glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
-
-            glDisableVertexAttribArray(0);
-            */
-
-            /*
-            if (false) {
-                char buffer[100];
-                //printf("before: %s\n", buffer);
-                sprintf(buffer, "/home/jerry/Pictures/%s_mist.png", filename);
-                //printf("after: %s\n", buffer);
-                //printf("file name is %s\n", filename);
-                //printf("saving screenshot to %s\n", buffer);
-                save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
-            }
-            */
-
-            // Swap buffers
-            //glfwSwapBuffers(window);
-            //glfwPollEvents();
-
-            
             // Let's fetch them from the backbuffer
-            // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
-            glReadPixels((GLint)0, (GLint)0,
-                (GLint)windowWidth, (GLint)windowHeight,
-                 GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
-
-            glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
-
-            
-            for (int i = 0; i < windowWidth * windowHeight; i++) 
-                dataBuffer_c[i] = dataBuffer[3*i];
-            
-            memcpy (reply.data () + windowWidth*windowHeight*sizeof(unsigned short) * k, (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
-            
-            
+			void * img_out_ptr =  reply.data () + windowWidth * windowHeight * sizeof(unsigned short) * k;
+			glGetTextureImage(renderedTexture, 0, GL_BLUE, 
+				GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), 
+				img_out_ptr);
 
         }
-
+		printf ("Render: %f seconds", t.elapsed());		
         socket.send (reply);
 
-        free(dataBuffer);
-        free(dataBuffer_c);
-        //free(dataBuffer);
-        //free(dataBuffer_c);
+        // free(dataBuffer);
+        // free(dataBuffer_c);
+
         
 
 
