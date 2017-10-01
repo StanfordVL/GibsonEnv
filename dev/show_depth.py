@@ -24,7 +24,8 @@ mousedown = False
 clickstart = (0,0)
 fps = 0
 
-dll=np.ctypeslib.load_library('render_cuda','.')
+#dll=np.ctypeslib.load_library('render_cuda','.')
+#dll2=np.ctypeslib.load_library('occinf','.')
 
 
 def onmouse(*args):
@@ -75,8 +76,8 @@ def showpoints(imgs, depths, poses, model, target):
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
 
-    imgv = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
-    maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
+    imgv = Variable(torch.zeros(1,3, showsz, showsz*2)).cuda()
+    maskv = Variable(torch.zeros(1,1, showsz, showsz*2)).cuda()
 
     cpose = np.eye(4)
 
@@ -85,7 +86,7 @@ def showpoints(imgs, depths, poses, model, target):
         t0 = time.time()
         target_depth[:] = 65535
         show[:] = 0
-        before = time.time()
+        occ = np.zeros((showsz,showsz * 2)).astype(np.bool)
         for i in range(len(imgs)):
             #print(poses[0])
 
@@ -93,6 +94,7 @@ def showpoints(imgs, depths, poses, model, target):
             #from IPython import embed; embed()
             print('after',pose_after)
 
+            '''
             dll.render(ct.c_int(imgs[i].shape[0]),
                        ct.c_int(imgs[i].shape[1]),
                        imgs[i].ctypes.data_as(ct.c_void_p),
@@ -102,26 +104,34 @@ def showpoints(imgs, depths, poses, model, target):
                        target_depth.ctypes.data_as(ct.c_void_p)
                       )
 
-        print('PC render time:', time.time() - before)
-
+            dll2.occinf(ct.c_int(imgs[i].shape[0]),
+                       ct.c_int(imgs[i].shape[1]),
+                       depths[i].ctypes.data_as(ct.c_void_p),
+                       pose_after.ctypes.data_as(ct.c_void_p),
+                       occ.ctypes.data_as(ct.c_void_p),
+                       target_depth.ctypes.data_as(ct.c_void_p)
+                       )
+            '''
+            #print(show.shape, occ.shape)
+            show[:,:,0] = (show[:,:,0] * (1-occ)).astype(np.uint8)
+            show[:,:,0] = show[:,:,0] + (occ * 255).astype(np.uint8)
+            
+            
         if model:
             tf = transforms.ToTensor()
-            before = time.time()
             source = tf(show)
-            source_depth = tf(np.expand_dims(target_depth, 2).astype(np.float32)/65536 * 255)
+            source_depth = tf(np.expand_dims(target_depth, 2))
             #print(source.size(), source_depth.size())
+
             imgv.data.copy_(source)
             maskv.data.copy_(source_depth)
-            print('Transfer time', time.time() - before)
-            before = time.time()
+
             recon = model(imgv, maskv)
-            print('NNtime:', time.time() - before)
-            before = time.time()
+            #print(recon.size())
             show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
             show[:] = (show2[:] * 255).astype(np.uint8)
-            print('Transfer to CPU time:', time.time() - before)
 
-        t1 =time.time()
+        t1 = time.time()
         t = t1-t0
         fps = 1/t
 
@@ -242,7 +252,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False, train = False)
+    d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False)
     idx = opt.idx
 
     data = d[idx]

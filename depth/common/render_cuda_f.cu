@@ -1,5 +1,6 @@
 #include <cstdlib>
-#include <cstdio>
+//#include <cstdio>
+#include <stdio.h>
 #include <vector>
 #include <algorithm>
 #include <math.h>
@@ -11,6 +12,9 @@ using namespace std;
 
 const int TILE_DIM = 32;
 const int BLOCK_ROWS = 8;
+
+const int N_THREADS = 64;
+const int N_BLOCKS = 64;
 
 __global__ void copy_mem(unsigned char *source, unsigned char *render)
 {
@@ -167,10 +171,89 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
 }
 
 
+__global__ void transform_cube_to_equi(float *dst, float * src, uint * idxs,  size_t count)
+{
+  int n_to_do = count / ( gridDim.x* blockDim.x);
+  int start = (blockIdx.x * blockDim.x + threadIdx.x) * n_to_do;
+  //printf("x: %d w: %d | %d %d (%d)(%d)\n", blockIdx.x, threadIdx.x, gridDim.x, blockDim.x, start, n_to_do);
+  for (int j = 0; j < n_to_do; j++)
+  {
+    dst[start + j] = src[idxs[start + j]];
+  }
+}
 
+__global__ void blue(float * dst, float * src, size_t count)
+{
+  int n_to_do = count / ( gridDim.x* blockDim.x);
+  int start = (blockIdx.x * blockDim.x + threadIdx.x) * n_to_do;
+  printf("%d", n_to_do);
+  for (int j = 0; j < n_to_do; j++)
+  {
+    dst[start + j] = src[3*(start + j) + 2];
+  }
+}
+
+
+__global__ void readSurfaceToCubeMapBuffer(float * dst, cudaSurfaceObject_t surf2D, int width, int height)
+{
+    unsigned int start_x = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int start_y = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned int n_to_do_x = height / (blockDim.y * gridDim.y);
+    unsigned int n_to_do_y = width / (blockDim.x * gridDim.x);
+    unsigned int n_to_do = n_to_do_x * n_to_do_y;
+    int start = (blockIdx.x * blockDim.x + threadIdx.x) * n_to_do;
+    float temp;
+    for (int j = 0; j < n_to_do; j++)
+    {
+        int x_val = (start_x + (j/n_to_do_y));//*4;
+        int y_val = start_y + (j%n_to_do_y);
+        surf2Dread(&temp, surf2D, x_val, y_val );
+        dst[start + j] = temp;
+        //src[3*(start + j) + 2];
+    }
+    printf("Thread index: (%i, %i); cudaArray = %d\n", n_to_do_x, n_to_do_y , n_to_do);
+}
 
 extern "C"{
-    
+
+void fillBlue(float * dst, cudaArray_t src, size_t offset)
+{
+    cudaResourceDesc wdsc;
+    wdsc.resType = cudaResourceTypeArray;
+    wdsc.res.array.array = src;
+    cudaSurfaceObject_t writeSurface;
+    cudaCreateSurfaceObject(&writeSurface, &wdsc);
+    dim3 dimBlock(1, 1);
+    dim3 dimGrid(1, 1);
+    printf("%d\n", sizeof(src));
+    readSurfaceToCubeMapBuffer<<< dimGrid, dimBlock >>>(dst + offset, writeSurface, 768, 768);
+}
+
+#define checkCudaErrors(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
+uint* move_idxs_to_gpu(uint * cube_idx_to_equi, size_t count) {
+    uint *d_idx;
+    const int idxs_mem_size = count*sizeof(uint);
+    cudaMalloc((void **)&d_idx, idxs_mem_size);
+    cudaMemcpy(d_idx, cube_idx_to_equi, idxs_mem_size, cudaMemcpyHostToDevice);
+    return d_idx;
+}
+
+float* allocate_buffer_on_gpu(size_t count) {
+    float *d_dst;
+    const int dst_mem_size = count*sizeof(float);
+    cudaMalloc((void **)&d_dst, dst_mem_size);
+    return d_dst;
+}
+
 void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, int * depth_render){
     //int ih, iw, i, ic;
     
@@ -238,6 +321,33 @@ void render(int h,int w,unsigned char * img, float * depth,float * pose, unsigne
     cudaFree(d_3dpoint_polar);
     cudaFree(d_pose);
 }
+
+
+void cube_to_equi(float * dst, float * d_src, uint *d_idx, size_t count, size_t src_size){
+    // First call move_idxs_to_gpu!
+
+    const int dst_mem_size = count*sizeof(float);
+    const int src_mem_size = src_size*sizeof(float);
+    //const int idxs_mem_size = count*sizeof(uint);
+    float *d_dst;//, *d_src;
+
+    cudaMalloc((void **)&d_dst, dst_mem_size);
+    //cudaMalloc((void **)&d_src, src_mem_size);
+    //cudaMalloc((void **)&d_idx, idxs_mem_size);
     
+    cudaMemcpy(d_dst, dst, dst_mem_size, cudaMemcpyHostToDevice);
+    //cudaMemcpy(d_src, src, src_mem_size, cudaMemcpyHostToDevice);
+    //cudaMemcpy(d_idx, cube_idx_to_equi, idxs_mem_size, cudaMemcpyHostToDevice);
     
+    transform_cube_to_equi<<< N_BLOCKS, N_THREADS >>>(d_dst, d_src, d_idx, count);
+    
+    //cudaMemset(d_dst, 0, dst_mem_size);
+    cudaMemcpy(dst, d_dst, dst_mem_size, cudaMemcpyDeviceToHost);
+
+    cudaFree(d_dst);
+    //cudaFree(d_src);
+    //cudaFree(d_idx);
+    cudaDeviceSynchronize();
+}
+
 }//extern "C"

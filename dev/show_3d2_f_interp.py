@@ -5,7 +5,7 @@ import cv2
 import sys
 import argparse
 from datasets import ViewDataSet3D
-from completion import CompletionNet
+from completion2 import CompletionNet2
 import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
@@ -16,9 +16,9 @@ import utils
 import zmq
 from cube2equi import find_corresponding_pixel
 from transfer import transfer2
+import scipy.stats
+import torch.nn.functional as F
 
-from profiler import Profiler
-from multiprocessing.dummy import Process
 class InImg(object):
     def __init__(self):
         self.grid = 768
@@ -51,6 +51,40 @@ clickstart = (0,0)
 fps = 0
 
 dll=np.ctypeslib.load_library('render_cuda_f','.')
+
+
+nlayer = 15
+convs = torch.nn.Conv2d(3, nlayer*3, nlayer, padding=nlayer//2).cuda()
+convs.bias.data.fill_(0)
+convs.weight.data.fill_(0)
+
+convs2 = torch.nn.Conv2d(1, 1, nlayer, padding=nlayer//2).cuda()
+convs2.weight.data.fill_(1)
+convs2.bias.data.fill_(0)
+
+print(convs.weight.data.size())
+for i in range(nlayer):
+    radius = i // 2
+    for c in range(3):
+        convs.weight.data[i + c * nlayer, c, nlayer//2-radius:nlayer//2+radius + 1, nlayer//2-radius:nlayer//2+radius + 1] = 1
+        convs.bias.data.fill_(0)
+
+def gkern(kernlen=11, nsig=2):
+    """Returns a 2D Gaussian kernel array."""
+    interval = (2*nsig+1.)/(kernlen)
+    x = np.linspace(-nsig-interval/2., nsig+interval/2., kernlen+1)
+    kern1d = np.diff(scipy.stats.norm.cdf(x))
+    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
+    kernel = kernel_raw/kernel_raw.sum()
+    return kernel
+
+conv_mask = torch.nn.Conv2d(1, 1, 11, padding=5).cuda()
+conv_mask.bias.data.fill_(0)
+conv_mask.weight.data[0,0,:,:] = torch.from_numpy(gkern())
+
+
+
+
 
 
 def onmouse(*args):
@@ -93,7 +127,7 @@ def mat_to_str(matrix):
 
 coords = np.load('coord.npy')
 
-def convert_array(img_array, outimg):
+def convert_array(img_array):
     inimg = InImg()
 
     wo, ho = inimg.grid * 4, inimg.grid * 3
@@ -104,12 +138,21 @@ def convert_array(img_array, outimg):
     n = ho/3
 
     # Create new image with width w, and height h
-    # outimg = np.zeros((h,w,1)) #.astype(np.uint8)
+    outimg = np.zeros((h,w,1)) #.astype(np.uint8)
+
+    in_imgs = None
+    print("converting images", len(img_array))
+
+    print("Passed in image array", len(img_array), np.max(img_array[0]))
+    in_imgs = img_array
+
+    # For each pixel in output image find colour value from input image
+    print(outimg.shape)
 
     # todo: for some reason the image is flipped 180 degrees
-    transfer2(img_array, coords, h, w, outimg)
+    outimg = transfer2(in_imgs, coords, h, w)[:, ::, :]
 
-    # return outimg
+    return outimg
 
 
 
@@ -121,7 +164,6 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
     showsz = target.shape[0]
     rotation = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
     print('target pose', target_pose)
-
 
     show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
     target_depth = np.zeros((showsz,showsz * 2)).astype(np.int32)
@@ -136,12 +178,12 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
     cv2.moveWindow('show3d',0,0)
     cv2.setMouseCallback('show3d',onmouse)
 
-    imgv = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
-    maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
+    imgv = Variable(torch.zeros(1,7, showsz, showsz*2), volatile=True).cuda()
+    maskv = Variable(torch.zeros(1,2, showsz, showsz*2), volatile=True).cuda()
 
     cpose = np.eye(4)
 
-    def render(imgs, depths, pose, model, poses, opengl_arr):
+    def render(imgs, depths, pose, model, poses):
         global fps
         t0 = time.time()
 
@@ -150,6 +192,10 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         p = p.dot(np.linalg.inv(rotation))
 
         print("Sending request ...")
+        print("s0", v_cam2world)
+        print('current viewer pose', pose)
+        print("camera pose", p)
+        print("target pose", target_pose)
         #s = mat_to_str(p2)
         s = mat_to_str(p)#v_cam2world)
 
@@ -168,59 +214,138 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         s = mat_to_str(poses[0] * p2)
         '''
 
+        socket.send(s)
+        message = socket.recv()
+        print("Received messages")
 
-        with Profiler("Depth request round-trip"):        
-            socket.send(s)
-            message = socket.recv()
+        data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
+        ## For some reason, the img passed back from opengl is upside down.
+        ## This is still yet to be debugged
+        data = data[:, ::-1,::,:]
+        img_array = []
+        for i in range(6):
+            img_array.append(data[i])
 
-        with Profiler("Read from framebuffer and make pano"):  
-            # data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
-            
-            wo, ho = 768 * 4, 768 * 3
+        img_array2 = [img_array[0], img_array[1], img_array[2], img_array[3], img_array[4], img_array[5]]
+        print("max value", np.max(data[0]), "shape", np.array(img_array2).shape)
 
-            # Calculate height and width of output image, and size of each square face
-            h = wo/3
-            w = 2*h
-            n = ho/3
-            opengl_arr = np.array(np.frombuffer(message, dtype=np.float32)).reshape((h, w))
+        opengl_arr = convert_array(np.array(img_array2))
+        opengl_arr = opengl_arr[::, ::]
 
-        def render_depth(opengl_arr):
-            with Profiler("Render Depth"):  
-                cv2.imshow('target depth', opengl_arr/16.)
+        print("opengl array shape", opengl_arr.shape)
+        #plot_histogram(opengl_arr)
+        print("zero values", np.sum(opengl_arr[:, :, 0] == 0), np.sum(opengl_arr[:, :, 1] == 0), np.sum(opengl_arr[:, :, 2] == 0))
 
-        def render_pc(opengl_arr):
-            with Profiler("Render pointcloud"):
-                scale = 100.  # 512
-                target_depth = np.int32(opengl_arr * scale)
-                show[:] = 0
-                poses_after = [
-                    pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
-                    for i in range(len(imgs))]
+        print("opengl min", np.min(opengl_arr), "opengl max", np.max(opengl_arr))
+        opengl_arr_err  = opengl_arr == 0
 
-                for i in range(len(imgs)):
-                    dll.render(ct.c_int(imgs[i].shape[0]),
-                            ct.c_int(imgs[i].shape[1]),
-                            imgs[i].ctypes.data_as(ct.c_void_p),
-                            depths[i].ctypes.data_as(ct.c_void_p),
-                            poses_after[i].ctypes.data_as(ct.c_void_p),
-                            show.ctypes.data_as(ct.c_void_p),
-                            target_depth.ctypes.data_as(ct.c_void_p)
-                            )
-                    break
-        threads = [
-            Process(target=render_pc, args=(opengl_arr,)),
-            Process(target=render_depth, args=(opengl_arr,))]
-        [t.start() for t in threads]
-        [t.join() for t in threads]
+        #opengl_arr = np.maximum(opengl_arr + 30, opengl_arr)
+
+        opengl_arr_show = (opengl_arr * 3500.0 / 128).astype(np.uint8)
+        print('arr shape', opengl_arr_show.shape, "max", np.max(opengl_arr_show), "total number of errors", np.sum(opengl_arr_err))
+
+        opengl_arr_show[opengl_arr_err[:, :, 0], 1:3] = 0
+        opengl_arr_show[opengl_arr_err[:, :, 0], 0] = 255
+        cv2.imshow('target depth',opengl_arr_show)
+
+        #from IPython import embed; embed()
+        target_depth[:] = (opengl_arr[:,:,0] * 100).astype(np.int32)
+
+
+        show[:] = 0
+        nimgs = len(imgs)
+        show_array=np.zeros((nimgs, showsz,showsz * 2,3),dtype='uint8')
+        
+        
+        before = time.time()
+        for i in range(len(imgs)):
+            #print(poses[0])
+
+            pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
+            if i == 0:
+                print('First pose after')
+                print(pose_after)
+            #from IPython import embed; embed()
+            #print('Received pose ' + str(i))
+            #print(pose_after)
+
+            dll.render(ct.c_int(imgs[i].shape[0]),
+                       ct.c_int(imgs[i].shape[1]),
+                       imgs[i].ctypes.data_as(ct.c_void_p),
+                       depths[i].ctypes.data_as(ct.c_void_p),
+                       pose_after.ctypes.data_as(ct.c_void_p),
+                       show_array[i].ctypes.data_as(ct.c_void_p),
+                       target_depth.ctypes.data_as(ct.c_void_p)
+                      )
+            if i == 0:
+                print(np.sum(show - imgs[0]))
+
+
+        print('PC render time:', time.time() - before)
+        
+        
+        
+        show_tensor = torch.zeros(4,3,1024,2048)
+        tf = transforms.ToTensor()
+        for i in range(4):
+            show_tensor[i, :, :, :] = tf(show_array[i])
+
+        show_tensor_v = Variable(show_tensor.cuda())
+        
+        
+        mask = (torch.sum(show_tensor_v, 1, keepdim = True) > 0).float().repeat(1,3,1,1)
+
+        conved = convs(show_tensor_v)
+        conved_mask = convs(mask)
+        i = nlayer - 1
+        for c in range(3):
+            conved_mask[:, i + c * nlayer, :, :] = convs2(convs2(conved_mask[:, i + c * nlayer, :, :].contiguous().view(-1,1,1024,2048)))
+            conved[:, i + c * nlayer, :, :] = convs2(convs2(conved[:, i + c * nlayer, :, :].contiguous().view(-1,1,1024,2048)))
+
+
+        avg = conved / conved_mask
+        avg[avg != avg] = 0
+        avg = avg.view(4,3,nlayer,1024,2048)
+        avg.size()
+        img = Variable(torch.zeros(4,3,1024,2048)).cuda()
+        for i in range(nlayer):
+            img[img == 0] = avg[:,:,i,:,:][img == 0]
+
+
+        density = conv_mask(conv_mask(conv_mask(mask[:,0:1,:,:])))
+
+
+        selection = F.softmax(5 * density.view(4,1024 * 2048).transpose(1,0)).transpose(1,0).contiguous().view(4, 1024, 2048)
+        occu = (torch.sum(img,1)>0).float()
+        selection[occu == 0] = 0
+        selection = (selection / torch.sum(selection, 0, keepdim = True)).view(4,1,1024,2048).repeat(1,3,1,1)
+
+        img_combined = torch.sum(img * selection, 0)
+        
+        
+        show[:] = (img_combined.cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
+        sel = (selection[:,0,:,:].cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
+        
 
         if model:
             tf = transforms.ToTensor()
             before = time.time()
-            source = tf(show)
+            source = tf(np.concatenate([show, sel], 2))
+            source = source.unsqueeze(0)
+            
             source_depth = tf(np.expand_dims(target_depth, 2).astype(np.float32)/65536 * 255)
-            #print(source.size(), source_depth.size())
+            source_depth = source_depth.unsqueeze(0)
+
+            mask_source = (torch.sum(source[:,:3,:,:],1)>0).float().unsqueeze(1)
+            print(source.size(), source_depth.size(), mask.size())
+            
+            
+            img_mean = torch.sum(torch.sum(source[:,:3,:,:], 2),2) / torch.sum(torch.sum(mask_source, 2),2).view(1,1)
+            source[:,:3,:,:] += (1-mask_source.repeat(1,3,1,1)) * img_mean.view(1,3,1,1).repeat(1,1,1024,2048)
+            
+            
             imgv.data.copy_(source)
-            maskv.data.copy_(source_depth)
+            maskv.data.copy_( torch.cat([source_depth, mask_source], 1))
             print('Transfer time', time.time() - before)
             before = time.time()
             recon = model(imgv, maskv)
@@ -271,9 +396,8 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
             cpose = np.dot(cpose, cpose2)
 
-            # print('cpose',cpose)
-            depth_buffer = np.zeros(imgs[0].shape[:2], dtype=np.float32)
-            render(imgs, depths, cpose.astype(np.float32), model, poses, depth_buffer)
+            print('cpose',cpose)
+            render(imgs, depths, cpose.astype(np.float32), model, poses)
             changed = False
 
         if overlay:
@@ -368,7 +492,7 @@ if __name__=='__main__':
 
     model = None
     if opt.model != '':
-        comp = CompletionNet()
+        comp = CompletionNet2()
         comp = torch.nn.DataParallel(comp).cuda()
         comp.load_state_dict(torch.load(opt.model))
         model = comp.module
@@ -384,16 +508,7 @@ if __name__=='__main__':
     print("Connecting to hello world server...")
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
-    print(coords.flatten().dtype)
-    with Profiler("Transform coords"):
-        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
-    print(coords.shape)
-    print("Count: ", coords.flatten().astype(np.uint32).size )
-    print("elem [2,3,5]: ", coords[4][2][1] )
-    socket.send(new_coords)
-    print("Sent reordering")
-    message = socket.recv()
-    print("msg")
+
     uuids, rts = d.get_scene_info(0)
     #print(uuids, rts)
     print(uuids[idx])

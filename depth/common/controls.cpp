@@ -29,23 +29,6 @@ glm::mat4 getProjectionMatrix(){
 }
 
 
-// Initial position : on +Z
-// point 0 view 1
-// glm::vec3 position = glm::vec3( 0.033474, 1.53312, 0.002227 );
-// opengl location = blender rotate by 90 along x
-// original (blender): 0.033474, -0.002227, 1.53312
-
-// point 0 view 2
-// glm::vec3 position = glm::vec3( -1.096474, 1.535375, -0.124639 ); // point 0 view 2 adapted
-// original (blender): -1.096474, 0.124639, 1.535375
-
-glm::vec3 position = glm::vec3(-1.096474, 0.124639, 1.535375); // point 0 view 2 original (blender):
-
-// Point 6 view 0
-//glm::vec3 position = glm::vec3( -1.096474, 1.535375, -0.124639 );
-
-
-
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
@@ -56,6 +39,8 @@ float mouseSpeed = 0.005f;
 
 float currentPoseStartTime = 0;
 int currentPoseRotCount = 0;
+
+glm::vec3 position;
 
 glm::quat initialDirections[] = {
 	glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)),
@@ -73,13 +58,17 @@ glm::quat initialDirections[] = {
 	// glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f))
 };
 
-glm::mat4 getView(glm::mat4 source, int k){
+glm::mat4 getView(glm::mat4 oldCam2world, int k){
     glm::quat initial = initialDirections[k];
-	glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
-	glm::quat viewDirection = rotateX_90 * initial;
-	glm::mat4 v = glm::inverse(source * glm::toMat4(viewDirection));
-        //glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));
-    return v;
+    glm::mat4 left2right = glm::mat4();
+    left2right[2][2] = -1;
+	
+	glm::quat newCam2oldCam = initial;
+	glm::mat4 newCam2World = oldCam2world * glm::toMat4(newCam2oldCam);
+	
+	glm::mat4 world2newCam = glm::inverse(newCam2World);
+	
+	return world2newCam;
 }
 
 // Automatically load all poses of a model, and render corresponding pngs
@@ -295,13 +284,13 @@ bool computeMatricesFromFile(std::string filename){
 
 	char namebuf[50];
 
-	int count = fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", namebuf, &posX, &posY, &posZ, &rotW, &rotY, &rotX, &rotZ, &junk[0], &junk[1] );
+	int count = fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", namebuf, &posX, &posY, &posZ, &rotX, &rotY, &rotZ, &rotW, &junk[0], &junk[1] );
 
-	printf("Loading pose file count: %d, namebuf: %s, rot count %d\n", count, namebuf, currentPoseRotCount);
+	printf("Loading pose file count: %d, namebuf: %s, rot count %d, (%f, %f, %f, %f)\n", count, namebuf, currentPoseRotCount, rotW, rotX, rotY, rotZ);
 
 	//assert(count == 10);
 
-	rotY = -rotY;
+	//rotY = -rotY;
 
 	position = glm::vec3(posX, posY, posZ);
 
@@ -311,7 +300,7 @@ bool computeMatricesFromFile(std::string filename){
 	//if (currentTime - currentPoseStartTime > 1) {
 		// UNCOMMENT THIS, in order to render png at a new position every second
 		//getPositionRotation(position, rotationX, rotationY, rotationZ, filename);
-		glm::quat initial = initialDirections[currentPoseRotCount];
+		glm::quat initial = initialDirections[currentPoseRotCount % 6];
 		//convertRotation(rotationX, rotationY, rotationZ, currentPoseRotCount);
 		currentPoseStartTime = currentTime;
 		currentPoseRotCount += 1;
@@ -322,7 +311,8 @@ bool computeMatricesFromFile(std::string filename){
 	glm::quat viewDirection;
 	//glm::vec3 viewDirectionEuler(rotationX, rotationY, rotationZ);
 	glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
-	viewDirection = rotateX_90 * glm::quat(rotW, rotX, rotY, rotZ) * initial;
+	//viewDirection = rotateX_90 * glm::quat(rotW, rotX, rotY, rotZ) * initial;
+	viewDirection = glm::quat(rotW, rotX, rotY, rotZ) * initial;
 	//viewDirection = glm::quat(viewDirectionEuler) * initial;
 
 	ViewMatrix = glm::inverse(glm::translate(glm::mat4(1.0), position) * glm::toMat4(viewDirection));

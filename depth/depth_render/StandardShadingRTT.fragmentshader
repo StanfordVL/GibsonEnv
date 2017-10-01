@@ -75,8 +75,12 @@ void main(){
 
 	//depth = vec3(EyeDirection_cameraspace.z/128, EyeDirection_cameraspace.z/128, EyeDirection_cameraspace.z/128);
 
-	float m = sqrt(EyeDirection_cameraspace.x * EyeDirection_cameraspace.x + EyeDirection_cameraspace.y * EyeDirection_cameraspace.y + EyeDirection_cameraspace.z * EyeDirection_cameraspace.z)/128;
+	float m = sqrt(EyeDirection_cameraspace.x * EyeDirection_cameraspace.x + EyeDirection_cameraspace.y * EyeDirection_cameraspace.y + EyeDirection_cameraspace.z * EyeDirection_cameraspace.z);
+	// float cosine = sqrt(EyeDirection_cameraspace.x * EyeDirection_cameraspace.x + EyeDirection_cameraspace.y * EyeDirection_cameraspace.y) / sqrt(EyeDirection_cameraspace.x * EyeDirection_cameraspace.x + EyeDirection_cameraspace.y * EyeDirection_cameraspace.y + EyeDirection_cameraspace.z * EyeDirection_cameraspace.z);
+	//float cosine = 1;
+	
 	mist = vec3(m, m, m);
+	//mist = vec3(cosine, cosine, cosine);
 
 	//depth = vec3(depthN * 65536, depthN * 65536, depthN * 65536);
 

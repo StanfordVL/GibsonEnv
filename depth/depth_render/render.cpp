@@ -5,6 +5,8 @@
 #include <string>
 #include <iostream>
 #include <X11/Xlib.h>
+#include "boost/multi_array.hpp"
+#include "boost/timer.hpp"
 
 // Include GLEW
 #include <GL/glew.h>
@@ -19,6 +21,15 @@ GLFWwindow* window;
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
+// Include cuda
+#include <cuda_runtime_api.h>
+#include <cuda_gl_interop.h>
+#include <cuda.h>
+
 //using namespace glm;
 using namespace std;
 
@@ -28,7 +39,7 @@ using namespace std;
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
 #include "common/cmdline.h"
-#include <boost/timer.hpp>
+#include <common/render_cuda_f.h>
 
 #include <zmq.hpp>
 
@@ -36,6 +47,9 @@ using namespace std;
 #include <unistd.h>
 #else
 #include <windows.h>
+
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #define sleep(n)    Sleep(n)
 #endif
@@ -45,13 +59,24 @@ using namespace std;
 // We would expect width and height to be 1024 and 768
 int windowWidth = 768;
 int windowHeight = 768;
+size_t panoWidth = 2048;
+size_t panoHeight = 1024;
+int cudaDevice = -1;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
 static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
 static glXMakeContextCurrentARBProc   glXMakeContextCurrentARB   = NULL;
 
-
+#define checkCudaErrors(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
 
 glm::vec3 GetOGLPos(int x, int y)
 {
@@ -104,8 +129,7 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
   for (int i = 0; i < nSize - 50; i++) {
   	if (dataBuffer[i] < least) least = dataBuffer[i];
   	if (dataBuffer[i] > most) most = dataBuffer[i];
-  	if (dataBuffer[i] == 26214) strange_count++;
-  }
+ }
 
   //least = least * 5000 *  65536.0f / 128.0f;
   //most = most * 5000 * 65536.0f / 128.0f;
@@ -177,8 +201,26 @@ glm::mat4 str_to_mat(std::string str) {
 	    idx += 1;
 	}
 	mat[idx % 4][idx / 4] = std::stof(str);
-	
+
 	return mat;
+}
+
+
+std::vector<size_t> str_to_vec(std::string str) {
+	std::string delimiter = " ";
+	std::vector<size_t> longs;
+	size_t pos = 0;
+	size_t idx = 0;
+	std::string token;
+	while ((pos = str.find(delimiter)) != std::string::npos) {
+	    token = str.substr(0, pos);
+	    longs.push_back(std::stoul(token));
+	    //std::cout << "after " << std::stof(token) << " "  << idx % 4 << " " << idx / 4 <<  std::endl;
+	    str.erase(0, pos + delimiter.length());
+	    idx += 1;
+	}
+	longs.push_back(std::stoul(str));	
+	return longs;
 }
 
 void debug_mat(glm::mat4 mat, std::string name) {
@@ -202,7 +244,8 @@ int main( int argc, char * argv[] )
 
     std::string model_id = cmdp.get<std::string>("model");
 
-    std::string name_obj = name_path + "/" + model_id + "/" + model_id + "_HIGH.obj";
+    std::string name_obj = name_path + "/" + model_id + "/" + "modeldata/out_res.obj";
+    //std::string name_obj = name_path + "/" + model_id + "/modeldata/out_res.obj";
 	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.csv";
 
 
@@ -349,6 +392,8 @@ int main( int argc, char * argv[] )
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
+	//glDepthRange(1.0f, 0.0f);
+
 
 	// Cull triangles which normal is not towards the camera
 	glEnable(GL_CULL_FACE);
@@ -380,14 +425,14 @@ int main( int argc, char * argv[] )
 	// Note: use unsigned int because of too many indices
 	//std::vector<short unsigned int> short_indices;
 	//bool res = loadAssImp(name_ply.c_str(), short_indices, vertices, uvs, normals);
-	
+
 	std::vector<unsigned int> indices;
-	
+
 	std::vector<glm::vec3> indexed_vertices;
 	std::vector<glm::vec2> indexed_uvs;
 	std::vector<glm::vec3> indexed_normals;
 	indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
-	
+
 
 
 	// Load it into a VBO
@@ -430,6 +475,7 @@ int main( int argc, char * argv[] )
 
 	// The texture we're going to render to
 	GLuint renderedTexture;
+	
 	glGenTextures(1, &renderedTexture);
 
 	// "Bind" the newly created texture : all future texture functions will modify this texture
@@ -513,29 +559,79 @@ int main( int argc, char * argv[] )
 	zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
     socket.bind ("tcp://127.0.0.1:5555");
+	cudaGetDevice( &cudaDevice );
+	int g_cuda_device = 0;
+	cudaSetDevice(g_cuda_device);	
+	cudaGLSetGLDevice(g_cuda_device);
+	cudaGraphicsResource* resource;			
+	checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
+	std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
     int pose_idx = 0;
-    
-    
+	zmq::message_t request;
+	
+	socket.recv (&request);
+	// std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
+	// std::vector<size_t> new_idxs = str_to_vec(request_str);
+	size_t img_size = request.size();
+	typedef boost::multi_array<uint, 3> array_type;
+	const int ndims=3;	
+	boost::multi_array<uint, 3> reordering{boost::extents[img_size / sizeof(uint)][1][1]};
+	// boost::array<array_type::size_type,ndims> orig_dims = {{img_size / sizeof(uint),1,1}};	
+	boost::array<array_type::index,ndims> dims = {{1024, 2048, 3}};       	
+	
+	// multi_array reordering(orig_dims);
+
+	for (int i = 0; i < (img_size / sizeof(uint)) ; i++) {
+		reordering[i][0][0] = ((uint*)request.data())[i];
+	}
+	
+	reordering.reshape(dims);
+
+	std::vector<uint> opengl_idx_to_pano;
+	for(size_t ycoord = 0; ycoord < panoHeight; ycoord++){
+		// std::cout << ycoord << std::endl;
+		for(size_t xcoord = 0; xcoord < panoWidth; xcoord++){
+			size_t ind = reordering[ycoord][xcoord][0];
+			size_t corrx = reordering[ycoord][xcoord][1];
+			size_t corry = reordering[ycoord][xcoord][2];
+
+							
+		// 		((float*)reply.data())[ycoord*panoWidth + xcoord] = 
+		// 			 dataBuffer[ind * 768 * 768 +
+		// 				(767 - corry) * 768 +
+		// 				corrx
+		// 			];
+			opengl_idx_to_pano.push_back(
+				ind * 768 * 768 +
+				(767 - corry) * 768 +
+				corrx);
+		}
+	}
+
+	uint *gpu_opengl_idx_to_pano = move_idxs_to_gpu(&(opengl_idx_to_pano[0]), opengl_idx_to_pano.size());
+	zmq::message_t reply0 (sizeof(float));
+	socket.send(reply0);
+	
+	float *cubemap_buf_gpu = allocate_buffer_on_gpu(windowHeight*windowWidth*6);
+    cudaMemset(cubemap_buf_gpu, 0, 768*768*6*sizeof(float));
 
 	do{
 
-		zmq::message_t request;
-		
-		std::cout << "\n\nWaiting for incoming task" << std::endl;
 
-		//  Wait for next request from client
+		std::cout << "Waiting for incoming task" << std::endl;
+
+        //  Wait for next request from client
         socket.recv (&request);
-		std::cout << "Received request " << request.data() << std::endl;
-
+        std::cout << "Received Hello " << request.data() << std::endl;
+		boost::timer t;
         //printf("%s\n", request.data());
 
         std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
 
-        std::cout << "Finished cast" << std::endl;
-        std::cout << request_str << std::endl;
+        std::cout << "\nFinished cast" << std::endl;
+        //std::cout << request_str << std::endl;
 
-		glm::mat4 viewMat = str_to_mat(request_str);
-		// boost::timer t;		
+        glm::mat4 viewMat = str_to_mat(request_str);
         // debug_mat(viewMat, "json");
 
 		// Measure speed
@@ -552,25 +648,30 @@ int main( int argc, char * argv[] )
 			lastTime += 1.0;
 		}
 
-        zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short) * 6);
+        //zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short) * 6);
+		
+        //std::cout << "message reply size " <<  windowWidth*windowHeight*sizeof(float) * 6 << std::endl;
+
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
         glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-        
-        int nSize = windowWidth*windowHeight*3;
-        int nByte = nSize*sizeof(unsigned short);
+
+        int nSize = windowWidth*windowHeight*3*6;
+        //int nByte = nSize*sizeof(unsigned short);
+        int nByte = nSize*sizeof(float);
+
         // First let's create our buffer, 3 channels per Pixel
-        // unsigned short* dataBuffer = (unsigned short*)malloc(nByte);
+        float* dataBuffer = (float*)malloc(nByte);
         //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
 
-        // unsigned short * dataBuffer_c = (unsigned short * ) malloc(windowWidth*windowHeight * sizeof(unsigned short));
-        // if (!dataBuffer) return false;
-        // if (!dataBuffer_c) return false;
+        float * dataBuffer_c = (float * ) malloc(windowWidth*windowHeight * sizeof(float));
+        if (!dataBuffer) return false;
+        if (!dataBuffer_c) return false;
 
-		boost::timer t;				
+
         for (int k = 0; k < 6; k ++ )
         {
             // Render to our framebuffer
-            
+
             // Clear the screen
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -583,6 +684,14 @@ int main( int argc, char * argv[] )
             float fov = glm::radians(90.0f);
             glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
             glm::mat4 ViewMatrix =  getView(viewMat, k);
+            //glm::mat4 ViewMatrix = getViewMatrix();
+            glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
+            // printf("View (pose) matrix for skybox %d\n", k);
+            // for (int i = 0; i < 4; ++i) {
+			// 	printf("\t %f %f %f %f\n", viewMatPose[0][i], viewMatPose[1][i], viewMatPose[2][i], viewMatPose[3][i]);
+			// 	//printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
+			// }
+
             glm::mat4 ModelMatrix = glm::mat4(1.0);
 
             pose_idx ++;
@@ -590,6 +699,12 @@ int main( int argc, char * argv[] )
             //glm::mat4 tempMat = getViewMatrix();
             //debug_mat(tempMat, "csv");
 
+            // glm::mat4 revertZ = glm::mat4();
+            // revertZ[2][2] = -1;
+            // glm::quat rotateZ_N90 = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(-90.0f)));
+			// glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f));
+
+            //glm::mat4 MVP = ProjectionMatrix * ViewMatrix * revertZ * ModelMatrix;
             glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
             // Send our transformation to the currently bound shader,
@@ -656,22 +771,104 @@ int main( int argc, char * argv[] )
 
             glDisableVertexAttribArray(0);
             glDisableVertexAttribArray(1);
-            glDisableVertexAttribArray(2);
+			glDisableVertexAttribArray(2);
+	
+            /*
+            // Render to the screen
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            // Render on the whole framebuffer, complete from the lower left corner to the upper right
+            glViewport(0,0,windowWidth,windowHeight);
+
+            // Clear the screen
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            // Use our shader
+            glUseProgram(quad_programID);
+
+            // Bind our texture in Texture Unit 0
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, renderedTexture);
+            //glBindTexture(GL_TEXTURE_2D, depthTexture);
+            // Set our "renderedTexture" sampler to use Texture Unit 0
+            glUniform1i(texID, 0);
+
+            glUniform1f(timeID, (float)(glfwGetTime()*10.0f) );
+
+            // 1rst attribute buffer : vertices
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
+            glVertexAttribPointer(
+                0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+            );
+
+            // Draw the triangles !
+            glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
+
+            glDisableVertexAttribArray(0);
+            */
+
+            /*
+            if (false) {
+                char buffer[100];
+                //printf("before: %s\n", buffer);
+                sprintf(buffer, "/home/jerry/Pictures/%s_mist.png", filename);
+                //printf("after: %s\n", buffer);
+                //printf("file name is %s\n", filename);
+                //printf("saving screenshot to %s\n", buffer);
+                save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
+            }
+            */
+
+            // Swap buffers
+            //glfwSwapBuffers(window);
+            //glfwPollEvents();
+
 
             // Let's fetch them from the backbuffer
-			void * img_out_ptr =  reply.data () + windowWidth * windowHeight * sizeof(unsigned short) * k;
-			glGetTextureImage(renderedTexture, 0, GL_BLUE, 
-				GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), 
-				img_out_ptr);
+            // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
 
-        }
-		printf ("Render: %f seconds", t.elapsed());		
+            //glReadPixels((GLint)0, (GLint)0,
+            //    (GLint)windowWidth, (GLint)windowHeight,
+            //     GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
+            //glReadPixels((GLint)0, (GLint)0,
+            //    (GLint)windowWidth, (GLint)windowHeight,
+            //     GL_BGR, GL_FLOAT, dataBuffer);
+
+            //glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
+			// float* loc = dataBuffer + windowWidth*windowHeight * k;
+			// glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, 
+				// (nSize/3)*sizeof(float), loc);
+
+        	checkCudaErrors(cudaGraphicsMapResources(1, &resource));
+            cudaArray_t writeArray;
+            checkCudaErrors(cudaGraphicsSubResourceGetMappedArray(&writeArray, resource, 0, 0));
+            fillBlue(cubemap_buf_gpu, writeArray, windowWidth*windowHeight * k);
+		    checkCudaErrors(cudaGraphicsUnmapResources(1, &resource));
+            checkCudaErrors(cudaStreamSynchronize(0));
+
+		}
+		// size_t bufferIdx = 0;
+		// for(std::vector<uint>::iterator it = opengl_idx_to_pano.begin(); it != opengl_idx_to_pano.end(); ++it, ++bufferIdx) {
+		// 	((float*)reply.data())[bufferIdx] = dataBuffer[*it];
+		// } 
+		zmq::message_t reply (panoWidth*panoHeight*sizeof(float));							
+		cube_to_equi((float*)reply.data(), cubemap_buf_gpu, gpu_opengl_idx_to_pano, opengl_idx_to_pano.size(), (size_t) nSize/3);
+		
+		
+		
+		std::cout << "Render time: " << t.elapsed() << std::endl;
         socket.send (reply);
 
-        // free(dataBuffer);
-        // free(dataBuffer_c);
+        free(dataBuffer);
+        free(dataBuffer_c);
+        //free(dataBuffer);
+        //free(dataBuffer_c);
 
-        
 
 
 	} while (true);
