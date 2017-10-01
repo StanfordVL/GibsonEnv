@@ -17,8 +17,8 @@ import zmq
 from cube2equi import find_corresponding_pixel
 from transfer import transfer2
 
-
-
+from profiler import Profiler
+from multiprocessing.dummy import Process
 class InImg(object):
     def __init__(self):
         self.grid = 768
@@ -93,7 +93,7 @@ def mat_to_str(matrix):
 
 coords = np.load('coord.npy')
 
-def convert_array(img_array):
+def convert_array(img_array, outimg):
     inimg = InImg()
 
     wo, ho = inimg.grid * 4, inimg.grid * 3
@@ -104,21 +104,12 @@ def convert_array(img_array):
     n = ho/3
 
     # Create new image with width w, and height h
-    outimg = np.zeros((h,w,1)) #.astype(np.uint8)
-
-    in_imgs = None
-    print("converting images", len(img_array))
-
-    print("Passed in image array", len(img_array), np.max(img_array[0]))
-    in_imgs = img_array
-
-    # For each pixel in output image find colour value from input image
-    print(outimg.shape)
+    # outimg = np.zeros((h,w,1)) #.astype(np.uint8)
 
     # todo: for some reason the image is flipped 180 degrees
-    outimg = transfer2(in_imgs, coords, h, w)[:, ::, :]
+    transfer2(img_array, coords, h, w, outimg)
 
-    return outimg
+    # return outimg
 
 
 
@@ -150,7 +141,7 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
     cpose = np.eye(4)
 
-    def render(imgs, depths, pose, model, poses):
+    def render(imgs, depths, pose, model, poses, opengl_arr):
         global fps
         t0 = time.time()
 
@@ -159,10 +150,6 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         p = p.dot(np.linalg.inv(rotation))
 
         print("Sending request ...")
-        print("s0", v_cam2world)
-        print('current viewer pose', pose)
-        print("camera pose", p)
-        print("target pose", target_pose)
         #s = mat_to_str(p2)
         s = mat_to_str(p)#v_cam2world)
 
@@ -181,70 +168,43 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         s = mat_to_str(poses[0] * p2)
         '''
 
-        socket.send(s)
-        message = socket.recv()
-        print("Received messages")
 
-        data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
-        ## For some reason, the img passed back from opengl is upside down.
-        ## This is still yet to be debugged
-        data = data[:, ::-1,::,:]
-        img_array = []
-        for i in range(6):
-            img_array.append(data[i])
+        with Profiler("Depth request round-trip"):        
+            socket.send(s)
+            message = socket.recv()
 
-        img_array2 = [img_array[0], img_array[1], img_array[2], img_array[3], img_array[4], img_array[5]]
-        print("max value", np.max(data[0]), "shape", np.array(img_array2).shape)
+        with Profiler("Read from framebuffer and make pano"):  
+            data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
+            convert_array(data, opengl_arr)
 
-        opengl_arr = convert_array(np.array(img_array2))
-        opengl_arr = opengl_arr[::, ::]
+        def render_depth(opengl_arr):
+            with Profiler("Render Depth"):  
+                cv2.imshow('target depth', opengl_arr/16.)
 
-        print("opengl array shape", opengl_arr.shape)
-        #plot_histogram(opengl_arr)
-        print("zero values", np.sum(opengl_arr[:, :, 0] == 0), np.sum(opengl_arr[:, :, 1] == 0), np.sum(opengl_arr[:, :, 2] == 0))
+        def render_pc(opengl_arr):
+            with Profiler("Render pointcloud"):
+                scale = 100.  # 512
+                target_depth = np.int32(opengl_arr * scale)
+                show[:] = 0
+                poses_after = [
+                    pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
+                    for i in range(len(imgs))]
 
-        print("opengl min", np.min(opengl_arr), "opengl max", np.max(opengl_arr))
-        opengl_arr_err  = opengl_arr == 0
-
-        #opengl_arr = np.maximum(opengl_arr + 30, opengl_arr)
-
-        opengl_arr_show = (opengl_arr * 3500.0 / 128).astype(np.uint8)
-        print('arr shape', opengl_arr_show.shape, "max", np.max(opengl_arr_show), "total number of errors", np.sum(opengl_arr_err))
-
-        opengl_arr_show[opengl_arr_err[:, :, 0], 1:3] = 0
-        opengl_arr_show[opengl_arr_err[:, :, 0], 0] = 255
-        cv2.imshow('target depth',opengl_arr_show)
-
-        #from IPython import embed; embed()
-        target_depth[:] = (opengl_arr[:,:,0] * 100).astype(np.int32)
-
-
-        show[:] = 0
-        before = time.time()
-        for i in range(len(imgs)):
-            #print(poses[0])
-
-            pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
-            if i == 0:
-                print('First pose after')
-                print(pose_after)
-            #from IPython import embed; embed()
-            #print('Received pose ' + str(i))
-            #print(pose_after)
-
-            dll.render(ct.c_int(imgs[i].shape[0]),
-                       ct.c_int(imgs[i].shape[1]),
-                       imgs[i].ctypes.data_as(ct.c_void_p),
-                       depths[i].ctypes.data_as(ct.c_void_p),
-                       pose_after.ctypes.data_as(ct.c_void_p),
-                       show.ctypes.data_as(ct.c_void_p),
-                       target_depth.ctypes.data_as(ct.c_void_p)
-                      )
-            if i == 0:
-                print(np.sum(show - imgs[0]))
-
-
-        print('PC render time:', time.time() - before)
+                for i in range(len(imgs)):
+                    dll.render(ct.c_int(imgs[i].shape[0]),
+                            ct.c_int(imgs[i].shape[1]),
+                            imgs[i].ctypes.data_as(ct.c_void_p),
+                            depths[i].ctypes.data_as(ct.c_void_p),
+                            poses_after[i].ctypes.data_as(ct.c_void_p),
+                            show.ctypes.data_as(ct.c_void_p),
+                            target_depth.ctypes.data_as(ct.c_void_p)
+                            )
+                    break
+        threads = [
+            Process(target=render_pc, args=(opengl_arr,)),
+            Process(target=render_depth, args=(opengl_arr,))]
+        [t.start() for t in threads]
+        [t.join() for t in threads]
 
         if model:
             tf = transforms.ToTensor()
@@ -304,8 +264,9 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
             cpose = np.dot(cpose, cpose2)
 
-            print('cpose',cpose)
-            render(imgs, depths, cpose.astype(np.float32), model, poses)
+            # print('cpose',cpose)
+            depth_buffer = np.zeros(imgs[0].shape[:2], dtype=np.float32)
+            render(imgs, depths, cpose.astype(np.float32), model, poses, depth_buffer)
             changed = False
 
         if overlay:

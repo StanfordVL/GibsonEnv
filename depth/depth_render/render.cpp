@@ -607,10 +607,10 @@ int main( int argc, char * argv[] )
             //glm::mat4 tempMat = getViewMatrix();
             //debug_mat(tempMat, "csv");
 
-            glm::mat4 revertZ = glm::mat4();
-            revertZ[2][2] = -1;
-            glm::quat rotateZ_N90 = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(-90.0f)));
-			glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f));
+            // glm::mat4 revertZ = glm::mat4();
+            // revertZ[2][2] = -1;
+            // glm::quat rotateZ_N90 = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(-90.0f)));
+			// glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f));
 
             //glm::mat4 MVP = ProjectionMatrix * ViewMatrix * revertZ * ModelMatrix;
             glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
@@ -748,15 +748,17 @@ int main( int argc, char * argv[] )
             //     GL_BGR, GL_FLOAT, dataBuffer);
 
             //glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
-            glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, nSize*sizeof(float), dataBuffer);
+			auto loc = reply.data () + windowWidth*windowHeight*sizeof(float) * k;
+			// glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, 
+			// 	(nSize/3)*sizeof(float), loc);
 
 
-            for (int i = 0; i < windowWidth * windowHeight; i++) {
-                dataBuffer_c[i] = (float) dataBuffer[3*i];
-            }
+            // for (int i = 0; i < windowWidth * windowHeight; i++) {
+            //     dataBuffer_c[i] = (float) dataBuffer[3*i];
+            // }
 
-            //memcpy (reply.data () + windowWidth*windowHeight*sizeof(unsigned short) * k, (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
-            memcpy (reply.data () + windowWidth*windowHeight*sizeof(float) * k, (float*)dataBuffer_c, windowWidth*windowHeight*sizeof(float));
+            // //memcpy (reply.data () + windowWidth*windowHeight*sizeof(unsigned short) * k, (unsigned char*)dataBuffer_c, windowWidth*windowHeight*sizeof(unsigned short));
+            // memcpy (reply.data () + windowWidth*windowHeight*sizeof(float) * k, (float*)dataBuffer_c, windowWidth*windowHeight*sizeof(float));
 
 
 
