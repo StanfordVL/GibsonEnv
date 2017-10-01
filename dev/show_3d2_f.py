@@ -174,8 +174,15 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             message = socket.recv()
 
         with Profiler("Read from framebuffer and make pano"):  
-            data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
-            convert_array(data, opengl_arr)
+            # data = np.array(np.frombuffer(message, dtype=np.float32)).reshape((6, 768, 768, 1))
+            
+            wo, ho = 768 * 4, 768 * 3
+
+            # Calculate height and width of output image, and size of each square face
+            h = wo/3
+            w = 2*h
+            n = ho/3
+            opengl_arr = np.array(np.frombuffer(message, dtype=np.float32)).reshape((h, w))
 
         def render_depth(opengl_arr):
             with Profiler("Render Depth"):  
@@ -377,7 +384,16 @@ if __name__=='__main__':
     print("Connecting to hello world server...")
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
-
+    print(coords.flatten().dtype)
+    with Profiler("Transform coords"):
+        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
+    print(coords.shape)
+    print("Count: ", coords.flatten().astype(np.uint32).size )
+    print("elem [2,3,5]: ", coords[4][2][1] )
+    socket.send(new_coords)
+    print("Sent reordering")
+    message = socket.recv()
+    print("msg")
     uuids, rts = d.get_scene_info(0)
     #print(uuids, rts)
     print(uuids[idx])
