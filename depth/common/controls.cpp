@@ -43,19 +43,19 @@ int currentPoseRotCount = 0;
 glm::vec3 position;
 
 glm::quat initialDirections[] = {
-	glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)),
-	glm::quat(glm::vec3(0.0f, glm::radians(-90.0f), 0.0f)),
-	glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
-	glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
-	glm::quat(glm::vec3(0.0f, glm::radians(-180.0f), 0.0f)),
-	glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f))
-
 	// glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)),
-	// glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
-	// glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
 	// glm::quat(glm::vec3(0.0f, glm::radians(-90.0f), 0.0f)),
+	// glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
+	// glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
 	// glm::quat(glm::vec3(0.0f, glm::radians(-180.0f), 0.0f)),
 	// glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f))
+
+	glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(90.0f), 0.0f)),
+	glm::quat(glm::vec3(0.0f, 0.0f, 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(-90.0f), 0.0f)),
+	glm::quat(glm::vec3(0.0f, glm::radians(-180.0f), 0.0f)),
+	glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f))
 };
 
 glm::mat4 getView(glm::mat4 oldCam2world, int k){

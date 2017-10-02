@@ -122,7 +122,7 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
   unsigned short least = 65535;
   unsigned short most = 0;
 
-  glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
+  glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
 
   int strange_count = 0;
 
@@ -291,7 +291,7 @@ int main( int argc, char * argv[] )
 	};
 
 
-	printf("Running up to this point %X\n", (char *)fbConfigs);
+	// printf("Running up to this point %X\n", (char *)fbConfigs);
 
 	// This breaks if DISPLAY is not set as 0
 	GLXContext openGLContext = glXCreateContextAttribsARB( display, fbConfigs[0], 0, True, context_attribs);
@@ -482,7 +482,7 @@ int main( int argc, char * argv[] )
 	glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
 	// Give an empty image to OpenGL ( the last "0" means "empty" )
-	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB32F, windowWidth, windowHeight, 0,GL_RGB, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0);
 
 	// Poor filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -587,7 +587,7 @@ int main( int argc, char * argv[] )
 	
 	reordering.reshape(dims);
 
-	std::vector<uint> opengl_idx_to_pano;
+	std::vector<uint> cubeMapCoordToPanoCoord;
 	for(size_t ycoord = 0; ycoord < panoHeight; ycoord++){
 		// std::cout << ycoord << std::endl;
 		for(size_t xcoord = 0; xcoord < panoWidth; xcoord++){
@@ -595,25 +595,19 @@ int main( int argc, char * argv[] )
 			size_t corrx = reordering[ycoord][xcoord][1];
 			size_t corry = reordering[ycoord][xcoord][2];
 
-							
-		// 		((float*)reply.data())[ycoord*panoWidth + xcoord] = 
-		// 			 dataBuffer[ind * 768 * 768 +
-		// 				(767 - corry) * 768 +
-		// 				corrx
-		// 			];
-			opengl_idx_to_pano.push_back(
-				ind * 768 * 768 +
-				(767 - corry) * 768 +
+			cubeMapCoordToPanoCoord.push_back(
+				ind * windowWidth * windowHeight +
+				(windowHeight - 1 - corry) * windowWidth +
 				corrx);
 		}
 	}
 
-	uint *gpu_opengl_idx_to_pano = move_idxs_to_gpu(&(opengl_idx_to_pano[0]), opengl_idx_to_pano.size());
+	uint *d_cubeMapCoordToPanoCoord = copyToGPU(&(cubeMapCoordToPanoCoord[0]), cubeMapCoordToPanoCoord.size());
 	zmq::message_t reply0 (sizeof(float));
 	socket.send(reply0);
 	
-	float *cubemap_buf_gpu = allocate_buffer_on_gpu(windowHeight*windowWidth*6);
-    cudaMemset(cubemap_buf_gpu, 0, 768*768*6*sizeof(float));
+	float *cubeMapGpuBuffer = allocateBufferOnGPU(windowHeight * windowWidth * 6);
+    cudaMemset(cubeMapGpuBuffer, 0, windowHeight * windowWidth * 6 * sizeof(float));
 
 	do{
 
@@ -639,7 +633,6 @@ int main( int argc, char * argv[] )
 
 		double currentTime = 0;
 
-		printf("Running main render loop %f\n");
 		nbFrames++;
 		if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1sec ago
 			// printf and reset
@@ -844,30 +837,27 @@ int main( int argc, char * argv[] )
 			// glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, 
 				// (nSize/3)*sizeof(float), loc);
 
+            // Map the OpenGL texture buffer to CUDA memory space
         	checkCudaErrors(cudaGraphicsMapResources(1, &resource));
             cudaArray_t writeArray;
             checkCudaErrors(cudaGraphicsSubResourceGetMappedArray(&writeArray, resource, 0, 0));
-            fillBlue(cubemap_buf_gpu, writeArray, windowWidth*windowHeight * k);
+
+            // Copy the blue channel of the texture to the appropriate part of the cubemap that CUDA will use
+            fillBlue(cubeMapGpuBuffer, writeArray, windowWidth * windowHeight * k, windowWidth, windowHeight);
+
+            // Unmap the OpenGL texture so that it can be rewritten
 		    checkCudaErrors(cudaGraphicsUnmapResources(1, &resource));
-            checkCudaErrors(cudaStreamSynchronize(0));
 
 		}
-		// size_t bufferIdx = 0;
-		// for(std::vector<uint>::iterator it = opengl_idx_to_pano.begin(); it != opengl_idx_to_pano.end(); ++it, ++bufferIdx) {
-		// 	((float*)reply.data())[bufferIdx] = dataBuffer[*it];
-		// } 
+        checkCudaErrors(cudaStreamSynchronize(0));
 		zmq::message_t reply (panoWidth*panoHeight*sizeof(float));							
-		cube_to_equi((float*)reply.data(), cubemap_buf_gpu, gpu_opengl_idx_to_pano, opengl_idx_to_pano.size(), (size_t) nSize/3);
-		
-		
+		projectCubeMapToEquirectangular((float*)reply.data(), cubeMapGpuBuffer, d_cubeMapCoordToPanoCoord, cubeMapCoordToPanoCoord.size(), (size_t) nSize/3);
 		
 		std::cout << "Render time: " << t.elapsed() << std::endl;
         socket.send (reply);
 
         free(dataBuffer);
         free(dataBuffer_c);
-        //free(dataBuffer);
-        //free(dataBuffer_c);
 
 
 
