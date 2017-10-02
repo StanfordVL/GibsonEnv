@@ -60,9 +60,13 @@ def main():
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
     parser.add_argument('--outf', type=str, default="filler_pano_pc_full", help='output folder')
     parser.add_argument('--model', type=str, default="", help='model path')
-    parser.add_argument('--cepoch'  ,type=int, default = 0, help='current epoch')
-    parser.add_argument('--l1'  , action='store_true', help='l1 only')
-    parser.add_argument('--iden'  , action='store_true', help='iden init')
+    parser.add_argument('--cepoch', type=int, default = 0, help='current epoch')
+    parser.add_argument('--loss', type=str, default="perceptual", help='l1 only')
+    parser.add_argument('--init', type=str, default = "iden", help='init method')
+    parser.add_argument('--l1', type=float, default = 0, help='add l1 loss')
+    
+    
+    
     
     
     mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
@@ -96,12 +100,12 @@ def main():
     img_original = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
-    comp = CompletionNet2()
+    comp = CompletionNet2(norm = nn.BatchNorm2d)
     dis = Discriminator2(pano = False)
     current_epoch = opt.cepoch
 
     comp =  torch.nn.DataParallel(comp).cuda()
-    if opt.iden:
+    if opt.init == 'iden':
         comp.apply(identity_init)
     else:
         comp.apply(weights_init)
@@ -114,7 +118,16 @@ def main():
         current_epoch = opt.cepoch
 
     l2 = nn.MSELoss()
-    optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
+    
+    if opt.loss == 'train_init':
+        params = list(comp.parameters())
+        sel = np.random.choice(len(params), len(params)/2, replace=False)
+        params_sel = [params[i] for i in sel]
+        optimizerG = torch.optim.Adam(params_sel, lr = opt.lr, betas = (opt.beta1, 0.999))
+        
+    else:
+        optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
+    
     optimizerD = torch.optim.Adam(dis.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
 
     curriculum = (200000, 300000) # step to start D training and G training, slightly different from the paper
@@ -126,7 +139,7 @@ def main():
     vgg16 = models.vgg16(pretrained = False)
     vgg16.load_state_dict(torch.load('vgg16-397923af.pth'))
     feat = vgg16.features
-    p = torch.nn.DataParallel(Perceptual(feat)).cuda()
+    p = torch.nn.DataParallel(Perceptual(feat, early = (opt.loss == 'early'))).cuda()
     
     for param in p.parameters():
         param.requires_grad = False
@@ -157,11 +170,15 @@ def main():
             imgc, maskvc, img_originalc = crop(img, maskv, img_original)
             #from IPython import embed; embed()
             recon = comp(imgc, maskvc)
-            if opt.l1:
+            if opt.loss == "train_init":
+                loss = l2(recon, imgc[:,:3,:,:])
+            elif opt.loss == 'l1':    
                 loss = l2(recon, img_originalc)
-            else:
-                loss = l2(p(recon), p(img_originalc).detach())
-            
+            elif opt.loss == 'perceptual':
+                loss = l2(p(recon), p(img_originalc).detach()) + opt.l1 * l2(recon, img_originalc)
+            elif opt.loss == 'color_stable':
+                loss = l2(p(recon.view(recon.size(0) * 3, 1, 256, 256).repeat(1,3,1,1)), p(img_originalc.view(img_originalc.size(0)*3,1,256,256).repeat(1,3,1,1)).detach())
+                
             loss.backward(retain_graph = True)
             
             
