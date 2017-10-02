@@ -355,6 +355,9 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             show[:] = (show2[:] * 255).astype(np.uint8)
             print('Transfer to CPU time:', time.time() - before)
 
+            
+            
+            
         t1 =time.time()
         t = t1-t0
         fps = 1/t
