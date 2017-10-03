@@ -54,8 +54,48 @@ class InImg(object):
             return (indx + 1, remx, remy)
 
 
+mousex,mousey=0.5,0.5
+changed=True
+pitch,yaw,x,y,z = 0,0,0,0,0
+roll = 0
+org_pitch, org_yaw, org_x, org_y, org_z = 0,0,0,0,0
+org_roll = 0
+mousedown = False
+clickstart = (0,0)
+fps = 0
+
 dll=np.ctypeslib.load_library('render_cuda_f','.')
 
+
+def onmouse(*args):
+    global mousex,mousey,changed
+    global pitch,yaw,x,y,z
+    global org_pitch, org_yaw, org_x, org_y, org_z
+    global org_roll, roll
+    global clickstart
+
+    if args[0] == cv2.EVENT_LBUTTONDOWN:
+        org_pitch, org_yaw, org_x, org_y, org_z =\
+        pitch,yaw,x,y,z
+        clickstart = (mousex, mousey)
+
+    if args[0] == cv2.EVENT_RBUTTONDOWN:
+        org_roll = roll
+        clickstart = (mousex, mousey)
+
+    if (args[3] & cv2.EVENT_FLAG_LBUTTON):
+        pitch = org_pitch + (mousex - clickstart[0])/10
+        yaw = org_yaw + (mousey - clickstart[1])
+        changed=True
+
+    if (args[3] & cv2.EVENT_FLAG_RBUTTON):
+        roll = org_roll + (mousex - clickstart[0])/50
+        changed=True
+
+    my=args[1]
+    mx=args[2]
+    mousex=mx/float(256)
+    mousey=my/float(256 * 2)
 
 
 def mat_to_str(matrix):
@@ -103,15 +143,24 @@ def mat_to_quat_xyzw(cpose):
     wxyz = transforms3d.quaternions.mat2quat(rot)
     return quat_wxyz_to_xyzw(wxyz)
 
+## wxyz: numpy array format
+def quat_wxyz_to_xyzw(wxyz):
+    return np.concatenate((wxyz[1:], wxyz[:1]))
+
+## xyzw: numpy array format
+def quat_xyzw_to_wxyz(xyzw):
+    return np.concatenate((xyzw[-1:], xyzw[:-1]))
+
 ## Quat(wxyz)
 def quat_pos_to_mat(pos, quat):
     r_w, r_x, r_y, r_z = quat
-    #print("quat", r_w, r_x, r_y, r_z)
-    mat = np.eye(4)
-    mat[:3, :3] = transforms3d.quaternions.quat2mat([r_w, r_x, r_y, r_z])
-    mat[:3, -1] = pos
+    print("quat", r_w, r_x, r_y, r_z)
+    quat_mat = np.eye(4)
+    quat_mat[:3, :3] = transforms3d.quaternions.quat2mat([r_w, r_x, r_y, r_z])
+    pose_mat = np.eye(4)
+    pose_mat[:3, -1] = pos
     # Return: roll, pitch, yaw
-    return mat
+    return pose_mat * quat_mat
 
 ## Used for URDF models that are default -x facing
 ##  Rotate the model around its internal x axis for 90 degrees
@@ -129,19 +178,6 @@ def y_up_to_z_up(quat_wxyz):
     to_z_up = transforms3d.euler.euler2quat(np.pi/2, 0, np.pi/2)
     return transforms3d.quaternions.qmult(to_z_up, quat_wxyz)
 
-
-def quat_wxyz_to_euler(wxyz):
-    q0, q1, q2, q3 = wxyz
-    sinr = 2 * (q0 * q1 + q2 * q3)
-    cosr = 1 - 2 * (q1 * q1 + q2 * q2)
-    sinp = 2 * (q0 * q2 - q3 * q1)
-    siny = 2 * (q0 * q3 + q1 * q2)
-    cosy = 1 - 2 * (q2 * q2 + q3 * q3)
-
-    roll  = np.arctan2(sinr, cosr)
-    pitch = np.arcsin(sinp)
-    yaw   = np.arctan2(siny, cosy)
-    return [roll, pitch, yaw]
 
 ## Talking to physics simulation
 ## New state: [x, y, z, r_w, r_x, r_y, r_z]
@@ -167,49 +203,42 @@ def getNewPoseFromPhysics(view_pose):
     new_pos, new_quat = json.loads(socket_phys.recv().decode("utf-8"))
     return new_pos, quat_xyzw_to_wxyz(new_quat)
 
-class PCRenderer:
-    def __init__(self):
-        self.roll, self.pitch, self.yaw = 0, 0, 0
-        self.x, self.y, self.z = 0, 0, 0
-        self.fps = 0
-        self.mousex, self.mousey = 0.5, 0.5
-        self.changed = True
-        self.org_pitch, self.org_yaw, self.org_roll = 0, 0, 0
-        self.org_x, self.org_y, self.org_z = 0, 0, 0
-        self.clickstart = (0,0)
-        self.mousedown = False
-        self.fps = 0
-        self.rotation_const = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
 
-    def onmouse(self, *args):
-        if args[0] == cv2.EVENT_LBUTTONDOWN:
-            self.org_pitch, self.org_yaw, self.org_x, self.org_y, self.org_z =\
-                self.pitch,self.yaw,self.x,self.y,self.z
-            self.clickstart = (self.mousex, self.mousey)
+def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
+    global mousex,mousey,changed
+    global pitch,yaw,x,y,z,roll
+    global fps
 
-        if args[0] == cv2.EVENT_RBUTTONDOWN:
-            self.org_roll = self.roll
-            self.clickstart = (self.mousex, self.mousey)
+    showsz = target.shape[0]
+    rotation = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
+    print('target pose', target_pose)
 
-        if (args[3] & cv2.EVENT_FLAG_LBUTTON):
-            self.pitch = self.org_pitch + (self.mousex - self.clickstart[0])/10
-            self.yaw = self.org_yaw + (self.mousey - self.clickstart[1])
-            self.changed=True
 
-        if (args[3] & cv2.EVENT_FLAG_RBUTTON):
-            self.roll = self.org_roll + (self.mousex - self.clickstart[0])/50
-            self.changed=True
+    show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
+    target_depth = np.zeros((showsz,showsz * 2)).astype(np.int32)
 
-        my=args[1]
-        mx=args[2]
-        self.mousex=mx/float(256)
-        self.mousey=my/float(256 * 2)
+    #target_depth[:] = (tdepth[:,:,0] * 12800).astype(np.int32)
+    #from IPython import embed; embed()
+    overlay = False
+    show_depth = False
+    cv2.namedWindow('show3d')
+    cv2.namedWindow('target depth')
 
-    def getViewerCpose(self):
+    cv2.moveWindow('show3d',0,0)
+    cv2.setMouseCallback('show3d',onmouse)
+
+    imgv = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
+    maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
+
+    old_state = [x, y, z, roll, pitch, yaw]
+
+    old_cpose = np.eye(4)
+
+    def getViewerCpose():
         cpose = np.eye(4)
-        alpha = self.yaw
-        beta = self.pitch
-        gamma = self.roll
+        alpha = yaw
+        beta = pitch
+        gamma = roll
         cpose = cpose.flatten()
 
         cpose[0] = cos(alpha) * cos(beta);
@@ -233,21 +262,21 @@ class PCRenderer:
         cpose = cpose.reshape((4,4))
 
         cpose2 = np.eye(4)
-        cpose2[0,3] = self.x
-        cpose2[1,3] = self.y
-        cpose2[2,3] = self.z
+        cpose2[0,3] = x
+        cpose2[1,3] = y
+        cpose2[2,3] = z
 
         cpose = np.dot(cpose, cpose2)
         return cpose
         #print('new_cpose', cpose)
 
-
-    def render(self, imgs, depths, pose, model, poses, target_pose, show):
+    def render(imgs, depths, pose, model, poses):
+        global fps
         t0 = time.time()
 
         v_cam2world = target_pose.dot(poses[0])
         p = (v_cam2world).dot(np.linalg.inv(pose))
-        p = p.dot(np.linalg.inv(self.rotation_const))
+        p = p.dot(np.linalg.inv(rotation))
 
         #print("Sending request ...")
         #print(v_cam2world)
@@ -255,6 +284,7 @@ class PCRenderer:
         #print("camera pose", p)
         #print("target pose", target_pose)
         s = mat_to_str(p)
+
 
         socket_mist.send(s)
         message = socket_mist.recv()
@@ -292,8 +322,7 @@ class PCRenderer:
         cv2.imshow('target depth',opengl_arr_show)
 
         #from IPython import embed; embed()
-        print(target_depth.shape, opengl_arr.shape)
-        target_depth[:, :, 0] = (opengl_arr[:,:,0] * 100).astype(np.int32)
+        target_depth[:] = (opengl_arr[:,:,0] * 100).astype(np.int32)
 
 
         show[:] = 0
@@ -343,208 +372,163 @@ class PCRenderer:
 
         t1 =time.time()
         t = t1-t0
-        self.fps = 1/t
+        fps = 1/t
 
         #cv2.waitKey(5)%256
-    def instantCheckPos(self, pos, target_pose):
-        cpose = self.getViewerCpose()
+
+    while True:
+        global pitch,yaw,x,y,z,roll
+        cpose = getViewerCpose()
         v_cam2world = target_pose.dot(poses[0])
-        world_cpose = (v_cam2world).dot(np.linalg.inv(cpose)).dot(np.linalg.inv(self.rotation_const))
-        new_pos  = mat_to_posi_xyz(world_cpose).tolist()
-        #print("Instant chec xyz", x, y, z)
-        print("Instant check pose", new_pos)
-
-    def showpoints(self, imgs, depths, poses, model, target, tdepth, target_pose):
-        showsz = target.shape[0]
-        print('target pose', target_pose)
-
-        show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
-        target_depth = np.zeros((showsz,showsz * 2)).astype(np.int32)
-
-        #target_depth[:] = (tdepth[:,:,0] * 12800).astype(np.int32)
-        #from IPython import embed; embed()
-        overlay = False
-        show_depth = False
-        cv2.namedWindow('show3d')
-        cv2.namedWindow('target depth')
-
-        cv2.moveWindow('show3d',0,0)
-        cv2.setMouseCallback('show3d',self.onmouse)
-
-        imgv = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
-        maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
-
-        old_state = [self.x, self.y, self.z, self.roll, self.pitch, self.yaw]
-        old_cpose = np.eye(4)
-
-        while True:
-            cpose = self.getViewerCpose()
-            v_cam2world = target_pose.dot(poses[0])
-            world_cpose = (v_cam2world).dot(np.linalg.inv(cpose)).dot(np.linalg.inv(self.rotation_const))
-            #print("world pose", world_cpose)
+        world_cpose = (v_cam2world).dot(np.linalg.inv(cpose)).dot(np.linalg.inv(rotation))
+        #print("world pose", world_cpose)
 
 
-            ## Query physics engine to get [x, y, z, roll, pitch, yaw]
-            if PHYSICS_FIRST:
-                pos  = mat_to_posi_xyz(world_cpose).tolist()
-                #quat = transforms3d.quaternions.qmult(transforms3d.euler.euler2quat(0, 0, 0), mat_to_quat_xyzw(world_cpose)).tolist()
-                quat_wxyz = quat_xyzw_to_wxyz(mat_to_quat_xyzw(world_cpose)).tolist()
-                #quat_wxyz = z_up_to_y_up(quat_wxyz)
-                new_pos, new_quat_wxyz = getNewPoseFromPhysics({
-                        'changed': self.changed,
-                        'pos': pos, 
-                        'quat': quat_wxyz
-                    })
-                print("communicating with", self.changed)
-                print("sending old o pose", pos)
-                print("receiving new pose", new_pos)
-                #print("sending old o quat", quat_wxyz)
-                #print("receiving new quat", new_quat_wxyz)
+        ## Query physics engine to get [x, y, z, roll, pitch, yaw]
+        if PHYSICS_FIRST:
+            pos  = mat_to_posi_xyz(world_cpose).tolist()
+            #quat = transforms3d.quaternions.qmult(transforms3d.euler.euler2quat(0, 0, 0), mat_to_quat_xyzw(world_cpose)).tolist()
+            quat_wxyz = quat_xyzw_to_wxyz(mat_to_quat_xyzw(world_cpose)).tolist()
+            quat_wxyz = z_up_to_y_up(quat_wxyz)
+            new_pos, new_quat_wxyz = getNewPoseFromPhysics({
+                    'changed': changed,
+                    'pos': pos, 
+                    'quat': quat_wxyz
+                })
+            print("communicating with", changed)
+            print("sending old o pose", pos)
+            print("receiving new pose", new_pos)
+            print("sending old o pose", quat_wxyz)
+            print("receiving new quat", new_quat_wxyz)
 
-                #new_quat = y_up_to_z_up(new_quat_wxyz)
-                new_quat = new_quat_wxyz
+            new_quat = y_up_to_z_up(new_quat_wxyz)
+            #new_quat = new_quat_wxyz
 
-                delta = 2
-                #if (new_pos[0] <= -0.05 or new_pos[0] >= 0.05):
-                print("early on world pose", world_cpose)
-                world_cpose = quat_pos_to_mat(new_pos, new_quat)
-                print("later on world pose", world_cpose)
-                #print("quat pose c to mat", mat_to_posi_xyz(world_cpose))
-                #print("before updating as", x, y, z)
-                #print("early on cpose was", cpose)
-            
-                cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(world_cpose).dot(self.rotation_const))
-                #print("now the cpose is :", cpose)
-                viewer_pose  = mat_to_posi_xyz(cpose).tolist()
-                viewer_quat = quat_xyzw_to_wxyz(mat_to_quat_xyzw(cpose)).tolist()
+            delta = 2
+            #if (new_pos[0] <= -0.05 or new_pos[0] >= 0.05):
+            world_cpose = quat_pos_to_mat(new_pos, new_quat)
+            try:
+                cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(world_cpose).dot(rotation))
+                pos  = mat_to_posi_xyz(cpose).tolist()
+                quat = quat_xyzw_to_wxyz(mat_to_quat_xyzw(cpose)).tolist()
+                x, y, z = pos
+                print("parsed new pose", (x, y, z))
+                print(pos, quat)
+            except:
+                continue
+            changed = True
 
-                print("before the transfo", [self.x, self.y, self.z])
+        if changed:
+            #world_cpose = cpose.dot(v_cam2world)
 
-                self.x, self.y, self.z = viewer_pose
-                
-                print("after  the transfo", [self.x, self.y, self.z])
-                #print("before the quat", self.roll, self.pitch, self.yaw)
-                self.roll, self.pitch, self.yaw = 0, 0, 0#quat_wxyz_to_euler(viewer_quat)
-                #print("after  the quat", self.roll, self.pitch, self.yaw)
-                ## TODO: parse viewer_quat into updating roll, pitch, yaw
-                self.instantCheckPos(viewer_pose, target_pose)
-                
+            #old_quat = mat_to_quat_xyzw(old_cpose)
+            #old_posi = mat_to_posi_xyz(old_cpose)
+            new_quat = mat_to_quat_xyzw(world_cpose)
+            new_quat = z_up_to_y_up(quat_xyzw_to_wxyz(new_quat))
 
-                self.changed = True
+            new_posi = mat_to_posi_xyz(world_cpose)
 
-            if self.changed:
-                #world_cpose = cpose.dot(v_cam2world)
-
-                #old_quat = mat_to_quat_xyzw(old_cpose)
-                #old_posi = mat_to_posi_xyz(old_cpose)
-                new_quat = mat_to_quat_xyzw(world_cpose)
-                new_quat = z_up_to_y_up(quat_xyzw_to_wxyz(new_quat))
-
-                new_posi = mat_to_posi_xyz(world_cpose)
-
-                ## Entry point for change of view 
-                ## If PHYSICS_FIRST mode, then collision is already handled
-                ##   inside physics simulator
-                if PHYSICS_FIRST or hasNoCollision(new_posi, new_quat):
-                    print("no collisions")
-                    self.render(imgs, depths, cpose.astype(np.float32), model, poses, target_pose, show)
-                    old_state = [self.x, self.y, self.z, self.roll, self.pitch, self.yaw]
-                    old_cpose = np.copy(cpose)
-                else:
-                    print("has collisions")
-                    self.x, self.y, self.z, self.roll, self.pitch, self.yaw = old_state
-                    cpose = old_cpose
-                
-                #render(imgs, depths, cpose.astype(np.float32), model, poses)
-                #old_state = [x, y, z, roll, pitch, yaw]
-                self.changed = False
-
-            if overlay:
-                show_out = (show/2 + target/2).astype(np.uint8)
-            elif show_depth:
-                show_out = (target_depth * 10).astype(np.uint8)
+            ## Entry point for change of view 
+            ## If PHYSICS_FIRST mode, then collision is already handled
+            ##   inside physics simulator
+            if PHYSICS_FIRST or hasNoCollision(new_posi, new_quat):
+                print("no collisions")
+                render(imgs, depths, cpose.astype(np.float32), model, poses)
+                old_state = [x, y, z, roll, pitch, yaw]
+                old_cpose = np.copy(cpose)
             else:
-                show_out = show
-
-            #assert(np.sum(show) != 0)
-
-
-            cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,showsz-15),0,0.5,(255,255,255))
-            #print("roll %f pitch %f yaw %f" % (roll, pitch, yaw))
+                print("has collisions")
+                x, y, z, roll, pitch, yaw = old_state
+                cpose = old_cpose
             
-            #cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
-            cv2.putText(show,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
+            #render(imgs, depths, cpose.astype(np.float32), model, poses)
+            #old_state = [x, y, z, roll, pitch, yaw]
+            changed = False
 
-            show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
-            cv2.imshow('show3d',show_rgb)
+        if overlay:
+            show_out = (show/2 + target/2).astype(np.uint8)
+        elif show_depth:
+            show_out = (target_depth * 10).astype(np.uint8)
+        else:
+            show_out = show
 
-            cmd=cv2.waitKey(5)%256
+        
+        cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(pitch, yaw, roll, x, y, z),(15,showsz-15),0,0.5,(255,255,255))
+        #print("roll %f pitch %f yaw %f" % (roll, pitch, yaw))
+        
+        #cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,cv2.cv.CV_RGB(255,255,255))
+        cv2.putText(show,'fps %.1f'%(fps),(15,15),0,0.5,(255,255,255))
 
-            ## delta = [x, y, z, roll, pitch, yaw]
-            #delta = [0, 0, 0, 0, 0, 0]
+        show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
+        cv2.imshow('show3d',show_rgb)
 
-            if cmd==ord('q'):
-                break
-            elif cmd == ord('w'):
-                self.x -= 0.05
-                #delta = [-0.05, 0, 0, 0, 0, 0]
-                self.changed = True
-            elif cmd == ord('s'):
-                self.x += 0.05
-                #delta = [0.05, 0, 0, 0, 0, 0]
-                self.changed = True
-            elif cmd == ord('a'):
-                self.y += 0.05
-                #delta = [0, 0.05, 0, 0, 0, 0]
-                self.changed = True
-            elif cmd == ord('d'):
-                self.y -= 0.05
-                #delta = [0, -0.05, 0, 0, 0, 0]
-                self.changed = True
-            elif cmd == ord('z'):
-                self.z += 0.01
-                #delta = [0, 0, 0, 0, 0, 0.01]
-                self.changed = True
-            elif cmd == ord('x'):
-                self.z -= 0.01
-                #delta = [0, 0, 0, 0, 0, -0.01]
-                self.changed = True
+        cmd=cv2.waitKey(1)%256
 
-            elif cmd == ord('r'):
-                self.pitch,self.yaw,self.x,self.y,self.z = 0,0,0,0,0
-                self.roll = 0
-                self.changed = True
-            elif cmd == ord('t'):
-                pose = poses[0]
-                print('pose', pose)
-                RT = pose.reshape((4,4))
-                R = RT[:3,:3]
-                T = RT[:3,-1]
+        ## delta = [x, y, z, roll, pitch, yaw]
+        #delta = [0, 0, 0, 0, 0, 0]
 
-                self.x,self.y,self.z = np.dot(np.linalg.inv(R),T)
-                self.roll, self.pitch, self.yaw = (utils.rotationMatrixToEulerAngles(R))
+        if cmd==ord('q'):
+            break
+        elif cmd == ord('w'):
+            x -= 0.05
+            #delta = [-0.05, 0, 0, 0, 0, 0]
+            changed = True
+        elif cmd == ord('s'):
+            x += 0.05
+            #delta = [0.05, 0, 0, 0, 0, 0]
+            changed = True
+        elif cmd == ord('a'):
+            y += 0.05
+            #delta = [0, 0.05, 0, 0, 0, 0]
+            changed = True
+        elif cmd == ord('d'):
+            y -= 0.05
+            #delta = [0, -0.05, 0, 0, 0, 0]
+            changed = True
+        elif cmd == ord('z'):
+            z += 0.01
+            #delta = [0, 0, 0, 0, 0, 0.01]
+            changed = True
+        elif cmd == ord('x'):
+            z -= 0.01
+            #delta = [0, 0, 0, 0, 0, -0.01]
+            changed = True
 
-                self.changed = True
+        elif cmd == ord('r'):
+            pitch,yaw,x,y,z = 0,0,0,0,0
+            roll = 0
+            changed = True
+        elif cmd == ord('t'):
+            pose = poses[0]
+            print('pose', pose)
+            RT = pose.reshape((4,4))
+            R = RT[:3,:3]
+            T = RT[:3,-1]
+
+            x,y,z = np.dot(np.linalg.inv(R),T)
+            roll, pitch, yaw = (utils.rotationMatrixToEulerAngles(R))
+
+            changed = True
 
 
-            elif cmd == ord('o'):
-                overlay = not overlay
-            elif cmd == ord('f'):
-                show_depth = not show_depth
-            elif cmd == ord('v'):
-                cv2.imwrite('save.jpg', show_rgb)
+        elif cmd == ord('o'):
+            overlay = not overlay
+        elif cmd == ord('f'):
+            show_depth = not show_depth
+        elif cmd == ord('v'):
+            cv2.imwrite('save.jpg', show_rgb)
 
-            '''
-            state = [x, y, z, roll, pitch, yaw]
-            if (hasNoCollision(state, delta)):
-                x = x + delta[0]
-                y = y + delta[1]
-                z = z + delta[2]
-                roll  = roll + delta[3]
-                pitch = pitch + delta[4]
-                yaw   = yaw + delta[5]
-            '''
-            #print("roll %d pitch %d yaw %d" % (roll, pitch, yaw))
+        '''
+        state = [x, y, z, roll, pitch, yaw]
+        if (hasNoCollision(state, delta)):
+            x = x + delta[0]
+            y = y + delta[1]
+            z = z + delta[2]
+            roll  = roll + delta[3]
+            pitch = pitch + delta[4]
+            yaw   = yaw + delta[5]
+        '''
+        #print("roll %d pitch %d yaw %d" % (roll, pitch, yaw))
 
 def show_target(target_img):
     cv2.namedWindow('target')
@@ -602,5 +586,4 @@ if __name__=='__main__':
 
     show_target(target)
 
-    renderer = PCRenderer()
-    renderer.showpoints(sources, source_depths, poses, model, target, target_depth, rts[idx])
+    showpoints(sources, source_depths, poses, model, target, target_depth, rts[idx])
