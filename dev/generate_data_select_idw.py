@@ -175,6 +175,9 @@ conv_mask.weight.data[0,0,:,:] = torch.from_numpy(gkern())
 
 
 for i in range(len(d)):
-    generate_data([i, d, opt.outf, convs, convs2, conv_mask])
+
+    filename = "%s/data_%d.npz" % (opt.outf, i)
+    if not os.path.isfile(filename):
+        generate_data([i, d, opt.outf, convs, convs2, conv_mask])
 
 
