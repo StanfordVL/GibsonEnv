@@ -71,10 +71,13 @@ class PhysicsObject():
 
 	
 	def getViewPosAndOrientation(self):
-		"""Output real-time view pose for view renderer
+		"""Output real-time pose for view renderer
 		
-		Note: the output pose & orientation are relative to
-		the initial pose & orientation
+		Note: the output pose & orientation are absolute pose defined
+		inside physics world coordinate. The viewer might use different 
+		convention, e.g. a coordinate relative to initial pose.
+		PhysicsObject is agnostic to viewer convention. It is the viewer's
+		job to handle this input/output 
 		"""
 		pos_world_xyz, quat_world_xyzw = self.sim.getBasePositionAndOrientation(self.uid)
 		quat_world_xyzw 	= self._cameraUncalibrate(quat_world_xyzw)
@@ -83,10 +86,13 @@ class PhysicsObject():
 		quat_init_wxyz = PhysicsObject.quatXyzwToWxyz(self.quat_init_xyzw)
 
 		pos_view_xyz = (np.array(pos_world_xyz) - np.array(self.pos_init_xyz)).tolist()
-		quat_view_wxyz = quaternions.qmult(quaternions.qinverse(quat_init_wxyz), quat_world_wxyz)
+		quat_view_wxyz = quaternions.qmult(quaternions.qinverse(quat_init_wxyz), quat_world_wxyz).tolist()
 
 		euler_view   = euler.quat2euler(quat_view_wxyz)
-		return pos_view_xyz, euler_view
+		#return pos_view_xyz, euler_view
+		#return pos_view_xyz, quat_view_wxyz
+		return np.array(pos_world_xyz).tolist(), quat_world_wxyz.tolist()
+
 
 
 	def getUpdateFromKeyboard(self):
@@ -101,17 +107,20 @@ class PhysicsObject():
 			'right'	  : False,
 			'forward' : False,
 			'backward': False,
+			'restart' : False,
 			'alpha'   : 0,
 			'beta'    : 0,
 			'gamma'   : 0
 		}
+		if (ord('r') in keys):
+			action['restart'] = True
 		if (ord('d') in keys):
 			action['right'] = True
 		if (ord('a') in keys):
 			action['left'] = True
 		if (ord('s') in keys):
 			action['backward'] = True
-		if (ord('w') in keys):
+		if (ord('w') in keys or ord('q') in keys):
 			action['forward'] = True
 		if (ord('z') in keys):
 			action['up'] = True
@@ -139,6 +148,9 @@ class PhysicsObject():
 		by delta
 		"""
 		delta_xyz = np.array([0, 0, 0], dtype=float)
+		if action['restart']:
+			self._restartLocationOrientation()
+			return
 		if action['up']:
 			delta_xyz[1] =  0.05
 		if action['down']:
@@ -264,6 +276,10 @@ class PhysicsObject():
 		new_quat_world_wxyz  = quaternions.qmult(quat_world_wxyz, quat_objec_wxyz)
 		new_quat_world_xyzw  = PhysicsObject.quatWxyzToXyzw(new_quat_world_wxyz)
 		return new_quat_world_xyzw
+
+
+	def _restartLocationOrientation(self):
+		self._updateInitialPositionOrientation()
 
 
 	def _clearUpDelta(self):

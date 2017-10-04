@@ -134,17 +134,17 @@ if __name__ == '__main__':
 
 	print("Generated cart", objectUid)
 
-	#p.setGravity(0,0,-10)
+	p.setGravity(0,0,-10)
 	p.setRealTimeSimulation(0)
 	
 	## same as cv.waitKey(5) in viewPort
-	#p.setTimeStep(0.01)
+	p.setTimeStep(0.1)
 
 	while (1):
 		cart.getUpdateFromKeyboard()
 		sendPoseToViewPort(cart.getViewPosAndOrientation())
 		p.stepSimulation()
-		time.sleep(0.05)
+		#time.sleep(0.01)
 
 		#if PHYSICS_FIRST:
 			## Physics-first simulation

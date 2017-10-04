@@ -189,6 +189,7 @@ def getNewPoseFromPhysics(view_pose):
 class PCRenderer:
     def __init__(self):
         self.roll, self.pitch, self.yaw = 0, 0, 0
+        self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
         self.fps = 0
         self.mousex, self.mousey = 0.5, 0.5
@@ -259,6 +260,23 @@ class PCRenderer:
         cpose = np.dot(cpose, cpose2)
         return cpose
         #print('new_cpose', cpose)
+
+    def getViewerCpose3D(self):
+        """ Similar to getViewerCpose, implemented using transforms3d
+        """
+        cpose = np.eye(4)
+        gamma = self.yaw
+        print("getting yaw", self.yaw)
+        alpha = self.pitch
+        beta  = -self.roll
+        #cpose[:3, :3] = transforms3d.euler.euler2mat(alpha, beta, gamma)
+        cpose[:3, :3] = transforms3d.quaternions.quat2mat(self.quat)
+        cpose[ 0, -1] = self.x
+        cpose[ 1, -1] = self.y
+        cpose[ 2, -1] = self.z
+
+        return cpose
+        
 
 
     def render(self, imgs, depths, pose, model, poses, target_pose, show):
@@ -361,7 +379,7 @@ class PCRenderer:
         #print('target pose', target_pose)
 
         v_cam2world = target_pose.dot(poses[0])
-        cpose = self.getViewerCpose()
+        cpose = self.getViewerCpose3D()
         p = (v_cam2world).dot(np.linalg.inv(cpose))
         p = p.dot(np.linalg.inv(self.rotation_const))
         pos  = mat_to_posi_xyz(p).tolist()
@@ -371,6 +389,10 @@ class PCRenderer:
             socket_phys.send(json.dumps([pos, quat]))
         else:
             return
+
+        initialPos   = pos
+        initialQuat  = quat
+        initialCpose = cpose
 
         show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
         target_depth = np.zeros((showsz,showsz * 2)).astype(np.int32)
@@ -390,9 +412,14 @@ class PCRenderer:
         old_cpose = np.eye(4)
 
         while True:
-            cpose = self.getViewerCpose()
+            cpose_viewer = self.getViewerCpose3D()
             v_cam2world = target_pose.dot(poses[0])
-            world_cpose = (v_cam2world).dot(np.linalg.inv(cpose)).dot(np.linalg.inv(self.rotation_const))
+            world_cpose = (v_cam2world).dot(np.linalg.inv(cpose_viewer)).dot(np.linalg.inv(self.rotation_const))
+            cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(cpose_viewer).dot(self.rotation_const))
+            #print("initial cpose", initialCpose)
+            #print("current cpose", cpose)
+            print("initial pos", initialPos)
+            print("current pos", self.x, self.y, self.z)
             #print("world pose", world_cpose)
 
 
@@ -412,7 +439,8 @@ class PCRenderer:
                 #new_quat = y_up_to_z_up(new_quat_wxyz)
                 #new_quat = new_quat_wxyz
                 print("waiting for physics")
-                new_pos, new_euler = getPoseOrientationFromPhysics()
+                #new_pos, new_euler = getPoseOrientationFromPhysics()
+                new_pos, new_quat = getPoseOrientationFromPhysics()
 
                 '''
                 delta = 2
@@ -422,17 +450,15 @@ class PCRenderer:
                 viewer_quat = quat_xyzw_to_wxyz(mat_to_quat_xyzw(cpose)).tolist()
                 '''
                 ## TODO: this part is hardcoded
-                self.x = -new_pos[1]
-                self.y = -new_pos[0]
-                self.z = -new_pos[2]
+                self.x, self.y, self.z = new_pos
                 
                 # rotation around intrinsic x, y, z
-                alpha, beta, gamma = new_euler
-                print("alpha, beta, gamma", alpha, beta, gamma)
+                #alpha, beta, gamma = new_euler
+                #print("alpha, beta, gamma", alpha, beta, gamma)
 
-                self.roll, self.pitch, self.yaw = -gamma, alpha, -beta
+                #self.roll, self.pitch, self.yaw = -gamma, alpha, beta
                 #self.instantCheckPos(viewer_pose, target_pose)
-                
+                self.quat = new_quat
 
                 self.changed = True
 
