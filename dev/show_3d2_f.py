@@ -143,6 +143,16 @@ def quat_wxyz_to_euler(wxyz):
     yaw   = np.arctan2(siny, cosy)
     return [roll, pitch, yaw]
 
+
+## wxyz: numpy array format
+def quat_wxyz_to_xyzw(wxyz):
+    return np.concatenate((wxyz[1:], wxyz[:1]))
+
+## xyzw: numpy array format
+def quat_xyzw_to_wxyz(xyzw):
+    return np.concatenate((xyzw[-1:], xyzw[:-1]))
+
+
 ## Talking to physics simulation
 ## New state: [x, y, z, r_w, r_x, r_y, r_z]
 def hasNoCollision(posi_xyz, quat_wxyz):
@@ -158,6 +168,14 @@ def hasNoCollision(posi_xyz, quat_wxyz):
     print("collisions", collisions_count)
     return collisions_count == 0
 
+def getPoseOrientationFromPhysics():
+    receive = socket_phys.recv().decode("utf-8")
+    new_pos, new_quat = json.loads(receive)
+    print("received from physics", new_pos, new_quat)
+    socket_phys.send(json.dumps({"received": True}))
+    return new_pos, new_quat
+
+
 ## Return pos(xyz), quat(wxyz)
 def getNewPoseFromPhysics(view_pose):
     view_pose['quat'] = quat_wxyz_to_xyzw(view_pose['quat']).tolist()
@@ -166,6 +184,7 @@ def getNewPoseFromPhysics(view_pose):
     socket_phys.send(json.dumps(view_pose))
     new_pos, new_quat = json.loads(socket_phys.recv().decode("utf-8"))
     return new_pos, quat_xyzw_to_wxyz(new_quat)
+
 
 class PCRenderer:
     def __init__(self):
@@ -248,12 +267,6 @@ class PCRenderer:
         v_cam2world = target_pose.dot(poses[0])
         p = (v_cam2world).dot(np.linalg.inv(pose))
         p = p.dot(np.linalg.inv(self.rotation_const))
-
-        #print("Sending request ...")
-        #print(v_cam2world)
-        #print('current viewer pose', pose)
-        #print("camera pose", p)
-        #print("target pose", target_pose)
         s = mat_to_str(p)
 
         socket_mist.send(s)
@@ -299,15 +312,7 @@ class PCRenderer:
         show[:] = 0
         before = time.time()
         for i in range(len(imgs)):
-            #print(poses[0])
-
             pose_after = pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32)
-            #if i == 0:
-                #print('First pose after')
-                #print(pose_after)
-            #from IPython import embed; embed()
-            #print('Received pose ' + str(i))
-            #print(pose_after)
 
             dll.render(ct.c_int(imgs[i].shape[0]),
                        ct.c_int(imgs[i].shape[1]),
@@ -318,12 +323,7 @@ class PCRenderer:
                        target_depth.ctypes.data_as(ct.c_void_p)
                       )
 
-            #if i == 0:
-            #    print(np.sum(show - imgs[0]))
             
-
-        #print('PC render time:', time.time() - before)
-
         if model:
             tf = transforms.ToTensor()
             before = time.time()
@@ -346,6 +346,8 @@ class PCRenderer:
         self.fps = 1/t
 
         #cv2.waitKey(5)%256
+
+
     def instantCheckPos(self, pos, target_pose):
         cpose = self.getViewerCpose()
         v_cam2world = target_pose.dot(poses[0])
@@ -356,13 +358,23 @@ class PCRenderer:
 
     def showpoints(self, imgs, depths, poses, model, target, tdepth, target_pose):
         showsz = target.shape[0]
-        print('target pose', target_pose)
+        #print('target pose', target_pose)
+
+        v_cam2world = target_pose.dot(poses[0])
+        cpose = self.getViewerCpose()
+        p = (v_cam2world).dot(np.linalg.inv(cpose))
+        p = p.dot(np.linalg.inv(self.rotation_const))
+        pos  = mat_to_posi_xyz(p).tolist()
+        quat = mat_to_quat_xyzw(p).tolist()
+        receive = str(socket_phys.recv().decode("utf-8"))
+        if (receive == "Initial"):
+            socket_phys.send(json.dumps([pos, quat]))
+        else:
+            return
 
         show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
         target_depth = np.zeros((showsz,showsz * 2)).astype(np.int32)
 
-        #target_depth[:] = (tdepth[:,:,0] * 12800).astype(np.int32)
-        #from IPython import embed; embed()
         overlay = False
         show_depth = False
         cv2.namedWindow('show3d')
@@ -387,56 +399,44 @@ class PCRenderer:
             ## Query physics engine to get [x, y, z, roll, pitch, yaw]
             if PHYSICS_FIRST:
                 pos  = mat_to_posi_xyz(world_cpose).tolist()
-                #quat = transforms3d.quaternions.qmult(transforms3d.euler.euler2quat(0, 0, 0), mat_to_quat_xyzw(world_cpose)).tolist()
                 quat_wxyz = quat_xyzw_to_wxyz(mat_to_quat_xyzw(world_cpose)).tolist()
-                #quat_wxyz = z_up_to_y_up(quat_wxyz)
+                
+                '''
                 new_pos, new_quat_wxyz = getNewPoseFromPhysics({
                         'changed': self.changed,
                         'pos': pos, 
                         'quat': quat_wxyz
                     })
-                print("communicating with", self.changed)
-                print("sending old o pose", pos)
-                print("receiving new pose", new_pos)
-                #print("sending old o quat", quat_wxyz)
-                #print("receiving new quat", new_quat_wxyz)
+                '''
 
                 #new_quat = y_up_to_z_up(new_quat_wxyz)
-                new_quat = new_quat_wxyz
+                #new_quat = new_quat_wxyz
+                print("waiting for physics")
+                new_pos, new_euler = getPoseOrientationFromPhysics()
 
+                '''
                 delta = 2
-                #if (new_pos[0] <= -0.05 or new_pos[0] >= 0.05):
-                print("early on world pose", world_cpose)
-                world_cpose = quat_pos_to_mat(new_pos, new_quat)
-                print("later on world pose", world_cpose)
-                #print("quat pose c to mat", mat_to_posi_xyz(world_cpose))
-                #print("before updating as", x, y, z)
-                #print("early on cpose was", cpose)
             
                 cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(world_cpose).dot(self.rotation_const))
-                #print("now the cpose is :", cpose)
                 viewer_pose  = mat_to_posi_xyz(cpose).tolist()
                 viewer_quat = quat_xyzw_to_wxyz(mat_to_quat_xyzw(cpose)).tolist()
-
-                print("before the transfo", [self.x, self.y, self.z])
-
-                self.x, self.y, self.z = viewer_pose
+                '''
+                ## TODO: this part is hardcoded
+                self.x = -new_pos[1]
+                self.y = -new_pos[0]
+                self.z = -new_pos[2]
                 
-                print("after  the transfo", [self.x, self.y, self.z])
-                #print("before the quat", self.roll, self.pitch, self.yaw)
-                self.roll, self.pitch, self.yaw = 0, 0, 0#quat_wxyz_to_euler(viewer_quat)
-                #print("after  the quat", self.roll, self.pitch, self.yaw)
-                ## TODO: parse viewer_quat into updating roll, pitch, yaw
-                self.instantCheckPos(viewer_pose, target_pose)
+                # rotation around intrinsic x, y, z
+                alpha, beta, gamma = new_euler
+                print("alpha, beta, gamma", alpha, beta, gamma)
+
+                self.roll, self.pitch, self.yaw = -gamma, alpha, -beta
+                #self.instantCheckPos(viewer_pose, target_pose)
                 
 
                 self.changed = True
 
             if self.changed:
-                #world_cpose = cpose.dot(v_cam2world)
-
-                #old_quat = mat_to_quat_xyzw(old_cpose)
-                #old_posi = mat_to_posi_xyz(old_cpose)
                 new_quat = mat_to_quat_xyzw(world_cpose)
                 new_quat = z_up_to_y_up(quat_xyzw_to_wxyz(new_quat))
 
@@ -592,7 +592,7 @@ if __name__=='__main__':
     socket_mist.connect("tcp://localhost:5555")
 
     context_phys = zmq.Context()
-    socket_phys = context_phys.socket(zmq.REQ)
+    socket_phys = context_phys.socket(zmq.REP)
     socket_phys.connect("tcp://localhost:5556")
 
         

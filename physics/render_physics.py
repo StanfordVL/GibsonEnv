@@ -6,8 +6,8 @@ import argparse
 import os
 import json
 import numpy as np
-from transforms3d import euler, quaternions, taitbryan
-
+from transforms3d import euler, quaternions
+from PhysicsObject import PhysicsObject
 from numpy import sin, cos
 
 PHYSICS_FIRST = True
@@ -19,51 +19,6 @@ def camera_init_orientation(quat):
 def setPosViewOrientation(objectUid, pos, rot):
 	return
 
-def getUpdateFromKeyboard(object):
-	# Controls: p.B3G_RIGHT_ARROW, p.B3G_LEFT_ARROW, p.B3G_DOWN_ARROW
-	# 		p.B3G_UP_ARROW, 
-	keys = p.getKeyboardEvents()
-	#print(keys)
-	#print(p.getBasePositionAndOrientation(objectUid))
-	#print(p.getContactPoints(boundaryUid, objectUid))
-	## Down
-	action = {
-		'up'	  : False,
-		'down'	  : False,
-		'left'	  : False,
-		'right'	  : False,
-		'forward' : False,
-		'backward': False,
-		'alpha'   : 0,
-		'beta'    : 0,
-		'gamma'   : 0
-	}
-	if (ord('d') in keys):
-		action['right'] = True
-	if (ord('a') in keys):
-		action['left'] = True
-	if (ord('s') in keys):
-		action['backward'] = True
-	if (ord('w') in keys):
-		action['forward'] = True
-	if (ord('z') in keys):
-		action['up'] = True
-	if (ord('c') in keys):
-		action['down'] = True
-
-	if (ord('u') in keys):
-		action['alpha'] = 1
-	if (ord('j') in keys):
-		action['alpha'] = -1
-	if (ord('i') in keys):
-		action['beta'] = 1
-	if (ord('k') in keys):
-		action['beta'] = -1
-	if (ord('o') in keys):
-		action['gamma'] = 1
-	if (ord('l') in keys):
-		action['gamma'] = -1
-	object.parseActionAndUpdate(action)
 	
 def getCollisionFromUpdate():
 	message = socket.recv().decode("utf-8")
@@ -82,6 +37,16 @@ def getCollisionFromUpdate():
 	socket.send_string(str(len(collisions)))
 	return
 
+def sendPoseToViewPort(pose):
+	socket.send_string(json.dumps(pose))
+	socket.recv()
+
+def getInitialPositionOrientation():
+	print("waiting to receive initial")
+	socket.send_string("Initial")
+	pos, quat = json.loads(socket.recv().decode("utf-8"))
+	print("received initial", pos, quat)
+	return pos, quat
 
 def synchronizeWithViewPort():
 	#step
@@ -107,191 +72,6 @@ def synchronizeWithViewPort():
 	print("")
 	#print(changed, pos, rot)
 	socket.send_string(json.dumps([pos, rot]))
-
-
-## wxyz: numpy array format
-def quatWxyzTOXyzw(wxyz):
-    return np.concatenate((wxyz[1:], wxyz[:1]))
-
-## xyzw: numpy array format
-def quatXyzwToWxyz(xyzw):
-    return np.concatenate((xyzw[-1:], xyzw[:-1]))
-
-def rotate_quat_by_euler(xyzw, e_x, e_y, e_z):
-	wxyz = quatXyzwToWxyz(xyzw)
-	rot_mat = euler.euler2mat(e_x, e_y, e_z)
-	wxyz = quaternions.qmult(rot_mat, wxyz)
-	return quatWxyzTOXyzw(wxyz)
-
-##  Physics Object stands for every controllable object in world
-#     This class mostly handles action parsing
-# 	  Note: only stores realtime delta pose, absolute pose is not 
-# 	  stored
-class PhysicsObject():
-	## By OpenGL convention, object is default: +x facing,
-	#  	 which is incompatible with camera view matrix (-z facing).
-	#  	 The inconsistency is handled by _cameraCalibrate function.
-	## By default, internal quaternion variables are [x, y, z, w]
-	def __init__(self, uid):
-		self.uid = uid
-		## Relative delta rotation of object to world
-		self.d_alpha, self.d_beta, self.d_gamma = 0, 0, 0
-		## Relative delta position inside object's world view
-		self.d_xyz = np.array([0, 0, 0], dtype=float)
-
-		## DEPRECATED: roll, pitch, yaw
-		self.roll, self.pitch, self.yaw = 0, np.pi/6, 0
-		self.updateInitialPositionOrientation()
-
-	## Convert object's head from +x facing to -z facing
-	#  Note that this is not needed when you're computing view_matrix,
-	#  only use this function for adjusting object head
-	#  To get object rotation at current object pose:
-	#   	rotation = self._cameraCalibrate(self._rotateIntrinsic(
-	#				   self.quat_world))
-	#  To get view rotation at current object pose:
-	#  		rotation = self._rotateIntrinsic(self.quat_world)
-	def _cameraCalibrate(self, org_quat_xyzw):
-		z_facing_wxyz = euler.euler2quat(-np.pi/2, np.pi/2, 0)
-		org_quat_wxyz = quatXyzwToWxyz(org_quat_xyzw)
-		new_quat_xyzw = quatWxyzTOXyzw(quaternions.qmult(org_quat_wxyz, z_facing_wxyz))
-		return new_quat_xyzw
-
-	def _cameraUncalibrate(self, new_quat_xyzw):
-		x_facing_wxyz = euler.euler2quat(np.pi/2, 0, -np.pi/2)
-		new_quat_wxyz = quatXyzwToWxyz(new_quat_xyzw)
-		org_quat_wxyz = quatWxyzTOXyzw(quaternions.qmult(new_quat_wxyz, x_facing_wxyz))
-		return org_quat_wxyz
-
-	## Update physics simulation (object position, object rotation)
-	#  This is the function where obj communicates with the world,
-	#  in manual step mode, you need to call updatePositionOrientation()
-	#  periodically. 
-	def updateInitialPositionOrientation(self):
-		pos_world_xyz, quat_world_xyzw = p.getBasePositionAndOrientation(self.uid)
-		new_pos_world_xyz = np.array([pos_world_xyz[0], pos_world_xyz[1], 1])
-
-		## parse xyz, alpha, beta, gamma from world
-		## apply local delta xyz, delta alpha, delta beta, delta gamma
-		## update to world
-		new_quat_world_xyzw = self._rotateIntrinsic(quat_world_xyzw)
-		## Calibrate
-		new_quat_world_xyzw = self._cameraCalibrate(new_quat_world_xyzw)
-		#pos_xyz   = self._translateIntrinsic()
-		p.resetBasePositionAndOrientation(self.uid, new_pos_world_xyz, new_quat_world_xyzw)
-
-
-	def updatePositionOrientation(self):
-		pos_world_xyz, quat_world_xyzw = p.getBasePositionAndOrientation(self.uid)
-		quat_world_xyzw 	= self._cameraUncalibrate(quat_world_xyzw)
-
-		new_pos_world_xyz   = self._translateIntrinsic(pos_world_xyz, quat_world_xyzw)
-		new_quat_world_xyzw = self._rotateIntrinsic(quat_world_xyzw)
-		## Calibrate
-
-		print("last world pos", quat_world_xyzw)
-		print()
-		print("new  world pos", new_quat_world_xyzw)
-		new_quat_world_xyzw = self._cameraCalibrate(new_quat_world_xyzw)
-		
-		p.resetBasePositionAndOrientation(self.uid, new_pos_world_xyz, new_quat_world_xyzw)
-
-
-	## Convert delta_relative (movement in object's world) to 
-	#  delta_absolute (movement in actual world)
-	'''
-	def _positionDeltaToAbsolute(self, delta_relative):
-		quat_xyzw = self._rotateIntrinsic()
-		quat_wxyz = quatXyzwToWxyz(quat_xyzw)
-		delta_abs = quaternions.quat2mat(quat_wxyz).dot(delta_relative)
-		return delta_abs
-	'''
-	## Convert intrinsic (x, y, z) translation to extrinsic 	
-	def _translateIntrinsic(self, pos_world_xyz, quat_world_xyzw):
-		delta_objec_xyz = self.d_xyz
-		quat_world_wxyz = quatXyzwToWxyz(quat_world_xyzw)
-		delta_world_xyz = quaternions.quat2mat(quat_world_wxyz).dot(delta_objec_xyz)
-		return pos_world_xyz + delta_world_xyz
-
-	## Add intrinsic (d_alpha, d_beta, d_gamma) rotation to extrinsic 
-	def _rotateIntrinsic(self, quat_world_xyzw):
-		quat_world_wxyz = quatXyzwToWxyz(quat_world_xyzw)
-		euler_world 	= euler.quat2euler(quat_world_wxyz)
-		
-		alpha = euler_world[0] + self.d_alpha
-		beta  = euler_world[1] + self.d_beta
-		gamma = euler_world[2] + self.d_gamma
-
-		#print("delta rotationss", self.d_alpha, self.d_beta, self.d_gamma)
-		#print('alpha beta gamma', alpha, beta, gamma)
-		new_quat_world_wxyz  = euler.euler2quat(alpha, beta, gamma, 'sxyz')
-		new_quat_world_xyzw  = quatWxyzTOXyzw(new_quat_world_wxyz)
-		return new_quat_world_xyzw
-		
-	## DEPRECATED: roll, pitch, yaw
-	def _principle_to_mat(self):
-		alpha = self.yaw
-		beta  = self.pitch
-		gamma = self.roll
-		mat   = np.eye(4)
-		mat[0, 0] = cos(alpha)*cos(beta)
-		mat[1, 0] = sin(alpha)*cos(beta)
-		mat[2, 0] = -sin(beta)
-
-		mat[0, 1] = cos(alpha)*sin(beta)*sin(gamma) - sin(alpha)*cos(gamma)
-		mat[1, 1] = sin(alpha)*sin(beta)*sin(gamma) + cos(alpha)*cos(gamma)
-		mat[2, 1] = cos(beta)*sin(gamma)
-
-		mat[0, 2] = cos(alpha)*sin(beta)*cos(gamma) + sin(alpha)*sin(gamma)
-		mat[1, 2] = sin(alpha)*sin(beta)*cos(gamma) - cos(alpha)*sin(gamma)
-		mat[2, 2] = cos(beta)*cos(gamma)
-		return mat
-
-	def getPosAndOrientation(self):
-		pos  = self.pos_world
-		quat = self.quat_world
-		quat = self._principle_to_mat() * quatXyzwToWxyz(quat)
-
-	def parseActionAndUpdate(self, action):
-		## Update position: because the object's rotation
-		#  changes every time, the position needs to be updated
-		#  by delta
-		#print(action)
-		delta_xyz = np.array([0, 0, 0], dtype=float)
-		if action['up']:
-			delta_xyz[1] =  0.1
-		if action['down']:
-			delta_xyz[1] = -0.1
-		if action['left']:
-			delta_xyz[0] = -0.1
-		if action['right']:
-			delta_xyz[0] = 0.1
-		if action['forward']:
-			delta_xyz[2] = -0.1
-		if action['backward']:
-			delta_xyz[2] = 0.1
-		self.d_xyz = delta_xyz
-
-		## Update rotation: reset the rotation every time
-		if action['alpha'] > 0:
-			self.d_alpha = np.pi/16
-		if action['alpha'] < 0:
-			self.d_alpha = - np.pi/16
-		if action['beta'] > 0:
-			self.d_beta = np.pi/16
-		if action['beta'] < 0:
-			self.d_beta = - np.pi/16
-		if action['gamma'] > 0:
-			self.d_gamma = np.pi/16
-		if action['gamma'] < 0:
-			self.d_gamma = - np.pi/16
-
-		self.updatePositionOrientation()
-		self._clearUpDelta()	
-
-	def _clearUpDelta(self):
-		self.d_xyz = np.array([0, 0, 0], dtype=float)
-		self.d_alpha, self.d_beta, self.d_gamma = 0, 0, 0
 	
 
 
@@ -302,6 +82,10 @@ if __name__ == '__main__':
 
 	opt = parser.parse_args()
 
+
+	context = zmq.Context()
+	socket = context.socket(zmq.REQ)
+	socket.bind("tcp://*:5556")
 
 	## Turn on p.GUI for visualization
 	## Turn on p.GUI for headless mode
@@ -341,11 +125,12 @@ if __name__ == '__main__':
 
 	#objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
 	objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
-	cart = PhysicsObject(objectUid)
-	#pos, rot = p.getBasePositionAndOrientation(objectUid)
-	#newpos = (pos[0], pos[1], 1)
-	#p.resetBasePositionAndOrientation(objectUid, newpos, rotate_quat_by_euler(rot, np.pi/6, 0, 0))
 
+	pos, quat_xyzw = getInitialPositionOrientation()
+	#pos  = [0, 0, 1]
+	#quat = [0, 0, 0, 1]
+	cart = PhysicsObject(objectUid, p, pos, quat_xyzw)
+	
 
 	print("Generated cart", objectUid)
 
@@ -355,14 +140,12 @@ if __name__ == '__main__':
 	## same as cv.waitKey(5) in viewPort
 	#p.setTimeStep(0.01)
 
-
-	context = zmq.Context()
-	socket = context.socket(zmq.REP)
-	socket.bind("tcp://*:5556")
 	while (1):
-		getUpdateFromKeyboard(cart)
+		cart.getUpdateFromKeyboard()
+		sendPoseToViewPort(cart.getViewPosAndOrientation())
 		p.stepSimulation()
 		time.sleep(0.05)
+
 		#if PHYSICS_FIRST:
 			## Physics-first simulation
 			#synchronizeWithViewPort()
