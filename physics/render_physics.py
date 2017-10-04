@@ -23,7 +23,7 @@ def getUpdateFromKeyboard(object):
 	# Controls: p.B3G_RIGHT_ARROW, p.B3G_LEFT_ARROW, p.B3G_DOWN_ARROW
 	# 		p.B3G_UP_ARROW, 
 	keys = p.getKeyboardEvents()
-	print(keys)
+	#print(keys)
 	#print(p.getBasePositionAndOrientation(objectUid))
 	#print(p.getContactPoints(boundaryUid, objectUid))
 	## Down
@@ -63,9 +63,8 @@ def getUpdateFromKeyboard(object):
 		action['gamma'] = 1
 	if (ord('l') in keys):
 		action['gamma'] = -1
-	object.parseAction(action)
-	object.updatePositionOrientation()
-
+	object.parseActionAndUpdate(action)
+	
 def getCollisionFromUpdate():
 	message = socket.recv().decode("utf-8")
 	
@@ -124,66 +123,113 @@ def rotate_quat_by_euler(xyzw, e_x, e_y, e_z):
 	wxyz = quaternions.qmult(rot_mat, wxyz)
 	return quatWxyzTOXyzw(wxyz)
 
-
+##  Physics Object stands for every controllable object in world
+#     This class mostly handles action parsing
+# 	  Note: only stores realtime delta pose, absolute pose is not 
+# 	  stored
 class PhysicsObject():
 	## By OpenGL convention, object is default: +x facing,
-	#  which is incompatible with camera view matrix (-z facing).
-	#  The inconsistency is handled by _camera_calibrate function.
+	#  	 which is incompatible with camera view matrix (-z facing).
+	#  	 The inconsistency is handled by _cameraCalibrate function.
+	## By default, internal quaternion variables are [x, y, z, w]
 	def __init__(self, uid):
 		self.uid = uid
-		## Initial position
-		self.pos_init, self.quat_init = p.getBasePositionAndOrientation(uid)
-		self.pos_init = np.array([self.pos_init[0], self.pos_init[1], 1])
-
-		## Relative rotation of object to world
-		self.alpha, self.beta, self.gamma = 0, 0, 0
-		## Relative position inside object's world view
-		self.xyz = np.array([0, 0, 0])
+		## Relative delta rotation of object to world
+		self.d_alpha, self.d_beta, self.d_gamma = 0, 0, 0
+		## Relative delta position inside object's world view
+		self.d_xyz = np.array([0, 0, 0], dtype=float)
 
 		## DEPRECATED: roll, pitch, yaw
 		self.roll, self.pitch, self.yaw = 0, np.pi/6, 0
-		
-		
+		self.updateInitialPositionOrientation()
+
 	## Convert object's head from +x facing to -z facing
 	#  Note that this is not needed when you're computing view_matrix,
 	#  only use this function for adjusting object head
 	#  To get object rotation at current object pose:
-	#   	rotation = self.camera_calibrate(self._rotate_intrinsic(
-	#				   self.quat_init))
+	#   	rotation = self._cameraCalibrate(self._rotateIntrinsic(
+	#				   self.quat_world))
 	#  To get view rotation at current object pose:
-	#  		rotation = self._rotate_intrinsic(self.quat_init)
-	def _camera_calibrate(self, quat_xyzw):
+	#  		rotation = self._rotateIntrinsic(self.quat_world)
+	def _cameraCalibrate(self, org_quat_xyzw):
 		z_facing_wxyz = euler.euler2quat(-np.pi/2, np.pi/2, 0)
-		quat_wxyz = quatXyzwToWxyz(quat_xyzw)
-		return quatWxyzTOXyzw(quaternions.qmult(quat_wxyz, z_facing_wxyz))
+		org_quat_wxyz = quatXyzwToWxyz(org_quat_xyzw)
+		new_quat_xyzw = quatWxyzTOXyzw(quaternions.qmult(org_quat_wxyz, z_facing_wxyz))
+		return new_quat_xyzw
+
+	def _cameraUncalibrate(self, new_quat_xyzw):
+		x_facing_wxyz = euler.euler2quat(np.pi/2, 0, -np.pi/2)
+		new_quat_wxyz = quatXyzwToWxyz(new_quat_xyzw)
+		org_quat_wxyz = quatWxyzTOXyzw(quaternions.qmult(new_quat_wxyz, x_facing_wxyz))
+		return org_quat_wxyz
 
 	## Update physics simulation (object position, object rotation)
+	#  This is the function where obj communicates with the world,
+	#  in manual step mode, you need to call updatePositionOrientation()
+	#  periodically. 
+	def updateInitialPositionOrientation(self):
+		pos_world_xyz, quat_world_xyzw = p.getBasePositionAndOrientation(self.uid)
+		new_pos_world_xyz = np.array([pos_world_xyz[0], pos_world_xyz[1], 1])
+
+		## parse xyz, alpha, beta, gamma from world
+		## apply local delta xyz, delta alpha, delta beta, delta gamma
+		## update to world
+		new_quat_world_xyzw = self._rotateIntrinsic(quat_world_xyzw)
+		## Calibrate
+		new_quat_world_xyzw = self._cameraCalibrate(new_quat_world_xyzw)
+		#pos_xyz   = self._translateIntrinsic()
+		p.resetBasePositionAndOrientation(self.uid, new_pos_world_xyz, new_quat_world_xyzw)
+
+
 	def updatePositionOrientation(self):
-		quat_xyzw = self._rotate_intrinsic(self.quat_init)
-		quat_xyzw = self._camera_calibrate(quat_xyzw)
-		pos_xyz   = self._translate_intrinsic()
-		p.resetBasePositionAndOrientation(self.uid, pos_xyz, quat_xyzw)
+		pos_world_xyz, quat_world_xyzw = p.getBasePositionAndOrientation(self.uid)
+		quat_world_xyzw 	= self._cameraUncalibrate(quat_world_xyzw)
+
+		new_pos_world_xyz   = self._translateIntrinsic(pos_world_xyz, quat_world_xyzw)
+		new_quat_world_xyzw = self._rotateIntrinsic(quat_world_xyzw)
+		## Calibrate
+
+		print("last world pos", quat_world_xyzw)
+		print()
+		print("new  world pos", new_quat_world_xyzw)
+		new_quat_world_xyzw = self._cameraCalibrate(new_quat_world_xyzw)
+		
+		p.resetBasePositionAndOrientation(self.uid, new_pos_world_xyz, new_quat_world_xyzw)
+
 
 	## Convert delta_relative (movement in object's world) to 
 	#  delta_absolute (movement in actual world)
+	'''
 	def _positionDeltaToAbsolute(self, delta_relative):
-		quat_xyzw = self._rotate_intrinsic(self.quat_init)
+		quat_xyzw = self._rotateIntrinsic()
 		quat_wxyz = quatXyzwToWxyz(quat_xyzw)
 		delta_abs = quaternions.quat2mat(quat_wxyz).dot(delta_relative)
 		return delta_abs
-		
+	'''
 	## Convert intrinsic (x, y, z) translation to extrinsic 	
-	def _translate_intrinsic(self):
-		return self.pos_init + self.xyz
+	def _translateIntrinsic(self, pos_world_xyz, quat_world_xyzw):
+		delta_objec_xyz = self.d_xyz
+		quat_world_wxyz = quatXyzwToWxyz(quat_world_xyzw)
+		delta_world_xyz = quaternions.quat2mat(quat_world_wxyz).dot(delta_objec_xyz)
+		return pos_world_xyz + delta_world_xyz
 
-	## Convert intrinsic (alpha, beta, gamma) rotation to extrinsic 
-	def _rotate_intrinsic(self, quat_xyzw):
-		quat_wxyz = quatXyzwToWxyz(quat_xyzw)
-		intrinsic = euler.euler2quat(self.alpha, self.beta, self.gamma, 'rxyz')
-		return quatWxyzTOXyzw(quaternions.qmult(intrinsic, quat_wxyz))
+	## Add intrinsic (d_alpha, d_beta, d_gamma) rotation to extrinsic 
+	def _rotateIntrinsic(self, quat_world_xyzw):
+		quat_world_wxyz = quatXyzwToWxyz(quat_world_xyzw)
+		euler_world 	= euler.quat2euler(quat_world_wxyz)
+		
+		alpha = euler_world[0] + self.d_alpha
+		beta  = euler_world[1] + self.d_beta
+		gamma = euler_world[2] + self.d_gamma
+
+		#print("delta rotationss", self.d_alpha, self.d_beta, self.d_gamma)
+		#print('alpha beta gamma', alpha, beta, gamma)
+		new_quat_world_wxyz  = euler.euler2quat(alpha, beta, gamma, 'sxyz')
+		new_quat_world_xyzw  = quatWxyzTOXyzw(new_quat_world_wxyz)
+		return new_quat_world_xyzw
 		
 	## DEPRECATED: roll, pitch, yaw
-	def principle_to_mat(self):
+	def _principle_to_mat(self):
 		alpha = self.yaw
 		beta  = self.pitch
 		gamma = self.roll
@@ -202,14 +248,15 @@ class PhysicsObject():
 		return mat
 
 	def getPosAndOrientation(self):
-		pos  = self.pos_init
-		quat = self.quat_init
-		quat = self.principle_to_mat() * quatXyzwToWxyz(quat)
+		pos  = self.pos_world
+		quat = self.quat_world
+		quat = self._principle_to_mat() * quatXyzwToWxyz(quat)
 
-	def parseAction(self, action):
+	def parseActionAndUpdate(self, action):
 		## Update position: because the object's rotation
 		#  changes every time, the position needs to be updated
 		#  by delta
+		#print(action)
 		delta_xyz = np.array([0, 0, 0], dtype=float)
 		if action['up']:
 			delta_xyz[1] =  0.1
@@ -223,21 +270,29 @@ class PhysicsObject():
 			delta_xyz[2] = -0.1
 		if action['backward']:
 			delta_xyz[2] = 0.1
-		self.xyz = self.xyz + self._positionDeltaToAbsolute(delta_xyz)
+		self.d_xyz = delta_xyz
 
 		## Update rotation: reset the rotation every time
 		if action['alpha'] > 0:
-			self.alpha = self.alpha + np.pi/16
+			self.d_alpha = np.pi/16
 		if action['alpha'] < 0:
-			self.alpha = self.alpha - np.pi/16
+			self.d_alpha = - np.pi/16
 		if action['beta'] > 0:
-			self.beta = self.beta + np.pi/16
+			self.d_beta = np.pi/16
 		if action['beta'] < 0:
-			self.beta = self.beta - np.pi/16
+			self.d_beta = - np.pi/16
 		if action['gamma'] > 0:
-			self.gamma = self.gamma + np.pi/16
+			self.d_gamma = np.pi/16
 		if action['gamma'] < 0:
-			self.gamma = self.gamma - np.pi/16
+			self.d_gamma = - np.pi/16
+
+		self.updatePositionOrientation()
+		self._clearUpDelta()	
+
+	def _clearUpDelta(self):
+		self.d_xyz = np.array([0, 0, 0], dtype=float)
+		self.d_alpha, self.d_beta, self.d_gamma = 0, 0, 0
+	
 
 
 if __name__ == '__main__':
@@ -257,8 +312,8 @@ if __name__ == '__main__':
 	obj_path = os.path.join(opt.datapath, opt.model, "modeldata", 'out_z_up.obj')
 
 	p.setRealTimeSimulation(0)
-	#boundaryUid = p.createCollisionShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-	#print("Exterior boundary", boundaryUid)
+	boundaryUid = p.createCollisionShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+	print("Exterior boundary", boundaryUid)
 	p.createMultiBody(0,0)
 
 	sphereRadius = 0.05
@@ -287,7 +342,6 @@ if __name__ == '__main__':
 	#objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
 	objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
 	cart = PhysicsObject(objectUid)
-	cart.updatePositionOrientation()
 	#pos, rot = p.getBasePositionAndOrientation(objectUid)
 	#newpos = (pos[0], pos[1], 1)
 	#p.resetBasePositionAndOrientation(objectUid, newpos, rotate_quat_by_euler(rot, np.pi/6, 0, 0))
@@ -296,7 +350,7 @@ if __name__ == '__main__':
 	print("Generated cart", objectUid)
 
 	#p.setGravity(0,0,-10)
-	#p.setRealTimeSimulation(1)
+	p.setRealTimeSimulation(0)
 	
 	## same as cv.waitKey(5) in viewPort
 	#p.setTimeStep(0.01)
@@ -307,7 +361,7 @@ if __name__ == '__main__':
 	socket.bind("tcp://*:5556")
 	while (1):
 		getUpdateFromKeyboard(cart)
-		#p.stepSimulation()
+		p.stepSimulation()
 		time.sleep(0.05)
 		#if PHYSICS_FIRST:
 			## Physics-first simulation
