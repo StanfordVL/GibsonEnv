@@ -255,8 +255,8 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         show[:] = 0
         nimgs = len(imgs)
         show_array=np.zeros((nimgs, showsz,showsz * 2,3),dtype='uint8')
-        
-        
+
+
         before = time.time()
         for i in range(len(imgs)):
             #print(poses[0])
@@ -282,17 +282,17 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
 
 
         print('PC render time:', time.time() - before)
-        
-        
-        
+
+
+
         show_tensor = torch.zeros(4,3,1024,2048)
         tf = transforms.ToTensor()
         for i in range(4):
             show_tensor[i, :, :, :] = tf(show_array[i])
 
         show_tensor_v = Variable(show_tensor.cuda())
-        
-        
+
+
         mask = (torch.sum(show_tensor_v, 1, keepdim = True) > 0).float().repeat(1,3,1,1)
 
         conved = convs(show_tensor_v)
@@ -321,29 +321,29 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
         selection = (selection / torch.sum(selection, 0, keepdim = True)).view(4,1,1024,2048).repeat(1,3,1,1)
 
         img_combined = torch.sum(img * selection, 0)
-        
-        
+
+
         show[:] = (img_combined.cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
         sel = (selection[:,0,:,:].cpu().data.numpy().transpose(1,2,0) * 255).astype(np.uint8)
-        
+
 
         if model:
             tf = transforms.ToTensor()
             before = time.time()
             source = tf(np.concatenate([show, sel], 2))
             source = source.unsqueeze(0)
-            
+
             source_depth = tf(np.expand_dims(target_depth, 2).astype(np.float32)/65536 * 255)
             source_depth = source_depth.unsqueeze(0)
 
             mask_source = (torch.sum(source[:,:3,:,:],1)>0).float().unsqueeze(1)
             print(source.size(), source_depth.size(), mask.size())
-            
-            
+
+
             img_mean = torch.sum(torch.sum(source[:,:3,:,:], 2),2) / torch.sum(torch.sum(mask_source, 2),2).view(1,1)
             source[:,:3,:,:] += (1-mask_source.repeat(1,3,1,1)) * img_mean.view(1,3,1,1).repeat(1,1,1024,2048)
-            
-            
+
+
             imgv.data.copy_(source)
             maskv.data.copy_( torch.cat([source_depth, mask_source], 1))
             print('Transfer time', time.time() - before)
@@ -352,12 +352,13 @@ def showpoints(imgs, depths, poses, model, target, tdepth, target_pose):
             print('NNtime:', time.time() - before)
             before = time.time()
             show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
+            np.clip(show2, 0, 1, out = show2)
             show[:] = (show2[:] * 255).astype(np.uint8)
             print('Transfer to CPU time:', time.time() - before)
 
-            
-            
-            
+
+
+
         t1 =time.time()
         t = t1-t0
         fps = 1/t
@@ -495,7 +496,7 @@ if __name__=='__main__':
 
     model = None
     if opt.model != '':
-        comp = CompletionNet2()
+        comp = CompletionNet2(norm = torch.nn.BatchNorm2d)
         comp = torch.nn.DataParallel(comp).cuda()
         comp.load_state_dict(torch.load(opt.model))
         model = comp.module
