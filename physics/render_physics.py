@@ -6,6 +6,7 @@ import argparse
 import os
 import json
 import numpy as np
+import settings
 from transforms3d import euler, quaternions
 from PhysicsObject import PhysicsObject
 from numpy import sin, cos
@@ -73,7 +74,10 @@ def synchronizeWithViewPort():
 	#print(changed, pos, rot)
 	socket.send_string(json.dumps([pos, rot]))
 	
-
+def stepNsteps(N, object):
+	for _ in range(int(N)):
+		p.stepSimulation()
+		object.parseActionAndUpdate()
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -123,14 +127,22 @@ if __name__ == '__main__':
 	allSpheres = []
 
 
+	framePerSec = 3
+
+
 	#objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
 	objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
 
 	pos, quat_xyzw = getInitialPositionOrientation()
-	#pos  = [0, 0, 1]
-	#quat = [0, 0, 0, 1]
-	cart = PhysicsObject(objectUid, p, pos, quat_xyzw)
+
+	v_t = 1 			# 1m/s max speed
+	v_r = np.pi 		# 18 degrees/s
+	#pos  = [0, 0, 3]
+	#quat_xyzw = [0, 0, 0, 3]
+	cart = PhysicsObject(objectUid, p, pos, quat_xyzw, v_t, v_r, framePerSec)
 	
+	#pos, quat = p.getViewPosAndOrientation(cart)
+	#p.resetBasePositionAndOrientation(cart, [pos[0], pos[1], 1], quat)
 
 	print("Generated cart", objectUid)
 
@@ -138,13 +150,21 @@ if __name__ == '__main__':
 	p.setRealTimeSimulation(0)
 	
 	## same as cv.waitKey(5) in viewPort
-	p.setTimeStep(0.1)
 
+
+	#p.setTimeStep(1.0/framePerSec)
+	p.setTimeStep(1.0/settings.STEPS_PER_SEC)
+
+	lasttime = time.time()
 	while (1):
+		## Execute one frame
 		cart.getUpdateFromKeyboard()
 		sendPoseToViewPort(cart.getViewPosAndOrientation())
-		p.stepSimulation()
-		#time.sleep(0.01)
+		print("passed time", time.time() - lasttime)
+		lasttime = time.time()
+		#p.stepSimulation()
+		stepNsteps(settings.STEPS_PER_SEC/framePerSec, cart)
+		#time.sleep(0.8)
 
 		#if PHYSICS_FIRST:
 			## Physics-first simulation

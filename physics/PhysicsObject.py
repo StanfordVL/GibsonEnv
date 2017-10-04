@@ -1,4 +1,5 @@
 import numpy as np
+import settings
 from transforms3d import euler, quaternions
 
 
@@ -17,9 +18,14 @@ class PhysicsObject():
 	By default, internal quaternion variables are [x, y, z, w]
 	"""
 
-	def __init__(self, uid, simulator, pos, quat):
+	def __init__(self, uid, simulator, pos, quat, v_t, v_r, fps):
 		self.uid = uid
 		self.sim = simulator
+
+		self.v_t = float(v_t)
+		self.v_r = float(v_r)
+		self.fps = float(fps)
+		self.action = self._createDefaultAction()
 
 		self.pos_init_xyz   = pos
 		self.quat_init_xyzw = quat
@@ -99,85 +105,75 @@ class PhysicsObject():
 		# Special Controls: B3G_RIGHT_ARROW, B3G_LEFT_ARROW, 
 		# 	B3G_DOWN_ARROW, B3G_UP_ARROW
 
+		self.action = self._createDefaultAction()
 		keys = self.sim.getKeyboardEvents()
-		action = {
-			'up'	  : False,
-			'down'	  : False,
-			'left'	  : False,
-			'right'	  : False,
-			'forward' : False,
-			'backward': False,
-			'restart' : False,
-			'alpha'   : 0,
-			'beta'    : 0,
-			'gamma'   : 0
-		}
+
 		if (ord('r') in keys):
-			action['restart'] = True
+			self.action['restart'] = True
 		if (ord('d') in keys):
-			action['right'] = True
+			self.action['right'] = True
 		if (ord('a') in keys):
-			action['left'] = True
+			self.action['left'] = True
 		if (ord('s') in keys):
-			action['backward'] = True
+			self.action['backward'] = True
 		if (ord('w') in keys or ord('q') in keys):
-			action['forward'] = True
+			self.action['forward'] = True
 		if (ord('z') in keys):
-			action['up'] = True
+			self.action['up'] = True
 		if (ord('c') in keys):
-			action['down'] = True
+			self.action['down'] = True
 
 		if (ord('u') in keys):
-			action['alpha'] = 1
+			self.action['alpha'] = 1
 		if (ord('j') in keys):
-			action['alpha'] = -1
+			self.action['alpha'] = -1
 		if (ord('i') in keys):
-			action['beta'] = 1
+			self.action['beta'] = 1
 		if (ord('k') in keys):
-			action['beta'] = -1
+			self.action['beta'] = -1
 		if (ord('o') in keys):
-			action['gamma'] = 1
+			self.action['gamma'] = 1
 		if (ord('l') in keys):
-			action['gamma'] = -1
-		self.parseActionAndUpdate(action)
+			self.action['gamma'] = -1
+		#self.parseActionAndUpdate()
 
 
-	def parseActionAndUpdate(self, action):
+	def parseActionAndUpdate(self):
 		""" Update position: because the object's rotation
 		changes every time, the position needs to be updated
 		by delta
 		"""
 		delta_xyz = np.array([0, 0, 0], dtype=float)
-		if action['restart']:
+		if self.action['restart']:
 			self._restartLocationOrientation()
 			return
-		if action['up']:
-			delta_xyz[1] =  0.05
-		if action['down']:
-			delta_xyz[1] = -0.05
-		if action['left']:
-			delta_xyz[0] = -0.05
-		if action['right']:
-			delta_xyz[0] = 0.05
-		if action['forward']:
-			delta_xyz[2] = -0.05
-		if action['backward']:
-			delta_xyz[2] = 0.05
+		if self.action['up']:
+			delta_xyz[1] =  self.v_t/settings.STEPS_PER_SEC
+		if self.action['down']:
+			delta_xyz[1] = -self.v_t/settings.STEPS_PER_SEC
+		if self.action['left']:
+			delta_xyz[0] = -self.v_t/settings.STEPS_PER_SEC
+		if self.action['right']:
+			delta_xyz[0] =  self.v_t/settings.STEPS_PER_SEC
+		if self.action['forward']:
+			delta_xyz[2] = -self.v_t/settings.STEPS_PER_SEC
+		if self.action['backward']:
+			delta_xyz[2] =  self.v_t/settings.STEPS_PER_SEC
 		self.d_xyz = delta_xyz
 
 		## Update rotation: reset the rotation every time
-		if action['alpha'] > 0:
-			self.d_alpha = np.pi/32
-		if action['alpha'] < 0:
-			self.d_alpha = - np.pi/32
-		if action['beta'] > 0:
-			self.d_beta = np.pi/32
-		if action['beta'] < 0:
-			self.d_beta = - np.pi/32
-		if action['gamma'] > 0:
-			self.d_gamma = np.pi/32
-		if action['gamma'] < 0:
-			self.d_gamma = - np.pi/32
+		if self.action['alpha'] > 0:
+			self.d_alpha =  self.v_r/settings.STEPS_PER_SEC
+		if self.action['alpha'] < 0:
+			self.d_alpha = -self.v_r/settings.STEPS_PER_SEC
+		if self.action['beta'] > 0:
+			self.d_beta =   self.v_r/settings.STEPS_PER_SEC
+		if self.action['beta'] < 0:
+			self.d_beta =  -self.v_r/settings.STEPS_PER_SEC
+		if self.action['gamma'] > 0:
+			self.d_gamma =  self.v_r/settings.STEPS_PER_SEC
+		if self.action['gamma'] < 0:
+			self.d_gamma = -self.v_r/settings.STEPS_PER_SEC
 
 		self.updatePositionOrientation()
 		self._clearUpDelta()
@@ -224,7 +220,21 @@ class PhysicsObject():
 		org_quat_wxyz = PhysicsObject.quatXyzwToWxyz(org_quat_xyzw)
 		new_quat_xyzw = PhysicsObject.quatWxyzToXyzw(quaternions.qmult(org_quat_wxyz, z_facing_wxyz))
 		return new_quat_xyzw
- 
+
+	def _createDefaultAction(self):
+		action = {
+			'up'	  : False,
+			'down'	  : False,
+			'left'	  : False,
+			'right'	  : False,
+			'forward' : False,
+			'backward': False,
+			'restart' : False,
+			'alpha'   : 0,
+			'beta'    : 0,
+			'gamma'   : 0
+		}
+		return action
 
 	def _cameraUncalibrate(self, new_quat_xyzw):
 		""" Undo the effect of _cameraCalibrate
