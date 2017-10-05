@@ -153,6 +153,7 @@ def quat_xyzw_to_wxyz(xyzw):
     return np.concatenate((xyzw[-1:], xyzw[:-1]))
 
 
+## DEPRECATED
 ## Talking to physics simulation
 ## New state: [x, y, z, r_w, r_x, r_y, r_z]
 def hasNoCollision(posi_xyz, quat_wxyz):
@@ -165,13 +166,11 @@ def hasNoCollision(posi_xyz, quat_wxyz):
     #print("new_state 1", new_state)
     socket_phys.send(" ".join(map(str, new_state)))
     collisions_count = int(socket_phys.recv().decode("utf-8"))
-    print("collisions", collisions_count)
     return collisions_count == 0
 
 def getPoseOrientationFromPhysics():
     receive = socket_phys.recv().decode("utf-8")
     new_pos, new_quat = json.loads(receive)
-    print("received from physics", new_pos, new_quat)
     socket_phys.send(json.dumps({"received": True}))
     return new_pos, new_quat
 
@@ -266,7 +265,6 @@ class PCRenderer:
         """
         cpose = np.eye(4)
         gamma = self.yaw
-        print("getting yaw", self.yaw)
         alpha = self.pitch
         beta  = -self.roll
         #cpose[:3, :3] = transforms3d.euler.euler2mat(alpha, beta, gamma)
@@ -279,7 +277,7 @@ class PCRenderer:
         
 
 
-    def render(self, imgs, depths, pose, model, poses, target_pose, show):
+    def render(self, imgs, depths, pose, model, poses, target_pose, show, target_depth):
         t0 = time.time()
 
         v_cam2world = target_pose.dot(poses[0])
@@ -299,33 +297,30 @@ class PCRenderer:
             img_array.append(data[i])
 
         img_array2 = [img_array[0], img_array[1], img_array[2], img_array[3], img_array[4], img_array[5]]
-        #print("max value", np.max(data[0]), "shape", np.array(img_array2).shape)
 
         opengl_arr = convert_array(np.array(img_array2))
         opengl_arr = opengl_arr[::, ::]
 
-        
-        #print("opengl array shape", opengl_arr.shape)
-        #plot_histogram(opengl_arr)
-        #print("zero values", np.sum(opengl_arr[:, :, 0] == 0), np.sum(opengl_arr[:, :, 1] == 0), np.sum(opengl_arr[:, :, 2] == 0))
-        
-        #print("opengl min", np.min(opengl_arr), "opengl max", np.max(opengl_arr))
         opengl_arr_err  = opengl_arr == 0
 
-        #opengl_arr = np.maximum(opengl_arr + 30, opengl_arr)
-
-        opengl_arr_show = (opengl_arr * 3500.0 / 128).astype(np.uint8)
-
-        #print('arr shape', opengl_arr_show.shape, "max", np.max(opengl_arr_show), "total number of errors", np.sum(opengl_arr_err))
        
+        opengl_arr_show = (opengl_arr * 3500.0 / 128).astype(np.uint8)
         opengl_arr_show[opengl_arr_err[:, :, 0], 1:3] = 0
         opengl_arr_show[opengl_arr_err[:, :, 0], 0] = 255
         cv2.imshow('target depth',opengl_arr_show)
 
+        
         #from IPython import embed; embed()
-        print(target_depth.shape, opengl_arr.shape)
-        target_depth[:, :, 0] = (opengl_arr[:,:,0] * 100).astype(np.int32)
-
+        #target_depth[:, :, 0] = (opengl_arr[:,:,0] * 100).astype(np.int32)
+        target_depth[:, :] = (opengl_arr[:,:,0] * 100).astype(np.int32)
+        
+        print("images type", depths[0].dtype, "opengl type", opengl_arr.dtype)
+        print("images: min", np.min(depths) * 12800, "mean", np.mean(depths) * 12800, "max", np.max(depths) * 12800)
+        '''
+        for i in range(len(imgs)):
+            imgs[i][depths[i] * 12800 > 100] = 0.0
+        '''
+        print('target: min', np.min(target_depth), "mean", np.mean(target_depth), "max", np.max(target_depth))
 
         show[:] = 0
         before = time.time()
@@ -442,24 +437,9 @@ class PCRenderer:
                 #new_pos, new_euler = getPoseOrientationFromPhysics()
                 new_pos, new_quat = getPoseOrientationFromPhysics()
 
-                '''
-                delta = 2
-            
-                cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(world_cpose).dot(self.rotation_const))
-                viewer_pose  = mat_to_posi_xyz(cpose).tolist()
-                viewer_quat = quat_xyzw_to_wxyz(mat_to_quat_xyzw(cpose)).tolist()
-                '''
-                ## TODO: this part is hardcoded
                 self.x, self.y, self.z = new_pos
                 
-                # rotation around intrinsic x, y, z
-                #alpha, beta, gamma = new_euler
-                #print("alpha, beta, gamma", alpha, beta, gamma)
-
-                #self.roll, self.pitch, self.yaw = -gamma, alpha, beta
-                #self.instantCheckPos(viewer_pose, target_pose)
                 self.quat = new_quat
-
                 self.changed = True
 
             if self.changed:
@@ -472,12 +452,10 @@ class PCRenderer:
                 ## If PHYSICS_FIRST mode, then collision is already handled
                 ##   inside physics simulator
                 if PHYSICS_FIRST or hasNoCollision(new_posi, new_quat):
-                    print("no collisions")
-                    self.render(imgs, depths, cpose.astype(np.float32), model, poses, target_pose, show)
+                    self.render(imgs, depths, cpose.astype(np.float32), model, poses, target_pose, show, target_depth)
                     old_state = [self.x, self.y, self.z, self.roll, self.pitch, self.yaw]
                     old_cpose = np.copy(cpose)
                 else:
-                    print("has collisions")
                     self.x, self.y, self.z, self.roll, self.pitch, self.yaw = old_state
                     cpose = old_cpose
                 
@@ -542,7 +520,6 @@ class PCRenderer:
                 self.changed = True
             elif cmd == ord('t'):
                 pose = poses[0]
-                print('pose', pose)
                 RT = pose.reshape((4,4))
                 R = RT[:3,:3]
                 T = RT[:3,-1]
