@@ -1,3 +1,6 @@
+## Issue related to time resolution/smoothness
+#  http://bulletphysics.org/mediawiki-1.5.8/index.php/Stepping_The_World
+
 import pybullet as p
 import time
 import random
@@ -75,7 +78,7 @@ def synchronizeWithViewPort():
 	socket.send_string(json.dumps([pos, rot]))
 	
 def stepNsteps(N, object):
-	for _ in range(int(N)):
+	for _ in range(N):
 		p.stepSimulation()
 		object.parseActionAndUpdate()
 
@@ -127,7 +130,7 @@ if __name__ == '__main__':
 	allSpheres = []
 
 
-	framePerSec = 3
+	framePerSec = 5
 
 
 	#objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
@@ -136,7 +139,7 @@ if __name__ == '__main__':
 	pos, quat_xyzw = getInitialPositionOrientation()
 
 	v_t = 1 			# 1m/s max speed
-	v_r = np.pi 		# 18 degrees/s
+	v_r = np.pi/5 		# 36 degrees/s
 	#pos  = [0, 0, 3]
 	#quat_xyzw = [0, 0, 0, 3]
 	cart = PhysicsObject(objectUid, p, pos, quat_xyzw, v_t, v_r, framePerSec)
@@ -160,12 +163,17 @@ if __name__ == '__main__':
 		## Execute one frame
 		cart.getUpdateFromKeyboard()
 		sendPoseToViewPort(cart.getViewPosAndOrientation())
-		print("passed time", time.time() - lasttime)
-		lasttime = time.time()
+		#time.sleep(1.0/framePerSec)
 		#p.stepSimulation()
-		stepNsteps(settings.STEPS_PER_SEC/framePerSec, cart)
-		#time.sleep(0.8)
+		simutime = time.time()
+		print('time step', 1.0/settings.STEPS_PER_SEC, 'stepping', settings.STEPS_PER_SEC/framePerSec)
+		stepNsteps(int(settings.STEPS_PER_SEC/framePerSec), cart)
+		#for _ in range(int(settings.STEPS_PER_SEC/framePerSec)):
+		#	p.stepSimulation()
 
+		print("passed time", time.time() - lasttime, "simulation time", time.time() - simutime)
+		lasttime = time.time()
+		
 		#if PHYSICS_FIRST:
 			## Physics-first simulation
 			#synchronizeWithViewPort()

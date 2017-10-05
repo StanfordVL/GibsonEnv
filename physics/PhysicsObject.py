@@ -66,6 +66,9 @@ class PhysicsObject():
 		updatePositionOrientation() periodically.
 		"""
 		pos_world_xyz, quat_world_xyzw = self.sim.getBasePositionAndOrientation(self.uid)
+		# velocity
+		v_translate, v_rotate = self.sim.getBaseVelocity(self.uid)
+
 		quat_world_xyzw 	= self._cameraUncalibrate(quat_world_xyzw)
 
 		new_pos_world_xyz   = self._translateIntrinsic(pos_world_xyz, quat_world_xyzw)
@@ -74,6 +77,7 @@ class PhysicsObject():
 		new_quat_world_xyzw = self._cameraCalibrate(new_quat_world_xyzw)
 		
 		self.sim.resetBasePositionAndOrientation(self.uid, new_pos_world_xyz, new_quat_world_xyzw)
+		self.sim.resetBaseVelocity(self.uid, v_translate, v_rotate)
 
 	
 	def getViewPosAndOrientation(self):
