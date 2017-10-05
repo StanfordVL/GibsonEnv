@@ -130,7 +130,7 @@ if __name__ == '__main__':
 	allSpheres = []
 
 
-	framePerSec = 5
+	framePerSec = 10
 
 
 	#objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)

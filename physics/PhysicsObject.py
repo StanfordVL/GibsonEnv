@@ -27,8 +27,10 @@ class PhysicsObject():
 		self.fps = float(fps)
 		self.action = self._createDefaultAction()
 
-		self.pos_init_xyz   = pos
-		self.quat_init_xyzw = quat
+		self.camera_offset  = np.array([0, 0, 0.8])
+
+		self.pos_init_xyz   = np.array(pos)
+		self.quat_init_xyzw = np.array(quat)
 
 		## Relative delta rotation of object to world
 		self.d_alpha, self.d_beta, self.d_gamma = 0, 0, 0
@@ -90,18 +92,23 @@ class PhysicsObject():
 		job to handle this input/output 
 		"""
 		pos_world_xyz, quat_world_xyzw = self.sim.getBasePositionAndOrientation(self.uid)
+	
+		pos_world_xyz 		= np.array(pos_world_xyz)
+		quat_world_xyzw 	= np.array(quat_world_xyzw)
+
 		quat_world_xyzw 	= self._cameraUncalibrate(quat_world_xyzw)
 		quat_world_wxyz     = PhysicsObject.quatXyzwToWxyz(quat_world_xyzw)
 
-		quat_init_wxyz = PhysicsObject.quatXyzwToWxyz(self.quat_init_xyzw)
+		"""
+		quat_init_wxyz 	= PhysicsObject.quatXyzwToWxyz(self.quat_init_xyzw)
+		pos_view_xyz 	= pos_world_xyz - self.pos_init_xyz
+		quat_view_wxyz 	= quaternions.qmult(quaternions.qinverse(quat_init_wxyz), quat_world_wxyz)
+		euler_view   	= euler.quat2euler(quat_view_wxyz)
+		"""
+		
+		pos_world_xyz = self._applyCameraOffset(pos_world_xyz)
 
-		pos_view_xyz = (np.array(pos_world_xyz) - np.array(self.pos_init_xyz)).tolist()
-		quat_view_wxyz = quaternions.qmult(quaternions.qinverse(quat_init_wxyz), quat_world_wxyz).tolist()
-
-		euler_view   = euler.quat2euler(quat_view_wxyz)
-		#return pos_view_xyz, euler_view
-		#return pos_view_xyz, quat_view_wxyz
-		return np.array(pos_world_xyz).tolist(), quat_world_wxyz.tolist()
+		return pos_world_xyz.tolist(), quat_world_wxyz.tolist()
 
 
 
@@ -210,6 +217,11 @@ class PhysicsObject():
 		return PhysicsObject.quatWxyzToXyzw(wxyz)
 
 
+	def _applyCameraOffset(self, pos_xyz):
+		pos_camera_xyz = pos_xyz + self.camera_offset
+		return pos_camera_xyz
+
+
 	def _cameraCalibrate(self, org_quat_xyzw):
 		""" Convert object's head from +x facing to -z facing
 		Note that this is not needed when you're computing view_matrix,
@@ -224,6 +236,7 @@ class PhysicsObject():
 		org_quat_wxyz = PhysicsObject.quatXyzwToWxyz(org_quat_xyzw)
 		new_quat_xyzw = PhysicsObject.quatWxyzToXyzw(quaternions.qmult(org_quat_wxyz, z_facing_wxyz))
 		return new_quat_xyzw
+
 
 	def _createDefaultAction(self):
 		action = {
