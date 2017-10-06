@@ -23,12 +23,12 @@ def camera_init_orientation(quat):
 def setPosViewOrientation(objectUid, pos, rot):
 	return
 
-	
+
 def getCollisionFromUpdate():
 	message = socket.recv().decode("utf-8")
-	
+
 	x, y, z, r_w, r_x, r_y, r_z = map(float, message.split())
-	
+
 	p.resetBasePositionAndOrientation(objectUid, [x, y, z], [r_w, r_x, r_y, r_z])
 	p.stepSimulation()
 	print("step simulation done")
@@ -76,7 +76,7 @@ def synchronizeWithViewPort():
 	print("")
 	#print(changed, pos, rot)
 	socket.send_string(json.dumps([pos, rot]))
-	
+
 def stepNsteps(N, object):
 	for _ in range(N):
 		p.stepSimulation()
@@ -114,8 +114,8 @@ if __name__ == '__main__':
 	mass = 1
 	visualShapeId = -1
 
-		
-		
+
+
 	link_Masses=[1]
 	linkCollisionShapeIndices=[colBoxId]
 	linkVisualShapeIndices=[-1]
@@ -130,11 +130,11 @@ if __name__ == '__main__':
 	allSpheres = []
 
 
-	framePerSec = 22
+	framePerSec = 7
 
 
-	objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
-	#objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
+	#objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
+	objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
 
 	pos, quat_xyzw = getInitialPositionOrientation()
 
@@ -143,15 +143,15 @@ if __name__ == '__main__':
 	#pos  = [0, 0, 3]
 	#quat_xyzw = [0, 0, 0, 3]
 	cart = PhysicsObject(objectUid, p, pos, quat_xyzw, v_t, v_r, framePerSec)
-	
+
 	#pos, quat = p.getViewPosAndOrientation(cart)
 	#p.resetBasePositionAndOrientation(cart, [pos[0], pos[1], 1], quat)
 
 	print("Generated cart", objectUid)
 
-	#p.setGravity(0,0,-10)
+	p.setGravity(0,0,-10)
 	p.setRealTimeSimulation(0)
-	
+
 	## same as cv.waitKey(5) in viewPort
 
 
@@ -173,13 +173,13 @@ if __name__ == '__main__':
 
 		print("passed time", time.time() - lasttime, "simulation time", time.time() - simutime)
 		lasttime = time.time()
-		
+
 		#if PHYSICS_FIRST:
 			## Physics-first simulation
 			#synchronizeWithViewPort()
 			#p.stepSimulation()
 			#time.sleep(0.05)
-		
+
 		#else:
 			## Visual-first simulation
 			#getCollisionFromUpdate()

@@ -7,10 +7,10 @@ class PhysicsObject():
 	"""
 	Controllable object in world
 	This class mostly handles action parsing
-	
-	Note: only stores realtime delta pose, absolute pose is not 
+
+	Note: only stores realtime delta pose, absolute pose is not
 	stored
-	
+
 	Note: conventions
 	By OpenGL convention, object is default: +x facing,
 	which is incompatible with camera view matrix (-z facing).
@@ -27,30 +27,30 @@ class PhysicsObject():
 		self.fps = float(fps)
 		self.action = self._createDefaultAction()
 
-		#self.camera_offset  = np.array([0, 0, 0.8])
-		self.camera_offset  = np.array([0, 0, 0])
+		self.camera_offset  = np.array([0, 0, 0.8])
+		#self.camera_offset  = np.array([0, 0, 0])
 
 		self.pos_init_xyz   = np.array(pos)
 		self.quat_init_xyzw = np.array(quat)
 
 		## Relative delta rotation of object to world
 		self.d_alpha, self.d_beta, self.d_gamma = 0, 0, 0
-		
+
 		## Relative delta position inside object's world view
 		self.d_xyz = np.array([0, 0, 0], dtype=float)
 		self._updateInitialPositionOrientation()
 
 		## DEPRECATED: roll, pitch, yaw
 		self.roll, self.pitch, self.yaw = 0, np.pi/6, 0
-		
+
 
 	def _updateInitialPositionOrientation(self):
-		""" Update initial physics simulation 
+		""" Update initial physics simulation
 		Similar to implementation in updatePositionOrientation()
 		"""
 		pos_world_xyz   = self.pos_init_xyz
 		quat_world_xyzw = self.quat_init_xyzw
-		
+
 		## parse xyz, alpha, beta, gamma from world
 		## apply local delta xyz, delta alpha, delta beta, delta gamma
 		## update to world
@@ -62,10 +62,10 @@ class PhysicsObject():
 
 
 	def updatePositionOrientation(self):
-		""" Update physics simulation 
+		""" Update physics simulation
 		Physics simulation = object position + object rotation
 
-		Note: When using sim.stepSimulation(), you need to call 
+		Note: When using sim.stepSimulation(), you need to call
 		updatePositionOrientation() periodically.
 		"""
 		pos_world_xyz, quat_world_xyzw = self.sim.getBasePositionAndOrientation(self.uid)
@@ -78,22 +78,22 @@ class PhysicsObject():
 		new_quat_world_xyzw = self._rotateIntrinsic(quat_world_xyzw)
 		## Calibrate
 		new_quat_world_xyzw = self._cameraCalibrate(new_quat_world_xyzw)
-		
+
 		self.sim.resetBasePositionAndOrientation(self.uid, new_pos_world_xyz, new_quat_world_xyzw)
 		self.sim.resetBaseVelocity(self.uid, v_translate, v_rotate)
 
-	
+
 	def getViewPosAndOrientation(self):
 		"""Output real-time pose for view renderer
-		
+
 		Note: the output pose & orientation are absolute pose defined
-		inside physics world coordinate. The viewer might use different 
+		inside physics world coordinate. The viewer might use different
 		convention, e.g. a coordinate relative to initial pose.
 		PhysicsObject is agnostic to viewer convention. It is the viewer's
-		job to handle this input/output 
+		job to handle this input/output
 		"""
 		pos_world_xyz, quat_world_xyzw = self.sim.getBasePositionAndOrientation(self.uid)
-	
+
 		pos_world_xyz 		= np.array(pos_world_xyz)
 		quat_world_xyzw 	= np.array(quat_world_xyzw)
 
@@ -106,7 +106,7 @@ class PhysicsObject():
 		quat_view_wxyz 	= quaternions.qmult(quaternions.qinverse(quat_init_wxyz), quat_world_wxyz)
 		euler_view   	= euler.quat2euler(quat_view_wxyz)
 		"""
-		
+
 		pos_world_xyz = self._applyCameraOffset(pos_world_xyz)
 
 		return pos_world_xyz.tolist(), quat_world_wxyz.tolist()
@@ -114,7 +114,7 @@ class PhysicsObject():
 
 
 	def getUpdateFromKeyboard(self):
-		# Special Controls: B3G_RIGHT_ARROW, B3G_LEFT_ARROW, 
+		# Special Controls: B3G_RIGHT_ARROW, B3G_LEFT_ARROW,
 		# 	B3G_DOWN_ARROW, B3G_UP_ARROW
 
 		self.action = self._createDefaultAction()
@@ -190,7 +190,7 @@ class PhysicsObject():
 		self.updatePositionOrientation()
 		self._clearUpDelta()
 
-
+	@staticmethod
 	def quatWxyzToXyzw(wxyz):
 		"""
 		wxyz: transforms3s array format
@@ -198,7 +198,7 @@ class PhysicsObject():
 		"""
 		return np.concatenate((wxyz[1:], wxyz[:1]))
 
-	
+	@staticmethod
 	def quatXyzwToWxyz(xyzw):
 		"""
 		wxyz: transforms3s array format
@@ -258,16 +258,16 @@ class PhysicsObject():
 		""" Undo the effect of _cameraCalibrate
 		Needed in two cases:
 		(1) Updating pose in physics engine
-	   		
+
 			self._cameraUnalibrate(sim.getBasePositionAndOrientation(uid))
-			
+
 		This is because object orientation in physics engine has
 		been calibrated. To update parameter (alpha, beta, gamma),
     	need to uncalibrate first. See updatePositionOrientation()
 	  	(2) Sending pose to viewer renderer
- 				
+
  			send(self._cameraUnalibrate(sim.See updatePositionOrientation(uid)))
-			
+
 		This is because we need to send uncalibrated view pose
 		"""
 		x_facing_wxyz = euler.euler2quat(np.pi/2, 0, -np.pi/2)
@@ -290,8 +290,8 @@ class PhysicsObject():
 
 
 	def _rotateIntrinsic(self, quat_world_xyzw):
-		""" Add intrinsic rotation to extrinsic	
-		Extrinsic rotation = Extrinsic rotation * 
+		""" Add intrinsic rotation to extrinsic
+		Extrinsic rotation = Extrinsic rotation *
 			Intrinsic delta rotation
 
 		Note: order matters. Apply intrinsic delta quat first, then
@@ -299,7 +299,7 @@ class PhysicsObject():
 		"""
 		quat_world_wxyz = PhysicsObject.quatXyzwToWxyz(quat_world_xyzw)
 		euler_world 	= euler.quat2euler(quat_world_wxyz)
-		
+
 		quat_objec_wxyz = euler.euler2quat(self.d_alpha, self.d_beta, self.d_gamma)
 		new_quat_world_wxyz  = quaternions.qmult(quat_world_wxyz, quat_objec_wxyz)
 		new_quat_world_xyzw  = PhysicsObject.quatWxyzToXyzw(new_quat_world_wxyz)
