@@ -380,7 +380,7 @@ class PCRenderer:
                 target_depth = np.int32(opengl_arr * scale)
                 show[:] = 0
                 poses_after = [
-                    pose.dot(poses[i]).astype(np.float32)
+                    pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
 
                 for i in range(len(imgs)):
@@ -527,7 +527,7 @@ class PCRenderer:
                         relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), target_poses[0])
                     
                     poses_after = [
-                    cpose.dot(relative_poses[i]).astype(np.float32)
+                    cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
                     
                     pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]        
