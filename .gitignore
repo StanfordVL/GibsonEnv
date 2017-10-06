@@ -21,6 +21,9 @@ dev/transfer.c
 *.zip
 
 
+# vscode
+.vscode/
+
 # Physics
 physics/*.txt
 physics/*.json
