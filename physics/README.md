@@ -45,8 +45,9 @@ You should see OpenCV windows, as well as pybullet panel pop up.
 To control the object, click on pybullet panel, then use the following keys. Pybullet sends its movement to
 Opengl & OpenCV for rendering.
 
-| w/q  | go forward |
+| key  | action |
 | ------------- | ------------- |
+| w/q | go forward |
 | a  | go left  |
 | s  | go backward  |
 | d  | go right |
@@ -55,4 +56,5 @@ Opengl & OpenCV for rendering.
 | u/j  | add/subtract roll |
 | i/k  | add/subtract pitch |
 | o/l | add/subtract yaw |
-  
+
+Note that key w has conflict with pybullet hotkey.
