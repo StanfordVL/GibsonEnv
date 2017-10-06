@@ -133,8 +133,8 @@ if __name__ == '__main__':
 	framePerSec = 7
 
 
-	#objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
-	objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
+	objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
+	#objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
 
 	pos, quat_xyzw = getInitialPositionOrientation()
 
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
 	print("Generated cart", objectUid)
 
-	p.setGravity(0,0,-10)
+	#p.setGravity(0,0,-10)
 	p.setRealTimeSimulation(0)
 
 	## same as cv.waitKey(5) in viewPort
