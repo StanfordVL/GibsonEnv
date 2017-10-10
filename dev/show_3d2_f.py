@@ -379,19 +379,31 @@ class PCRenderer:
                 scale = 100.  # 512
                 target_depth = np.int32(opengl_arr * scale)
                 show[:] = 0
+                
+                show_all = np.zeros((len(imgs), 1024, 2048, 3)).astype(np.uint8)
+                
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
-
+                
                 for i in range(len(imgs)):
-                    dll.render(ct.c_int(imgs[i].shape[0]),
-                            ct.c_int(imgs[i].shape[1]),
-                            imgs[i].ctypes.data_as(ct.c_void_p),
-                            depths[i].ctypes.data_as(ct.c_void_p),
-                            poses_after[i].ctypes.data_as(ct.c_void_p),
-                            show.ctypes.data_as(ct.c_void_p),
-                            target_depth.ctypes.data_as(ct.c_void_p)
-                            )
+                #from IPython import embed; embed()
+                    dll.render(ct.c_int(len(imgs)),
+                               ct.c_int(imgs[i].shape[0]),
+                               ct.c_int(imgs[i].shape[1]),
+                               np.array(imgs[i]).ctypes.data_as(ct.c_void_p),
+                               depths[i].ctypes.data_as(ct.c_void_p),
+                               np.array(poses_after[i]).ctypes.data_as(ct.c_void_p),
+                               show_all[i].ctypes.data_as(ct.c_void_p),
+                               target_depth.ctypes.data_as(ct.c_void_p)
+                               )
+                    
+                #show_all_tensor = Variable(torch.from_numpy(show_all).cuda()).transpose(3,2).transpose(2,1)
+                #print(show_all_tensor.size())
+                #show_all = show_all_tensor.cpu().data.numpy().transpose(0,2,3,1)
+                
+                show[:] = np.amax(show_all, axis = 0)
+        
         threads = [
             Process(target=render_pc, args=(opengl_arr,)),
             Process(target=render_depth, args=(opengl_arr,))]
@@ -530,14 +542,15 @@ class PCRenderer:
                     cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
                     
-                    pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]        
-                    top5 = (np.argsort(pose_after_distance))[:5]
-                    imgs_top5 = [imgs[i] for i in top5]
-                    depths_top5 = [depths[i] for i in top5]
-                    relative_poses_top5 = [relative_poses[i] for i in top5]
+                    pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]  
+                    k = 3
+                    topk = (np.argsort(pose_after_distance))[:k]
+                    imgs_topk = [imgs[i] for i in topk]
+                    depths_topk = [depths[i] for i in topk]
+                    relative_poses_topk = [relative_poses[i] for i in topk]
                     
                     
-                    self.render(imgs_top5, depths_top5, cpose.astype(np.float32), model, relative_poses_top5, target_poses[0], show, target_depth, depth_buffer)
+                    self.render(imgs_topk, depths_topk, cpose.astype(np.float32), model, relative_poses_topk, target_poses[0], show, target_depth, depth_buffer)
                     old_state = [self.x, self.y, self.z, self.roll, self.pitch, self.yaw]
                     old_cpose = np.copy(cpose)
                 else:
