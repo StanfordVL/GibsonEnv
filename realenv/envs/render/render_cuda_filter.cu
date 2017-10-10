@@ -158,11 +158,7 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
      int this_depth = (int)(12800/128 * points3d_polar[(ih * w + iw) * 3 + 0]);
      int delta = this_depth - depth_render[(ty * w + tx)];
      
-     int dr = depth_render[(ty * w + tx)];
-     //printf("%d %d\n", this_depth, depth_render[(ty * w + tx)]);
-     //if ((y > h/8) && (y < h*7/8))
      if ((delta > -10) && (delta < 10) && (this_depth < 10000)) {
-     //if ((dr <= 12800 * 12800) && dr >= - 12800 * 12800) {
            render[(ty * w + tx)] = img[(ih * w + iw)];
      }
   }

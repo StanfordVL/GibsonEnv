@@ -27,7 +27,6 @@ import transforms3d
 import json
 
 import zmq
-from cube2equi import find_corresponding_pixel
 from transfer import transfer2
 
 from profiler import Profiler
