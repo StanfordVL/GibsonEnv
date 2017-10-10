@@ -113,14 +113,15 @@ class PhysicsObject():
 
 
 
-	def getUpdateFromKeyboard(self):
+	def getUpdateFromKeyboard(self, restart=False):
 		# Special Controls: B3G_RIGHT_ARROW, B3G_LEFT_ARROW,
 		# 	B3G_DOWN_ARROW, B3G_UP_ARROW
 
 		self.action = self._createDefaultAction()
 		keys = self.sim.getKeyboardEvents()
 
-		if (ord('r') in keys):
+
+		if (ord('r') in keys or restart):
 			self.action['restart'] = True
 		if (ord('d') in keys):
 			self.action['right'] = True

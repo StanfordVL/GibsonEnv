@@ -96,8 +96,8 @@ if __name__ == '__main__':
 
 	## Turn on p.GUI for visualization
 	## Turn on p.GUI for headless mode
-	p.connect(p.GUI)
-	#p.connect(p.DIRECT)
+	#p.connect(p.GUI)
+	p.connect(p.DIRECT)
 
 
 	obj_path = os.path.join(opt.datapath, opt.model, "modeldata", 'out_z_up.obj')
@@ -105,6 +105,8 @@ if __name__ == '__main__':
 	p.setRealTimeSimulation(0)
 	boundaryUid = p.createCollisionShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
 	print("Exterior boundary", boundaryUid)
+	p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 1, 1, 0.5])
+
 	p.createMultiBody(0,0)
 
 	sphereRadius = 0.05
@@ -130,11 +132,12 @@ if __name__ == '__main__':
 	allSpheres = []
 
 
-	framePerSec = 7
+	framePerSec = 13
 
 
-	objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
-	#objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
+	#objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
+	objectUid = p.loadURDF("models/husky.urdf", globalScaling = 0.8)
+	#p.changeVisualShape(objectUid, -1, rgbaColor=[1, 1, 1, 0.5])
 
 	pos, quat_xyzw = getInitialPositionOrientation()
 
@@ -149,7 +152,7 @@ if __name__ == '__main__':
 
 	print("Generated cart", objectUid)
 
-	#p.setGravity(0,0,-10)
+	p.setGravity(0,0,-10)
 	p.setRealTimeSimulation(0)
 
 	## same as cv.waitKey(5) in viewPort
@@ -158,6 +161,7 @@ if __name__ == '__main__':
 	#p.setTimeStep(1.0/framePerSec)
 	p.setTimeStep(1.0/settings.STEPS_PER_SEC)
 
+	startttime = time.time()
 	lasttime = time.time()
 	while (1):
 		## Execute one frame
@@ -173,7 +177,12 @@ if __name__ == '__main__':
 
 		print("passed time", time.time() - lasttime, "simulation time", time.time() - simutime)
 		lasttime = time.time()
-
+		print("last time", lasttime, "start time", startttime)
+		if lasttime - startttime > 5:
+			startttime = lasttime
+			cart.getUpdateFromKeyboard(restart=True)
+			stepNsteps(int(settings.STEPS_PER_SEC/framePerSec), cart)
+		
 		#if PHYSICS_FIRST:
 			## Physics-first simulation
 			#synchronizeWithViewPort()
