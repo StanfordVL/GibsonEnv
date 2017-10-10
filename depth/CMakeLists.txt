@@ -5,6 +5,16 @@ project (Tutorials)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
+
+# ------ Cuda 
+find_package(CUDA REQUIRED)
+include_directories(${CUDA_INCLUDE_DIRS})
+link_directories(${CUDA_LIBRARY_DIRS})
+# set(CUDA_SEPARABLE_COMPILATION ON)
+# set(CUDA_ARCH -gencode arch=compute_35,code=sm_35)
+# set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${CUDA_ARCH} -Xcompiler -fPIC -shared -o)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} "-std=c++11")
+
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
     message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
 endif()
@@ -91,8 +101,11 @@ add_definitions(
 )
 
 
-add_executable(depth_render
+
+cuda_add_executable(depth_render
 	depth_render/render.cpp
+	common/render_cuda_f.cu
+	common/render_cuda_f.h
 	common/shader.cpp
 	common/shader.hpp
 	common/controls.cpp
@@ -115,6 +128,7 @@ add_executable(depth_render
 	depth_render/Passthrough.vertexshader
 	depth_render/WobblyTexture.fragmentshader
 )
+
 
 target_link_libraries(depth_render
 	${ALL_LIBS}

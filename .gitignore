@@ -19,3 +19,16 @@ dev/transfer.c
 *.bmp
 *.bak
 *.zip
+
+
+# vscode
+.vscode/
+
+# Physics
+physics/*.txt
+physics/*.json
+# Physics assets
+physics/models
+
+# Data
+data/*.log
