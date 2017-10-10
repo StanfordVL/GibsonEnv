@@ -133,7 +133,7 @@ __global__ void render_depth(float *points3d_polar, unsigned int * depth_render)
   {
      int iw = x;
      int ih = y + j;
-     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] - M_PI)/(2*M_PI) * w - 0.5);
+     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
      int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
      int this_depth = (int)(100 * points3d_polar[(ih * w + iw) * 3 + 0]);
      atomicMin(&depth_render[(ty * w + tx)] , this_depth);
@@ -153,7 +153,7 @@ __global__ void render_final(float *points3d_polar, unsigned int * depth_render,
   {
      int iw = x;
      int ih = y + j;
-     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] - M_PI)/(2*M_PI) * w - 0.5);
+     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
      int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
      int this_depth = (int)(100 * points3d_polar[(ih * w + iw) * 3 + 0]);
      if (this_depth == depth_render[(ty * w + tx)]) {
