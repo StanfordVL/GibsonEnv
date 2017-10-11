@@ -9,12 +9,14 @@ Install opencv, pytorch and others
 conda install -c menpo opencv -y
 conda install pytorch torchvision cuda80 -c soumith
 conda install progressbar pillow
+pip install zmq
 ```
 
-Build cython dependencies
+Build cpp, cython dependencies
 ```shell
 bash build.sh
 bash build_cuda.sh
+python setup.py build_ext --inplace
 ```
 
 Download the necessary helper files

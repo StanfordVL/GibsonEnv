@@ -2,6 +2,9 @@
 
 This folder has the source code for environment bundle, which includes viewer renderer, multichannel renderer and physics simulation engine
 
+### Requirement
+You need CUDA 8.0 in order to run the environment.
+
 ### Run everything at once
 Open three different shells, and follow the sequence
 ```shell
