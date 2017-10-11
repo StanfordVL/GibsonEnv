@@ -201,9 +201,9 @@ class ViewDataSet3D(data.Dataset):
         poses_relative = []
 
         for pose_i, item in enumerate(img_poses):
-            print('source_pose %d' % pose_i, item)
-            print('target_pose', target_pose)
-            print(img_paths[pose_i])
+            #print('source_pose %d' % pose_i, item)
+            #print('target_pose', target_pose)
+            #print(img_paths[pose_i])
             pose_i = pose_i + 1
             relative = np.dot(inv(target_pose), item)
             poses_relative.append(torch.from_numpy(relative))

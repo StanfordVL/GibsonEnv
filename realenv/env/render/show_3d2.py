@@ -262,21 +262,20 @@ class PCRenderer:
         t = t1-t0
         self.fps = 1/t
 
-    def renderOffScreenSetup(self):
+    def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling
         pos, quat_wxyz = self._getViewerAbsolutePose(self.target_poses[0])
         pos       = pos.tolist()
         quat_wxyz = quat_wxyz.tolist()
-        assert(self._sendInitialPoseToPhysics([pos, quat_wxyz]))
+        return pos, quat_wxyz
 
-    def renderOffScreen(self):
+    def renderOffScreen(self, pose):
         showsz = self.target.shape[0]
         show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
         target_depth   = np.zeros((showsz,showsz * 2)).astype(np.int32)
         
         ## Query physics engine to get [x, y, z, roll, pitch, yaw]
-        print("waiting for physics")
-        new_pos, new_quat = self._getPoseOrientationFromPhysics()
+        new_pos, new_quat = pose[0], pose[1]
         print("receiving", new_pos, new_quat)
         self.x, self.y, self.z = new_pos
         self.quat = new_quat
@@ -418,7 +417,7 @@ def sync_coords():
     socket_mist.send(new_coords)
     print("Sent reordering")
     message = socket_mist.recv()
-    print("msg")
+
 
 if __name__=='__main__':
 

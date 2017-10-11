@@ -23,6 +23,9 @@ class SimpleEnv(gym.Env):
     #self.p_render  = subprocess.Popen()
     self.r_physics = self._setupPhysics()
     self.r_visuals = self._setupVisuals()
+
+    pose_init = self.r_visuals.renderOffScreenInitialPose()
+    self.r_physics.initialize(pose_init)
     
   def _setupVisuals(self):
     d = ViewDataSet3D(root=self.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
@@ -62,7 +65,6 @@ class SimpleEnv(gym.Env):
     sync_coords()
     
     renderer = PCRenderer(5556, sources, source_depths, target, rts)
-    renderer.renderOffScreenSetup()
     return renderer
 
   def _setupPhysics(self):
@@ -76,8 +78,8 @@ class SimpleEnv(gym.Env):
 
   def _step(self, action):
     #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
-    self.r_physics.renderOffScreen(action)
-    print(self.r_visuals.renderOffScreen().size)
+    pose = self.r_physics.renderOffScreen(action)
+    print(self.r_visuals.renderOffScreen(pose).size)
     return
 
   def _reset(self):
