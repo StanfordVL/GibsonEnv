@@ -1,6 +1,7 @@
 from __future__ import print_function
 import numpy as np
 import ctypes as ct
+import os
 import cv2
 import sys
 import torch
@@ -20,8 +21,15 @@ from multiprocessing.dummy import Process
 from datasets import ViewDataSet3D
 from completion import CompletionNet
 
-cuda_pc = np.ctypeslib.load_library('render_cuda_f','.')
-coords  = np.load('coord.npy')
+
+file_dir = os.path.dirname(__file__)
+cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
+coords  = np.load(os.path.join(file_dir, 'coord.npy'))
+context_mist = zmq.Context()
+print("Connecting to hello world server...")
+socket_mist = context_mist.socket(zmq.REQ)
+socket_mist.connect("tcp://localhost:5555")
+
 
 class InImg(object):
     def __init__(self):
@@ -71,6 +79,7 @@ class PCRenderer:
         self.imgs = imgs
         self.depths = depths
         self.target = target
+        self.model = None
 
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
@@ -261,7 +270,7 @@ class PCRenderer:
         assert(self._sendInitialPoseToPhysics([pos, quat_wxyz]))
 
     def renderOffScreen(self):
-        showsz = target.shape[0]
+        showsz = self.target.shape[0]
         show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
         target_depth   = np.zeros((showsz,showsz * 2)).astype(np.int32)
         
@@ -292,7 +301,7 @@ class PCRenderer:
         depths_top5 = [self.depths[i] for i in top5]
         relative_poses_top5 = [relative_poses[i] for i in top5]
         
-        self.render(imgs_top5, depths_top5, cpose.astype(np.float32), model, relative_poses_top5, self.target_poses[0], show, target_depth, depth_buffer)
+        self.render(imgs_top5, depths_top5, cpose.astype(np.float32), self.model, relative_poses_top5, self.target_poses[0], show, target_depth, depth_buffer)
 
         if self.overlay:
             show_out = (show/2 + self.target/2).astype(np.uint8)
@@ -399,6 +408,18 @@ def show_target(target_img):
     show_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
     cv2.imshow('target', show_rgb)
 
+def sync_coords():
+    print(coords.flatten().dtype)
+    with Profiler("Transform coords"):
+        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
+    print(coords.shape)
+    print("Count: ", coords.flatten().astype(np.uint32).size )
+    print("elem [2,3,5]: ", coords[4][2][1] )
+    socket_mist.send(new_coords)
+    print("Sent reordering")
+    message = socket_mist.recv()
+    print("msg")
+
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
@@ -450,23 +471,8 @@ if __name__=='__main__':
     # print(source_depth)
     print(sources[0].shape, source_depths[0].shape)
     
-    context_mist = zmq.Context()
-    print("Connecting to hello world server...")
-
-    socket_mist = context_mist.socket(zmq.REQ)
-    socket_mist.connect("tcp://localhost:5555")
     
-    print(coords.flatten().dtype)
-    with Profiler("Transform coords"):
-        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
-    print(coords.shape)
-    print("Count: ", coords.flatten().astype(np.uint32).size )
-    print("elem [2,3,5]: ", coords[4][2][1] )
-    socket_mist.send(new_coords)
-    print("Sent reordering")
-    message = socket_mist.recv()
-    print("msg")
-
+    sync_coords()
     
     show_target(target)
 
