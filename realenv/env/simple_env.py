@@ -6,6 +6,7 @@ from render.datasets import ViewDataSet3D
 from render.show_3d2 import PCRenderer, sync_coords
 import numpy as np
 import zmq
+import time
 
 class SimpleEnv(gym.Env):
   metadata = {'render.modes': ['human']}
@@ -14,22 +15,22 @@ class SimpleEnv(gym.Env):
     cmd_channel = "./channels/depth_render/depth_render --datapath data -m 11HB6XZSh1Q"
     cmd_physics = "python show_3d2.py --datapath ../data/ --idx 10"
     cmd_render  = ""
+    self.datapath = "data"
+    self.model_id = "11HB6XZSh1Q"
     #self.p_channel = subprocess.Popen(cmd_channel.split(), stdout=subprocess.PIPE)
     #self.p_physics = subprocess.Popen()
     #self.p_render  = subprocess.Popen()
+    self.r_visuals = self._setupRenderer()
+    #self.r_physics  = self._setupPhysics()
 
-    self.p_renderer = self._setupRenderer()
-
-    
   def _setupRenderer(self):
-    datapath = "data"
-    model_id = "11HB6XZSh1Q"
-    d = ViewDataSet3D(root=datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
+    d = ViewDataSet3D(root=self.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
+
     scene_dict = dict(zip(d.scenes, range(len(d.scenes))))
-    if not model_id in scene_dict.keys():
+    if not self.model_id in scene_dict.keys():
         print("model not found")
     else:
-        scene_id = scene_dict[model_id]
+        scene_id = scene_dict[self.model_id]
     uuids, rts = d.get_scene_info(scene_id)
     #print(uuids, rts)
     targets = []
@@ -69,7 +70,7 @@ class SimpleEnv(gym.Env):
 
   def _step(self, action):
     #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
-    print(self.p_renderer.renderOffScreen().size)
+    print(self.r_visuals.renderOffScreen().size)
     return
 
   def _reset(self):
@@ -81,11 +82,15 @@ class SimpleEnv(gym.Env):
   def _end(self):
     #self.p_channel.kill()
     #self.p_physics.kill()
-    #self.p_render.kill()
+    #self.r_visuals.kill()
     return
 
 
 if __name__ == "__main__":
   env = SimpleEnv()
   while True:
+    t0 = time.time()
     env._step({})
+    t1 = time.time()
+    t = t1-t0
+    print('fps', 1/t)
