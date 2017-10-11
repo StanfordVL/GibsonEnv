@@ -47,12 +47,22 @@ class PhysRenderer(object):
         #objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
         self.objectUid = p.loadURDF(os.path.join(file_dir, "models/husky.urdf"), globalScaling = 0.8)
         #p.changeVisualShape(objectUid, -1, rgbaColor=[1, 1, 1, 0.5])
-
+        '''
         pos, quat_xyzw = self._getInitialPositionOrientation()
         v_t = 1             # 1m/s max speed
         v_r = np.pi/5       # 36 degrees/s
         self.cart = PhysicsObject(self.objectUid, p, pos, quat_xyzw, v_t, v_r, framePerSec)
 
+        print("Generated cart", self.objectUid)
+        #p.setTimeStep(1.0/framePerSec)
+        p.setTimeStep(1.0/settings.STEPS_PER_SEC)
+        '''
+
+    def initialize(self, pose):
+        pos, quat_xyzw = pose[0], pose[1]
+        v_t = 1             # 1m/s max speed
+        v_r = np.pi/5       # 36 degrees/s
+        self.cart = PhysicsObject(self.objectUid, p, pos, quat_xyzw, v_t, v_r, self.framePerSec)
         print("Generated cart", self.objectUid)
         #p.setTimeStep(1.0/framePerSec)
         p.setTimeStep(1.0/settings.STEPS_PER_SEC)
@@ -93,11 +103,8 @@ class PhysRenderer(object):
     def renderOffScreen(self, action, restart=False):
         ## Execute one frame
         self.cart.parseActionAndUpdate(action)
-        self._sendPoseToViewPort(self.cart.getViewPosAndOrientation())
-        
-        self._stepNsteps(int(settings.STEPS_PER_SEC/framePerSec), self.cart)
-        self.cart.getUpdateFromKeyboard(restart)
-        self._stepNsteps(int(settings.STEPS_PER_SEC/framePerSec), self.cart)
+
+        self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
         if self.debug_mode:
             cameraDist = p.readUserDebugParameter(self.debug_sliders['dist'])
             cameraYaw  = p.readUserDebugParameter(self.debug_sliders['yaw'])
@@ -106,6 +113,8 @@ class PhysRenderer(object):
             projMatrix = p.computeProjectionMatrix(-0.1, 0.1, -0.1, 0.1, 0.1, 128)
             p.getCameraImage(256, 256, viewMatrix = viewMatrix, projectionMatrix = projMatrix)
             p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, [0, 0, 0])
+        pos_xyz, quat_wxyz = self.cart.getViewPosAndOrientation()
+        return pos_xyz, quat_wxyz
 
     def renderToScreen(self):
         startttime = time.time()
@@ -116,8 +125,8 @@ class PhysRenderer(object):
             self._sendPoseToViewPort(self.cart.getViewPosAndOrientation())
             
             simutime = time.time()
-            print('time step', 1.0/settings.STEPS_PER_SEC, 'stepping', settings.STEPS_PER_SEC/framePerSec)
-            self._stepNsteps(int(settings.STEPS_PER_SEC/framePerSec), self.cart)
+            print('time step', 1.0/settings.STEPS_PER_SEC, 'stepping', settings.STEPS_PER_SEC/self.framePerSec)
+            self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
 
             print("passed time", time.time() - lasttime, "simulation time", time.time() - simutime)
             lasttime = time.time()
@@ -125,7 +134,7 @@ class PhysRenderer(object):
             if lasttime - startttime > 5:
                 startttime = lasttime
                 self.cart.getUpdateFromKeyboard(restart=True)
-                self._stepNsteps(int(settings.STEPS_PER_SEC/framePerSec), self.cart)
+                self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
             if self.debug_mode:
                 cameraDist = p.readUserDebugParameter(self.debug_sliders['dist'])
                 cameraYaw  = p.readUserDebugParameter(self.debug_sliders['yaw'])
