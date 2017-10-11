@@ -4,6 +4,7 @@ from gym.utils import seeding
 import subprocess
 from render.datasets import ViewDataSet3D
 from render.show_3d2 import PCRenderer, sync_coords
+from physics.render_physics import PhysRenderer
 import numpy as np
 import zmq
 import time
@@ -20,10 +21,10 @@ class SimpleEnv(gym.Env):
     #self.p_channel = subprocess.Popen(cmd_channel.split(), stdout=subprocess.PIPE)
     #self.p_physics = subprocess.Popen()
     #self.p_render  = subprocess.Popen()
-    self.r_visuals = self._setupRenderer()
-    #self.r_physics  = self._setupPhysics()
-
-  def _setupRenderer(self):
+    self.r_physics = self._setupPhysics()
+    self.r_visuals = self._setupVisuals()
+    
+  def _setupVisuals(self):
     d = ViewDataSet3D(root=self.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
 
     scene_dict = dict(zip(d.scenes, range(len(d.scenes))))
@@ -64,12 +65,18 @@ class SimpleEnv(gym.Env):
     renderer.renderOffScreenSetup()
     return renderer
 
+  def _setupPhysics(self):
+    framePerSec = 13
+    renderer = PhysRenderer(self.datapath, self.model_id, framePerSec)
+    #renderer.renderToScreen()
+    return renderer
 
   def testShow3D(self):
     return
 
   def _step(self, action):
     #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
+    self.r_physics.renderOffScreen(action)
     print(self.r_visuals.renderOffScreen().size)
     return
 

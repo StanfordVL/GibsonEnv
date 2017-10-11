@@ -151,11 +151,13 @@ class PhysicsObject():
 		#self.parseActionAndUpdate()
 
 
-	def parseActionAndUpdate(self):
+	def parseActionAndUpdate(self, action=None):
 		""" Update position: because the object's rotation
 		changes every time, the position needs to be updated
 		by delta
 		"""
+		if action:
+			self.action = action
 		delta_xyz = np.array([0, 0, 0], dtype=float)
 		if self.action['restart']:
 			self._restartLocationOrientation()
