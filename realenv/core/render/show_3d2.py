@@ -49,7 +49,7 @@ class ViewRenderer(object):
 
 
 class PCRenderer:
-    def __init__(self, port):
+    def __init__(self, port, imgs, depths, target, target_poses):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -67,6 +67,10 @@ class PCRenderer:
         self._context_phys = zmq.Context()
         self.socket_phys = self._context_phys.socket(zmq.REP)
         self.socket_phys.connect("tcp://localhost:%d" % port)
+        self.target_poses = target_poses
+        self.imgs = imgs
+        self.depths = depths
+        self.target = target
 
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
@@ -249,8 +253,57 @@ class PCRenderer:
         t = t1-t0
         self.fps = 1/t
 
+    def renderOffScreenSetup(self):
+        ## TODO (hzyjerry): error handling
+        pos, quat_wxyz = self._getViewerAbsolutePose(self.target_poses[0])
+        pos       = pos.tolist()
+        quat_wxyz = quat_wxyz.tolist()
+        assert(self._sendInitialPoseToPhysics([pos, quat_wxyz]))
+
     def renderOffScreen(self):
-        return
+        showsz = target.shape[0]
+        show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
+        target_depth   = np.zeros((showsz,showsz * 2)).astype(np.int32)
+        
+        ## Query physics engine to get [x, y, z, roll, pitch, yaw]
+        print("waiting for physics")
+        new_pos, new_quat = self._getPoseOrientationFromPhysics()
+        print("receiving", new_pos, new_quat)
+        self.x, self.y, self.z = new_pos
+        self.quat = new_quat
+
+        v_cam2world = self.target_poses[0]
+        v_cam2cam   = self._getViewerRelativePose()
+        cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(self.rotation_const))
+        
+        ## Entry point for change of view 
+        ## Optimization
+        depth_buffer = np.zeros(self.imgs[0].shape[:2], dtype=np.float32)
+        
+        relative_poses = np.copy(self.target_poses)
+        for i in range(len(relative_poses)):
+            relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
+        
+        poses_after = [cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
+        pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
+
+        top5 = (np.argsort(pose_after_distance))[:5]
+        imgs_top5 = [self.imgs[i] for i in top5]
+        depths_top5 = [self.depths[i] for i in top5]
+        relative_poses_top5 = [relative_poses[i] for i in top5]
+        
+        self.render(imgs_top5, depths_top5, cpose.astype(np.float32), model, relative_poses_top5, self.target_poses[0], show, target_depth, depth_buffer)
+
+        if self.overlay:
+            show_out = (show/2 + self.target/2).astype(np.uint8)
+        elif self.show_depth:
+            show_out = (target_depth * 10).astype(np.uint8)
+        else:
+            show_out = show
+
+        show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
+        return show_rgb
+
 
     def renderToScreen(self, imgs, depths, poses, model, target, tdepth, target_poses):
         cv2.namedWindow('show3d')
@@ -264,7 +317,7 @@ class PCRenderer:
         imgv  = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
         maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
         
-        ## TODO: error handling
+        ## TODO (hzyjerry): error handling
         pos, quat_wxyz = self._getViewerAbsolutePose(target_poses[0])
         pos       = pos.tolist()
         quat_wxyz = quat_wxyz.tolist()
@@ -279,12 +332,11 @@ class PCRenderer:
             pos  = utils.mat_to_posi_xyz(p).tolist()
             quat = utils.mat_to_quat_xyzw(p).tolist()
             '''
-
-            #world_cpose = 
             
             ## Query physics engine to get [x, y, z, roll, pitch, yaw]
             print("waiting for physics")
             new_pos, new_quat = self._getPoseOrientationFromPhysics()
+            print("receiving", new_pos, new_quat)
             self.x, self.y, self.z = new_pos
             self.quat = new_quat
 
@@ -299,11 +351,6 @@ class PCRenderer:
             '''
 
             #self.changed = True
-
-            #if self.changed:
-            #new_quat = utils.mat_to_quat_xyzw(world_cpose)
-            #new_quat = utils.z_up_to_y_up(utils.quat_xyzw_to_wxyz(new_quat))
-            #new_posi = utils.mat_to_posi_xyz(world_cpose)
 
             ## Entry point for change of view 
             ## Optimization
@@ -423,8 +470,11 @@ if __name__=='__main__':
     
     show_target(target)
 
-    renderer = PCRenderer(5556)
-    renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
+    renderer = PCRenderer(5556, sources, source_depths, target, rts)
+    #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
+    renderer.renderOffScreenSetup()
+    while True:
+        print(renderer.renderOffScreen().size)
 
 
 
