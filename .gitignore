@@ -3,10 +3,32 @@
 *.so
 *.egg-info/
 .DS_Store
-data/
+*.pth
+src/
 pw
 *.o
 *.ipynb
 *.out
-*.pth
 npz/
+11HB6XZSh1Q/
+11HB6XZSh1Q*/
+*.npy
+dev/transfer.c
+*.jpg
+*.png
+*.bmp
+*.bak
+*.zip
+
+
+# vscode
+.vscode/
+
+# Physics
+physics/*.txt
+physics/*.json
+# Physics assets
+physics/models
+
+# Data
+data/*.log
