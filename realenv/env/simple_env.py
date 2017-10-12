@@ -11,6 +11,7 @@ import time
 import os
 import random
 import progressbar
+from realtime_plot import RewardDisplayer
 
 class SimpleEnv(gym.Env):
   metadata = {'render.modes': ['human']}
@@ -36,6 +37,7 @@ class SimpleEnv(gym.Env):
     except Exception as e:
       print(e)
       self._end()
+    self.r_displayer = RewardDisplayer()
     
   def _setupVisuals(self):
     d = ViewDataSet3D(root=self.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
@@ -95,7 +97,9 @@ class SimpleEnv(gym.Env):
   def _step(self, action):
     #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
     pose = self.r_physics.renderOffScreen(action)
-    return self.r_visuals.renderToScreen(pose), random.randrange(-8, 20)
+    reward = random.randrange(-8, 20)
+    self.r_displayer.add_reward(reward)
+    return self.r_visuals.renderToScreen(pose), reward
 
   def _reset(self):
     return

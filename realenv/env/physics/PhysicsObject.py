@@ -27,8 +27,8 @@ class PhysicsObject():
 		self.fps = float(fps)
 		self.action = self._createDefaultAction()
 
-		#self.camera_offset  = np.array([0, 0, 0.8])
-		self.camera_offset  = np.array([0, 0, 0])
+		self.camera_offset  = np.array([0, 0, 0.8])
+		#self.camera_offset  = np.array([0, 0, 0])
 
 		self.pos_init_xyz   = np.array(pos)
 		self.quat_init_xyzw = np.array(quat)
