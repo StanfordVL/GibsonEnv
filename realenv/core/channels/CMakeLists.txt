@@ -13,7 +13,7 @@ link_directories(${CUDA_LIBRARY_DIRS})
 # set(CUDA_SEPARABLE_COMPILATION ON)
 # set(CUDA_ARCH -gencode arch=compute_35,code=sm_35)
 # set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${CUDA_ARCH} -Xcompiler -fPIC -shared -o)
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} "-std=c++11")
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} " --Wno-deprecated-gpu-targets -std=c++11")
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
     message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
@@ -194,5 +194,4 @@ add_custom_command(
    TARGET depth_render POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/depth_render${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
-
 
