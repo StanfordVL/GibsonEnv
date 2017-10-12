@@ -191,7 +191,7 @@ __global__ void render_depth(float *points3d_polar, unsigned int * depth_render)
 
 
 
-__global__ void render_final(float *points3d_polar, int * depth_render, int * img,  int * render)
+__global__ void render_final(float *points3d_polar, float * depth_render, int * img,  int * render)
 {
  int x = blockIdx.x * TILE_DIM + threadIdx.x;
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
@@ -219,7 +219,7 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
      
      
      int this_depth = (int)(12800/128 * points3d_polar[(ih * w + iw) * 3 + 0]);
-     int delta = this_depth - depth_render[(ty * w + tx)];
+     int delta = this_depth - (int)(100 * depth_render[(ty * w + tx)]);
      
      int txmin = min(min(txlu, txrd), min(txru, txld));
      int txmax = max(max(txlu, txrd), max(txru, txld));
@@ -242,7 +242,7 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
 
 extern "C"{
     
-void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, int * depth_render){
+void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, float * depth_render){
     //int ih, iw, i, ic;
     printf("inside cuda code %d\n", depth);
     const int nx = w;
@@ -255,7 +255,7 @@ void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, 
     
     unsigned char *d_img, *d_render, *d_render_all;
     float *d_depth, *d_pose;
-    int *d_depth_render;
+    float *d_depth_render;
     float *d_3dpoint, *d_3dpoint_after;
     
     int *d_render2, *d_img2;
@@ -264,13 +264,13 @@ void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, 
     cudaMalloc((void **)&d_render, frame_mem_size);
     cudaMalloc((void **)&d_render_all, frame_mem_size * n);
     cudaMalloc((void **)&d_depth, depth_mem_size);
-    cudaMalloc((void **)&d_depth_render, nx * ny * sizeof(int));
+    cudaMalloc((void **)&d_depth_render, nx * ny * sizeof(float));
     cudaMalloc((void **)&d_3dpoint, depth_mem_size * 4);
     cudaMalloc((void **)&d_3dpoint_after, depth_mem_size * 4);
     cudaMalloc((void **)&d_pose, sizeof(float) * 16);
     cudaMalloc((void **)&d_render2, nx * ny * sizeof(int));
     cudaMalloc((void **)&d_img2, nx * ny * sizeof(int));
-    cudaMemcpy(d_depth_render, depth_render, nx * ny * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_depth_render, depth_render, nx * ny * sizeof(float), cudaMemcpyHostToDevice);
     
     cudaMemset(d_render_all, 0, frame_mem_size * n);
     

@@ -378,35 +378,22 @@ class PCRenderer:
                         )
             '''
             with Profiler("Render pointcloud"):
-                scale = 100.  # 512
-                target_depth = np.int32(opengl_arr * scale)
-                show[:] = 0
-                
-                show_all = np.zeros((1024, 2048, 3)).astype(np.uint8)
+                scale = 100.
                 
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
                 
-                
-                #depth_test = np.array(depths).flatten()
-                    
                 dll.render(ct.c_int(len(imgs)),                      
                            ct.c_int(imgs[0].shape[0]),
                            ct.c_int(imgs[0].shape[1]),
                            imgs.ctypes.data_as(ct.c_void_p),
                            depths.ctypes.data_as(ct.c_void_p),
                            np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                           show_all.ctypes.data_as(ct.c_void_p),
-                           target_depth.ctypes.data_as(ct.c_void_p)
+                           show.ctypes.data_as(ct.c_void_p),
+                           opengl_arr.ctypes.data_as(ct.c_void_p)
                           )
                 
-                #show_all_tensor = Variable(torch.from_numpy(show_all).cuda()).transpose(3,2).transpose(2,1)
-                #print(show_all_tensor.size())
-                #show_all = show_all_tensor.cpu().data.numpy().transpose(0,2,3,1)
-                
-                show[:] = show_all
-        
         threads = [
             Process(target=render_pc, args=(opengl_arr,)),
             Process(target=render_depth, args=(opengl_arr,))]
@@ -525,7 +512,6 @@ class PCRenderer:
                 self.changed = True
 
                 
-            
             if self.changed:
                 new_quat = mat_to_quat_xyzw(world_cpose)
                 new_quat = z_up_to_y_up(quat_xyzw_to_wxyz(new_quat))
