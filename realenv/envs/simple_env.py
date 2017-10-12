@@ -32,8 +32,9 @@ class SimpleEnv(gym.Env):
 
       pose_init = self.r_visuals.renderOffScreenInitialPose()
       self.r_physics.initialize(pose_init)
-      #self.r_visuals.renderToScreenSetup()
-    except Exception:
+      self.r_visuals.renderToScreenSetup()
+    except Exception as e:
+      print(e)
       self._end()
     
   def _setupVisuals(self):
@@ -85,6 +86,7 @@ class SimpleEnv(gym.Env):
     framePerSec = 13
     renderer = PhysRenderer(self.datapath, self.model_id, framePerSec)
     #renderer.renderToScreen()
+    print('finish setup physics')
     return renderer
 
   def testShow3D(self):
@@ -93,7 +95,7 @@ class SimpleEnv(gym.Env):
   def _step(self, action):
     #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
     pose = self.r_physics.renderOffScreen(action)
-    return self.r_visuals.renderOffScreen(pose), random.randrange(-8, 20)
+    return self.r_visuals.renderToScreen(pose), random.randrange(-8, 20)
 
   def _reset(self):
     return
