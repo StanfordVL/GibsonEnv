@@ -42,15 +42,9 @@ class PhysRenderer(object):
         #boundaryUid = p.createVisualShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], rgbaColor = [1, 0, 0, 0.5], specularColor=[0.4, 4.0])
 
         print("Exterior boundary", boundaryUid)
-        p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0, 0, 0.5])
+        p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0.5, 0.5, 0.7])
         print("visual shape", p.getVisualShapeData(boundaryUid))
         p.createMultiBody(0,0)
-
-        #viewMatrix = p.computeViewMatrix([0, 0, -1], [0, 0, 0], [0, 1, 0])
-        viewMatrix = p.computeViewMatrixFromYawPitchRoll([0, 0, -2], 10, 0, 90, 0, 2)
-        print(viewMatrix)
-        projMatrix = p.computeProjectionMatrix(-0.01, 0.01, -0.01, 0.01, 0.01, 128)
-        p.getCameraImage(256, 256, viewMatrix = viewMatrix, projectionMatrix = projMatrix)
         
         p.setGravity(0,0,-10)
         p.setRealTimeSimulation(0)
@@ -59,6 +53,12 @@ class PhysRenderer(object):
         file_dir = os.path.dirname(__file__)
         #objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
         self.objectUid = p.loadURDF(os.path.join(file_dir, "models/husky.urdf"), globalScaling = 0.8)
+
+        #viewMatrix = p.computeViewMatrix([0, 0, -1], [0, 0, 0], [0, 1, 0])
+        viewMatrix = p.computeViewMatrixFromYawPitchRoll([0, 0, 0], 10, 0, 90, 0, 2)
+        print(viewMatrix)
+        projMatrix = p.computeProjectionMatrix(-0.01, 0.01, -0.01, 0.01, 0.01, 128)
+        p.getCameraImage(256, 256, viewMatrix = viewMatrix, projectionMatrix = projMatrix)
 
     def initialize(self, pose):
         pos, quat_xyzw = pose[0], pose[1]
