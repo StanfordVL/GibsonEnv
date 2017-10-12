@@ -17,15 +17,15 @@ from numpy import sin, cos
 
 class PhysRenderer(object):
 
-    def __init__(self, datapath, model_id, framePerSec):
+    def __init__(self, datapath, model_id, framePerSec, debug):
         print("physics renderer", datapath)
         context = zmq.Context()
         self.visn_socket = context.socket(zmq.REQ)
         self.visn_socket.bind("tcp://*:5556")
-        self.debug_mode = True
+        
         self.debug_sliders = {}
 
-        if self.debug_mode:
+        if debug:
             p.connect(p.GUI)
             self._startDebugRoomMap()
         else:
@@ -92,9 +92,9 @@ class PhysRenderer(object):
             pObject.parseActionAndUpdate()
 
     def _startDebugRoomMap(self):
-        cameraDistSlider  = p.addUserDebugParameter("Distance",0,10,7)
-        cameraYawSlider   = p.addUserDebugParameter("Camera Yaw",-180,180,0)
-        cameraPitchSlider = p.addUserDebugParameter("Camera Pitch",-90,90,0)
+        cameraDistSlider  = p.addUserDebugParameter("Distance",0,15,4)
+        cameraYawSlider   = p.addUserDebugParameter("Camera Yaw",-180,180,-45)
+        cameraPitchSlider = p.addUserDebugParameter("Camera Pitch",-90,90,-30)
         self.debug_sliders = {
             'dist' :cameraDistSlider,
             'yaw'  : cameraYawSlider,
@@ -108,40 +108,23 @@ class PhysRenderer(object):
 
         self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
         pos_xyz, quat_wxyz = self.cart.getViewPosAndOrientation()
-        if self.debug_mode:
-            cameraDist = p.readUserDebugParameter(self.debug_sliders['dist'])
-            cameraYaw  = p.readUserDebugParameter(self.debug_sliders['yaw'])
-            cameraPitch = p.readUserDebugParameter(self.debug_sliders['pitch'])
-            p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
-            p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, pos_xyz)
         return pos_xyz, quat_wxyz
 
-    def renderToScreen(self):
-        startttime = time.time()
-        lasttime = time.time()
-        while (1):
-            ## Execute one frame
-            self.cart.getUpdateFromKeyboard()
-            self._sendPoseToViewPort(self.cart.getViewPosAndOrientation())
-            
-            simutime = time.time()
-            print('time step', 1.0/settings.STEPS_PER_SEC, 'stepping', settings.STEPS_PER_SEC/self.framePerSec)
-            self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
+    def renderToScreen(self, action, restart=False):
+        
+        self.cart.getUpdateFromKeyboard(restart=restart)
+        #self.cart.parseActionAndUpdate(action)
 
-            print("passed time", time.time() - lasttime, "simulation time", time.time() - simutime)
-            lasttime = time.time()
-            print("last time", lasttime, "start time", startttime)
-            if lasttime - startttime > 5:
-                startttime = lasttime
-                self.cart.getUpdateFromKeyboard(restart=True)
-                self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
-            if self.debug_mode:
-                cameraDist = p.readUserDebugParameter(self.debug_sliders['dist'])
-                cameraYaw  = p.readUserDebugParameter(self.debug_sliders['yaw'])
-                cameraPitch = p.readUserDebugParameter(self.debug_sliders['pitch'])
-                p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
-                p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, [0, 0, 0])
-            time.sleep(0.01)
+        self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
+        pos_xyz, quat_wxyz = self.cart.getViewPosAndOrientation()
+        
+        cameraDist = p.readUserDebugParameter(self.debug_sliders['dist'])
+        cameraYaw  = p.readUserDebugParameter(self.debug_sliders['yaw'])
+        cameraPitch = p.readUserDebugParameter(self.debug_sliders['pitch'])
+        p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
+        p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, pos_xyz)
+        #time.sleep(0.01)
+        return pos_xyz, quat_wxyz
 
     ## DEPRECATED
     def _getCollisionFromUpdate(self):

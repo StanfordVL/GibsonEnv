@@ -298,8 +298,8 @@ class PCRenderer:
     def renderToScreenSetup(self):
         cv2.namedWindow('show3d')
         cv2.namedWindow('target depth')
-        cv2.moveWindow('show3d',0,0)
-        cv2.moveWindow('target depth', 0, 2048)
+        cv2.moveWindow('show3d',1140,0)
+        cv2.moveWindow('target depth', 1140, 2048)
         cv2.setMouseCallback('show3d',self._onmouse)
 
     def renderToScreen(self, pose):
@@ -309,8 +309,6 @@ class PCRenderer:
         imgv  = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
         maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
         
-        cv2.namedWindow('show3d')
-        cv2.moveWindow('show3d',0,0)
         show_rgb = self.renderOffScreen(pose)
         cv2.putText(show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,showsz-15),0,0.5,(255,255,255))            
         cv2.putText(show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
@@ -324,7 +322,7 @@ class PCRenderer:
 
 def show_target(target_img):
     cv2.namedWindow('target')
-    cv2.moveWindow('target',0,256 + 50)
+    cv2.moveWindow('target',1032,256 + 50)
     show_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
     cv2.imshow('target', show_rgb)
 

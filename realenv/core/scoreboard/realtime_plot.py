@@ -83,7 +83,7 @@ class RewardDisplayer:
         font0 = FontProperties()
         gs = gridspec.GridSpec(12, 3)
 
-        fig = plt.figure(figsize=(10, 8))
+        fig = plt.figure(figsize=(10.25, 8))
         
         self.axes_text = plt.subplot(gs[:2, :], facecolor='gainsboro')
         self.axes_full = plt.subplot(gs[2:9, :], facecolor='gainsboro')
