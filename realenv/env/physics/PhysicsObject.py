@@ -27,8 +27,8 @@ class PhysicsObject():
 		self.fps = float(fps)
 		self.action = self._createDefaultAction()
 
-		#self.camera_offset  = np.array([0, 0, 0.8])
-		self.camera_offset  = np.array([0, 0, 0])
+		self.camera_offset  = np.array([0, 0, 0.8])
+		#self.camera_offset  = np.array([0, 0, 0])
 
 		self.pos_init_xyz   = np.array(pos)
 		self.quat_init_xyzw = np.array(quat)
@@ -113,14 +113,15 @@ class PhysicsObject():
 
 
 
-	def getUpdateFromKeyboard(self):
+	def getUpdateFromKeyboard(self, restart=False):
 		# Special Controls: B3G_RIGHT_ARROW, B3G_LEFT_ARROW,
 		# 	B3G_DOWN_ARROW, B3G_UP_ARROW
 
 		self.action = self._createDefaultAction()
 		keys = self.sim.getKeyboardEvents()
 
-		if (ord('r') in keys):
+
+		if (ord('r') in keys or restart):
 			self.action['restart'] = True
 		if (ord('d') in keys):
 			self.action['right'] = True
@@ -150,11 +151,15 @@ class PhysicsObject():
 		#self.parseActionAndUpdate()
 
 
-	def parseActionAndUpdate(self):
+	def parseActionAndUpdate(self, action=None):
 		""" Update position: because the object's rotation
 		changes every time, the position needs to be updated
 		by delta
 		"""
+		if action:
+			self.action = self._createDefaultAction()
+			for k in action.keys():
+				self.action[k] = action[k]
 		delta_xyz = np.array([0, 0, 0], dtype=float)
 		if self.action['restart']:
 			self._restartLocationOrientation()

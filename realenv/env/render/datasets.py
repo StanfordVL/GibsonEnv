@@ -36,13 +36,11 @@ def depth_loader(path):
     return img
 
 class ViewDataSet3D(data.Dataset):
-
     def __init__(self, root, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
         print ('Processing the data:')
-        self.root = root.rstrip('/')
-        #print(self.root)
-        self.fofn = os.path.basename(self.root) + '_fofn'+str(int(train))+'.pkl'
-        self.train = train
+        self.root   = root.rstrip('/')
+        self.fofn   = os.path.basename(self.root) + '_fofn'+str(int(train))+'.pkl'
+        self.train  = train
         self.loader = loader
         self.seqlen = seqlen
         self.transform = transform
@@ -201,9 +199,9 @@ class ViewDataSet3D(data.Dataset):
         poses_relative = []
 
         for pose_i, item in enumerate(img_poses):
-            print('source_pose %d' % pose_i, item)
-            print('target_pose', target_pose)
-            print(img_paths[pose_i])
+            #print('source_pose %d' % pose_i, item)
+            #print('target_pose', target_pose)
+            #print(img_paths[pose_i])
             pose_i = pose_i + 1
             relative = np.dot(inv(target_pose), item)
             poses_relative.append(torch.from_numpy(relative))

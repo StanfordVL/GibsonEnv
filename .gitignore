@@ -29,6 +29,3 @@ physics/*.txt
 physics/*.json
 # Physics assets
 physics/models
-
-# Data
-data/*.log
