@@ -17,7 +17,7 @@ from numpy import sin, cos
 
 class PhysRenderer(object):
 
-    def __init__(self, datapath, model_id, framePerSec, debug):
+    def __init__(self, datapath, model_id, framePerSec, debug, human):
         print("physics renderer", datapath)
         context = zmq.Context()
         self.visn_socket = context.socket(zmq.REQ)
@@ -61,6 +61,7 @@ class PhysRenderer(object):
         p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
 
         self.target_pos = np.array([-4.35, -1.71, 0.8])
+        self.human = human
 
     def initialize(self, pose):
         pos, quat_xyzw = pose[0], pose[1]
@@ -118,8 +119,10 @@ class PhysRenderer(object):
 
     def renderToScreen(self, action, restart=False):
         
-        #self.cart.getUpdateFromKeyboard(restart=restart)
-        self.cart.parseActionAndUpdate(action)
+        if self.human:
+            self.cart.getUpdateFromKeyboard(restart=restart)
+        else:
+            self.cart.parseActionAndUpdate(action)
 
         self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
         pos_xyz, quat_wxyz = self.cart.getViewPosAndOrientation()
@@ -129,7 +132,7 @@ class PhysRenderer(object):
         cameraPitch = p.readUserDebugParameter(self.debug_sliders['pitch'])
         p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
         p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, pos_xyz)
-        #time.sleep(0.01)
+        
         state = {
             'distance_to_target': np.sum(np.square(pos_xyz - self.target_pos))
         }

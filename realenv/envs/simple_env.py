@@ -11,13 +11,14 @@ import time
 import os
 import random
 import progressbar
-from realtime_plot import RewardDisplayer
-
+from realtime_plot import MPRewardDisplayer, RewardDisplayer
+from render.profiler import Profiler
+from multiprocessing.dummy import Process
 
 class SimpleEnv(gym.Env):
   metadata = {'render.modes': ['human']}
 
-  def __init__(self):
+  def __init__(self, human=False):
     self.debug_mode = True
     file_dir = os.path.dirname(__file__)
     cmd_channel = "bash run_depth_render.sh"
@@ -36,11 +37,11 @@ class SimpleEnv(gym.Env):
       print(e)
       self._end()
     
-    self.r_physics = self._setupPhysics()
+    self.r_physics = self._setupPhysics(human)
     self.r_physics.initialize(pose_init)
     if self.debug_mode:
       self.r_visuals.renderToScreenSetup()
-      self.r_displayer = RewardDisplayer()
+      self.r_displayer = RewardDisplayer() #MPRewardDisplayer()
     self._setupRewardFunc()
     self.state_old = None
 
@@ -96,9 +97,9 @@ class SimpleEnv(gym.Env):
     renderer = PCRenderer(5556, sources, source_depths, target, rts)
     return renderer
 
-  def _setupPhysics(self):
+  def _setupPhysics(self, human):
     framePerSec = 13
-    renderer = PhysRenderer(self.datapath, self.model_id, framePerSec, debug = self.debug_mode)
+    renderer = PhysRenderer(self.datapath, self.model_id, framePerSec, debug = self.debug_mode, human = human)
     #renderer.renderToScreen()
     print('finish setup physics')
     return renderer
@@ -115,12 +116,17 @@ class SimpleEnv(gym.Env):
       self.state_old = state
       visuals = self.r_visuals.renderOffScreen(pose)
     else:
-      pose, state = self.r_physics.renderToScreen(action)
+      with Profiler("Physics to screen"):
+        pose, state = self.r_physics.renderToScreen(action)
       #reward = random.randrange(-8, 20)
       reward = self.reward_func(self.state_old, state)
-      self.state_old = state
       self.r_displayer.add_reward(reward)
-      visuals = self.r_visuals.renderToScreen(pose)
+      self.state_old = state
+      #with Profiler("Display reward"):
+      
+      with Profiler("Render to screen"):
+        visuals = self.r_visuals.renderToScreen(pose)
+      print()
     return visuals, reward 
 
   def _reset(self):
@@ -131,8 +137,6 @@ class SimpleEnv(gym.Env):
     
   def _end(self):
     self.p_channel.kill()
-    #self.p_physics.kill()
-    #self.r_visuals.kill()
     return
 
 
@@ -148,3 +152,11 @@ if __name__ == "__main__":
   except KeyboardInterrupt:
     env._end()
     print("Program finished")
+  '''
+  r_displayer = MPRewardDisplayer()
+  for i in range(10000):
+      num = random.random() * 100 - 30
+      r_displayer.add_reward(num)
+      if i % 40 == 0:
+          r_displayer.reset()
+  '''
