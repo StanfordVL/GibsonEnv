@@ -8,17 +8,20 @@ from physics.render_physics import PhysRenderer
 import numpy as np
 import zmq
 import time
+import os
 
 class SimpleEnv(gym.Env):
   metadata = {'render.modes': ['human']}
 
   def __init__(self):
-    cmd_channel = "./channels/depth_render/depth_render --datapath data -m 11HB6XZSh1Q"
+    file_dir = os.path.dirname(__file__)
+    cmd_channel = "bash run_depth_render.sh"
+    print(cmd_channel.split())
     cmd_physics = "python show_3d2.py --datapath ../data/ --idx 10"
     cmd_render  = ""
     self.datapath = "data"
     self.model_id = "11HB6XZSh1Q"
-    #self.p_channel = subprocess.Popen(cmd_channel.split(), stdout=subprocess.PIPE)
+    self.p_channel = subprocess.Popen(cmd_channel.split(), stdout=subprocess.PIPE)
     #self.p_physics = subprocess.Popen()
     #self.p_render  = subprocess.Popen()
     self.r_physics = self._setupPhysics()
@@ -89,7 +92,7 @@ class SimpleEnv(gym.Env):
     return
     
   def _end(self):
-    #self.p_channel.kill()
+    self.p_channel.kill()
     #self.p_physics.kill()
     #self.r_visuals.kill()
     return
@@ -97,9 +100,13 @@ class SimpleEnv(gym.Env):
 
 if __name__ == "__main__":
   env = SimpleEnv()
-  while True:
-    t0 = time.time()
-    img = env._step({})
-    t1 = time.time()
-    t = t1-t0
-    print('fps', 1/t, np.mean(img))
+  try:
+    while True:
+      t0 = time.time()
+      img = env._step({})
+      t1 = time.time()
+      t = t1-t0
+      print('fps', 1/t, np.mean(img))
+  except KeyboardInterrupt:
+    env._end()
+    print("Program finished")
