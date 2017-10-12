@@ -21,7 +21,7 @@ class PhysRenderer(object):
         context = zmq.Context()
         self.visn_socket = context.socket(zmq.REQ)
         self.visn_socket.bind("tcp://*:5556")
-        self.debug_mode = False
+        self.debug_mode = True
         self.debug_sliders = {}
 
         if self.debug_mode:
@@ -46,17 +46,6 @@ class PhysRenderer(object):
         file_dir  = os.path.dirname(__file__) 
         #objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
         self.objectUid = p.loadURDF(os.path.join(file_dir, "models/husky.urdf"), globalScaling = 0.8)
-        #p.changeVisualShape(objectUid, -1, rgbaColor=[1, 1, 1, 0.5])
-        '''
-        pos, quat_xyzw = self._getInitialPositionOrientation()
-        v_t = 1             # 1m/s max speed
-        v_r = np.pi/5       # 36 degrees/s
-        self.cart = PhysicsObject(self.objectUid, p, pos, quat_xyzw, v_t, v_r, framePerSec)
-
-        print("Generated cart", self.objectUid)
-        #p.setTimeStep(1.0/framePerSec)
-        p.setTimeStep(1.0/settings.STEPS_PER_SEC)
-        '''
 
     def initialize(self, pose):
         pos, quat_xyzw = pose[0], pose[1]
@@ -198,6 +187,6 @@ if __name__ == '__main__':
     framePerSec = 13
 
     r_physics = PhysRenderer(opt.datapath, opt.model, framePerSec)
-
+    r_physics.initialize(pose_init)
     r_physics.renderToScreen()
         
