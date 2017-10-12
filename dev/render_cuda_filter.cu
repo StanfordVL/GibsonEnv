@@ -84,7 +84,7 @@ __global__ void to3d_point(float *depth, float *points3d)
      
      int iw = x;
      int ih = y + j;
-     float depth_point = depth[ih*w + iw] * 128.0;
+     float depth_point = depth[ ih*w + iw ] * 128.0;
      float phi = ((float)(ih) + 0.5) / float(h) * M_PI;
      float theta = ((float)(iw) + 0.5) / float(w) * 2 * M_PI + M_PI;
   
@@ -208,7 +208,7 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
 
 extern "C"{
     
-void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, int * depth_render){
+void render(int n, int idx, int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, int * depth_render){
     //int ih, iw, i, ic;
     
     const int nx = w;
@@ -237,9 +237,15 @@ void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, 
     cudaMalloc((void **)&d_img2, nx * ny * sizeof(int));
     
     cudaMemcpy(d_depth_render, depth_render, nx * ny * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_pose, pose, sizeof(float) * 16, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_img, img, frame_mem_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_depth, depth, depth_mem_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_pose, &(pose[idx * 16]), sizeof(float) * 16, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_img, &(img[idx * nx * ny * 3]), frame_mem_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_depth, &(depth[idx * nx * ny]), depth_mem_size, cudaMemcpyHostToDevice);
+    
+    int i;
+    for (i = 0; i < 100; i++) {
+        printf("%f ", depth[i + idx * nx * ny]);
+    }
+    printf("\n");
     
     cudaMemset(d_render, 0, frame_mem_size);
     cudaMemset(d_render2, 0, nx * ny * sizeof(int));

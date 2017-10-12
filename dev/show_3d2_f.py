@@ -386,18 +386,22 @@ class PCRenderer:
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
                 
-                for i in range(len(imgs)):
                 #from IPython import embed; embed()
+                
+                
+                for i in range(len(imgs)):
+                
                     dll.render(ct.c_int(len(imgs)),
-                               ct.c_int(imgs[i].shape[0]),
-                               ct.c_int(imgs[i].shape[1]),
-                               np.array(imgs[i]).ctypes.data_as(ct.c_void_p),
-                               depths[i].ctypes.data_as(ct.c_void_p),
-                               np.array(poses_after[i]).ctypes.data_as(ct.c_void_p),
+                               ct.c_int(i),
+                               ct.c_int(imgs[0].shape[0]),
+                               ct.c_int(imgs[0].shape[1]),
+                               np.asarray(imgs, dtype = np.uint8).ctypes.data_as(ct.c_void_p),
+                               np.asarray(depths, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                               np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
                                show_all[i].ctypes.data_as(ct.c_void_p),
                                target_depth.ctypes.data_as(ct.c_void_p)
                                )
-                    
+                
                 #show_all_tensor = Variable(torch.from_numpy(show_all).cuda()).transpose(3,2).transpose(2,1)
                 #print(show_all_tensor.size())
                 #show_all = show_all_tensor.cpu().data.numpy().transpose(0,2,3,1)
