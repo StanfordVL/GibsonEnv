@@ -299,6 +299,7 @@ class PCRenderer:
         cv2.namedWindow('show3d')
         cv2.namedWindow('target depth')
         cv2.moveWindow('show3d',0,0)
+        cv2.moveWindow('target depth', 0, 2048)
         cv2.setMouseCallback('show3d',self._onmouse)
 
     def renderToScreen(self, pose):

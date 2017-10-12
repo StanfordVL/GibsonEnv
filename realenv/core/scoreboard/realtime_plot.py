@@ -8,8 +8,6 @@ import matplotlib.patches as mpatches
 from matplotlib import pyplot as plt
 
 
-start = time.time()
-
 class SmoothList(collections.MutableSequence):
     max_entries = 200
     def __init__(self):
@@ -87,10 +85,10 @@ class RewardDisplayer:
 
         fig = plt.figure(figsize=(10, 8))
         
-        self.axes_text = plt.subplot(gs[:2, :])
-        self.axes_full = plt.subplot(gs[2:9, :])
-        self.axes_real = plt.subplot(gs[9:12, :])
-        
+        self.axes_text = plt.subplot(gs[:2, :], facecolor='gainsboro')
+        self.axes_full = plt.subplot(gs[2:9, :], facecolor='gainsboro')
+        self.axes_real = plt.subplot(gs[9:12, :], facecolor='gainsboro')
+
         self.axes_text.set_xlim(0, 10)
         self.axes_text.set_ylim(0, 10)
 
@@ -138,6 +136,7 @@ class RewardDisplayer:
         self.txt_reward = self.axes_text.text(2, 9, '%.2f' % reward, fontproperties=self.font, size = 30,  **self.alignment)
         self.txt_totalr = self.axes_text.text(6.5, 9, '%.2f' % self.score, fontproperties=self.font, size = 30, **self.alignment)
         self.txt_time   = self.axes_text.text(2, 3, '%.2f' % cur_time, fontproperties=self.font, size = 30, **self.alignment)
+        plt.pause(0.0001)
 
 
 def main():
@@ -145,7 +144,6 @@ def main():
     for i in range(10000):
         num = random.random() * 100 - 30
         r_displayer.add_reward(num)
-        plt.pause(0.0001)
         if i % 40 == 0:
             r_displayer.reset()
 
