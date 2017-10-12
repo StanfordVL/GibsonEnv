@@ -27,6 +27,7 @@ class PhysRenderer(object):
 
         if debug:
             p.connect(p.GUI)
+            p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
             self._startDebugRoomMap()
         else:
             # Headless training mode
@@ -58,6 +59,8 @@ class PhysRenderer(object):
         self.viewMatrix = p.computeViewMatrixFromYawPitchRoll([0, 0, 0], 10, 0, 90, 0, 2)
         self.projMatrix = p.computeProjectionMatrix(-0.01, 0.01, -0.01, 0.01, 0.01, 128)
         p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
+
+        self.target_pos = np.array([-4.35, -1.71, 0.8])
 
     def initialize(self, pose):
         pos, quat_xyzw = pose[0], pose[1]
@@ -108,12 +111,15 @@ class PhysRenderer(object):
 
         self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
         pos_xyz, quat_wxyz = self.cart.getViewPosAndOrientation()
-        return pos_xyz, quat_wxyz
+        state = {
+            'distance_to_target': np.sum(np.square(pos_xyz - self.target_pos))
+        }
+        return [pos_xyz, quat_wxyz], state
 
     def renderToScreen(self, action, restart=False):
         
-        self.cart.getUpdateFromKeyboard(restart=restart)
-        #self.cart.parseActionAndUpdate(action)
+        #self.cart.getUpdateFromKeyboard(restart=restart)
+        self.cart.parseActionAndUpdate(action)
 
         self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
         pos_xyz, quat_wxyz = self.cart.getViewPosAndOrientation()
@@ -124,7 +130,10 @@ class PhysRenderer(object):
         p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
         p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, pos_xyz)
         #time.sleep(0.01)
-        return pos_xyz, quat_wxyz
+        state = {
+            'distance_to_target': np.sum(np.square(pos_xyz - self.target_pos))
+        }
+        return [pos_xyz, quat_wxyz], state
 
     ## DEPRECATED
     def _getCollisionFromUpdate(self):

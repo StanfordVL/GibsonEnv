@@ -26,7 +26,6 @@ file_dir = os.path.dirname(__file__)
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
 coords  = np.load(os.path.join(file_dir, 'coord.npy'))
 context_mist = zmq.Context()
-print("Connecting to hello world server...")
 socket_mist = context_mist.socket(zmq.REQ)
 socket_mist.connect("tcp://localhost:5555")
 
