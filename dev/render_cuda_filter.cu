@@ -210,11 +210,11 @@ extern "C"{
     
 void render(int n, int idx, int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, int * depth_render){
     //int ih, iw, i, ic;
-    
+    printf("inside cuda code %d\n", depth);
     const int nx = w;
     const int ny = h;
-    const int depth_mem_size = nx*ny*sizeof(float);
-    const int frame_mem_size = nx*ny*sizeof(unsigned char) * 3;
+    const size_t depth_mem_size = nx*ny*sizeof(float);
+    const size_t frame_mem_size = nx*ny*sizeof(unsigned char) * 3;
     
     dim3 dimGrid(nx/TILE_DIM, ny/TILE_DIM, 1);
     dim3 dimBlock(TILE_DIM, BLOCK_ROWS, 1);
@@ -262,7 +262,7 @@ void render(int n, int idx, int h,int w,unsigned char * img, float * depth,float
     render_final <<< dimGrid, dimBlock >>> (d_3dpoint_after, d_depth_render, d_img2, d_render2);
     int_to_char <<< dimGrid, dimBlock >>> (d_render2, d_render);
     
-    cudaMemcpy(render, d_render, frame_mem_size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&(render[idx * nx * ny * 3]), d_render, frame_mem_size, cudaMemcpyDeviceToHost);
         
     cudaFree(d_img);
     cudaFree(d_depth);

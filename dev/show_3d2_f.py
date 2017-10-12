@@ -388,17 +388,22 @@ class PCRenderer:
                 
                 #from IPython import embed; embed()
                 
-                
+                depth_test = np.zeros((1024 * 2048 * len(imgs),), dtype = np.float32)
+                for i in range(len(imgs)):
+                    depth_test[1024*2048 * i:1024*2048 * (i+1)] = np.asarray(depths[i], dtype = np.float32, order = 'C').flatten()
+                    
+                    
                 for i in range(len(imgs)):
                 
+                    
                     dll.render(ct.c_int(len(imgs)),
                                ct.c_int(i),
                                ct.c_int(imgs[0].shape[0]),
                                ct.c_int(imgs[0].shape[1]),
                                np.asarray(imgs, dtype = np.uint8).ctypes.data_as(ct.c_void_p),
-                               np.asarray(depths, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                               depth_test.ctypes.data_as(ct.c_void_p),
                                np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                               show_all[i].ctypes.data_as(ct.c_void_p),
+                               show_all.ctypes.data_as(ct.c_void_p),
                                target_depth.ctypes.data_as(ct.c_void_p)
                                )
                 
@@ -408,12 +413,14 @@ class PCRenderer:
                 
                 show[:] = np.amax(show_all, axis = 0)
         
-        threads = [
-            Process(target=render_pc, args=(opengl_arr,)),
-            Process(target=render_depth, args=(opengl_arr,))]
-        [t.start() for t in threads]
-        [t.join() for t in threads]
-
+        #threads = [
+        #    Process(target=render_pc, args=(opengl_arr,)),
+        #    Process(target=render_depth, args=(opengl_arr,))]
+        #[t.start() for t in threads]
+        #[t.join() for t in threads]
+    
+        render_pc(opengl_arr)
+        render_depth(opengl_arr)
             
         if model:
             tf = transforms.ToTensor()
