@@ -26,6 +26,7 @@ class SimpleEnv(gym.Env):
 
     pose_init = self.r_visuals.renderOffScreenInitialPose()
     self.r_physics.initialize(pose_init)
+    self.r_visuals.renderToScreenSetup()
     
   def _setupVisuals(self):
     d = ViewDataSet3D(root=self.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
@@ -79,8 +80,7 @@ class SimpleEnv(gym.Env):
   def _step(self, action):
     #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
     pose = self.r_physics.renderOffScreen(action)
-    print(self.r_visuals.renderOffScreen(pose).size)
-    return
+    return self.r_visuals.renderToScreen(pose)
 
   def _reset(self):
     return
@@ -99,7 +99,7 @@ if __name__ == "__main__":
   env = SimpleEnv()
   while True:
     t0 = time.time()
-    env._step({})
+    img = env._step({})
     t1 = time.time()
     t = t1-t0
-    print('fps', 1/t)
+    print('fps', 1/t, np.mean(img))

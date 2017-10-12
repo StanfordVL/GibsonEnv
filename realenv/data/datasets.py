@@ -36,13 +36,11 @@ def depth_loader(path):
     return img
 
 class ViewDataSet3D(data.Dataset):
-
     def __init__(self, root, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
         print ('Processing the data:')
-        self.root = root.rstrip('/')
-        #print(self.root)
-        self.fofn = os.path.basename(self.root) + '_fofn'+str(int(train))+'.pkl'
-        self.train = train
+        self.root   = root.rstrip('/')
+        self.fofn   = os.path.basename(self.root) + '_fofn'+str(int(train))+'.pkl'
+        self.train  = train
         self.loader = loader
         self.seqlen = seqlen
         self.transform = transform

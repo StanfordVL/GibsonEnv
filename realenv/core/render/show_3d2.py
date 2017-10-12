@@ -51,11 +51,6 @@ class InImg(object):
         else:
             return (indx + 1, remx, remy)
 
-class ViewRenderer(object):
-    def __init__(self):
-        return
-
-
 class PCRenderer:
     def __init__(self, port, imgs, depths, target, target_poses):
         self.roll, self.pitch, self.yaw = 0, 0, 0
@@ -63,7 +58,6 @@ class PCRenderer:
         self.x, self.y, self.z = 0, 0, 0
         self.fps = 0
         self.mousex, self.mousey = 0.5, 0.5
-        #self.changed = True
         self.org_pitch, self.org_yaw, self.org_roll = 0, 0, 0
         self.org_x, self.org_y, self.org_z = 0, 0, 0
         self.clickstart = (0,0)
@@ -94,12 +88,10 @@ class PCRenderer:
         if (args[3] & cv2.EVENT_FLAG_LBUTTON):
             self.pitch = self.org_pitch + (self.mousex - self.clickstart[0])/10
             self.yaw = self.org_yaw + (self.mousey - self.clickstart[1])
-            #self.changed=True
-
+            
         if (args[3] & cv2.EVENT_FLAG_RBUTTON):
             self.roll = self.org_roll + (self.mousex - self.clickstart[0])/50
-            #self.changed=True
-
+            
         my=args[1]
         mx=args[2]
         self.mousex=mx/float(256)
@@ -111,26 +103,19 @@ class PCRenderer:
             return False
         elif cmd == ord('w'):
             self.x -= 0.05
-            #self.changed = True
         elif cmd == ord('s'):
             self.x += 0.05
-            #self.changed = True
         elif cmd == ord('a'):
             self.y += 0.05
-            #self.changed = True
         elif cmd == ord('d'):
             self.y -= 0.05
-            #self.changed = True
         elif cmd == ord('z'):
             self.z += 0.01
-            #self.changed = True
         elif cmd == ord('x'):
             self.z -= 0.01
-            #self.changed = True
         elif cmd == ord('r'):
             self.pitch,self.yaw,self.x,self.y,self.z = 0,0,0,0,0
             self.roll = 0
-            #self.changed = True
         elif cmd == ord('t'):
             pose = poses[0]
             RT = pose.reshape((4,4))
@@ -138,7 +123,6 @@ class PCRenderer:
             T = RT[:3,-1]
             self.x,self.y,self.z = np.dot(np.linalg.inv(R),T)
             self.roll, self.pitch, self.yaw = (utils.rotationMatrixToEulerAngles(R))
-            #self.changed = True
         elif cmd == ord('o'):
             self.overlay = not self.overlay
         elif cmd == ord('f'):
@@ -200,42 +184,41 @@ class PCRenderer:
         p = p.dot(np.linalg.inv(self.rotation_const))
         s = utils.mat_to_str(p)
 
-        with Profiler("Depth request round-trip"):        
-            socket_mist.send(s)
-            message = socket_mist.recv()
+        #with Profiler("Depth request round-trip"):        
+        socket_mist.send(s)
+        message = socket_mist.recv()
 
-        with Profiler("Read from framebuffer and make pano"):  
-            wo, ho = 768 * 4, 768 * 3
+        #with Profiler("Read from framebuffer and make pano"):  
+        wo, ho = 768 * 4, 768 * 3
 
-            # Calculate height and width of output image, and size of each square face
-            h = wo/3
-            w = 2*h
-            n = ho/3
-            opengl_arr = np.array(np.frombuffer(message, dtype=np.float32)).reshape((h, w))
-
+        # Calculate height and width of output image, and size of each square face
+        h = wo/3
+        w = 2*h
+        n = ho/3
+        opengl_arr = np.array(np.frombuffer(message, dtype=np.float32)).reshape((h, w))
 
         def _render_depth(opengl_arr):
-            with Profiler("Render Depth"):  
-                cv2.imshow('target depth', opengl_arr/16.)
+            #with Profiler("Render Depth"):  
+            cv2.imshow('target depth', opengl_arr/16.)
 
         def _render_pc(opengl_arr):
-            with Profiler("Render pointcloud"):
-                scale = 100.  # 512
-                target_depth = np.int32(opengl_arr * scale)
-                show[:] = 0
-                poses_after = [
-                    pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
-                    for i in range(len(imgs))]
+            #with Profiler("Render pointcloud"):
+            scale = 100.  # 512
+            target_depth = np.int32(opengl_arr * scale)
+            show[:] = 0
+            poses_after = [
+                pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
+                for i in range(len(imgs))]
 
-                for i in range(len(imgs)):
-                    cuda_pc.render(ct.c_int(imgs[i].shape[0]),
-                            ct.c_int(imgs[i].shape[1]),
-                            imgs[i].ctypes.data_as(ct.c_void_p),
-                            depths[i].ctypes.data_as(ct.c_void_p),
-                            poses_after[i].ctypes.data_as(ct.c_void_p),
-                            show.ctypes.data_as(ct.c_void_p),
-                            target_depth.ctypes.data_as(ct.c_void_p)
-                            )
+            for i in range(len(imgs)):
+                cuda_pc.render(ct.c_int(imgs[i].shape[0]),
+                        ct.c_int(imgs[i].shape[1]),
+                        imgs[i].ctypes.data_as(ct.c_void_p),
+                        depths[i].ctypes.data_as(ct.c_void_p),
+                        poses_after[i].ctypes.data_as(ct.c_void_p),
+                        show.ctypes.data_as(ct.c_void_p),
+                        target_depth.ctypes.data_as(ct.c_void_p)
+                        )
         threads = [
             Process(target=_render_pc, args=(opengl_arr,)),
             Process(target=_render_depth, args=(opengl_arr,))]
@@ -276,7 +259,7 @@ class PCRenderer:
         
         ## Query physics engine to get [x, y, z, roll, pitch, yaw]
         new_pos, new_quat = pose[0], pose[1]
-        print("receiving", new_pos, new_quat)
+        #print("receiving", new_pos, new_quat)
         self.x, self.y, self.z = new_pos
         self.quat = new_quat
 
@@ -312,93 +295,30 @@ class PCRenderer:
         show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
         return show_rgb
 
-
-    def renderToScreen(self, imgs, depths, poses, model, target, tdepth, target_poses):
+    def renderToScreenSetup(self):
         cv2.namedWindow('show3d')
         cv2.namedWindow('target depth')
         cv2.moveWindow('show3d',0,0)
         cv2.setMouseCallback('show3d',self._onmouse)
 
-        showsz = target.shape[0]
+    def renderToScreen(self, pose):
+        showsz = self.target.shape[0]
         show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
         target_depth   = np.zeros((showsz,showsz * 2)).astype(np.int32)
         imgv  = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
         maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
         
-        ## TODO (hzyjerry): error handling
-        pos, quat_wxyz = self._getViewerAbsolutePose(target_poses[0])
-        pos       = pos.tolist()
-        quat_wxyz = quat_wxyz.tolist()
-        assert(self._sendInitialPoseToPhysics([pos, quat_wxyz]))
+        cv2.namedWindow('show3d')
+        cv2.moveWindow('show3d',0,0)
+        show_rgb = self.renderOffScreen(pose)
+        cv2.putText(show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,showsz-15),0,0.5,(255,255,255))            
+        cv2.putText(show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
-        while True:
-            '''
-            v_cam2world = target_poses[0]
-            v_cam2cam   = self._getViewerRelativePose()
-            p = v_cam2world.dot(np.linalg.inv(v_cam2cam))
-            p = p.dot(np.linalg.inv(self.rotation_const))
-            pos  = utils.mat_to_posi_xyz(p).tolist()
-            quat = utils.mat_to_quat_xyzw(p).tolist()
-            '''
-            
-            ## Query physics engine to get [x, y, z, roll, pitch, yaw]
-            print("waiting for physics")
-            new_pos, new_quat = self._getPoseOrientationFromPhysics()
-            print("receiving", new_pos, new_quat)
-            self.x, self.y, self.z = new_pos
-            self.quat = new_quat
-
-            v_cam2world = target_poses[0]
-            v_cam2cam   = self._getViewerRelativePose()
-            cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(self.rotation_const))
-            
-            '''
-            pos, quat_wxyz = self._getViewerAbsolutePose(target_poses[0])
-            pos       = pos.tolist()
-            quat_wxyz = utils.quat_wxyz_to_xyzw(quat_wxyz).tolist()
-            '''
-
-            #self.changed = True
-
-            ## Entry point for change of view 
-            ## Optimization
-            depth_buffer = np.zeros(imgs[0].shape[:2], dtype=np.float32)
-            
-            relative_poses = np.copy(target_poses)
-            for i in range(len(relative_poses)):
-                relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), target_poses[0])
-            
-            poses_after = [cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(imgs))]
-            pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
-
-            top5 = (np.argsort(pose_after_distance))[:5]
-            imgs_top5 = [imgs[i] for i in top5]
-            depths_top5 = [depths[i] for i in top5]
-            relative_poses_top5 = [relative_poses[i] for i in top5]
-            
-            
-            self.render(imgs_top5, depths_top5, cpose.astype(np.float32), model, relative_poses_top5, target_poses[0], show, target_depth, depth_buffer)
-            
-            #render(imgs, depths, cpose.astype(np.float32), model, poses)
-            #self.changed = False
-
-            if self.overlay:
-                show_out = (show/2 + target/2).astype(np.uint8)
-            elif self.show_depth:
-                show_out = (target_depth * 10).astype(np.uint8)
-            else:
-                show_out = show
-
-
-
-            cv2.putText(show,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,showsz-15),0,0.5,(255,255,255))            
-            cv2.putText(show,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
-
-            show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
-            cv2.imshow('show3d',show_rgb)
-
-            if (not self._updateStateFromKeyboard()):
-                break
+        cv2.imshow('show3d',show_rgb)
+        
+        ## TODO (hzyjerry): does this introduce extra time delay?
+        cv2.waitKey(5)
+        return show_rgb
         
 
 def show_target(target_img):

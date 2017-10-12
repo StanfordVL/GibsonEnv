@@ -21,7 +21,7 @@ class PhysRenderer(object):
         context = zmq.Context()
         self.visn_socket = context.socket(zmq.REQ)
         self.visn_socket.bind("tcp://*:5556")
-        self.debug_mode = True
+        self.debug_mode = False
         self.debug_sliders = {}
 
         if self.debug_mode:
