@@ -6,7 +6,8 @@ from matplotlib.font_manager import FontProperties
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 from matplotlib import pyplot as plt
-
+from multiprocessing import Process, Pipe
+#import gobject
 
 class SmoothList(collections.MutableSequence):
     max_entries = 200
@@ -138,9 +139,56 @@ class RewardDisplayer:
         self.txt_time   = self.axes_text.text(2, 3, '%.2f' % cur_time, fontproperties=self.font, size = 30, **self.alignment)
         plt.pause(0.0001)
 
+    def terminate(self):
+        plt.close('all')
+
+    def poll_draw(self):
+        while 1:
+            #print("polling")
+            if not self.pipe.poll():
+                break
+            command = self.pipe.recv()
+            #print("received reward", command)
+            if command is None:
+                self.terminate()
+                return False
+            else:
+                self.add_reward(command)
+            time.sleep(0.01)
+        #self.fig.canvas.draw()
+        return True
+
+    def __call__(self, pipe):
+        print('Starting plotter...')
+
+        self.pipe = pipe
+        #self.fig, self.ax = plt.subplots()
+        #self.gid = gobject.timeout_add(1000, )
+        self.poll_draw()
+        print('...done')
+        #plt.show()
+
+class MPRewardDisplayer(object):
+    def __init__(self):
+        self.plot_pipe, plotter_pipe = Pipe()
+        self.plotter = RewardDisplayer()
+        self.plot_process = Process(target=self.plotter,
+                                    args=(plotter_pipe,))
+        self.plot_process.daemon = True
+        self.plot_process.start()
+
+    def add_reward(self, reward, finished=False):
+        send = self.plot_pipe.send
+        if finished:
+            send(None)
+        else:
+            send(reward)
+
+    def reset(self):
+        return
 
 def main():
-    r_displayer = RewardDisplayer()
+    r_displayer = MPRewardDisplayer()
     for i in range(10000):
         num = random.random() * 100 - 30
         r_displayer.add_reward(num)
