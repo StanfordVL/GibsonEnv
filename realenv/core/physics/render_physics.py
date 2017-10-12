@@ -18,10 +18,11 @@ from numpy import sin, cos
 class PhysRenderer(object):
 
     def __init__(self, datapath, model_id, framePerSec):
+        print("physics renderer", datapath)
         context = zmq.Context()
         self.visn_socket = context.socket(zmq.REQ)
         self.visn_socket.bind("tcp://*:5556")
-        self.debug_mode = True
+        self.debug_mode = False
         self.debug_sliders = {}
 
         if self.debug_mode:
@@ -91,6 +92,7 @@ class PhysRenderer(object):
 
     def renderOffScreen(self, action, restart=False):
         ## Execute one frame
+        #print("physics engine get action", action)
         self.cart.parseActionAndUpdate(action)
 
         self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
@@ -98,7 +100,7 @@ class PhysRenderer(object):
             cameraDist = p.readUserDebugParameter(self.debug_sliders['dist'])
             cameraYaw  = p.readUserDebugParameter(self.debug_sliders['yaw'])
             cameraPitch = p.readUserDebugParameter(self.debug_sliders['pitch'])
-            viewMatrix = p.computeViewMatrixFromYawPitchRoll([0, 0, 0], 8, 0, 0, 0, 2)
+            viewMatrix = p.computeViewMatrixFromYawPitchRoll([0, 0, 0], 0, 0, -8, 0, 2)
             projMatrix = p.computeProjectionMatrix(-0.1, 0.1, -0.1, 0.1, 0.1, 128)
             p.getCameraImage(256, 256, viewMatrix = viewMatrix, projectionMatrix = projMatrix)
             p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, [0, 0, 0])
