@@ -72,6 +72,40 @@ __global__ void int_to_char(int * img2, unsigned char * img)
 }
 
 
+__global__ void merge(unsigned char * img_all, unsigned char * img, int n, int stride)
+{
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    int width = gridDim.x * TILE_DIM;
+    int idx = 0;
+    
+    for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS) {
+      
+      int nz = 0;
+      for (idx = 0; idx < n; idx ++) 
+          if (img_all[stride * idx + 3*((y+j)*width + x)] + img_all[stride * idx + 3*((y+j)*width + x) + 1] + img_all[stride * idx + 3*((y+j)*width + x) + 2] > 0)
+          nz +=1 ;
+          
+      img[3*((y+j)*width + x)] = 0;        
+      img[3*((y+j)*width + x)+1] = 0;    
+      img[3*((y+j)*width + x)+2] = 0;    
+      
+      
+      if (nz > 0)
+      for (idx = 0; idx < n; idx ++) {
+      
+      img[3*((y+j)*width + x)] += img_all[idx * stride + 3*((y+j)*width + x)] / nz;
+      img[3*((y+j)*width + x)+1] += img_all[idx * stride + 3*((y+j)*width + x) + 1] / nz;
+      img[3*((y+j)*width + x)+2] += img_all[idx * stride + 3*((y+j)*width + x) + 2] / nz;
+      
+      }
+      
+      
+    
+    }
+}
+
+
 __global__ void to3d_point(float *depth, float *points3d)
 {
   int x = blockIdx.x * TILE_DIM + threadIdx.x;
@@ -192,8 +226,8 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
      int tymin = min(min(tylu, tyrd), min(tyru, tyld));
      int tymax = max(max(tylu, tyrd), max(tyru, tyld));
       
-     if ((y > h/8) && (y < h*7/8))
-     if ((delta > -10) && (delta < 10) && (this_depth < 10000)) {
+     if ((y > h/8) && (y < (h*7)/8))
+     if ((delta > -15) && (delta < 15) && (this_depth < 10000)) {
            
            if ((txmax - txmin) * (tymax - tymin) < 50)
            {
@@ -208,7 +242,7 @@ __global__ void render_final(float *points3d_polar, int * depth_render, int * im
 
 extern "C"{
     
-void render(int n, int idx, int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, int * depth_render){
+void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, int * depth_render){
     //int ih, iw, i, ic;
     printf("inside cuda code %d\n", depth);
     const int nx = w;
@@ -219,7 +253,7 @@ void render(int n, int idx, int h,int w,unsigned char * img, float * depth,float
     dim3 dimGrid(nx/TILE_DIM, ny/TILE_DIM, 1);
     dim3 dimBlock(TILE_DIM, BLOCK_ROWS, 1);
     
-    unsigned char *d_img, *d_render;
+    unsigned char *d_img, *d_render, *d_render_all;
     float *d_depth, *d_pose;
     int *d_depth_render;
     float *d_3dpoint, *d_3dpoint_after;
@@ -228,6 +262,7 @@ void render(int n, int idx, int h,int w,unsigned char * img, float * depth,float
     
     cudaMalloc((void **)&d_img, frame_mem_size);
     cudaMalloc((void **)&d_render, frame_mem_size);
+    cudaMalloc((void **)&d_render_all, frame_mem_size * n);
     cudaMalloc((void **)&d_depth, depth_mem_size);
     cudaMalloc((void **)&d_depth_render, nx * ny * sizeof(int));
     cudaMalloc((void **)&d_3dpoint, depth_mem_size * 4);
@@ -235,34 +270,44 @@ void render(int n, int idx, int h,int w,unsigned char * img, float * depth,float
     cudaMalloc((void **)&d_pose, sizeof(float) * 16);
     cudaMalloc((void **)&d_render2, nx * ny * sizeof(int));
     cudaMalloc((void **)&d_img2, nx * ny * sizeof(int));
-    
     cudaMemcpy(d_depth_render, depth_render, nx * ny * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_pose, &(pose[idx * 16]), sizeof(float) * 16, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_img, &(img[idx * nx * ny * 3]), frame_mem_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_depth, &(depth[idx * nx * ny]), depth_mem_size, cudaMemcpyHostToDevice);
     
-    int i;
-    for (i = 0; i < 100; i++) {
-        printf("%f ", depth[i + idx * nx * ny]);
+    cudaMemset(d_render_all, 0, frame_mem_size * n);
+    
+    int idx;
+    for (idx = 0; idx < n; idx ++) {
+    
+        cudaMemcpy(d_pose, &(pose[idx * 16]), sizeof(float) * 16, cudaMemcpyHostToDevice);
+        cudaMemcpy(d_img, &(img[idx * nx * ny * 3]), frame_mem_size, cudaMemcpyHostToDevice);
+        cudaMemcpy(d_depth, &(depth[idx * nx * ny]), depth_mem_size, cudaMemcpyHostToDevice);
+
+        //int i;
+        //for (i = 0; i < 100; i++) {
+        //    printf("%f ", depth[i + idx * nx * ny]);
+        //}
+        //printf("\n");
+
+        cudaMemset(d_render, 0, frame_mem_size);
+        cudaMemset(d_render2, 0, nx * ny * sizeof(int));
+        cudaMemset(d_img2, 0, nx * ny * sizeof(int));  
+        cudaMemset(d_3dpoint, 0, depth_mem_size * 4);
+        cudaMemset(d_3dpoint_after, 0, depth_mem_size * 4);
+
+        to3d_point<<< dimGrid, dimBlock >>>(d_depth, d_3dpoint);
+        transform<<< dimGrid, dimBlock >>>(d_3dpoint_after, d_3dpoint, d_pose);
+        transform2d<<<dimGrid, dimBlock>>>(d_3dpoint_after);
+
+        char_to_int <<< dimGrid, dimBlock >>> (d_img2, d_img);
+
+        render_final <<< dimGrid, dimBlock >>> (d_3dpoint_after, d_depth_render, d_img2, d_render2);
+        int_to_char <<< dimGrid, dimBlock >>> (d_render2, d_render);
+        int_to_char <<< dimGrid, dimBlock >>> (d_render2, &(d_render_all[idx * nx * ny * 3]));
+
     }
-    printf("\n");
-    
-    cudaMemset(d_render, 0, frame_mem_size);
-    cudaMemset(d_render2, 0, nx * ny * sizeof(int));
-    cudaMemset(d_img2, 0, nx * ny * sizeof(int));  
-    cudaMemset(d_3dpoint, 0, depth_mem_size * 4);
-    cudaMemset(d_3dpoint_after, 0, depth_mem_size * 4);
-    
-    to3d_point<<< dimGrid, dimBlock >>>(d_depth, d_3dpoint);
-    transform<<< dimGrid, dimBlock >>>(d_3dpoint_after, d_3dpoint, d_pose);
-    transform2d<<<dimGrid, dimBlock>>>(d_3dpoint_after);
-    
-    char_to_int <<< dimGrid, dimBlock >>> (d_img2, d_img);
-    
-    render_final <<< dimGrid, dimBlock >>> (d_3dpoint_after, d_depth_render, d_img2, d_render2);
-    int_to_char <<< dimGrid, dimBlock >>> (d_render2, d_render);
-    
-    cudaMemcpy(&(render[idx * nx * ny * 3]), d_render, frame_mem_size, cudaMemcpyDeviceToHost);
+
+        merge <<< dimGrid, dimBlock >>> (d_render_all, d_render, n, nx * ny * 3);
+        cudaMemcpy(render, d_render, frame_mem_size, cudaMemcpyDeviceToHost);
+        
         
     cudaFree(d_img);
     cudaFree(d_depth);
@@ -273,6 +318,7 @@ void render(int n, int idx, int h,int w,unsigned char * img, float * depth,float
     cudaFree(d_3dpoint);
     cudaFree(d_3dpoint_after);
     cudaFree(d_pose);
+    cudaFree(d_render_all);
 }
     
     
