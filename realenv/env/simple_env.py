@@ -9,6 +9,8 @@ import numpy as np
 import zmq
 import time
 import os
+import random
+import progressbar
 
 class SimpleEnv(gym.Env):
   metadata = {'render.modes': ['human']}
@@ -16,20 +18,23 @@ class SimpleEnv(gym.Env):
   def __init__(self):
     file_dir = os.path.dirname(__file__)
     cmd_channel = "bash run_depth_render.sh"
-    print(cmd_channel.split())
-    cmd_physics = "python show_3d2.py --datapath ../data/ --idx 10"
-    cmd_render  = ""
+
     self.datapath = "data"
     self.model_id = "11HB6XZSh1Q"
+
     self.p_channel = subprocess.Popen(cmd_channel.split(), stdout=subprocess.PIPE)
     #self.p_physics = subprocess.Popen()
     #self.p_render  = subprocess.Popen()
-    self.r_physics = self._setupPhysics()
-    self.r_visuals = self._setupVisuals()
 
-    pose_init = self.r_visuals.renderOffScreenInitialPose()
-    self.r_physics.initialize(pose_init)
-    self.r_visuals.renderToScreenSetup()
+    try:
+      self.r_physics = self._setupPhysics()
+      self.r_visuals = self._setupVisuals()
+
+      pose_init = self.r_visuals.renderOffScreenInitialPose()
+      self.r_physics.initialize(pose_init)
+      #self.r_visuals.renderToScreenSetup()
+    except Exception:
+      self._end()
     
   def _setupVisuals(self):
     d = ViewDataSet3D(root=self.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
@@ -45,8 +50,13 @@ class SimpleEnv(gym.Env):
     sources = []
     source_depths = []
     poses = []
-    for k,v in uuids:
-        print(k,v)
+    pbar  = progressbar.ProgressBar(widgets=[
+                        ' [ Initializeing Environment ] ',
+                        progressbar.Bar(),
+                        ' (', progressbar.ETA(), ') ',
+                        ])
+    for k,v in pbar(uuids):
+        #print(k,v)
         data = d[v]
         source = data[0][0]
         target = data[1]
@@ -83,7 +93,7 @@ class SimpleEnv(gym.Env):
   def _step(self, action):
     #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
     pose = self.r_physics.renderOffScreen(action)
-    return self.r_visuals.renderToScreen(pose)
+    return self.r_visuals.renderOffScreen(pose), random.randrange(-8, 20)
 
   def _reset(self):
     return
@@ -103,7 +113,7 @@ if __name__ == "__main__":
   try:
     while True:
       t0 = time.time()
-      img = env._step({})
+      img, reward = env._step({})
       t1 = time.time()
       t = t1-t0
       print('fps', 1/t, np.mean(img))

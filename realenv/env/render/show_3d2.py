@@ -337,7 +337,7 @@ def sync_coords():
     socket_mist.send(new_coords)
     print("Sent reordering")
     message = socket_mist.recv()
-
+    print("received reordering reply")
 
 if __name__=='__main__':
 
@@ -365,7 +365,7 @@ if __name__=='__main__':
     poses = []
         
     for k,v in uuids:
-        print(k,v)
+        #print(k,v)
         data = d[v]
         source = data[0][0]
         target = data[1]

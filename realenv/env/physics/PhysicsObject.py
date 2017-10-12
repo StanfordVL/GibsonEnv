@@ -157,7 +157,9 @@ class PhysicsObject():
 		by delta
 		"""
 		if action:
-			self.action = action
+			self.action = self._createDefaultAction()
+			for k in action.keys():
+				self.action[k] = action[k]
 		delta_xyz = np.array([0, 0, 0], dtype=float)
 		if self.action['restart']:
 			self._restartLocationOrientation()
