@@ -17,7 +17,7 @@ from numpy import sin, cos
 
 class PhysRenderer(object):
 
-    def __init__(self, datapath, model_id, framePerSec, debug):
+    def __init__(self, datapath, model_id, framePerSec, debug, human):
         print("physics renderer", datapath)
         context = zmq.Context()
         self.visn_socket = context.socket(zmq.REQ)
@@ -39,28 +39,30 @@ class PhysRenderer(object):
         p.setRealTimeSimulation(0)
 
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        visualId = p.createVisualShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], rgbaColor = [1, 0.2, 0.2, 0.3], specularColor=[0.4, 4.0])
 
-        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
-        
-        print("Exterior boundary", boundaryUid)
-        
-        p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0.2, 0.2, 0.3], specularColor=[1, 1, 1])
-        #p.changeVisualShape(visualId, -1, rgbaColor=[1, 0.2, 0.2, 0.3])
-        
-        p.setGravity(0,0,-10)
+        if debug:
+            visualId = p.createVisualShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], rgbaColor = [1, 0.2, 0.2, 0.3], specularColor=[0.4, 4.0])
+            boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
+            print("Exterior boundary", boundaryUid)
+            p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0.2, 0.2, 0.3], specularColor=[1, 1, 1])
+            #p.changeVisualShape(visualId, -1, rgbaColor=[1, 0.2, 0.2, 0.3])
+        else:
+            visualId = 0
+
+        #p.setGravity(0,0,-10)
         p.setRealTimeSimulation(0)
         self.framePerSec = framePerSec
 
         file_dir = os.path.dirname(__file__)
-        #objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
-        self.objectUid = p.loadURDF(os.path.join(file_dir, "models/husky.urdf"), globalScaling = 0.8)
+        self.objectUid = p.loadURDF(os.path.join(file_dir, "models/quadrotor.urdf"), globalScaling = 0.8)
+        #self.objectUid = p.loadURDF(os.path.join(file_dir, "models/husky.urdf"), globalScaling = 0.8)
 
         self.viewMatrix = p.computeViewMatrixFromYawPitchRoll([0, 0, 0], 10, 0, 90, 0, 2)
         self.projMatrix = p.computeProjectionMatrix(-0.01, 0.01, -0.01, 0.01, 0.01, 128)
         p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
 
         self.target_pos = np.array([-4.35, -1.71, 0.8])
+        self.human = human
 
     def initialize(self, pose):
         pos, quat_xyzw = pose[0], pose[1]
@@ -118,8 +120,10 @@ class PhysRenderer(object):
 
     def renderToScreen(self, action, restart=False):
         
-        #self.cart.getUpdateFromKeyboard(restart=restart)
-        self.cart.parseActionAndUpdate(action)
+        if self.human:
+            self.cart.getUpdateFromKeyboard(restart=restart)
+        else:
+            self.cart.parseActionAndUpdate(action)
 
         self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
         pos_xyz, quat_wxyz = self.cart.getViewPosAndOrientation()
@@ -129,7 +133,7 @@ class PhysRenderer(object):
         cameraPitch = p.readUserDebugParameter(self.debug_sliders['pitch'])
         p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
         p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, pos_xyz)
-        #time.sleep(0.01)
+        
         state = {
             'distance_to_target': np.sum(np.square(pos_xyz - self.target_pos))
         }

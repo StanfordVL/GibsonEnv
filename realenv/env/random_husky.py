@@ -1,3 +1,4 @@
+from __future__ import print_function
 import time
 import numpy as np
 import sys
@@ -5,6 +6,7 @@ sys.path.append("../env")
 from PIL import Image
 from simple_env import SimpleEnv
 from generate_actions import *
+from render.profiler import Profiler
 
 
 class RandomAgent(object):
@@ -29,22 +31,24 @@ class RandomAgent(object):
 if __name__ == '__main__':
     action_space = generate_actions()
     agent = RandomAgent(action_space)
-    env = SimpleEnv()
+    env = SimpleEnv(human=False, debug=True)
     ob = None
 
+    i = 0
     try:
-        for i in range(100000):
+        while True:
             if (i <= 14):
                 observation, reward = env._step({})
-            elif (i == 10000):
-                ## Relocate the view to a new position
-                observation, reward = env.reset()
+            #elif (i == 10000):
+            #    observation, reward = env.reset()
             else:
                 action = agent.act(ob)
-                observation, reward = env._step(action)
-                print("Husky action", action, "reward", reward)
-
-            time.sleep(0.2)
+                with Profiler("Agent step function"):
+                    observation, reward = env._step(action)
+                print("Husky action", action, "reward %.3f"% reward)
+            i = i + 1
+            print("current step", i)
+            #time.sleep(0.2)
 
     except KeyboardInterrupt:
         env._end()
