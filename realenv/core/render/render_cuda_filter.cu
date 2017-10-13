@@ -228,7 +228,6 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
       
      if ((y > h/8) && (y < (h*7)/8))
      if ((delta > -15) && (delta < 15) && (this_depth < 10000)) {
-           
            if ((txmax - txmin) * (tymax - tymin) < 50)
            {
                for (tx = txmin; tx < txmax; tx ++)
@@ -244,7 +243,7 @@ extern "C"{
     
 void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, unsigned char * render, float * depth_render){
     //int ih, iw, i, ic;
-    printf("inside cuda code %d\n", depth);
+    //printf("inside cuda code %d\n", depth);
     const int nx = w;
     const int ny = h;
     const size_t depth_mem_size = nx*ny*sizeof(float);
@@ -307,7 +306,6 @@ void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, 
 
         merge <<< dimGrid, dimBlock >>> (d_render_all, d_render, n, nx * ny * 3);
         cudaMemcpy(render, d_render, frame_mem_size, cudaMemcpyDeviceToHost);
-        
         
     cudaFree(d_img);
     cudaFree(d_depth);
