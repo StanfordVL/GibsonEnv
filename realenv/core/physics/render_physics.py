@@ -39,22 +39,23 @@ class PhysRenderer(object):
         p.setRealTimeSimulation(0)
 
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        visualId = p.createVisualShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], rgbaColor = [1, 0.2, 0.2, 0.3], specularColor=[0.4, 4.0])
 
-        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
-        
-        print("Exterior boundary", boundaryUid)
-        
-        p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0.2, 0.2, 0.3], specularColor=[1, 1, 1])
-        #p.changeVisualShape(visualId, -1, rgbaColor=[1, 0.2, 0.2, 0.3])
-        
-        p.setGravity(0,0,-10)
+        if debug:
+            visualId = p.createVisualShape(p.GEOM_MESH, fileName=obj_path, meshScale=[1, 1, 1], rgbaColor = [1, 0.2, 0.2, 0.3], specularColor=[0.4, 4.0])
+            boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
+            print("Exterior boundary", boundaryUid)
+            p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0.2, 0.2, 0.3], specularColor=[1, 1, 1])
+            #p.changeVisualShape(visualId, -1, rgbaColor=[1, 0.2, 0.2, 0.3])
+        else:
+            visualId = 0
+
+        #p.setGravity(0,0,-10)
         p.setRealTimeSimulation(0)
         self.framePerSec = framePerSec
 
         file_dir = os.path.dirname(__file__)
-        #objectUid = p.loadURDF("models/quadrotor.urdf", globalScaling = 0.8)
-        self.objectUid = p.loadURDF(os.path.join(file_dir, "models/husky.urdf"), globalScaling = 0.8)
+        self.objectUid = p.loadURDF(os.path.join(file_dir, "models/quadrotor.urdf"), globalScaling = 0.8)
+        #self.objectUid = p.loadURDF(os.path.join(file_dir, "models/husky.urdf"), globalScaling = 0.8)
 
         self.viewMatrix = p.computeViewMatrixFromYawPitchRoll([0, 0, 0], 10, 0, 90, 0, 2)
         self.projMatrix = p.computeProjectionMatrix(-0.01, 0.01, -0.01, 0.01, 0.01, 128)

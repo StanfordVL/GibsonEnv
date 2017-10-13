@@ -51,6 +51,7 @@ class InImg(object):
             return (indx + 1, remx, remy)
 
 class PCRenderer:
+    ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
     def __init__(self, port, imgs, depths, target, target_poses):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
@@ -62,7 +63,6 @@ class PCRenderer:
         self.clickstart = (0,0)
         self.mousedown  = False
         self.fps = 0
-        self.rotation_const = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
         self.overlay    = False
         self.show_depth = False
         self._context_phys = zmq.Context()
@@ -73,6 +73,8 @@ class PCRenderer:
         self.depths = depths
         self.target = target
         self.model = None
+        self.old_topk = set([]) 
+        self.k = 5
 
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
@@ -169,21 +171,19 @@ class PCRenderer:
         v_cam2world  = target_pose
         v_cam2cam    = self._getViewerRelativePose()
         p     = v_cam2world.dot(np.linalg.inv(v_cam2cam))
-        p     = p.dot(np.linalg.inv(self.rotation_const))
+        p     = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
         pos        = utils.mat_to_posi_xyz(p)
         quat_wxyz  = utils.quat_xyzw_to_wxyz(utils.mat_to_quat_xyzw(p))
         return pos, quat_wxyz
         
     
     def render(self, imgs, depths, pose, model, poses, target_pose, show, target_depth, opengl_arr):
-        t0 = time.time()
-
         v_cam2world = target_pose
         p = (v_cam2world).dot(np.linalg.inv(pose))
-        p = p.dot(np.linalg.inv(self.rotation_const))
+        p = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
         s = utils.mat_to_str(p)
 
-        #with Profiler("Depth request round-trip"):        
+        #with Profiler("Depth request round-trip"):
         socket_mist.send(s)
         message = socket_mist.recv()
 
@@ -202,22 +202,20 @@ class PCRenderer:
 
         def _render_pc(opengl_arr):
             #with Profiler("Render pointcloud"):
-            scale = 100.  # 512
-            target_depth = np.int32(opengl_arr * scale)
-            show[:] = 0
             poses_after = [
                 pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                 for i in range(len(imgs))]
-
-            for i in range(len(imgs)):
-                cuda_pc.render(ct.c_int(imgs[i].shape[0]),
-                        ct.c_int(imgs[i].shape[1]),
-                        imgs[i].ctypes.data_as(ct.c_void_p),
-                        depths[i].ctypes.data_as(ct.c_void_p),
-                        poses_after[i].ctypes.data_as(ct.c_void_p),
-                        show.ctypes.data_as(ct.c_void_p),
-                        target_depth.ctypes.data_as(ct.c_void_p)
-                        )
+            
+            cuda_pc.render(ct.c_int(len(imgs)),                      
+                           ct.c_int(imgs[0].shape[0]),
+                           ct.c_int(imgs[0].shape[1]),
+                           imgs.ctypes.data_as(ct.c_void_p),
+                           depths.ctypes.data_as(ct.c_void_p),
+                           np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                           show.ctypes.data_as(ct.c_void_p),
+                           opengl_arr.ctypes.data_as(ct.c_void_p)
+                          )
+                
         threads = [
             Process(target=_render_pc, args=(opengl_arr,)),
             Process(target=_render_depth, args=(opengl_arr,))]
@@ -240,9 +238,6 @@ class PCRenderer:
             show[:] = (show2[:] * 255).astype(np.uint8)
             print('Transfer to CPU time:', time.time() - before)
 
-        t1 =time.time()
-        t = t1-t0
-        self.fps = 1/t
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling
@@ -264,7 +259,7 @@ class PCRenderer:
 
         v_cam2world = self.target_poses[0]
         v_cam2cam   = self._getViewerRelativePose()
-        cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(self.rotation_const))
+        cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
         
         ## Entry point for change of view 
         ## Optimization
@@ -277,12 +272,16 @@ class PCRenderer:
         poses_after = [cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
         pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
 
-        top5 = (np.argsort(pose_after_distance))[:5]
-        imgs_top5 = [self.imgs[i] for i in top5]
-        depths_top5 = [self.depths[i] for i in top5]
-        relative_poses_top5 = [relative_poses[i] for i in top5]
+        topk = (np.argsort(pose_after_distance))[:self.k]
         
-        self.render(imgs_top5, depths_top5, cpose.astype(np.float32), self.model, relative_poses_top5, self.target_poses[0], show, target_depth, depth_buffer)
+        if set(topk) != self.old_topk:      
+            self.imgs_topk = np.array([self.imgs[i] for i in topk])
+            self.depths_topk = np.array([self.depths[i] for i in topk]).flatten()
+            self.relative_poses_topk = [relative_poses[i] for i in topk]
+            self.old_topk = set(topk)
+
+        self.render(self.imgs_topk, self.depths_topk, cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], show, target_depth, depth_buffer)
+        
 
         if self.overlay:
             show_out = (show/2 + self.target/2).astype(np.uint8)
@@ -290,6 +289,7 @@ class PCRenderer:
             show_out = (target_depth * 10).astype(np.uint8)
         else:
             show_out = show
+
 
         show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
         return show_rgb
@@ -302,20 +302,24 @@ class PCRenderer:
         cv2.setMouseCallback('show3d',self._onmouse)
 
     def renderToScreen(self, pose):
+        t0 = time.time()
         showsz = self.target.shape[0]
         show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
         target_depth   = np.zeros((showsz,showsz * 2)).astype(np.int32)
-        imgv  = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
-        maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
+        #imgv  = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
+        #maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
         
         show_rgb = self.renderOffScreen(pose)
+        t1 =time.time()
+        t = t1-t0
+        self.fps = 1/t
         cv2.putText(show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,showsz-15),0,0.5,(255,255,255))            
         cv2.putText(show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
         cv2.imshow('show3d',show_rgb)
         
         ## TODO (hzyjerry): does this introduce extra time delay?
-        cv2.waitKey(5)
+        cv2.waitKey(1)
         return show_rgb
         
 
@@ -346,7 +350,7 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-    d = ViewDataSet3D(root=opt.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
+    d = ViewDataSet3D(root=opt.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = True)
     
     scene_dict = dict(zip(d.scenes, range(len(d.scenes))))
     if not opt.model_id in scene_dict.keys():
