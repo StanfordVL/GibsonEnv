@@ -25,7 +25,7 @@ class AdaptiveNorm2d(nn.Module):
         return self.w0.repeat(x.size()) * self.nm(x) +  self.w1.repeat(x.size()) * x
     
 class CompletionNet2(nn.Module):
-    def __init__(self):
+    def __init__(self, norm = AdaptiveNorm2d):
         super(CompletionNet2, self).__init__()
         nf = 64
         alpha = 0.05
@@ -33,55 +33,55 @@ class CompletionNet2(nn.Module):
             nn.Conv2d(9, nf/4, kernel_size = 5, stride = 1, padding = 2),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf/4, nf, kernel_size = 5, stride = 2, padding = 2),
-            AdaptiveNorm2d(nf, momentum=alpha),
+            norm(nf, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf, nf, kernel_size = 3, stride = 1, padding = 2),
-            AdaptiveNorm2d(nf, momentum=alpha),
+            norm(nf, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf, nf*4, kernel_size = 5, stride = 2, padding = 1),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf*4, nf * 4, kernel_size = 3, stride = 1, padding = 1),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf * 4, nf * 4, kernel_size = 3, stride = 1, padding = 1),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.LeakyReLU(0.1),
 
             nn.Conv2d(nf * 4, nf * 4, kernel_size = 3, stride = 1, dilation = 2, padding = 2),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf * 4, nf * 4, kernel_size = 3, stride = 1, dilation = 4, padding = 4),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf * 4, nf * 4, kernel_size = 3, stride = 1, dilation = 8, padding = 8),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf * 4, nf * 4, kernel_size = 3, stride = 1, dilation = 16, padding = 16),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf * 4, nf * 4, kernel_size = 3, stride = 1, dilation = 32, padding = 32),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.LeakyReLU(0.1),
 
             nn.Conv2d(nf * 4, nf * 4, kernel_size = 3, stride = 1, padding = 1),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.ReLU(),
             nn.Conv2d(nf * 4, nf * 4, kernel_size = 3, stride = 1, padding = 1),
-            AdaptiveNorm2d(nf * 4, momentum=alpha),
+            norm(nf * 4, momentum=alpha),
             nn.ReLU(),
 
             nn.ConvTranspose2d(nf * 4, nf , kernel_size = 4, stride = 2, padding = 1),
-            AdaptiveNorm2d(nf , momentum=alpha),
+            norm(nf , momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf, nf, kernel_size = 3, stride = 1, padding = 1),
-            AdaptiveNorm2d(nf, momentum=alpha),
+            norm(nf, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.ConvTranspose2d(nf, nf/4, kernel_size = 4, stride = 2, padding = 1),
-            AdaptiveNorm2d(nf/4, momentum=alpha),
+            norm(nf/4, momentum=alpha),
             nn.ReLU(),
             nn.Conv2d(nf/4, nf/4, kernel_size = 3, stride = 1, padding = 1),
-            AdaptiveNorm2d(nf/4, momentum=alpha),
+            norm(nf/4, momentum=alpha),
             nn.LeakyReLU(0.1),
             nn.Conv2d(nf/4, 3, kernel_size = 3, stride = 1, padding = 1),
             )
@@ -130,9 +130,10 @@ def identity_init(m):
         
 
 class Perceptual(nn.Module):
-    def __init__(self, features):
+    def __init__(self, features, early = False):
         super(Perceptual, self).__init__()
         self.features = features
+        self.early = early
         
     def forward(self, x):
         bs = x.size(0)
@@ -169,5 +170,9 @@ class Perceptual(nn.Module):
         x = self.features[26](x)
         x4 = x.view(bs, -1, 1)
         
-        perfeat = torch.cat([x0, x1, x2, x3, x4], 1)
+        if self.early:
+            perfeat = torch.cat([x0, x1, x2], 1)
+        else:    
+            perfeat = torch.cat([x0, x1, x2, x3, x4], 1)
+                
         return perfeat
