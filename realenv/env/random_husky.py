@@ -31,21 +31,23 @@ class RandomAgent(object):
 if __name__ == '__main__':
     action_space = generate_actions()
     agent = RandomAgent(action_space)
-    env = SimpleEnv(human=True)
+    env = SimpleEnv(human=False)
     ob = None
 
+    i = 0
     try:
-        for i in range(100000):
+        while True:
             if (i <= 14):
                 observation, reward = env._step({})
-            elif (i == 10000):
-                observation, reward = env.reset()
+            #elif (i == 10000):
+            #    observation, reward = env.reset()
             else:
                 action = agent.act(ob)
                 with Profiler("Agent step function"):
                     observation, reward = env._step(action)
                 print("Husky action", action, "reward %.3f"% reward)
-
+            i = i + 1
+            print("current step", i)
             #time.sleep(0.2)
 
     except KeyboardInterrupt:

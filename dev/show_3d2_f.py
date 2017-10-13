@@ -208,6 +208,11 @@ class PCRenderer:
         self.fps = 0
         self.rotation_const = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
 
+<<<<<<< HEAD
+=======
+        self.old_topk = set([])   
+        
+>>>>>>> 7cecc4365b6a20e1a0d236c1272d48a841f2feed
     def onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
             self.org_pitch, self.org_yaw, self.org_x, self.org_y, self.org_z =\
@@ -376,16 +381,21 @@ class PCRenderer:
                         )
             '''
             with Profiler("Render pointcloud"):
+<<<<<<< HEAD
                 scale = 100.  # 512
                 target_depth = np.int32(opengl_arr * scale)
                 show[:] = 0
                 
                 show_all = np.zeros((len(imgs), 1024, 2048, 3)).astype(np.uint8)
+=======
+                scale = 100.
+>>>>>>> 7cecc4365b6a20e1a0d236c1272d48a841f2feed
                 
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
                 
+<<<<<<< HEAD
                 #from IPython import embed; embed()
                 
                 depth_test = np.zeros((1024 * 2048 * len(imgs),), dtype = np.float32)
@@ -421,6 +431,26 @@ class PCRenderer:
     
         render_pc(opengl_arr)
         render_depth(opengl_arr)
+=======
+                dll.render(ct.c_int(len(imgs)),                      
+                           ct.c_int(imgs[0].shape[0]),
+                           ct.c_int(imgs[0].shape[1]),
+                           imgs.ctypes.data_as(ct.c_void_p),
+                           depths.ctypes.data_as(ct.c_void_p),
+                           np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                           show.ctypes.data_as(ct.c_void_p),
+                           opengl_arr.ctypes.data_as(ct.c_void_p)
+                          )
+                
+        threads = [
+            Process(target=render_pc, args=(opengl_arr,)),
+            Process(target=render_depth, args=(opengl_arr,))]
+        [t.start() for t in threads]
+        [t.join() for t in threads]
+    
+        #render_pc(opengl_arr)
+        #render_depth(opengl_arr)
+>>>>>>> 7cecc4365b6a20e1a0d236c1272d48a841f2feed
             
         if model:
             tf = transforms.ToTensor()
@@ -530,6 +560,10 @@ class PCRenderer:
                 self.quat = new_quat
                 self.changed = True
 
+<<<<<<< HEAD
+=======
+                
+>>>>>>> 7cecc4365b6a20e1a0d236c1272d48a841f2feed
             if self.changed:
                 new_quat = mat_to_quat_xyzw(world_cpose)
                 new_quat = z_up_to_y_up(quat_xyzw_to_wxyz(new_quat))
@@ -542,8 +576,12 @@ class PCRenderer:
                 if PHYSICS_FIRST or hasNoCollision(new_posi, new_quat):
                     ## Optimization
                     depth_buffer = np.zeros(imgs[0].shape[:2], dtype=np.float32)
+<<<<<<< HEAD
                     #render(imgs, depths, cpose.astype(np.float32), model, poses, depth_buffer)
                     
+=======
+                    #render(imgs, depths, cpose.astype(np.float32), model, poses, depth_buffer)        
+>>>>>>> 7cecc4365b6a20e1a0d236c1272d48a841f2feed
                     
                     relative_poses = np.copy(target_poses)
                     for i in range(len(relative_poses)):
@@ -556,10 +594,19 @@ class PCRenderer:
                     pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]  
                     k = 3
                     topk = (np.argsort(pose_after_distance))[:k]
+<<<<<<< HEAD
                     imgs_topk = [imgs[i] for i in topk]
                     depths_topk = [depths[i] for i in topk]
                     relative_poses_topk = [relative_poses[i] for i in topk]
                     
+=======
+                    
+                    if set(topk) != self.old_topk:      
+                        imgs_topk = np.array([imgs[i] for i in topk])
+                        depths_topk = np.array([depths[i] for i in topk]).flatten()
+                        relative_poses_topk = [relative_poses[i] for i in topk]
+                        self.old_topk = set(topk)
+>>>>>>> 7cecc4365b6a20e1a0d236c1272d48a841f2feed
                     
                     self.render(imgs_topk, depths_topk, cpose.astype(np.float32), model, relative_poses_topk, target_poses[0], show, target_depth, depth_buffer)
                     old_state = [self.x, self.y, self.z, self.roll, self.pitch, self.yaw]
@@ -673,7 +720,11 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
+<<<<<<< HEAD
     d = ViewDataSet3D(root=opt.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
+=======
+    d = ViewDataSet3D(root=opt.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = True)
+>>>>>>> 7cecc4365b6a20e1a0d236c1272d48a841f2feed
     
     scene_dict = dict(zip(d.scenes, range(len(d.scenes))))
     if not opt.model_id in scene_dict.keys():
