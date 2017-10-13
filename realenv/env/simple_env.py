@@ -18,8 +18,8 @@ from multiprocessing.dummy import Process
 class SimpleEnv(gym.Env):
   metadata = {'render.modes': ['human']}
 
-  def __init__(self, human=False):
-    self.debug_mode = True
+  def __init__(self, human=False, debug=True):
+    self.debug_mode = debug
     file_dir = os.path.dirname(__file__)
     cmd_channel = "bash run_depth_render.sh"
 
@@ -115,7 +115,7 @@ class SimpleEnv(gym.Env):
         #reward = random.randrange(-8, 20)
         with Profiler("Reward func"):
           reward = self.reward_func(self.state_old, state)
-        #self.r_displayer.add_reward(reward)
+        self.r_displayer.add_reward(reward)
         self.state_old = state
         #with Profiler("Display reward"):
         
