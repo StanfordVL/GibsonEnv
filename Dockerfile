@@ -70,7 +70,7 @@ WORKDIR /usr/local/realenv/
 RUN ["chmod", "+x", "/usr/local/realenv/init.sh"]
 
 
-#ENTRYPOINT ["/usr/local/realenv/init.sh"]
+#ENTRYPOINT [ "/usr/local/realenv/init.sh" ]
 #ENTRYPOINT [ "/bin/bash", "-c" ]
 #CMD ["x11vnc", "-forever", "-usepw", "-create"]
 

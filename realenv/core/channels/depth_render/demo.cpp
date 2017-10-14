@@ -339,14 +339,14 @@ int main( int argc, char * argv[] )
         socket.recv (&request);
         std::cout << "Received Hello " << request.data() << std::endl;
 
-        printf("%s\n", request.data());
+        //printf("%s\n", request.data());
 
 		// Measure speed
 		//double currentTime = glfwGetTime();
 
 		double currentTime = 0;
 
-		printf("Running main render loop %f\n");
+		//printf("Running main render loop %f\n");
 		nbFrames++;
 		if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1sec ago
 			// printf and reset

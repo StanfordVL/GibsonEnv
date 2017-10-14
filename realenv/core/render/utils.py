@@ -6,8 +6,9 @@
 import numpy as np
 import math
 import PIL
+import transforms3d
 from numpy import cos,sin
-
+from transfer import transfer2
 
 # In[36]:
 
@@ -164,3 +165,117 @@ def generate_transformation_matrix(x,y,z,yaw,pitch,roll):
     rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
     current_rt = np.dot(rotation, current_rt)
     return current_rt
+
+
+
+
+def mat_to_str(matrix):
+    s = ""
+    for row in range(4):
+        for col in range(4):
+            s = s + " " + str(matrix[row][col])
+    return s.strip()
+
+
+def mat_to_posi_xyz(cpose):
+    return cpose[:3, -1]
+
+def mat_to_quat_xyzw(cpose):
+    rot = cpose[:3, :3]
+    ## Return: [r_x, r_y, r_z, r_w]
+    wxyz = transforms3d.quaternions.mat2quat(rot)
+    return quat_wxyz_to_xyzw(wxyz)
+
+
+def convert_array(img_array, outimg):
+    inimg = InImg()
+
+    wo, ho = inimg.grid * 4, inimg.grid * 3
+
+    # Calculate height and width of output image, and size of each square face
+    h = wo/3
+    w = 2*h
+    n = ho/3
+
+    # Create new image with width w, and height h
+    # outimg = np.zeros((h,w,1)) #.astype(np.uint8)
+    '''
+    # PHYSICS
+    outimg = np.zeros((h,w,1)) #.astype(np.uint8)
+
+    in_imgs = None
+    #print("converting images", len(img_array))
+
+    #print("Passed in image array", len(img_array), np.max(img_array[0]))
+    in_imgs = img_array
+
+    # For each pixel in output image find colour value from input image
+    #print(outimg.shape)
+    '''
+
+    # todo: for some reason the image is flipped 180 degrees
+    transfer2(img_array, coords, h, w, outimg)
+
+    # return outimg
+
+
+
+## Blender generated poses and OpenGL default poses adhere to
+## different conventions. To better understand the nitty-gritty
+## transformations inside this file, check out this:
+## https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Navigation
+##  Blender: z-is-up
+##      same with: csv, rt_camera_matrix
+##  OpenGL: y-is-up
+##      same with: obj
+##  Default camera: y is up-direction, -z facing
+
+
+## Quat(wxyz)
+def quat_pos_to_mat(pos, quat):
+    r_w, r_x, r_y, r_z = quat
+    #print("quat", r_w, r_x, r_y, r_z)
+    mat = np.eye(4)
+    mat[:3, :3] = transforms3d.quaternions.quat2mat([r_w, r_x, r_y, r_z])
+    mat[:3, -1] = pos
+    # Return: roll, pitch, yaw
+    return mat
+
+## Used for URDF models that are default -x facing
+##  Rotate the model around its internal x axis for 90 degrees
+##  so that it is at "normal" pose when applied camera_rt_matrix 
+## Format: wxyz for input & return
+def z_up_to_y_up(quat_wxyz):
+    ## Operations (1) rotate around y for pi/2, 
+    ##            (2) rotate around z for pi/2
+    to_y_up = transforms3d.euler.euler2quat(0, np.pi/2, np.pi/2)
+    return transforms3d.quaternions.qmult(quat_wxyz, to_y_up)
+
+## Models coming out of opengl are negative x facing
+##  Transform the default to 
+def y_up_to_z_up(quat_wxyz):
+    to_z_up = transforms3d.euler.euler2quat(np.pi/2, 0, np.pi/2)
+    return transforms3d.quaternions.qmult(to_z_up, quat_wxyz)
+
+
+def quat_wxyz_to_euler(wxyz):
+    q0, q1, q2, q3 = wxyz
+    sinr = 2 * (q0 * q1 + q2 * q3)
+    cosr = 1 - 2 * (q1 * q1 + q2 * q2)
+    sinp = 2 * (q0 * q2 - q3 * q1)
+    siny = 2 * (q0 * q3 + q1 * q2)
+    cosy = 1 - 2 * (q2 * q2 + q3 * q3)
+
+    roll  = np.arctan2(sinr, cosr)
+    pitch = np.arcsin(sinp)
+    yaw   = np.arctan2(siny, cosy)
+    return [roll, pitch, yaw]
+
+
+## wxyz: numpy array format
+def quat_wxyz_to_xyzw(wxyz):
+    return np.concatenate((wxyz[1:], wxyz[:1]))
+
+## xyzw: numpy array format
+def quat_xyzw_to_wxyz(xyzw):
+    return np.concatenate((xyzw[-1:], xyzw[:-1]))
