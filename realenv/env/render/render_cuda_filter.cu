@@ -202,37 +202,70 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
   {
      int iw = x;
      int ih = y + j;
-     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
+     int tx = ((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
+     int ty = ((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
           
-     int txlu = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int tylu = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
+     float tx_offset = ((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
+     float ty_offset = ((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
      
-     int txld = round((points3d_polar[(ih * w + iw + 1) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int tyld = round((points3d_polar[(ih * w + iw + 1) * 3 + 2])/M_PI * h - 0.5);
      
-     int txru = round((points3d_polar[((ih + 1) * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int tyru = round((points3d_polar[((ih + 1) * w + iw) * 3 + 2])/M_PI * h - 0.5);
+     float tx00 = 0;
+     float ty00 = 0;
      
-     int txrd = round((points3d_polar[((ih+1) * w + iw + 1) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int tyrd = round((points3d_polar[((ih+1) * w + iw + 1) * 3 + 2])/M_PI * h - 0.5);
      
+     float tx01 = ((points3d_polar[(ih * w + iw + 1) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5) - tx_offset;
+     float ty01 = ((points3d_polar[(ih * w + iw + 1) * 3 + 2])/M_PI * h - 0.5) - ty_offset;
+     
+     float tx10 = ((points3d_polar[((ih + 1) * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5) - tx_offset;
+     float ty10 = ((points3d_polar[((ih + 1) * w + iw) * 3 + 2])/M_PI * h - 0.5) - ty_offset;
+     
+     float tx11 = ((points3d_polar[((ih+1) * w + iw + 1) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5) - tx_offset;
+     float ty11 = ((points3d_polar[((ih+1) * w + iw + 1) * 3 + 2])/M_PI * h - 0.5) - ty_offset;
+     
+     float t00 = 0 * (float)tx00 + (float)tx01 * -1.0/3  + (float)tx10 *  2.0/3   + (float)tx11 *  1.0/3;
+     float t01 = 0 * (float)ty00 + (float)ty01 * -1.0/3  + (float)ty10 *  2.0/3   + (float)ty11 *  1.0/3;
+     float t10 = 0 * (float)tx00 + (float)tx01 *  2.0/3  + (float)tx10 * -1.0/3   + (float)tx11 *  1.0/3;
+     float t11 = 0 * (float)ty00 + (float)ty01 *  2.0/3  + (float)ty10 * -1.0/3   + (float)ty11 *  1.0/3;
+     
+     float det = t00 * t11 - t01 * t10 + 1e-10;
+     
+     //printf("%f %f %f %f %f\n", t00, t01, t10, t11, det);
+     
+     float it00, it01, it10, it11;
+     
+     it00 = t11/det;
+     it01 = -t01/det;
+     it10 = -t10/det;
+     it11 = t00/det;
+     
+     
+     //printf("inverse %f %f %f %f\n", it00, it01, it10, it11);
      
      int this_depth = (int)(12800/128 * points3d_polar[(ih * w + iw) * 3 + 0]);
      int delta = this_depth - (int)(100 * depth_render[(ty * w + tx)]);
      
-     int txmin = min(min(txlu, txrd), min(txru, txld));
-     int txmax = max(max(txlu, txrd), max(txru, txld));
-     int tymin = min(min(tylu, tyrd), min(tyru, tyld));
-     int tymax = max(max(tylu, tyrd), max(tyru, tyld));
+     int txmin = floor(tx_offset + min(min(tx00, tx11), min(tx01, tx10)));
+     int txmax = ceil(tx_offset + max(max(tx00, tx11), max(tx01, tx10)));
+     int tymin = floor(ty_offset + min(min(ty00, ty11), min(ty01, ty10)));
+     int tymax = ceil(ty_offset + max(max(ty00, ty11), max(ty01, ty10)));
       
+     float newx, newy;
+     
      if ((y > h/8) && (y < (h*7)/8))
-     if ((delta > -15) && (delta < 15) && (this_depth < 10000)) {
+     if ((delta > -10) && (delta < 10) && (this_depth < 10000)) {
            if ((txmax - txmin) * (tymax - tymin) < 50)
            {
                for (tx = txmin; tx < txmax; tx ++)
                    for (ty = tymin; ty < tymax; ty ++)
-                       render[(ty * w + tx)] = img[(ih * w + iw)];
+                       {
+                       newx = (tx - tx_offset) * it00 + it10 * (ty - ty_offset);
+                       newy = (tx - tx_offset) * it01 + it11 * (ty - ty_offset);
+                       
+                       //printf("%f %f\n", newx, newy);
+                       if ((newx > -0.01) && (newx < 1.01) && (newy > -0.01) && (newy < 1.01))
+                           render[(ty * w + tx)] = img[(ih * w + iw)];
+                       }
+                       
             }
      }
   }
