@@ -616,6 +616,7 @@ int main( int argc, char * argv[] )
 
         //  Wait for next request from client
         socket.recv (&request);
+
         std::cout << "Received Hello " << request.data() << std::endl;
 		boost::timer t;
         //printf("%s\n", request.data());
@@ -626,7 +627,6 @@ int main( int argc, char * argv[] )
         //std::cout << request_str << std::endl;
 
         glm::mat4 viewMat = str_to_mat(request_str);
-        // debug_mat(viewMat, "json");
 
 		// Measure speed
 		//double currentTime = glfwGetTime();
