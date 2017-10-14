@@ -33,6 +33,7 @@ class SimpleEnv(gym.Env):
     try:
       self.r_visuals = self._setupVisuals()
       pose_init = self.r_visuals.renderOffScreenInitialPose()
+      print("initial pose", pose_init)
       self.r_physics = self._setupPhysics(human)
       self.r_physics.initialize(pose_init)
       if self.debug_mode:
@@ -115,7 +116,7 @@ class SimpleEnv(gym.Env):
         #reward = random.randrange(-8, 20)
         with Profiler("Reward func"):
           reward = self.reward_func(self.state_old, state)
-        self.r_displayer.add_reward(reward)
+        #self.r_displayer.add_reward(reward)
         self.state_old = state
         #with Profiler("Display reward"):
         
