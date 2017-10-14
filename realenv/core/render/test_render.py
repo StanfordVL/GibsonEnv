@@ -111,16 +111,17 @@ showsz = 1024
 show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
 
 this_depth = (128 * depths[topk[0]]).astype(np.float32)
-with Profiler("Render pointcloud"):
-    cuda_pc.render(ct.c_int(len(imgs_topk)),                      
-                   ct.c_int(imgs_topk[0].shape[0]),
-                   ct.c_int(imgs_topk[0].shape[1]),
-                   imgs_topk.ctypes.data_as(ct.c_void_p),
-                   depths_topk.ctypes.data_as(ct.c_void_p),
-                   np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                   show.ctypes.data_as(ct.c_void_p),
-                   this_depth.ctypes.data_as(ct.c_void_p)
-                  )
+for i in range(5):
+    with Profiler("Render pointcloud"):
+        cuda_pc.render(ct.c_int(len(imgs_topk)),                      
+                       ct.c_int(imgs_topk[0].shape[0]),
+                       ct.c_int(imgs_topk[0].shape[1]),
+                       imgs_topk.ctypes.data_as(ct.c_void_p),
+                       depths_topk.ctypes.data_as(ct.c_void_p),
+                       np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                       show.ctypes.data_as(ct.c_void_p),
+                       this_depth.ctypes.data_as(ct.c_void_p)
+                      )
 # In[ ]:
 
 # In[ ]:
