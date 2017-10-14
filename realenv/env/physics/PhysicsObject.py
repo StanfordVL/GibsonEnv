@@ -3,7 +3,7 @@ import settings
 from transforms3d import euler, quaternions
 
 
-class PhysicsObject():
+class PhysicsObject(object):
 	"""
 	Controllable object in world
 	This class mostly handles action parsing
@@ -148,6 +148,7 @@ class PhysicsObject():
 			self.action['gamma'] = 1
 		if (ord('l') in keys):
 			self.action['gamma'] = -1
+		return keys
 		#self.parseActionAndUpdate()
 
 
@@ -193,7 +194,7 @@ class PhysicsObject():
 			self.d_gamma = -self.v_r/settings.STEPS_PER_SEC
 
 		self.updatePositionOrientation()
-		self._clearUpDelta()
+		#self.clearUpDelta()
 
 	@staticmethod
 	def quatWxyzToXyzw(wxyz):
@@ -315,7 +316,7 @@ class PhysicsObject():
 		self._updateInitialPositionOrientation()
 
 
-	def _clearUpDelta(self):
+	def clearUpDelta(self):
 		self.d_xyz = np.array([0, 0, 0], dtype=float)
 		self.d_alpha, self.d_beta, self.d_gamma = 0, 0, 0
 

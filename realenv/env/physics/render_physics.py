@@ -49,7 +49,7 @@ class PhysRenderer(object):
         else:
             visualId = 0
 
-        #p.setGravity(0,0,-10)
+        p.setGravity(0,0,-10)
         p.setRealTimeSimulation(0)
         self.framePerSec = framePerSec
 
@@ -95,6 +95,7 @@ class PhysRenderer(object):
         for _ in range(N):
             p.stepSimulation()
             pObject.parseActionAndUpdate()
+        pObject.clearUpDelta()
 
     def _startDebugRoomMap(self):
         cameraDistSlider  = p.addUserDebugParameter("Distance",0,15,4)
@@ -126,17 +127,20 @@ class PhysRenderer(object):
             self.cart.parseActionAndUpdate(action)
 
         self._stepNsteps(int(settings.STEPS_PER_SEC/self.framePerSec), self.cart)
+        
         pos_xyz, quat_wxyz = self.cart.getViewPosAndOrientation()
         
         cameraDist = p.readUserDebugParameter(self.debug_sliders['dist'])
         cameraYaw  = p.readUserDebugParameter(self.debug_sliders['yaw'])
         cameraPitch = p.readUserDebugParameter(self.debug_sliders['pitch'])
+        
         p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
         p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, pos_xyz)
         
         state = {
             'distance_to_target': np.sum(np.square(pos_xyz - self.target_pos))
         }
+        
         return [pos_xyz, quat_wxyz], state
 
     ## DEPRECATED
