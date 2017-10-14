@@ -247,7 +247,7 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
      int tymax = ceil(ty_offset + max(max(ty00, ty11), max(ty01, ty10)));
       
      float newx, newy;
-     char r,g,b;
+     int r,g,b;
      int itx, ity;
      
      if ((y > h/8) && (y < (h*7)/8))
@@ -263,9 +263,10 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
                        //printf("%f %f\n", newx, newy);
                        if ((newx > -0.01) && (newx < 1.01) && (newy > -0.01) && (newy < 1.01))
                           { 
-                           r = img[(ih * w + iw)] / (256*256);
-                           g = img[(ih * w + iw)] / 256 % 256;
-                           b = img[(ih * w + iw)] % 256;
+                           r = img[(ih * w + iw)] / (256*256) * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / (256*256) * (1-newx) * (newy) + img[((ih+1) * w + iw)] / (256*256) * (newx) * (1-newy) + img[((ih+1) * w + iw + 1)] / (256*256) * newx * newy;
+                           g = img[(ih * w + iw)] / 256 % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / 256 % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] / 256 % 256  * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] / 256 % 256 * newx * newy;
+                           b = img[(ih * w + iw)] % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] % 256 * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] % 256 * newx * newy ;
+                           
                            render[(ity * w + itx)] = r * 256 * 256 + g * 256 + b;
                            }
                        }
