@@ -274,7 +274,7 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
      
      if ((y > h/8) && (y < (h*7)/8))
      if ((delta > -10) && (delta < 10) && (this_depth < 10000)) {
-           if ((txmax - txmin) * (tymax - tymin) < 50)
+           if ((txmax - txmin) * (tymax - tymin) < 100)
            {
                for (itx = txmin; itx < txmax; itx ++)
                    for (ity = tymin; ity < tymax; ity ++)
@@ -285,6 +285,12 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
                        //printf("%f %f\n", newx, newy);
                        if ((newx > -0.05) && (newx < 1.05) && (newy > -0.05) && (newy < 1.05))
                           { 
+                          if (newx < 0) newx = 0;
+                          if (newy < 0) newy = 0;
+                          if (newx > 1) newx = 1;
+                          if (newy > 1) newy = 1;
+                          
+                          
                            r = img[(ih * w + iw)] / (256*256) * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / (256*256) * (1-newx) * (newy) + img[((ih+1) * w + iw)] / (256*256) * (newx) * (1-newy) + img[((ih+1) * w + iw + 1)] / (256*256) * newx * newy;
                            g = img[(ih * w + iw)] / 256 % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / 256 % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] / 256 % 256  * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] / 256 % 256 * newx * newy;
                            b = img[(ih * w + iw)] % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] % 256 * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] % 256 * newx * newy ;
@@ -343,12 +349,6 @@ void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, 
         cudaMemcpy(d_pose, &(pose[idx * 16]), sizeof(float) * 16, cudaMemcpyHostToDevice);
         cudaMemcpy(d_img, &(img[idx * nx * ny * 3]), frame_mem_size, cudaMemcpyHostToDevice);
         cudaMemcpy(d_depth, &(depth[idx * nx * ny]), depth_mem_size, cudaMemcpyHostToDevice);
-
-        //int i;
-        //for (i = 0; i < 100; i++) {
-        //    printf("%f ", depth[i + idx * nx * ny]);
-        //}
-        //printf("\n");
 
         cudaMemset(d_render, 0, frame_mem_size);
         cudaMemset(d_render2, 0, nx * ny * sizeof(int));
