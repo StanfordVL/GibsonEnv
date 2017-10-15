@@ -72,6 +72,28 @@ __global__ void int_to_char(int * img2, unsigned char * img)
 }
 
 
+
+__global__ void fill(unsigned char * img)
+{
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    int width = gridDim.x * TILE_DIM;
+    
+    for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS) {
+      
+      if ( img[3*((y+j)*width + x)] + img[3*((y+j)*width + x)+1] + img[3*((y+j)*width + x)+2] == 0) {
+          
+          img[3*((y+j)*width + x)] = img[3*((y+j)*width + x + 1)];
+          img[3*((y+j)*width + x)+1] = img[3*((y+j)*width + x + 1)+1];
+          img[3*((y+j)*width + x)+2] = img[3*((y+j)*width + x + 1)+2];
+      }  
+      
+    }
+}
+
+
+
+
 __global__ void merge(unsigned char * img_all, unsigned char * img, int n, int stride)
 {
     int x = blockIdx.x * TILE_DIM + threadIdx.x;
@@ -205,34 +227,82 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
      int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
      int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
           
-     int txlu = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int tylu = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
+     float tx_offset = ((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
+     float ty_offset = ((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h - 0.5);
      
-     int txld = round((points3d_polar[(ih * w + iw + 1) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int tyld = round((points3d_polar[(ih * w + iw + 1) * 3 + 2])/M_PI * h - 0.5);
+     float tx00 = 0;
+     float ty00 = 0;
      
-     int txru = round((points3d_polar[((ih + 1) * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int tyru = round((points3d_polar[((ih + 1) * w + iw) * 3 + 2])/M_PI * h - 0.5);
+     float tx01 = ((points3d_polar[(ih * w + iw + 1) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5) - tx_offset;
+     float ty01 = ((points3d_polar[(ih * w + iw + 1) * 3 + 2])/M_PI * h - 0.5) - ty_offset;
      
-     int txrd = round((points3d_polar[((ih+1) * w + iw + 1) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5);
-     int tyrd = round((points3d_polar[((ih+1) * w + iw + 1) * 3 + 2])/M_PI * h - 0.5);
+     float tx10 = ((points3d_polar[((ih + 1) * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5) - tx_offset;
+     float ty10 = ((points3d_polar[((ih + 1) * w + iw) * 3 + 2])/M_PI * h - 0.5) - ty_offset;
      
+     float tx11 = ((points3d_polar[((ih+1) * w + iw + 1) * 3 + 1] + M_PI)/(2*M_PI) * w - 0.5) - tx_offset;
+     float ty11 = ((points3d_polar[((ih+1) * w + iw + 1) * 3 + 2])/M_PI * h - 0.5) - ty_offset;
+     
+     float t00 = 0 * (float)tx00 + (float)tx01 * -1.0/3  + (float)tx10 *  2.0/3   + (float)tx11 *  1.0/3;
+     float t01 = 0 * (float)ty00 + (float)ty01 * -1.0/3  + (float)ty10 *  2.0/3   + (float)ty11 *  1.0/3;
+     float t10 = 0 * (float)tx00 + (float)tx01 *  2.0/3  + (float)tx10 * -1.0/3   + (float)tx11 *  1.0/3;
+     float t11 = 0 * (float)ty00 + (float)ty01 *  2.0/3  + (float)ty10 * -1.0/3   + (float)ty11 *  1.0/3;
+     
+     float det = t00 * t11 - t01 * t10 + 1e-10;
+     
+     //printf("%f %f %f %f %f\n", t00, t01, t10, t11, det);
+     
+     float it00, it01, it10, it11;
+     
+     it00 = t11/det;
+     it01 = -t01/det;
+     it10 = -t10/det;
+     it11 = t00/det;
+     
+     //printf("inverse %f %f %f %f\n", it00, it01, it10, it11);
      
      int this_depth = (int)(12800/128 * points3d_polar[(ih * w + iw) * 3 + 0]);
      int delta = this_depth - (int)(100 * depth_render[(ty * w + tx)]);
      
-     int txmin = min(min(txlu, txrd), min(txru, txld));
-     int txmax = max(max(txlu, txrd), max(txru, txld));
-     int tymin = min(min(tylu, tyrd), min(tyru, tyld));
-     int tymax = max(max(tylu, tyrd), max(tyru, tyld));
+     int txmin = floor(tx_offset + min(min(tx00, tx11), min(tx01, tx10)));
+     int txmax = ceil(tx_offset + max(max(tx00, tx11), max(tx01, tx10)));
+     int tymin = floor(ty_offset + min(min(ty00, ty11), min(ty01, ty10)));
+     int tymax = ceil(ty_offset + max(max(ty00, ty11), max(ty01, ty10)));
       
+     float newx, newy;
+     int r,g,b;
+     int itx, ity;
+     
      if ((y > h/8) && (y < (h*7)/8))
-     if ((delta > -15) && (delta < 15) && (this_depth < 10000)) {
-           if ((txmax - txmin) * (tymax - tymin) < 50)
+     if ((delta > -10) && (delta < 10) && (this_depth < 10000)) {
+           if ((txmax - txmin) * (tymax - tymin) < 100)
            {
-               for (tx = txmin; tx < txmax; tx ++)
-                   for (ty = tymin; ty < tymax; ty ++)
-                       render[(ty * w + tx)] = img[(ih * w + iw)];
+               for (itx = txmin; itx < txmax; itx ++)
+                   for (ity = tymin; ity < tymax; ity ++)
+                       {
+                       newx = (itx - tx_offset) * it00 + it10 * (ity - ty_offset);
+                       newy = (itx - tx_offset) * it01 + it11 * (ity - ty_offset);
+                       
+                       //printf("%f %f\n", newx, newy);
+                       if ((newx > -0.05) && (newx < 1.05) && (newy > -0.05) && (newy < 1.05))
+                          { 
+                          if (newx < 0) newx = 0;
+                          if (newy < 0) newy = 0;
+                          if (newx > 1) newx = 1;
+                          if (newy > 1) newy = 1;
+                          
+                          
+                           r = img[(ih * w + iw)] / (256*256) * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / (256*256) * (1-newx) * (newy) + img[((ih+1) * w + iw)] / (256*256) * (newx) * (1-newy) + img[((ih+1) * w + iw + 1)] / (256*256) * newx * newy;
+                           g = img[(ih * w + iw)] / 256 % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / 256 % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] / 256 % 256  * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] / 256 % 256 * newx * newy;
+                           b = img[(ih * w + iw)] % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] % 256 * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] % 256 * newx * newy ;
+                           
+                           if (r > 255) r = 255;
+                           if (g > 255) g = 255;
+                           if (b > 255) b = 255;
+                           
+                           render[(ity * w + itx)] = r * 256 * 256 + g * 256 + b;
+                           }
+                       }
+                       
             }
      }
   }
@@ -280,12 +350,6 @@ void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, 
         cudaMemcpy(d_img, &(img[idx * nx * ny * 3]), frame_mem_size, cudaMemcpyHostToDevice);
         cudaMemcpy(d_depth, &(depth[idx * nx * ny]), depth_mem_size, cudaMemcpyHostToDevice);
 
-        //int i;
-        //for (i = 0; i < 100; i++) {
-        //    printf("%f ", depth[i + idx * nx * ny]);
-        //}
-        //printf("\n");
-
         cudaMemset(d_render, 0, frame_mem_size);
         cudaMemset(d_render2, 0, nx * ny * sizeof(int));
         cudaMemset(d_img2, 0, nx * ny * sizeof(int));  
@@ -302,6 +366,7 @@ void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, 
         int_to_char <<< dimGrid, dimBlock >>> (d_render2, d_render);
         int_to_char <<< dimGrid, dimBlock >>> (d_render2, &(d_render_all[idx * nx * ny * 3]));
 
+        fill <<< dimGrid, dimBlock >>> (&(d_render_all[idx * nx * ny * 3]));
     }
 
         merge <<< dimGrid, dimBlock >>> (d_render_all, d_render, n, nx * ny * 3);
