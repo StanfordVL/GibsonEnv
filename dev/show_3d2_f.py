@@ -300,18 +300,8 @@ class PCRenderer:
         '''
         p = pose.dot(np.linalg.inv(poses[0])) #.dot(target_pose)
 
-        trans = -pose[:3, -1]
-        rot = np.linalg.inv(pose[:3, :3])
-
-
-        p2 = np.eye(4)
-        p2[:3, :3] = rot
-        p2[:3, -1] = trans
-
-
         s = mat_to_str(poses[0] * p2)
         '''
-
 
         with Profiler("Depth request round-trip"):        
             socket_mist.send(s)
