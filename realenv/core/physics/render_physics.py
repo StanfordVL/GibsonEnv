@@ -49,7 +49,7 @@ class PhysRenderer(object):
         else:
             visualId = 0
 
-        p.setGravity(0,0,-10)
+        #p.setGravity(0,0,-10)
         p.setRealTimeSimulation(0)
         self.framePerSec = framePerSec
 

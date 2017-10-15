@@ -243,8 +243,8 @@ class PCRenderer:
         ## TODO (hzyjerry): error handling
         pos, quat_wxyz = self._getViewerAbsolutePose(self.target_poses[0])
         pos       = pos.tolist()
-        quat_wxyz = quat_wxyz.tolist()
-        return pos, quat_wxyz
+        quat_xyzw = utils.quat_wxyz_to_xyzw(quat_wxyz).tolist()
+        return pos, quat_xyzw
 
     def renderOffScreen(self, pose):
         showsz = self.target.shape[0]

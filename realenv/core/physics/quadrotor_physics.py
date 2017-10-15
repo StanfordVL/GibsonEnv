@@ -30,6 +30,7 @@ class QuadObject(PhysicsObject):
         by delta
         """
         super(self.__class__, self).parseActionAndUpdate(action)
+        
         delta_force = np.array([0, 0, 0, 0], dtype=float)
         if self.action['rotor_1']:
             delta_force[0] = self.v_f/settings.STEPS_PER_SEC
@@ -71,7 +72,7 @@ class QuadRenderer(PhysRenderer):
         pos, quat_xyzw = pose[0], pose[1]
         v_t = 1             # 1m/s max speed
         v_r = np.pi/5       # 36 degrees/s
-        self.cart = QuadObject(self.objectUid, p, pos, quat_xyzw, v_t, v_r, 3500.0,  self.framePerSec)
+        self.cart = QuadObject(self.objectUid, p, pos, quat_xyzw, v_t, v_r, 2500.0,  self.framePerSec)
         print("Generated cart", self.objectUid)
         #p.setTimeStep(1.0/framePerSec)
         p.setTimeStep(1.0/settings.STEPS_PER_SEC)
@@ -89,4 +90,10 @@ if __name__ == "__main__":
     r_physics.initialize(pose_init)
     while True:
         r_physics.renderToScreen(action = None)
+        '''
+        {
+        'rotor_1': True,
+        'rotor_2': True,
+        'rotor_3': True,
+        'rotor_4': True})'''
         time.sleep(0.01)
