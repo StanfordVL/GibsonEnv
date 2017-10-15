@@ -72,6 +72,28 @@ __global__ void int_to_char(int * img2, unsigned char * img)
 }
 
 
+
+__global__ void fill(unsigned char * img)
+{
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    int width = gridDim.x * TILE_DIM;
+    
+    for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS) {
+      
+      if ( img[3*((y+j)*width + x)] + img[3*((y+j)*width + x)+1] + img[3*((y+j)*width + x)+2] == 0) {
+          
+          img[3*((y+j)*width + x)] = img[3*((y+j)*width + x + 1)];
+          img[3*((y+j)*width + x)+1] = img[3*((y+j)*width + x + 1)+1];
+          img[3*((y+j)*width + x)+2] = img[3*((y+j)*width + x + 1)+2];
+      }  
+      
+    }
+}
+
+
+
+
 __global__ void merge(unsigned char * img_all, unsigned char * img, int n, int stride)
 {
     int x = blockIdx.x * TILE_DIM + threadIdx.x;
@@ -261,11 +283,15 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
                        newy = (itx - tx_offset) * it01 + it11 * (ity - ty_offset);
                        
                        //printf("%f %f\n", newx, newy);
-                       if ((newx > -0.01) && (newx < 1.01) && (newy > -0.01) && (newy < 1.01))
+                       if ((newx > -0.05) && (newx < 1.05) && (newy > -0.05) && (newy < 1.05))
                           { 
                            r = img[(ih * w + iw)] / (256*256) * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / (256*256) * (1-newx) * (newy) + img[((ih+1) * w + iw)] / (256*256) * (newx) * (1-newy) + img[((ih+1) * w + iw + 1)] / (256*256) * newx * newy;
                            g = img[(ih * w + iw)] / 256 % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / 256 % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] / 256 % 256  * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] / 256 % 256 * newx * newy;
                            b = img[(ih * w + iw)] % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] % 256 * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] % 256 * newx * newy ;
+                           
+                           if (r > 255) r = 255;
+                           if (g > 255) g = 255;
+                           if (b > 255) b = 255;
                            
                            render[(ity * w + itx)] = r * 256 * 256 + g * 256 + b;
                            }
@@ -340,6 +366,7 @@ void render(int n, int h,int w,unsigned char * img, float * depth,float * pose, 
         int_to_char <<< dimGrid, dimBlock >>> (d_render2, d_render);
         int_to_char <<< dimGrid, dimBlock >>> (d_render2, &(d_render_all[idx * nx * ny * 3]));
 
+        fill <<< dimGrid, dimBlock >>> (&(d_render_all[idx * nx * ny * 3]));
     }
 
         merge <<< dimGrid, dimBlock >>> (d_render_all, d_render, n, nx * ny * 3);
