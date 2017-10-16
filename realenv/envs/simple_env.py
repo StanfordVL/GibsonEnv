@@ -2,17 +2,17 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import subprocess
-from render.datasets import ViewDataSet3D
-from render.show_3d2 import PCRenderer, sync_coords
-from physics.render_physics import PhysRenderer
+from realenv.data.datasets import ViewDataSet3D
+from realenv.core.render.show_3d2 import PCRenderer, sync_coords
+from realenv.core.physics.render_physics import PhysRenderer
+from realenv.core.render.profiler import Profiler
 import numpy as np
 import zmq
 import time
 import os
 import random
 import progressbar
-from realtime_plot import MPRewardDisplayer, RewardDisplayer
-from render.profiler import Profiler
+from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
 from multiprocessing.dummy import Process
 
 class SimpleEnv(gym.Env):
@@ -124,7 +124,7 @@ class SimpleEnv(gym.Env):
           visuals = self.r_visuals.renderToScreen(pose)
         print()
       return visuals, reward
-    except Exception: 
+    except Exception as e: 
       print(e)
       print("ending")
       self._end()

@@ -8,7 +8,6 @@ import math
 import PIL
 import transforms3d
 from numpy import cos,sin
-from transfer import transfer2
 
 # In[36]:
 
@@ -185,38 +184,6 @@ def mat_to_quat_xyzw(cpose):
     ## Return: [r_x, r_y, r_z, r_w]
     wxyz = transforms3d.quaternions.mat2quat(rot)
     return quat_wxyz_to_xyzw(wxyz)
-
-
-def convert_array(img_array, outimg):
-    inimg = InImg()
-
-    wo, ho = inimg.grid * 4, inimg.grid * 3
-
-    # Calculate height and width of output image, and size of each square face
-    h = wo/3
-    w = 2*h
-    n = ho/3
-
-    # Create new image with width w, and height h
-    # outimg = np.zeros((h,w,1)) #.astype(np.uint8)
-    '''
-    # PHYSICS
-    outimg = np.zeros((h,w,1)) #.astype(np.uint8)
-
-    in_imgs = None
-    #print("converting images", len(img_array))
-
-    #print("Passed in image array", len(img_array), np.max(img_array[0]))
-    in_imgs = img_array
-
-    # For each pixel in output image find colour value from input image
-    #print(outimg.shape)
-    '''
-
-    # todo: for some reason the image is flipped 180 degrees
-    transfer2(img_array, coords, h, w, outimg)
-
-    # return outimg
 
 
 

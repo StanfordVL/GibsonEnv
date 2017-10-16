@@ -11,7 +11,7 @@ import json
 import numpy as np
 import settings
 from transforms3d import euler, quaternions
-from PhysicsObject import PhysicsObject
+from realenv.core.physics.physics_object import PhysicsObject
 from numpy import sin, cos
 
 

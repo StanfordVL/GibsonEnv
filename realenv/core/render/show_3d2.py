@@ -15,11 +15,11 @@ import zmq
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 from numpy import cos, sin
-from profiler import Profiler
+from realenv.core.render.profiler import Profiler
 from multiprocessing.dummy import Process
 
-from datasets import ViewDataSet3D
-from completion import CompletionNet
+from realenv.data.datasets import ViewDataSet3D
+from realenv.core.render.completion import CompletionNet
 
 
 file_dir = os.path.dirname(__file__)

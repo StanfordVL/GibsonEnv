@@ -12,7 +12,6 @@ import ctypes as ct
 import progressbar
 import sys
 import torchvision.transforms as transforms
-import utils
 import argparse
 import json
 from numpy.linalg import inv
