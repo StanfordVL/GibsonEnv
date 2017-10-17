@@ -30,7 +30,7 @@ class RandomAgent(object):
 if __name__ == '__main__':
     action_space = generate_actions()
     agent = RandomAgent(action_space)
-    env = SimpleEnv(human=True, debug=True)
+    env = SimpleEnv(human=True, debug=True, scale_up = 1)
     ob = None
 
     i = 0

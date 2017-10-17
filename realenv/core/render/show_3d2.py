@@ -52,7 +52,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -76,10 +76,12 @@ class PCRenderer:
         self.old_topk = set([]) 
         self.k = 5
         
-        self.showsz = self.target.shape[0]
+        self.showsz = 1024
         self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
 
+        self.scale_up = scale_up
+        
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
             self.org_pitch, self.org_yaw, self.org_x, self.org_y, self.org_z =\
@@ -199,7 +201,7 @@ class PCRenderer:
         w = 2*h
         n = ho/3
         opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
-
+        
         def _render_depth(opengl_arr):
             #with Profiler("Render Depth"):  
             cv2.imshow('target depth', opengl_arr/16.)
@@ -211,8 +213,9 @@ class PCRenderer:
                     for i in range(len(imgs))]
 
                 cuda_pc.render(ct.c_int(len(imgs)),                      
-                               ct.c_int(imgs[0].shape[0]),
-                               ct.c_int(imgs[0].shape[1]),
+                               ct.c_int(imgs[0].shape[0] * self.scale_up),
+                               ct.c_int(imgs[0].shape[1] * self.scale_up),
+                               ct.c_int(self.scale_up),
                                imgs.ctypes.data_as(ct.c_void_p),
                                depths.ctypes.data_as(ct.c_void_p),
                                np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
