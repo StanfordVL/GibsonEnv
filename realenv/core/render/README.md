@@ -21,7 +21,7 @@ python setup.py build_ext --inplace
 
 Download the necessary helper files
 ```shell
-wget https://www.dropbox.com/s/a4tb959bbue0hap/coord.npy?dl=1
+wget https://www.dropbox.com/s/a4tb959bbue0hap/coord.npy
 ```
 
 ```

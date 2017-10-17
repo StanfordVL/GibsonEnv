@@ -17,7 +17,7 @@ from numpy import sin, cos
 
 class PhysRenderer(object):
 
-    def __init__(self, obj_path, model_id, framePerSec, debug, human):
+    def __init__(self, obj_path, framePerSec, debug, human):
         context = zmq.Context()
         self.visn_socket = context.socket(zmq.REQ)
         self.visn_socket.bind("tcp://*:5556")
@@ -49,7 +49,7 @@ class PhysRenderer(object):
         p.setRealTimeSimulation(0)
         self.framePerSec = framePerSec
 
-        file_dir = os.path.dirname(__file__)
+        file_dir = os.path.dirname(os.path.abspath(__file__))
         self.objectUid = p.loadURDF(os.path.join(file_dir, "models/quadrotor.urdf"), globalScaling = 0.8)
         #self.objectUid = p.loadURDF(os.path.join(file_dir, "models/husky.urdf"), globalScaling = 0.8)
 
@@ -185,13 +185,12 @@ class PhysRenderer(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--datapath'  , required = True, help='dataset path')
-    parser.add_argument('--model'  , type = str, default = '', help='path of model')
+    parser.add_argument('--objpath'  , required = True, help='dataset path')
     opt = parser.parse_args()
 
     framePerSec = 13
 
-    r_physics = PhysRenderer(opt.datapath, opt.model, framePerSec)
+    r_physics = PhysRenderer(opt.objpath, framePerSec)
     r_physics.initialize(pose_init)
     r_physics.renderToScreen()
         

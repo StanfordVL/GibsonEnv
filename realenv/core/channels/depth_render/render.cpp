@@ -315,9 +315,6 @@ int main( int argc, char * argv[] )
 	}
 
 
-    printf("Does it make it to this point\n");
-
-
 	if( !glfwInit() )
 	{
 		fprintf( stderr, "Failed to initialize GLFW\n" );

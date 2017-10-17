@@ -1,7 +1,6 @@
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
-import subprocess
 from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.show_3d2 import PCRenderer, sync_coords
 from realenv.core.physics.render_physics import PhysRenderer
@@ -17,19 +16,14 @@ from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDispl
 from multiprocessing import Process
 
 class SimpleEnv(gym.Env):
-  metadata = {'render.modes': ['human']}
-
-  def __init__(self, human=False, debug=True):
+  def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q"):
     self.debug_mode = debug
     file_dir = os.path.dirname(__file__)
     
-    # TODO: (hzyjerry)
-    self.model_id = "11HB6XZSh1Q"
+    self.model_id = model_id
     self.dataset  = ViewDataSet3D(transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
 
     self.p_channel = Process(target=run_depth_render)
-    #, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
     self.state_old = None
 
 
@@ -51,7 +45,6 @@ class SimpleEnv(gym.Env):
 
   def _setupRewardFunc(self):
     def _getReward(state_old, state_new):
-      print(state_old)
       if not state_old:
         return 0
       else:
@@ -70,7 +63,7 @@ class SimpleEnv(gym.Env):
     source_depths = []
     poses = []
     pbar  = progressbar.ProgressBar(widgets=[
-                        ' [ Initializeing Environment ] ',
+                        ' [ Initializing Environment ] ',
                         progressbar.Bar(),
                         ' (', progressbar.ETA(), ') ',
                         ])
@@ -96,7 +89,7 @@ class SimpleEnv(gym.Env):
 
   def _setupPhysics(self, human):
     framePerSec = 13
-    renderer = PhysRenderer(self.dataset.get_model_obj(), self.model_id, framePerSec, debug = self.debug_mode, human = human)
+    renderer = PhysRenderer(self.dataset.get_model_obj(), framePerSec, debug = self.debug_mode, human = human)
     return renderer
 
   def testShow3D(self):
@@ -136,10 +129,8 @@ class SimpleEnv(gym.Env):
     return
     
   def _end(self):
-    #print("trying to kill this", self.p_channel)
     ## TODO (hzyjerry): this does not kill cleanly
     ## to reproduce bug, set human = false, debug_mode = false
-    #self.p_channel.kill()
     self.p_channel.terminate()
     return
 

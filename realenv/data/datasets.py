@@ -39,10 +39,11 @@ def get_model_path(idx=0):
     model_paths = [os.path.join(data_path, id) for id in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, id))]
     return model_paths[idx]
 
+
 class ViewDataSet3D(data.Dataset):
     def __init__(self, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
         print ('Processing the data:')
-        self.root   = os.path.join(os.path.dirname(__file__), 'dataset')
+        self.root   = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dataset')
         self.fofn   = os.path.basename(self.root) + '_fofn'+str(int(train))+'.pkl'
         self.train  = train
         self.loader = loader
@@ -165,6 +166,9 @@ class ViewDataSet3D(data.Dataset):
         scene = self.select[index][0][0]
         #print(scene)
         uuids = [item[1] for item in self.select[index]]
+        #print("selection length", len(self.select), len(self.select[0]))
+        #print(uuids)
+        
         #print(uuids)
         #poses = ([self.meta[scene][item][1:] for item in uuids])
         #poses = [item[0] + item[1] for item in poses]
@@ -212,7 +216,7 @@ class ViewDataSet3D(data.Dataset):
             pose_i = pose_i + 1
             relative = np.dot(inv(target_pose), item)
             poses_relative.append(torch.from_numpy(relative))
-
+        #print("img paths", len(img_paths), img_paths)
         imgs = [self.loader(item) for item in img_paths]
         target = self.loader(target_path)
 
@@ -309,8 +313,6 @@ class Places365Dataset(data.Dataset):
         if not self.transform is None:
             img = self.transform(img)
         return img
-
-
 
 
 

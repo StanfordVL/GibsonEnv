@@ -22,7 +22,7 @@ from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.completion import CompletionNet
 
 
-file_dir = os.path.dirname(__file__)
+file_dir = os.path.dirname(os.path.abspath(__file__))
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
 coords  = np.load(os.path.join(file_dir, 'coord.npy'))
 context_mist = zmq.Context()
