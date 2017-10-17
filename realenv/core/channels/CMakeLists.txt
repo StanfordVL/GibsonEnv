@@ -64,16 +64,15 @@ add_subdirectory (external)
 
 # On Visual 2005 and above, this module can set the debug working directory
 
-find_package(glfw REQUIRED)
+#find_package(glfw REQUIRED)
 
-message("GLFW" ${GLFW3_INCLUDE_DIR}/GLFW)
-message("GLFW lib" ${GLFW3_LIBRARY})
-
-
+#message("GLFW" ${GLFW3_INCLUDE_DIR}/GLFW)
+#message("GLFW lib" ${GLFW3_LIBRARY})
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
-    ${GLFW3_INCLUDE_DIR}/GLFW
+    #${GLFW3_INCLUDE_DIR}/GLFW
+	external/glfw-3.1.2/include/GLFW
 	external/lodepng/
 	${GLUT_INCLUDE_DIRS}
 	.
@@ -88,7 +87,6 @@ set(ALL_LIBS
     GLEW_1130
 	${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
-    #${GLFW3_LIBRARY}
     glfw
 )
 

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 verify_cuda() {
 	export CUDA_HOME=/usr/local/cuda-8.0
 	export LD_LIBRARY_PATH=${CUDA_HOME}/lib64 
@@ -38,73 +36,115 @@ cast_error() {
 }
 
 
-echo -n Password: 
-read -s password
+verify_conda() {
+	## Conda environment
+	echo 'Checking if conda environment is installed'
+	conda --version
+	if (($? > 0)); then
+	    printf 'Installing conda'
+	    echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
+		wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.21-Linux-x86_64.sh -O ~/miniconda.sh && \
+		    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+		    rm ~/miniconda.sh
+		export PATH=~/opt/conda/bin:$PATH
 
-verify_cuda
+		alias conda="~/opt/conda/bin/conda"
+	else
+		echo 'conda already installed'
+	fi
+}
 
+install() {
+	set -e
 
-## Conda environment
-echo 'Checking if conda environment is installed'
-conda --version
-if (($? > 0)); then
-    printf 'Installing conda'
-    echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-	wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.27-Linux-x86_64.sh -O ~/miniconda.sh && \
-	    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
-	    rm ~/miniconda.sh
-	export PATH=~/opt/conda/bin:$PATH
+	echo -n Password: 
+	read -s password
 
-	alias conda="~/opt/conda/bin/conda"
-else
-	echo 'conda already installed'
-fi
+	## Core rendering functionality
+	conda install -c menpo opencv -y
+	cast_error 'Opencv installation failed'
+	conda install pytorch torchvision cuda80 -c soumith -y
+	
 
-## Core rendering functionality
-conda install -c menpo opencv -y &
-P_opencv=$!
-#cast_error 'Opencv installation failed'
-conda install pytorch torchvision cuda80 -c soumith -y &
-P_torch=$!
-#cast_error 'Pytorch installation failed'
+	## Core multi channel GLFW
+	echo $password | sudo apt-get -qq -y update
+	echo $password | sudo apt-get -qq -y install libzmq3-dev libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev
+	cast_error 'Opengl installation failed'
+	echo $password | sudo apt -qq -y install mesa-common-dev libglu1-mesa-dev freeglut3-dev
+	cast_error 'Opengl addons installation failed'
+	echo $password | sudo apt -qq -y install cmake
+	cast_error 'CMake installation failed'
+	
 
+	wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
+	unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
+	mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
+	mkdir ./realenv/core/channels/external/glfw-3.1.2/build
+	cd ./realenv/core/channels/external/glfw-3.1.2/build
+	mkdir 
+	$ cd build
+	$ cmake -D BUILD_SHARED_LIBS=ON ..
 
-## Core multi channel GLFW
-echo $password | sudo apt-get install libzmq3-dev libglew-dev libglm-dev
-cast_error 'Opengl installation failed'
-echo $password | sudo apt install mesa-common-dev libglu1-mesa-dev freeglut3-dev
-cast_error 'Opengl addons installation failed'
+	mkdir ./realenv/core/channels/build
+	cd ./realenv/core/channels/build
+	cmake .. && make -j 10
+	cd -
 
+	## Core renderer
+	echo $password | sudo apt -qq -y install nvidia-cuda-toolkit	## Huge, 1121M
+	cd ./realenv/core/render/
+	wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
+	pip install cython
+	bash build.sh
+	bash build_cuda.sh
+	python setup.py build_ext --inplace
+	cd -
 
-wget https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
-unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
-mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
-mkdir ./realenv/core/channels/build
-cd ./realenv/core/channels/build
-cmake .. && make -j 10
-cd -
+	## Data set
+	cd ./realenv/data
+	mkdir dataset
+	wget --quiet https://www.dropbox.com/s/gtg09zm5mwnvro8/11HB6XZSh1Q.zip
+	unzip -q 11HB6XZSh1Q.zip && rm 11HB6XZSh1Q.zip
+	mv 11HB6XZSh1Q dataset
+	cd -
 
-## Core renderer
-cd ./realenv/core/render/
-wget https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
-pip install cython
-bash build.sh
-bash build_cuda.sh
-python setup.py build_ext --inplace
-cd -
+	## Physics Models
+	cd ./realenv/core/physics
+	wget --quiet https://www.dropbox.com/s/vb3pv4igllr39pi/models.zip
+	unzip -q models.zip && rm models.zip
+	cd -
 
-## Data set
-cd ./realenv/data
-mkdir dataset
-wget https://www.dropbox.com/s/gtg09zm5mwnvro8/11HB6XZSh1Q.zip
-unzip -q 11HB6XZSh1Q.zip && rm 11HB6XZSh1Q.zip
-mv 11HB6XZSh1Q dataset
-cd -
+}
 
-## Physics Models
-cd ./realenv/core/physics
-wget https://www.dropbox.com/s/vb3pv4igllr39pi/models.zip
-unzip -q models.zip && rm models.zip
-cd -
+ec2_install_conda() {
+    wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.27-Linux-x86_64.sh -O ~/miniconda.sh
+    /bin/bash ~/miniconda.sh -b && rm ~/miniconda.sh
+    export PATH=/home/ubuntu/miniconda2/bin:$PATH
+}
 
-wait $P_opencv $P_torch
+hello() {
+	echo "hello world"
+}
+
+subcommand=$1
+case "$subcommand" in                                                                                
+  "install")
+	install
+	;;
+  "hello" )
+	hello
+	;;
+  "ec2_install_conda")                                                           
+    ec2_install_conda
+    ;;
+  "verify_cuda")
+	verify_cuda
+	;;
+  "verify_conda")
+	verify_conda
+	;;
+  *)                                                                                     
+    default "$@"                                       
+    exit 1                                                                             
+    ;;                                                                                 
+esac 
