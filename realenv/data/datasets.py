@@ -44,7 +44,7 @@ class ViewDataSet3D(data.Dataset):
     def __init__(self, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
         print ('Processing the data:')
         self.root   = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dataset')
-        self.fofn   = os.path.basename(self.root) + '_fofn'+str(int(train))+'.pkl'
+        self.fofn   = self.root + '_fofn'+str(int(train))+'.pkl'
         self.train  = train
         self.loader = loader
         self.seqlen = seqlen
