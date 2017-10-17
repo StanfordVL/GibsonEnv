@@ -6,6 +6,7 @@ from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.show_3d2 import PCRenderer, sync_coords
 from realenv.core.physics.render_physics import PhysRenderer
 from realenv.core.render.profiler import Profiler
+from realenv.core.channels.depth_render import run_depth_render
 import numpy as np
 import zmq
 import time
@@ -13,7 +14,7 @@ import os
 import random
 import progressbar
 from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
-from multiprocessing.dummy import Process
+from multiprocessing import Process
 
 class SimpleEnv(gym.Env):
   metadata = {'render.modes': ['human']}
@@ -21,16 +22,19 @@ class SimpleEnv(gym.Env):
   def __init__(self, human=False, debug=True):
     self.debug_mode = debug
     file_dir = os.path.dirname(__file__)
-    cmd_channel = "bash run_depth_render.sh"
-
-    self.datapath = "data"
+    
+    # TODO: (hzyjerry)
     self.model_id = "11HB6XZSh1Q"
+    self.dataset  = ViewDataSet3D(transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
 
-    self.p_channel = subprocess.Popen(cmd_channel.split())#, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    self.p_channel = Process(target=run_depth_render)
+    #, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     self.state_old = None
 
+
     try:
+      self.p_channel.start()
       self.r_visuals = self._setupVisuals()
       pose_init = self.r_visuals.renderOffScreenInitialPose()
       print("initial pose", pose_init)
@@ -41,9 +45,8 @@ class SimpleEnv(gym.Env):
         self.r_displayer = RewardDisplayer() #MPRewardDisplayer()
         self._setupRewardFunc()
     except Exception as e:
-      print(e)
-      print("ending")
       self._end()
+      raise(e)
     
 
   def _setupRewardFunc(self):
@@ -56,14 +59,12 @@ class SimpleEnv(gym.Env):
     self.reward_func = _getReward
     
   def _setupVisuals(self):
-    d = ViewDataSet3D(root=self.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
-
-    scene_dict = dict(zip(d.scenes, range(len(d.scenes))))
+    scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
     if not self.model_id in scene_dict.keys():
         print("model not found")
     else:
         scene_id = scene_dict[self.model_id]
-    uuids, rts = d.get_scene_info(scene_id)
+    uuids, rts = self.dataset.get_scene_info(scene_id)
     targets = []
     sources = []
     source_depths = []
@@ -74,7 +75,7 @@ class SimpleEnv(gym.Env):
                         ' (', progressbar.ETA(), ') ',
                         ])
     for k,v in pbar(uuids):
-        data = d[v]
+        data = self.dataset[v]
         source = data[0][0]
         target = data[1]
         target_depth = data[3]
@@ -95,7 +96,7 @@ class SimpleEnv(gym.Env):
 
   def _setupPhysics(self, human):
     framePerSec = 13
-    renderer = PhysRenderer(self.datapath, self.model_id, framePerSec, debug = self.debug_mode, human = human)
+    renderer = PhysRenderer(self.dataset.get_model_obj(), self.model_id, framePerSec, debug = self.debug_mode, human = human)
     return renderer
 
   def testShow3D(self):
@@ -122,12 +123,11 @@ class SimpleEnv(gym.Env):
         
         with Profiler("Render to screen"):
           visuals = self.r_visuals.renderToScreen(pose)
-        print()
+
       return visuals, reward
     except Exception as e: 
-      print(e)
-      print("ending")
       self._end()
+      raise(e)
 
   def _reset(self):
     return
@@ -139,7 +139,8 @@ class SimpleEnv(gym.Env):
     #print("trying to kill this", self.p_channel)
     ## TODO (hzyjerry): this does not kill cleanly
     ## to reproduce bug, set human = false, debug_mode = false
-    self.p_channel.kill()
+    #self.p_channel.kill()
+    self.p_channel.terminate()
     return
 
 

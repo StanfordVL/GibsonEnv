@@ -34,10 +34,15 @@ def depth_loader(path):
     img = Image.open(path).convert('I')
     return img
 
+def get_model_path(idx=0):
+    data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dataset')
+    model_paths = [os.path.join(data_path, id) for id in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, id))]
+    return model_paths[idx]
+
 class ViewDataSet3D(data.Dataset):
-    def __init__(self, root, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
+    def __init__(self, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
         print ('Processing the data:')
-        self.root   = root.rstrip('/')
+        self.root   = os.path.join(os.path.dirname(__file__), 'dataset')
         self.fofn   = os.path.basename(self.root) + '_fofn'+str(int(train))+'.pkl'
         self.train  = train
         self.loader = loader
@@ -51,7 +56,6 @@ class ViewDataSet3D(data.Dataset):
         if not self.off_pc_render:
             self.dll=np.ctypeslib.load_library('render','.')
 
-        print(self.fofn)
         if not os.path.isfile(self.fofn):
 
             self.scenes = sorted([d for d in (os.listdir(self.root)) if os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(os.path.join(self.root, d, 'sweep_locations.csv')) and os.path.isdir(os.path.join(self.root, d, 'pano'))])
@@ -115,6 +119,10 @@ class ViewDataSet3D(data.Dataset):
             with open(self.fofn, 'rb') as fp:
                 self.scenes, self.meta, self.select, num_scenes, num_train = pickle.load(fp)
                 print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
+
+    def get_model_obj(self, idx=0):
+        obj_files = [os.path.join(self.root, d, 'modeldata', 'out_z_up.obj') for d in (os.listdir(self.root))]
+        return obj_files[idx]
 
 
     def get_scene_info(self, index):

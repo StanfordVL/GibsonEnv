@@ -2,11 +2,10 @@ from __future__ import print_function
 import time
 import numpy as np
 import sys
-sys.path.append("../env")
 from PIL import Image
-from simple_env import SimpleEnv
+from realenv.envs.simple_env import SimpleEnv
 from generate_actions import *
-from render.profiler import Profiler
+from realenv.core.render.profiler import Profiler
 
 
 class RandomAgent(object):

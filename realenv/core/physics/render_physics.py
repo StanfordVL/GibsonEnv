@@ -17,8 +17,7 @@ from numpy import sin, cos
 
 class PhysRenderer(object):
 
-    def __init__(self, datapath, model_id, framePerSec, debug, human):
-        print("physics renderer", datapath)
+    def __init__(self, obj_path, model_id, framePerSec, debug, human):
         context = zmq.Context()
         self.visn_socket = context.socket(zmq.REQ)
         self.visn_socket.bind("tcp://*:5556")
@@ -32,9 +31,6 @@ class PhysRenderer(object):
         else:
             # Headless training mode
             p.connect(p.DIRECT)
-
-        obj_path = os.path.join(datapath, model_id, "modeldata", 'out_z_up.obj')
-        urdf_path = os.path.join(datapath, model_id, "modeldata", 'out_z_up.urdf')
 
         p.setRealTimeSimulation(0)
 

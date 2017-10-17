@@ -234,22 +234,14 @@ int main( int argc, char * argv[] )
 {
 
     cmdline::parser cmdp;
-    cmdp.add<std::string>("datapath", 'd', "data model directory", true, "");
-
-    cmdp.add<std::string>("model", 'm', "model id", true, "");
+    cmdp.add<std::string>("modelpath", 'd', "data model directory", true, "");
 
     cmdp.parse_check(argc, argv);
 
-    std::string name_path = cmdp.get<std::string>("datapath");
+    std::string model_path = cmdp.get<std::string>("modelpath");
 
-    std::string model_id = cmdp.get<std::string>("model");
-
-    std::string name_obj = name_path + "/" + model_id + "/" + "modeldata/out_res.obj";
-    //std::string name_obj = name_path + "/" + model_id + "/modeldata/out_res.obj";
-	std::string name_loc = name_path + "/" + model_id + "/" + "sweep_locations.csv";
-
-
-    //std::string name_ply = "out_res.ply";
+    std::string name_obj = model_path + "/" + "modeldata/out_res.obj";
+    std::string name_loc = model_path + "/" + "sweep_locations.csv";
 
 
     glfwSetErrorCallback(error_callback);
@@ -403,7 +395,7 @@ int main( int argc, char * argv[] )
 	glBindVertexArray(VertexArrayID);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "StandardShadingRTT.vertexshader", "StandardShadingRTT.fragmentshader" );
+	GLuint programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./StandardShadingRTT.fragmentshader" );
 
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
@@ -543,7 +535,7 @@ int main( int argc, char * argv[] )
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint quad_programID = LoadShaders( "Passthrough.vertexshader", "WobblyTexture.fragmentshader" );
+	GLuint quad_programID = LoadShaders( "./Passthrough.vertexshader", "./WobblyTexture.fragmentshader" );
 	GLuint texID = glGetUniformLocation(quad_programID, "renderedTexture");
 	GLuint timeID = glGetUniformLocation(quad_programID, "time");
 
