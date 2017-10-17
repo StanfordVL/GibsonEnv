@@ -106,7 +106,7 @@ class SimpleEnv(gym.Env):
         visuals = self.r_visuals.renderOffScreen(pose)
       else:
         with Profiler("Physics to screen"):
-          pose, state = self.r_physics.renderToScreen(action)
+          pose, state = self.r_physics.renderOffScreen(action)
         #reward = random.randrange(-8, 20)
         with Profiler("Reward func"):
           reward = self.reward_func(self.state_old, state)
