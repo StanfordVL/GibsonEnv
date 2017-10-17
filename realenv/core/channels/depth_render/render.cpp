@@ -549,9 +549,9 @@ int main( int argc, char * argv[] )
     zmq::socket_t socket (context, ZMQ_REP);
     socket.bind ("tcp://127.0.0.1:5555");
 	cudaGetDevice( &cudaDevice );
-	int g_cuda_device = 0;
-	cudaSetDevice(g_cuda_device);	
-	cudaGLSetGLDevice(g_cuda_device);
+	//int g_cuda_device = 0;
+	cudaSetDevice(cudaDevice);	
+	cudaGLSetGLDevice(cudaDevice);
 	cudaGraphicsResource* resource;			
 	checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
 	std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
