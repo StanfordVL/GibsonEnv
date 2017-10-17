@@ -31,7 +31,7 @@ class VNCClient:
 		self._configure()
 	
 	def _configure(self):
-		remote_file = os.path.join(os.path.dirname(__file__), 'remote.yml')
+		remote_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'remote.yml')
 		# remote_file = './remote.yml'
 		with open(remote_file) as f:
 		    spec = yaml.load(f)
