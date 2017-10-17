@@ -261,7 +261,14 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
      //printf("inverse %f %f %f %f\n", it00, it01, it10, it11);
      
      int this_depth = (int)(12800/128 * points3d_polar[(ih * w + iw) * 3 + 0]);
-     int delta = this_depth - (int)(100 * depth_render[(ty * w + tx)]);
+     int delta00 = (int)(12800/128 * points3d_polar[(ih * w + iw) * 3 + 0]) - (int)(100 * depth_render[(ty * w + tx)]);
+     int delta01 = (int)(12800/128 * points3d_polar[(ih * w + iw + 1) * 3 + 0]) - (int)(100 * depth_render[(ty * w + tx + 1)]);
+     int delta10 = (int)(12800/128 * points3d_polar[((ih + 1) * w + iw) * 3 + 0]) - (int)(100 * depth_render[((ty+1) * w + tx)]);
+     int delta11 = (int)(12800/128 * points3d_polar[((ih+1) * w + iw + 1) * 3 + 0]) - (int)(100 * depth_render[((ty+1) * w + tx + 1)]);
+     
+     int mindelta = min(min(delta00, delta01), min(delta10, delta11));
+     int maxdelta = max(max(delta00, delta01), max(delta10, delta11));
+     
      
      int txmin = floor(tx_offset + min(min(tx00, tx11), min(tx01, tx10)));
      int txmax = ceil(tx_offset + max(max(tx00, tx11), max(tx01, tx10)));
@@ -273,7 +280,7 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
      int itx, ity;
      
      if ((y > h/8) && (y < (h*7)/8))
-     if ((delta > -10) && (delta < 10) && (this_depth < 10000)) {
+     if ((mindelta > -10) && (maxdelta < 10) && (this_depth < 10000)) {
            if ((txmax - txmin) * (tymax - tymin) < 100)
            {
                for (itx = txmin; itx < txmax; itx ++)
