@@ -12,6 +12,7 @@ import numpy as np
 import settings
 from transforms3d import euler, quaternions
 from realenv.core.physics.physics_object import PhysicsObject
+from realenv.core.render.profiler import Profiler
 from numpy import sin, cos
 
 

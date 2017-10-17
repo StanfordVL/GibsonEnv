@@ -27,7 +27,12 @@ setup(name='realenv',
 			'gym>=0.9.2',
 			'Pillow>=3.3.0',
           	'PyYAML>=3.12',
-          	'numpy>=1.13'
+          	'numpy>=1.13',
+          	'pybullet>=1.5.6',
+          	'transforms3d>=0.3.1',
+          	'progressbar>=2.3',
+          	'pyzmq>=16.0.2',
+          	'Pillow>=4.2.1'
 	],
 	tests_require=[],
 	# cmdclass={
