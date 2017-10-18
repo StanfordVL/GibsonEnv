@@ -82,6 +82,11 @@ class PCRenderer:
 
         self.scale_up = scale_up
         
+        self.show   = np.zeros((768, 768, 3),dtype='uint8')
+        self.show_rgb   = np.zeros((768, 768 ,3),dtype='uint8')
+        
+        
+        
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
             self.org_pitch, self.org_yaw, self.org_x, self.org_y, self.org_z =\
@@ -216,12 +221,13 @@ class PCRenderer:
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
-                opengl_arr = np.zeros((h,w), dtype = np.float32)
+                #opengl_arr = np.zeros((h,w), dtype = np.float32)
                 
                 cuda_pc.render(ct.c_int(len(imgs)),                      
-                               ct.c_int(imgs[0].shape[0] * self.scale_up),
-                               ct.c_int(imgs[0].shape[1] * self.scale_up),
-                               ct.c_int(self.scale_up),
+                               ct.c_int(imgs[0].shape[0]),
+                               ct.c_int(imgs[0].shape[1]),
+                               ct.c_int(768),
+                               ct.c_int(768),
                                imgs.ctypes.data_as(ct.c_void_p),
                                depths.ctypes.data_as(ct.c_void_p),
                                np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
