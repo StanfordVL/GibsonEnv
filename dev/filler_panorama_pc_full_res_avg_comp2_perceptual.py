@@ -64,8 +64,8 @@ def main():
     parser.add_argument('--loss', type=str, default="perceptual", help='l1 only')
     parser.add_argument('--init', type=str, default = "iden", help='init method')
     parser.add_argument('--l1', type=float, default = 0, help='add l1 loss')
-    
-    
+    parser.add_argument('--color_coeff', type=float, default = 0, help='add color match loss')
+    parser.add_argument('--cascade'  , action='store_true', help='debug mode')
     
     
     
@@ -100,10 +100,14 @@ def main():
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
     comp = CompletionNet2(norm = nn.BatchNorm2d)
+    
     dis = Discriminator2(pano = False)
     current_epoch = opt.cepoch
 
     comp =  torch.nn.DataParallel(comp).cuda()
+    
+    
+    
     if opt.init == 'iden':
         comp.apply(identity_init)
     else:
@@ -116,6 +120,13 @@ def main():
         #dis.load_state_dict(torch.load(opt.model.replace("G", "D")))
         current_epoch = opt.cepoch
 
+    if opt.cascade:
+        comp2 = CompletionNet2(norm = nn.BatchNorm2d)
+        comp2 =  torch.nn.DataParallel(comp2).cuda()
+        if opt.model != '':
+            comp2.load_state_dict(torch.load(opt.model))
+        optimizerG2 = torch.optim.Adam(comp2.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))          
+        
     l2 = nn.MSELoss()
     #if opt.loss == 'train_init':
     #    params = list(comp.parameters())
@@ -128,7 +139,7 @@ def main():
     optimizerD = torch.optim.Adam(dis.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
 
     curriculum = (200000, 300000) # step to start D training and G training, slightly different from the paper
-    alpha = 0.0004
+    alpha = 0.004
 
     errG_data = 0
     errD_data = 0
@@ -151,8 +162,9 @@ def main():
             step = i + epoch * len(dataloader)
             
             mask = (torch.sum(source[:,:3,:,:],1)>0).float().unsqueeze(1)
-            img_mean = torch.sum(torch.sum(source[:,:3,:,:], 2),2) / torch.sum(torch.sum(mask, 2),2).view(opt.batchsize,1)
-            source[:,:3,:,:] += (1-mask.repeat(1,3,1,1)) * img_mean.view(opt.batchsize,3,1,1).repeat(1,1,1024,2048)
+            #img_mean = torch.sum(torch.sum(source[:,:3,:,:], 2),2) / torch.sum(torch.sum(mask, 2),2).view(opt.batchsize,1)
+            
+            source[:,:3,:,:] += (1-mask.repeat(1,3,1,1)) * mean.view(1,3,1,1).repeat(opt.batchsize,1,1024,2048)
             source_depth = source_depth[:,:,:,0].unsqueeze(1)
             #print(source_depth.size(), mask.size())
             source_depth = torch.cat([source_depth, mask], 1)
@@ -162,6 +174,8 @@ def main():
             imgc, maskvc, img_originalc = crop(img, maskv, img_original)
             #from IPython import embed; embed()
             recon = comp(imgc, maskvc)
+            
+            
             if opt.loss == "train_init":
                 loss = l2(recon, imgc[:,:3,:,:])
             elif opt.loss == 'l1':    
@@ -171,19 +185,66 @@ def main():
             elif opt.loss == 'color_stable':
                 loss = l2(p(recon.view(recon.size(0) * 3, 1, 256, 256).repeat(1,3,1,1)), p(img_originalc.view(img_originalc.size(0)*3,1,256,256).repeat(1,3,1,1)).detach())
             elif opt.loss == 'color_correction':
-                #from IPython import embed; embed()
-                img_originalc_patch = img_originalc.view(opt.batchsize * 4,3,8,32,8,32).transpose(4,3).contiguous().view(opt.batchsize * 4,3,8,8,-1) 
-                recon_patch = recon.view(opt.batchsize * 4,3,8,32,8,32).transpose(4,3).contiguous().view(opt.batchsize * 4,3,8,8,-1) 
-                img_originalc_patch_mean = img_originalc_patch.mean(dim=-1)
-                img_originalc_patch_std = img_originalc_patch.std(dim=-1)
-                recon_patch_mean = recon_patch.mean(dim = -1)
-                recon_patch_std = recon_patch.std(dim = -1)
-                
-                color_loss = l2(recon_patch_mean, img_originalc_patch_mean) + l2(recon_patch_std, img_originalc_patch_std)
-                loss = l2(p(recon), p(img_originalc).detach()) + 100 * color_loss
-                print("color loss %f" % color_loss.data[0])
+                loss = l2(p(recon), p(img_originalc).detach())
+                for scale in [32]:
+                    img_originalc_patch = img_originalc.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1) 
+                    recon_patch = recon.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1)    
+                    img_originalc_patch_mean = img_originalc_patch.mean(dim=-1)
+                    recon_patch_mean = recon_patch.mean(dim = -1)
+                    recon_patch_cov = []
+                    img_originalc_patch_cov = []
+                    
+                    for j in range(3):
+                        recon_patch_cov.append((recon_patch * recon_patch[:,j:j+1].repeat(1,3,1,1,1)).mean(dim=-1))
+                        img_originalc_patch_cov.append((img_originalc_patch * img_originalc_patch[:,j:j+1].repeat(1,3,1,1,1)).mean(dim=-1))
+                    
+                    recon_patch_cov_cat = torch.cat(recon_patch_cov,1)
+                    img_originalc_patch_cov_cat = torch.cat(img_originalc_patch_cov, 1)
+                    
+                    #from IPython import embed; embed()
+                    
+                    color_loss = l2(recon_patch_mean, img_originalc_patch_mean) + l2(recon_patch_cov_cat, img_originalc_patch_cov_cat.detach())
+                    
+                    loss += opt.color_coeff * color_loss
+                    
+                    print("color loss %f" % color_loss.data[0])
             
             loss.backward(retain_graph = True)
+            
+            if opt.cascade:
+                optimizerG2.zero_grad()
+                
+                recon2 = comp2(torch.cat([recon, imgc[:,3:]], 1), maskvc)
+                loss2 = l2(p(recon2), p(img_originalc).detach())
+                for scale in [32]:
+                    img_originalc_patch = img_originalc.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1) 
+                    recon2_patch = recon2.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1)    
+                    img_originalc_patch_mean = img_originalc_patch.mean(dim=-1)
+                    recon2_patch_mean = recon2_patch.mean(dim = -1)
+                    recon2_patch_cov = []
+                    img_originalc_patch_cov = []
+                    
+                    for j in range(3):
+                        recon2_patch_cov.append((recon2_patch * recon2_patch[:,j:j+1].repeat(1,3,1,1,1)).mean(dim=-1))
+                        img_originalc_patch_cov.append((img_originalc_patch * img_originalc_patch[:,j:j+1].repeat(1,3,1,1,1)).mean(dim=-1))
+                    
+                    recon2_patch_cov_cat = torch.cat(recon2_patch_cov,1)
+                    img_originalc_patch_cov_cat = torch.cat(img_originalc_patch_cov, 1)
+                    
+                    
+                    color_loss = l2(recon2_patch_mean, img_originalc_patch_mean) + l2(recon2_patch_cov_cat, img_originalc_patch_cov_cat.detach())
+                    
+                    loss2 += opt.color_coeff * color_loss
+                    
+                    print("color loss %f" % color_loss.data[0])
+            
+                loss2.backward(retain_graph = True)
+                print("loss2 %f" % loss2.data[0])
+                optimizerG2.step()
+                
+                if i%10 == 0:
+                    writer.add_scalar('MSEloss2', loss2.data[0], step)
+            
             
             if step > curriculum[1]:
                 label.data.fill_(1)
@@ -204,6 +265,8 @@ def main():
                         
             optimizerG.step()
              
+                
+                
             # Train D:
             if step > curriculum[0]:
                 optimizerD.zero_grad()
@@ -235,17 +298,27 @@ def main():
                 target = test_data[2]
                 
                 mask = (torch.sum(source[:,:3,:,:],1)>0).float().unsqueeze(1)
-                img_mean = torch.sum(torch.sum(source[:,:3,:,:], 2),2) / torch.sum(torch.sum(mask, 2),2).view(opt.batchsize,1)
-                source[:,:3,:,:] += (1-mask.repeat(1,3,1,1)) * img_mean.view(opt.batchsize,3,1,1).repeat(1,1,1024,2048)
+                
+                source[:,:3,:,:] += (1-mask.repeat(1,3,1,1)) * mean.view(1,3,1,1).repeat(opt.batchsize,1,1024,2048)
                 source_depth = source_depth[:,:,:,0].unsqueeze(1)
                 source_depth = torch.cat([source_depth, mask], 1)
                 img.data.copy_(source)
                 maskv.data.copy_(source_depth)
                 img_original.data.copy_(target)
                 imgc, maskvc, img_originalc = crop(img, maskv, img_original)
+                comp.eval()
                 recon = comp(imgc, maskvc)
-
-                visual = torch.cat([imgc.data[:,:3,:,:], recon.data, img_originalc.data], 3)
+                comp.train()
+                
+                if opt.cascade:
+                    comp2.eval()
+                    recon2 = comp2(torch.cat([recon, imgc[:,3:]], 1), maskvc)
+                    comp2.train()
+                    visual = torch.cat([imgc.data[:,:3,:,:], recon.data, recon2.data, img_originalc.data], 3)
+                else:
+                    visual = torch.cat([imgc.data[:,:3,:,:], recon.data, img_originalc.data], 3)
+                
+                
                 visual = vutils.make_grid(visual, normalize=True)
                 writer.add_image('image', visual, step)
                 vutils.save_image(visual, '%s/compare%d_%d.png' % (opt.outf, epoch, i), nrow=1)
