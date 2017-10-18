@@ -14,9 +14,10 @@ import random
 import progressbar
 from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
 from multiprocessing import Process
+import cv2
 
 class SimpleEnv(gym.Env):
-  def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q"):
+  def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q", scale_up = 1):
     self.debug_mode = debug
     file_dir = os.path.dirname(__file__)
     
@@ -25,6 +26,7 @@ class SimpleEnv(gym.Env):
 
     self.p_channel = Process(target=run_depth_render)
     self.state_old = None
+    self.scale_up = scale_up
 
 
     try:
@@ -69,10 +71,13 @@ class SimpleEnv(gym.Env):
                         ])
     for k,v in pbar(uuids):
         data = self.dataset[v]
-        source = data[0][0]
         target = data[1]
         target_depth = data[3]
-        source_depth = data[2][0]
+        
+        if self.scale_up !=1:
+            target =  cv2.resize(target,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)
+            target_depth =  cv2.resize(target_depth,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)
+        
         pose = data[-1][0].numpy()
         targets.append(target)
         poses.append(pose)
@@ -84,7 +89,7 @@ class SimpleEnv(gym.Env):
     
     sync_coords()
     
-    renderer = PCRenderer(5556, sources, source_depths, target, rts)
+    renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
     return renderer
 
   def _setupPhysics(self, human):

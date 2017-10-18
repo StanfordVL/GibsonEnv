@@ -52,7 +52,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -75,7 +75,13 @@ class PCRenderer:
         self.model = None
         self.old_topk = set([]) 
         self.k = 5
+        
+        self.showsz = 1024
+        self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
+        self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
 
+        self.scale_up = scale_up
+        
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
             self.org_pitch, self.org_yaw, self.org_x, self.org_y, self.org_z =\
@@ -177,7 +183,7 @@ class PCRenderer:
         return pos, quat_wxyz
         
     
-    def render(self, imgs, depths, pose, model, poses, target_pose, show, target_depth, opengl_arr):
+    def render(self, imgs, depths, pose, model, poses, target_pose, show):
         v_cam2world = target_pose
         p = (v_cam2world).dot(np.linalg.inv(pose))
         p = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
@@ -194,27 +200,28 @@ class PCRenderer:
         h = wo/3
         w = 2*h
         n = ho/3
-        opengl_arr = np.array(np.frombuffer(message, dtype=np.float32)).reshape((h, w))
-
+        opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
+        
         def _render_depth(opengl_arr):
             #with Profiler("Render Depth"):  
             cv2.imshow('target depth', opengl_arr/16.)
 
         def _render_pc(opengl_arr):
-            #with Profiler("Render pointcloud"):
-            poses_after = [
-                pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
-                for i in range(len(imgs))]
-            
-            cuda_pc.render(ct.c_int(len(imgs)),                      
-                           ct.c_int(imgs[0].shape[0]),
-                           ct.c_int(imgs[0].shape[1]),
-                           imgs.ctypes.data_as(ct.c_void_p),
-                           depths.ctypes.data_as(ct.c_void_p),
-                           np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                           show.ctypes.data_as(ct.c_void_p),
-                           opengl_arr.ctypes.data_as(ct.c_void_p)
-                          )
+            with Profiler("Render pointcloud cuda"):
+                poses_after = [
+                    pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
+                    for i in range(len(imgs))]
+
+                cuda_pc.render(ct.c_int(len(imgs)),                      
+                               ct.c_int(imgs[0].shape[0] * self.scale_up),
+                               ct.c_int(imgs[0].shape[1] * self.scale_up),
+                               ct.c_int(self.scale_up),
+                               imgs.ctypes.data_as(ct.c_void_p),
+                               depths.ctypes.data_as(ct.c_void_p),
+                               np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                               show.ctypes.data_as(ct.c_void_p),
+                               opengl_arr.ctypes.data_as(ct.c_void_p)
+                              )
                 
         threads = [
             Process(target=_render_pc, args=(opengl_arr,)),
@@ -247,52 +254,42 @@ class PCRenderer:
         return pos, quat_xyzw
 
     def renderOffScreen(self, pose):
-        showsz = self.target.shape[0]
-        show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
-        target_depth   = np.zeros((showsz,showsz * 2)).astype(np.int32)
-        
-        ## Query physics engine to get [x, y, z, roll, pitch, yaw]
-        new_pos, new_quat = pose[0], pose[1]
-        #print("receiving", new_pos, new_quat)
-        self.x, self.y, self.z = new_pos
-        self.quat = new_quat
+        with Profiler("top k selection"):       
+            ## Query physics engine to get [x, y, z, roll, pitch, yaw]
+            new_pos, new_quat = pose[0], pose[1]
+            #print("receiving", new_pos, new_quat)
+            self.x, self.y, self.z = new_pos
+            self.quat = new_quat
 
-        v_cam2world = self.target_poses[0]
-        v_cam2cam   = self._getViewerRelativePose()
-        cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
-        
-        ## Entry point for change of view 
-        ## Optimization
-        depth_buffer = np.zeros(self.imgs[0].shape[:2], dtype=np.float32)
-        
-        relative_poses = np.copy(self.target_poses)
-        for i in range(len(relative_poses)):
-            relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
-        
-        poses_after = [cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
-        pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
+            v_cam2world = self.target_poses[0]
+            v_cam2cam   = self._getViewerRelativePose()
+            cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
 
-        topk = (np.argsort(pose_after_distance))[:self.k]
+            ## Entry point for change of view 
+            ## Optimization
+            #depth_buffer = np.zeros(self.imgs[0].shape[:2], dtype=np.float32)
+
+            relative_poses = np.copy(self.target_poses)
+            for i in range(len(relative_poses)):
+                relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
+
+            poses_after = [cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
+            pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
+
+            topk = (np.argsort(pose_after_distance))[:self.k]
+
+            if set(topk) != self.old_topk:      
+                self.imgs_topk = np.array([self.imgs[i] for i in topk])
+                self.depths_topk = np.array([self.depths[i] for i in topk]).flatten()
+                self.relative_poses_topk = [relative_poses[i] for i in topk]
+                self.old_topk = set(topk)
+
+        with Profiler("Render pointcloud all"):
+            self.render(self.imgs_topk, self.depths_topk, cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show)
         
-        if set(topk) != self.old_topk:      
-            self.imgs_topk = np.array([self.imgs[i] for i in topk])
-            self.depths_topk = np.array([self.depths[i] for i in topk]).flatten()
-            self.relative_poses_topk = [relative_poses[i] for i in topk]
-            self.old_topk = set(topk)
-
-        self.render(self.imgs_topk, self.depths_topk, cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], show, target_depth, depth_buffer)
+            self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
         
-
-        if self.overlay:
-            show_out = (show/2 + self.target/2).astype(np.uint8)
-        elif self.show_depth:
-            show_out = (target_depth * 10).astype(np.uint8)
-        else:
-            show_out = show
-
-
-        show_rgb = cv2.cvtColor(show_out, cv2.COLOR_BGR2RGB)
-        return show_rgb
+        #return self.show_rgb
 
     def renderToScreenSetup(self):
         cv2.namedWindow('show3d')
@@ -303,24 +300,18 @@ class PCRenderer:
 
     def renderToScreen(self, pose):
         t0 = time.time()
-        showsz = self.target.shape[0]
-        show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
-        target_depth   = np.zeros((showsz,showsz * 2)).astype(np.int32)
-        #imgv  = Variable(torch.zeros(1,3, showsz, showsz*2), volatile=True).cuda()
-        #maskv = Variable(torch.zeros(1,1, showsz, showsz*2), volatile=True).cuda()
-        
-        show_rgb = self.renderOffScreen(pose)
-        t1 =time.time()
+        self.renderOffScreen(pose)
+        t1 = time.time()
         t = t1-t0
         self.fps = 1/t
-        cv2.putText(show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,showsz-15),0,0.5,(255,255,255))            
-        cv2.putText(show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
+        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))            
+        cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
-        cv2.imshow('show3d',show_rgb)
+        cv2.imshow('show3d',self.show_rgb)
         
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
-        return show_rgb
+        return self.show_rgb
         
 
 def show_target(target_img):
