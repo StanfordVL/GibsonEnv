@@ -71,7 +71,7 @@ install() {
 	echo $password | sudo -s apt install mesa-common-dev libglu1-mesa-dev freeglut3-dev -y
 	echo $password | sudo -s apt autoremove
 	echo $password | sudo -s apt install cmake -y
-	echo $password | sudo -s apt install golang libjpeg-turbo8-dev -y
+	echo $password | sudo -s apt install golang libjpeg-turbo8-dev unzip -y
 
 	## Core renderer
 	echo $password | sudo -s apt install nvidia-cuda-toolkit -y	## Huge, 1121M

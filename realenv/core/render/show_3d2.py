@@ -206,7 +206,8 @@ class PCRenderer:
                 pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                 for i in range(len(imgs))]
             
-            cuda_pc.render(ct.c_int(len(imgs)),                      
+            with Profiler("CUDA PC rendering"):
+                cuda_pc.render(ct.c_int(len(imgs)),                      
                            ct.c_int(imgs[0].shape[0]),
                            ct.c_int(imgs[0].shape[1]),
                            imgs.ctypes.data_as(ct.c_void_p),
@@ -217,8 +218,8 @@ class PCRenderer:
                           )
                 
         threads = [
-            Process(target=_render_pc, args=(opengl_arr,)),
-            Process(target=_render_depth, args=(opengl_arr,))]
+            Process(target=_render_pc, args=(opengl_arr,))]#,
+            #Process(target=_render_depth, args=(opengl_arr,))]
         [t.start() for t in threads]
         [t.join() for t in threads]
 

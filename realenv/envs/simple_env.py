@@ -115,7 +115,7 @@ class SimpleEnv(gym.Env):
         #with Profiler("Display reward"):
         
         with Profiler("Render to screen"):
-          visuals = self.r_visuals.renderToScreen(pose)
+          visuals = self.r_visuals.renderOffScreen(pose)
 
       return visuals, reward
     except Exception as e: 
