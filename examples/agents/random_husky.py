@@ -30,16 +30,14 @@ class RandomAgent(object):
 if __name__ == '__main__':
     action_space = generate_actions()
     agent = RandomAgent(action_space)
-    env = SimpleEnv(human=False, debug=True)
+    env = SimpleEnv(human=True, debug=True, scale_up = 1)
     ob = None
 
     i = 0
     try:
         while True:
             if (i <= 14):
-                observation, reward = env._step({})
-            #elif (i == 10000):
-            #    observation, reward = env.reset()
+                observation, reward, done, info = env._step({})
             else:
                 action = agent.act(ob)
                 with Profiler("Agent step function"):

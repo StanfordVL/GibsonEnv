@@ -14,9 +14,10 @@ sudo apt-get install nvidia-375
 ## Reboot now
 
 #sudo apt install xinit
-#start x 
+#start x
 sudo apt-get install mesa-utils xserver-xorg libglu1-mesa-dev freeglut3-dev mesa-common-dev libxmu-dev libxi-dev -y
 sudo nvidia-xconfig -a --use-display-device=None --virtual=1280x1024
+
 ###
 #  Expect
 # Using X configuration file: "/etc/X11/xorg.conf".

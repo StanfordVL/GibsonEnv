@@ -1,22 +1,28 @@
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
+import realenv
+from realenv.main import RealEnv
 from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.show_3d2 import PCRenderer, sync_coords
 from realenv.core.physics.render_physics import PhysRenderer
 from realenv.core.render.profiler import Profiler
 from realenv.core.channels.depth_render import run_depth_render
+from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
 import numpy as np
 import zmq
 import time
 import os
 import random
 import progressbar
-from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
 from multiprocessing import Process
+import cv2
 
-class SimpleEnv(gym.Env):
-  def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q"):
+
+class SimpleEnv(RealEnv):
+  """Bare bone room environment with no addtional constraint (disturbance, friction, gravity change)
+  """
+  def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q", scale_up = 1):
     self.debug_mode = debug
     file_dir = os.path.dirname(__file__)
     
@@ -25,6 +31,7 @@ class SimpleEnv(gym.Env):
 
     self.p_channel = Process(target=run_depth_render)
     self.state_old = None
+    self.scale_up = scale_up
 
 
     try:
@@ -37,20 +44,10 @@ class SimpleEnv(gym.Env):
       if self.debug_mode:
         self.r_visuals.renderToScreenSetup()
         self.r_displayer = RewardDisplayer() #MPRewardDisplayer()
-        self._setupRewardFunc()
     except Exception as e:
       self._end()
       raise(e)
-    
-
-  def _setupRewardFunc(self):
-    def _getReward(state_old, state_new):
-      if not state_old:
-        return 0
-      else:
-        return 5 * (state_old['distance_to_target'] - state_new['distance_to_target'])
-    self.reward_func = _getReward
-    
+        
   def _setupVisuals(self):
     scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
     if not self.model_id in scene_dict.keys():
@@ -69,10 +66,13 @@ class SimpleEnv(gym.Env):
                         ])
     for k,v in pbar(uuids):
         data = self.dataset[v]
-        source = data[0][0]
         target = data[1]
         target_depth = data[3]
-        source_depth = data[2][0]
+        
+        if self.scale_up !=1:
+            target =  cv2.resize(target,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)
+            target_depth =  cv2.resize(target_depth,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)
+        
         pose = data[-1][0].numpy()
         targets.append(target)
         poses.append(pose)
@@ -84,7 +84,7 @@ class SimpleEnv(gym.Env):
     
     sync_coords()
     
-    renderer = PCRenderer(5556, sources, source_depths, target, rts)
+    renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
     return renderer
 
   def _setupPhysics(self, human):
@@ -97,27 +97,28 @@ class SimpleEnv(gym.Env):
 
   def _step(self, action):
     try:
-      #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
-      if not self.debug_mode:
-        pose, state = self.r_physics.renderOffScreen(action)
-        #reward = random.randrange(-8, 20)
-        reward = self.reward_func(self.state_old, state)
-        self.state_old = state
-        visuals = self.r_visuals.renderOffScreen(pose)
-      else:
-        with Profiler("Physics to screen"):
+      with Profiler("Physics to screen"):
+        if not self.debug_mode:
           pose, state = self.r_physics.renderOffScreen(action)
-        #reward = random.randrange(-8, 20)
-        with Profiler("Reward func"):
-          reward = self.reward_func(self.state_old, state)
-        #self.r_displayer.add_reward(reward)
-        self.state_old = state
-        #with Profiler("Display reward"):
-        
-        with Profiler("Render to screen"):
+        else:  
+          pose, state = self.r_physics.renderOffScreen(action)
+      
+      if not state_old:
+        reward = 0
+      else:
+        reward = 5 * (state_old['distance_to_target'] - state_new['distance_to_target'])
+      #self.r_displayer.add_reward(reward)
+      self.state_old = state        
+
+      with Profiler("Render to screen"):
+        if not self.debug_mode:
+          visuals = self.r_visuals.renderOffScreen(pose)
+        else:
           visuals = self.r_visuals.renderOffScreen(pose)
 
-      return visuals, reward
+        done = False        
+
+      return visuals, reward, done, dict(state_old=state_old['distance_to_target'], state_new=state_new['distance_to_target'])
     except Exception as e: 
       self._end()
       raise(e)
