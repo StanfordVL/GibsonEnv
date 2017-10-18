@@ -62,23 +62,21 @@ install() {
 
 	## Core rendering functionality
 	conda install -c menpo opencv -y
-	cast_error 'Opencv installation failed'
 	conda install pytorch torchvision cuda80 -c soumith -y
 	
 
 	## Core multi channel GLFW
-	echo $password | sudo apt-get -qq update -y
-	echo $password | sudo apt-get -qq install libzmq3-dev libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev -y
-	cast_error 'Opengl installation failed'
-	echo $password | sudo apt -qq install mesa-common-dev libglu1-mesa-dev freeglut3-dev -y
-	cast_error 'Opengl addons installation failed' 
-	echo $password | sudo apt -qq install cmake golang -y
-	cast_error 'CMake installation failed'
-	echo $password | sudo apt -qq install golang libjpeg-turbo8-dev -y
-	cast_error 'Universe dependencies failed'
+	echo $password | sudo -s apt-get update
+	echo $password | sudo -s apt-get install libzmq3-dev libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev -y
+	echo $password | sudo -s apt install mesa-common-dev libglu1-mesa-dev freeglut3-dev -y
+	echo $password | sudo -s apt autoremove
+	echo $password | sudo -s apt install cmake -y
+	echo $password | sudo -s apt install golang libjpeg-turbo8-dev -y
 
 	## Core renderer
-	echo $password | sudo apt -qq install nvidia-cuda-toolkit -y	## Huge, 1121M
+	echo $password | sudo -s apt install nvidia-cuda-toolkit -y	## Huge, 1121M
+
+
 
 	build_local
 	
@@ -134,6 +132,8 @@ ec2_install_conda() {
     fi
     export PATH=/home/ubuntu/miniconda2/bin:$PATH
     echo "PATH=/home/ubuntu/miniconda2/bin:$PATH" >> ~/.bashrc
+    echo "Run this command in your aws terminal:"
+    echo "	export PATH=/home/ubuntu/miniconda2/bin:$PATH"
 }
 
 hello() {
