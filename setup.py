@@ -32,7 +32,8 @@ setup(name='realenv',
           	'transforms3d>=0.3.1',
           	'progressbar>=2.3',
           	'pyzmq>=16.0.2',
-          	'Pillow>=4.2.1'
+          	'Pillow>=4.2.1',
+          	'matplotlib>=2.1.0'
 	],
 	tests_require=[],
 	# cmdclass={

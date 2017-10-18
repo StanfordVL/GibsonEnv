@@ -27,6 +27,10 @@ endif()
 
 ## use this to globally use C++11 with in our project
 set(CMAKE_CXX_STANDARD 11)
+
+SET(CMAKE_CXX_FLAGS "-D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES -D__STRICT_ANSI__")
+
+
 ## load in pkg-config support
 find_package(PkgConfig)
 ## use pkg-config to get hints for 0mq locations

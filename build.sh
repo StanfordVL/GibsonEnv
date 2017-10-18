@@ -72,26 +72,33 @@ install() {
 	cast_error 'Opengl installation failed'
 	echo $password | sudo apt -qq install mesa-common-dev libglu1-mesa-dev freeglut3-dev -y
 	cast_error 'Opengl addons installation failed'
-	echo $password | sudo apt -qq install cmake -y
+	echo $password | sudo apt -qq install cmake golang -y
 	cast_error 'CMake installation failed'
+	echo $password | sudo apt -qq install golang libjpeg-turbo8-dev -y
+	cast_error 'Universe dependencies failed'
+
+	## Core renderer
+	echo $password | sudo apt -qq install nvidia-cuda-toolkit -y	## Huge, 1121M
+
+	build_local
 	
+	download_data
+}
+
+build_local() {
+	## Core renderer
+	[ ! -d ./realenv/core/channels/external/glfw-3.1.2 ] || rm -rf ./realenv/core/channels/external/glfw-3.1.2
+	[ ! -d ./realenv/core/channels/build ] || rm -rf ./realenv/core/channels/build
 
 	wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
 	unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
 	mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
-	mkdir ./realenv/core/channels/external/glfw-3.1.2/build
-	cd ./realenv/core/channels/external/glfw-3.1.2/build
-	mkdir 
-	$ cd build
-	$ cmake -D BUILD_SHARED_LIBS=ON ..
-
-	mkdir ./realenv/core/channels/build
+	mkdir -p ./realenv/core/channels/build
 	cd ./realenv/core/channels/build
 	cmake .. && make -j 10
 	cd -
 
-	## Core renderer
-	echo $password | sudo apt -qq install nvidia-cuda-toolkit -y	## Huge, 1121M
+
 	cd ./realenv/core/render/
 	wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
 	pip install cython
@@ -99,13 +106,19 @@ install() {
 	bash build_cuda.sh
 	python setup.py build_ext --inplace
 	cd -
+}
 
+download_data () {
 	## Data set
 	cd ./realenv/data
-	mkdir dataset
-	wget --quiet https://www.dropbox.com/s/gtg09zm5mwnvro8/11HB6XZSh1Q.zip
-	unzip -q 11HB6XZSh1Q.zip && rm 11HB6XZSh1Q.zip
-	mv 11HB6XZSh1Q dataset
+	[ -d dataset ] || mkdir dataset
+	[ ! -d ./realenv/core/physics/models ] || rm -rf ./realenv/core/physics/models
+	
+	if [ ! -d 11HB6XZSh1Q ]; then
+		wget --quiet https://www.dropbox.com/s/gtg09zm5mwnvro8/11HB6XZSh1Q.zip
+		unzip -q 11HB6XZSh1Q.zip && rm 11HB6XZSh1Q.zip
+		mv 11HB6XZSh1Q dataset
+	fi
 	cd -
 
 	## Physics Models
@@ -113,7 +126,6 @@ install() {
 	wget --quiet https://www.dropbox.com/s/vb3pv4igllr39pi/models.zip
 	unzip -q models.zip && rm models.zip
 	cd -
-
 }
 
 ec2_install_conda() {
@@ -142,6 +154,12 @@ case "$subcommand" in
 	;;
   "verify_conda")
 	verify_conda
+	;;
+  "download_data")
+	download_data
+	;;
+  "build_local")
+	build_local
 	;;
   *)                                                                                     
     default "$@"                                       
