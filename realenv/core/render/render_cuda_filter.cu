@@ -26,6 +26,7 @@ const int BLOCK_ROWS = 8;
 
 #endif
 
+const bool pano = false;
 
 __global__ void copy_mem(unsigned char *source, unsigned char *render)
 {
@@ -186,9 +187,17 @@ __global__ void transform2d(float *points3d_after)
      float y = points3d_after[(ih * w + iw) * 3 + 1];
      float z = points3d_after[(ih * w + iw) * 3 + 2];
 
-    points3d_after[(ih * w + iw) * 3 + 0] = sqrt(x * x + y * y + z * z);
-    points3d_after[(ih * w + iw) * 3 + 1] = atan2(y, x);
-    points3d_after[(ih * w + iw) * 3 + 2] = atan2(sqrt(x * x + y * y), z);
+      points3d_after[(ih * w + iw) * 3 + 0] = sqrt(x * x + y * y + z * z);
+    //points3d_after[(ih * w + iw) * 3 + 1] = atan2(y, x);
+    //points3d_after[(ih * w + iw) * 3 + 2] = atan2(sqrt(x * x + y * y), z);
+      if ((z > 0) && (x < z) && (x > -z) && (y < z) && (y > -z)) {
+          points3d_after[(ih * w + iw) * 3 + 1] = x / (z + 1e-5);
+          points3d_after[(ih * w + iw) * 3 + 2] = y / (z + 1e-5);
+      }
+      else {
+          points3d_after[(ih * w + iw) * 3 + 1] = 0;
+          points3d_after[(ih * w + iw) * 3 + 2] = 0;
+      }
   }
 }
 
@@ -224,8 +233,11 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
   {
      int iw = x;
      int ih = y + j;
-     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w * s - 0.5);
-     int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h * s - 0.5);
+     //int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w * s - 0.5);
+     //int ty = round((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h * s - 0.5);
+          
+     int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + 1)/2 * h * s - 0.5);
+     int ty = round((points3d_polar[(ih * w + iw) * 3 + 2] + 1)/2 * h * s - 0.5);
           
      float tx_offset = ((points3d_polar[(ih * w + iw) * 3 + 1] + M_PI)/(2*M_PI) * w * s - 0.5);
      float ty_offset = ((points3d_polar[(ih * w + iw) * 3 + 2])/M_PI * h * s - 0.5);
@@ -279,6 +291,10 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
      int r,g,b;
      int itx, ity;
      
+     render[(ty * w * s + tx)] = img[ih * w + iw];
+     
+     /*
+     
      if ((y > h/8) && (y < (h*7)/8))
      if ((mindelta > -10) && (maxdelta < 10) && (this_depth < 10000)) {
            if ((txmax - txmin) * (tymax - tymin) < 100 * s * s)
@@ -311,8 +327,11 @@ __global__ void render_final(float *points3d_polar, float * depth_render, int * 
                        }
                        
             }
-     }
+     }*/
   }
+  
+  
+  
 }
 
 

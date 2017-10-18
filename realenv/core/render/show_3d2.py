@@ -200,8 +200,13 @@ class PCRenderer:
         h = wo/3
         w = 2*h
         n = ho/3
-        opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
         
+        pano = False
+        if pano:
+            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
+        else:
+            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
+            
         def _render_depth(opengl_arr):
             #with Profiler("Render Depth"):  
             cv2.imshow('target depth', opengl_arr/16.)
@@ -211,7 +216,8 @@ class PCRenderer:
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
-
+                opengl_arr = np.zeros((h,w), dtype = np.float32)
+                
                 cuda_pc.render(ct.c_int(len(imgs)),                      
                                ct.c_int(imgs[0].shape[0] * self.scale_up),
                                ct.c_int(imgs[0].shape[1] * self.scale_up),
@@ -223,12 +229,15 @@ class PCRenderer:
                                opengl_arr.ctypes.data_as(ct.c_void_p)
                               )
                 
-        threads = [
-            Process(target=_render_pc, args=(opengl_arr,)),
-            Process(target=_render_depth, args=(opengl_arr,))]
-        [t.start() for t in threads]
-        [t.join() for t in threads]
+        #threads = [
+        #    Process(target=_render_pc, args=(opengl_arr,)),
+        #    Process(target=_render_depth, args=(opengl_arr,))]
+        #[t.start() for t in threads]
+        #[t.join() for t in threads]
 
+        _render_pc(opengl_arr)
+        
+        
         if model:
             tf = transforms.ToTensor()
             before = time.time()
