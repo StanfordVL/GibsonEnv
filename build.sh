@@ -71,7 +71,7 @@ install() {
 	echo $password | sudo apt-get -qq install libzmq3-dev libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev -y
 	cast_error 'Opengl installation failed'
 	echo $password | sudo apt -qq install mesa-common-dev libglu1-mesa-dev freeglut3-dev -y
-	cast_error 'Opengl addons installation failed'
+	cast_error 'Opengl addons installation failed' 
 	echo $password | sudo apt -qq install cmake golang -y
 	cast_error 'CMake installation failed'
 	echo $password | sudo apt -qq install golang libjpeg-turbo8-dev -y
@@ -129,9 +129,11 @@ download_data () {
 }
 
 ec2_install_conda() {
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.21-Linux-x86_64.sh -O ~/miniconda.sh
-    /bin/bash ~/miniconda.sh -b && rm ~/miniconda.sh
+    if [ ! -d ~/miniconda2 ]; then
+     	wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.21-Linux-x86_64.sh -O ~/miniconda.sh && /bin/bash ~/miniconda.sh -b && rm ~/miniconda.sh
+    fi
     export PATH=/home/ubuntu/miniconda2/bin:$PATH
+    echo "PATH=/home/ubuntu/miniconda2/bin:$PATH" >> ~/.bashrc
 }
 
 hello() {
