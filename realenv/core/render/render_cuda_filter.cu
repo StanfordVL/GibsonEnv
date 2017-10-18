@@ -190,9 +190,9 @@ __global__ void transform2d(float *points3d_after)
       points3d_after[(ih * w + iw) * 3 + 0] = sqrt(x * x + y * y + z * z);
     //points3d_after[(ih * w + iw) * 3 + 1] = atan2(y, x);
     //points3d_after[(ih * w + iw) * 3 + 2] = atan2(sqrt(x * x + y * y), z);
-      if ((z > 0) && (x < z) && (x > -z) && (y < z) && (y > -z)) {
-          points3d_after[(ih * w + iw) * 3 + 1] = x / (z + 1e-5);
-          points3d_after[(ih * w + iw) * 3 + 2] = y / (z + 1e-5);
+      if ((x > 0) && (y < x) && (y > -x) && (z < x) && (z > -x)) {
+          points3d_after[(ih * w + iw) * 3 + 1] = y / (x + 1e-5);
+          points3d_after[(ih * w + iw) * 3 + 2] = -z / (x + 1e-5);
       }
       else {
           points3d_after[(ih * w + iw) * 3 + 1] = 0;

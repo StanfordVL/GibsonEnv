@@ -229,13 +229,12 @@ class PCRenderer:
                                opengl_arr.ctypes.data_as(ct.c_void_p)
                               )
                 
-        #threads = [
-        #    Process(target=_render_pc, args=(opengl_arr,)),
-        #    Process(target=_render_depth, args=(opengl_arr,))]
-        #[t.start() for t in threads]
-        #[t.join() for t in threads]
+        threads = [
+            Process(target=_render_pc, args=(opengl_arr,)),
+            Process(target=_render_depth, args=(opengl_arr,))]
+        [t.start() for t in threads]
+        [t.join() for t in threads]
 
-        _render_pc(opengl_arr)
         
         
         if model:
