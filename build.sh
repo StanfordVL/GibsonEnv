@@ -67,12 +67,12 @@ install() {
 	
 
 	## Core multi channel GLFW
-	echo $password | sudo apt-get -qq -y update
-	echo $password | sudo apt-get -qq -y install libzmq3-dev libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev
+	echo $password | sudo apt-get -qq update -y
+	echo $password | sudo apt-get -qq install libzmq3-dev libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev -y
 	cast_error 'Opengl installation failed'
-	echo $password | sudo apt -qq -y install mesa-common-dev libglu1-mesa-dev freeglut3-dev
+	echo $password | sudo apt -qq install mesa-common-dev libglu1-mesa-dev freeglut3-dev -y
 	cast_error 'Opengl addons installation failed'
-	echo $password | sudo apt -qq -y install cmake
+	echo $password | sudo apt -qq install cmake -y
 	cast_error 'CMake installation failed'
 	
 
@@ -91,7 +91,7 @@ install() {
 	cd -
 
 	## Core renderer
-	echo $password | sudo apt -qq -y install nvidia-cuda-toolkit	## Huge, 1121M
+	echo $password | sudo apt -qq install nvidia-cuda-toolkit -y	## Huge, 1121M
 	cd ./realenv/core/render/
 	wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
 	pip install cython
@@ -117,7 +117,7 @@ install() {
 }
 
 ec2_install_conda() {
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.27-Linux-x86_64.sh -O ~/miniconda.sh
+    wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.21-Linux-x86_64.sh -O ~/miniconda.sh
     /bin/bash ~/miniconda.sh -b && rm ~/miniconda.sh
     export PATH=/home/ubuntu/miniconda2/bin:$PATH
 }
