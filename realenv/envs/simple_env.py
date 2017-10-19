@@ -28,7 +28,8 @@ class SimpleEnv(RealEnv):
     self.engine = Engine(model_id, human, debug)
 
     self.r_visuals, self.r_physics, self.p_channel = self.engine.setup_all()
-
+    if self.debug_mode:
+      self.r_displayer = RewardDisplayer()
 
   def testShow3D(self):
     return
@@ -41,10 +42,10 @@ class SimpleEnv(RealEnv):
         else:  
           pose, state = self.r_physics.renderOffScreen(action)
       
-      if not state_old:
+      if not self.state_old:
         reward = 0
       else:
-        reward = 5 * (state_old['distance_to_target'] - state_new['distance_to_target'])
+        reward = 5 * (self.state_old['distance_to_target'] - state['distance_to_target'])
       #self.r_displayer.add_reward(reward)
       self.state_old = state        
 
@@ -56,7 +57,7 @@ class SimpleEnv(RealEnv):
 
         done = False        
 
-      return visuals, reward, done, dict(state_old=state_old['distance_to_target'], state_new=state_new['distance_to_target'])
+      return visuals, reward, done, dict(state_old=self.state_old['distance_to_target'], state_new=state['distance_to_target'])
     except Exception as e: 
       self._end()
       raise(e)
@@ -67,7 +68,7 @@ class SimpleEnv(RealEnv):
   def _render(self, mode='human', close=False):
     return
 
-  def __del__(self):
+  def _end(self):
     ## TODO (hzyjerry): this does not kill cleanly
     ## to reproduce bug, set human = false, debug_mode = false
     self.engine.cleanUp()

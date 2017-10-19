@@ -47,14 +47,13 @@ class Engine(object):
         
         ## Sync initial poses
         pose_init = self.r_visuals.renderOffScreenInitialPose()
-        self.r_physics = self._setupPhysics(self.human)
         self.r_physics.initialize(pose_init)
 
         if self.debug:
             self.r_visuals.renderToScreenSetup()
-            self.r_displayer = RewardDisplayer() #MPRewardDisplayer()
+            #self.r_displayer = RewardDisplayer() #MPRewardDisplayer()
 
-        return self.r_visuals, self.r_physics
+        return self.r_visuals, self.r_physics, self.p_channel
 
     def _checkPortClear(self):
         # TODO (hzyjerry) not working
@@ -75,9 +74,11 @@ class Engine(object):
     def _setupChannel(self):
         model_path = get_model_path()
         dr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'channels', 'depth_render')
-        cmd = "pwd && ls && cd {} && ./depth_render --modelpath {}".format(dr_path, model_path)
+        cur_path = os.getcwd()
+        os.chdir(dr_path)
+        cmd = "./depth_render --modelpath {}".format(model_path)
         self.p_channel = subprocess.Popen(shlex.split(cmd), shell=False)
-        
+        os.chdir(cur_path)
       
 
     def _setupVisuals(self):
@@ -119,12 +120,12 @@ class Engine(object):
         sync_coords()
 
         renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
-        return renderer
+        self.r_visuals = renderer
 
     def _setupPhysics(self, human):
         framePerSec = 13
         renderer = PhysRenderer(self.dataset.get_model_obj(), framePerSec, debug = self.debug, human = human)
-        return renderer
+        self.r_physics = renderer
 
     def cleanUp(self):
         self.p_channel.terminate()

@@ -41,7 +41,7 @@ if __name__ == '__main__':
             else:
                 action = agent.act(ob)
                 with Profiler("Agent step function"):
-                    observation, reward = env._step(action)
+                    observation, reward, done, info = env._step(action)
                 print("Husky action", action, "reward %.3f"% reward)
             i = i + 1
             print("current step", i)
