@@ -187,16 +187,12 @@ glm::mat4 str_to_mat(std::string str) {
 	glm::mat4 mat = glm::mat4();
 	std::string delimiter = " ";
 
-	//std::cout << "Inside str_to_mat" << str << std::endl;
-
 	size_t pos = 0;
 	size_t idx = 0;
 	std::string token;
 	while ((pos = str.find(delimiter)) != std::string::npos) {
 	    token = str.substr(0, pos);
-	    //std::cout << token <<  std::endl;
 	    mat[idx % 4][idx / 4] = std::stof(token);
-	    //std::cout << "after " << std::stof(token) << " "  << idx % 4 << " " << idx / 4 <<  std::endl;
 	    str.erase(0, pos + delimiter.length());
 	    idx += 1;
 	}
@@ -215,7 +211,6 @@ std::vector<size_t> str_to_vec(std::string str) {
 	while ((pos = str.find(delimiter)) != std::string::npos) {
 	    token = str.substr(0, pos);
 	    longs.push_back(std::stoul(token));
-	    //std::cout << "after " << std::stof(token) << " "  << idx % 4 << " " << idx / 4 <<  std::endl;
 	    str.erase(0, pos + delimiter.length());
 	    idx += 1;
 	}
@@ -578,7 +573,6 @@ int main( int argc, char * argv[] )
 
 	std::vector<uint> cubeMapCoordToPanoCoord;
 	for(size_t ycoord = 0; ycoord < panoHeight; ycoord++){
-		// std::cout << ycoord << std::endl;
 		for(size_t xcoord = 0; xcoord < panoWidth; xcoord++){
 			size_t ind = reordering[ycoord][xcoord][0];
 			size_t corrx = reordering[ycoord][xcoord][1];
@@ -601,38 +595,26 @@ int main( int argc, char * argv[] )
 	do{
 
 
-		std::cout << "Waiting for incoming task" << std::endl;
+		std::cout << "Realenv Channel Renderer: waiting for pose" << std::endl;
 
         //  Wait for next request from client
         socket.recv (&request);
-
-        std::cout << "Received Hello " << request.data() << std::endl;
 		boost::timer t;
-        //printf("%s\n", request.data());
-
+        
         std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
-
-        std::cout << "\nFinished cast" << std::endl;
-        //std::cout << request_str << std::endl;
 
         glm::mat4 viewMat = str_to_mat(request_str);
 
 		// Measure speed
-		//double currentTime = glfwGetTime();
-
+		// double currentTime = glfwGetTime();
 		double currentTime = 0;
 
 		nbFrames++;
-		if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1sec ago
-			// printf and reset
+		if ( currentTime - lastTime >= 1.0 ){
 			printf("%f ms/frame %d fps\n", 1000.0/double(nbFrames), nbFrames);
 			nbFrames = 0;
 			lastTime += 1.0;
 		}
-
-        //zmq::message_t reply (windowWidth*windowHeight*sizeof(unsigned short) * 6);
-		
-        //std::cout << "message reply size " <<  windowWidth*windowHeight*sizeof(float) * 6 << std::endl;
 
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
         glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
@@ -641,7 +623,7 @@ int main( int argc, char * argv[] )
         //int nByte = nSize*sizeof(unsigned short);
         int nByte = nSize*sizeof(float);
 
-        // First let's create our buffer, 3 channels per Pixel
+        // create buffer, 3 channels per Pixel
         float* dataBuffer = (float*)malloc(nByte);
         //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
 
@@ -661,18 +643,15 @@ int main( int argc, char * argv[] )
             glUseProgram(programID);
 
             // Compute the MVP matrix from keyboard and mouse input
-            //computeMatricesFromInputs();
-            //computeMatricesFromFile(name_loc);
+            // computeMatricesFromInputs();
+            // computeMatricesFromFile(name_loc);
             float fov = glm::radians(90.0f);
-            glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
+            glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); 
+            // TODO: (hzyjerry) near & far are not verified, but accuracy seems to work well
             glm::mat4 ViewMatrix =  getView(viewMat, k);
             //glm::mat4 ViewMatrix = getViewMatrix();
             glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
-            // printf("View (pose) matrix for skybox %d\n", k);
-            // for (int i = 0; i < 4; ++i) {
-			// 	printf("\t %f %f %f %f\n", viewMatPose[0][i], viewMatPose[1][i], viewMatPose[2][i], viewMatPose[3][i]);
-			// 	//printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
-			// }
+
 
             glm::mat4 ModelMatrix = glm::mat4(1.0);
 

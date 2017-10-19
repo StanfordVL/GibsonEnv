@@ -3,19 +3,14 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 import realenv
 from realenv.main import RealEnv
-from realenv.data.datasets import ViewDataSet3D
-from realenv.core.render.show_3d2 import PCRenderer, sync_coords
-from realenv.core.physics.render_physics import PhysRenderer
+from realenv.core.engine import Engine
 from realenv.core.render.profiler import Profiler
-from realenv.core.channels.depth_render import run_depth_render
 from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
 import numpy as np
 import zmq
 import time
 import os
 import random
-import progressbar
-from multiprocessing import Process
 import cv2
 
 
@@ -26,71 +21,14 @@ class SimpleEnv(RealEnv):
     self.debug_mode = debug
     file_dir = os.path.dirname(__file__)
     
-    self.model_id = model_id
-    self.dataset  = ViewDataSet3D(transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
-
-    self.p_channel = Process(target=run_depth_render)
+    self.model_id  = model_id
     self.state_old = None
-    self.scale_up = scale_up
+    self.scale_up  = scale_up
 
+    self.engine = Engine(model_id, human, debug)
 
-    try:
-      self.p_channel.start()
-      self.r_visuals = self._setupVisuals()
-      pose_init = self.r_visuals.renderOffScreenInitialPose()
-      print("initial pose", pose_init)
-      self.r_physics = self._setupPhysics(human)
-      self.r_physics.initialize(pose_init)
-      if self.debug_mode:
-        self.r_visuals.renderToScreenSetup()
-        self.r_displayer = RewardDisplayer() #MPRewardDisplayer()
-    except Exception as e:
-      self._end()
-      raise(e)
-        
-  def _setupVisuals(self):
-    scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
-    if not self.model_id in scene_dict.keys():
-        print("model not found")
-    else:
-        scene_id = scene_dict[self.model_id]
-    uuids, rts = self.dataset.get_scene_info(scene_id)
-    targets = []
-    sources = []
-    source_depths = []
-    poses = []
-    pbar  = progressbar.ProgressBar(widgets=[
-                        ' [ Initializing Environment ] ',
-                        progressbar.Bar(),
-                        ' (', progressbar.ETA(), ') ',
-                        ])
-    for k,v in pbar(uuids):
-        data = self.dataset[v]
-        target = data[1]
-        target_depth = data[3]
-        
-        if self.scale_up !=1:
-            target =  cv2.resize(target,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)
-            target_depth =  cv2.resize(target_depth,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)
-        
-        pose = data[-1][0].numpy()
-        targets.append(target)
-        poses.append(pose)
-        sources.append(target)
-        source_depths.append(target_depth)
-    context_mist = zmq.Context()
-    socket_mist = context_mist.socket(zmq.REQ)
-    socket_mist.connect("tcp://localhost:5555")
-    
-    sync_coords()
-    
-    renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
-    return renderer
+    self.r_visuals, self.r_physics, self.p_channel = self.engine.setup_all()
 
-  def _setupPhysics(self, human):
-    framePerSec = 13
-    renderer = PhysRenderer(self.dataset.get_model_obj(), framePerSec, debug = self.debug_mode, human = human)
-    return renderer
 
   def testShow3D(self):
     return
@@ -128,11 +66,11 @@ class SimpleEnv(RealEnv):
 
   def _render(self, mode='human', close=False):
     return
-    
-  def _end(self):
+
+  def __del__(self):
     ## TODO (hzyjerry): this does not kill cleanly
     ## to reproduce bug, set human = false, debug_mode = false
-    self.p_channel.terminate()
+    self.engine.cleanUp()
     return
 
 

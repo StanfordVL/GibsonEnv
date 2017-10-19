@@ -311,6 +311,12 @@ class PCRenderer:
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
         return self.show_rgb
+
+def sync_coords():
+    with Profiler("Transform coords"):
+        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
+    socket_mist.send(new_coords)
+    message = socket_mist.recv()
         
 
 def show_target(target_img):
@@ -319,18 +325,7 @@ def show_target(target_img):
     show_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
     cv2.imshow('target', show_rgb)
 
-def sync_coords():
-    print(coords.flatten().dtype)
-    with Profiler("Transform coords"):
-        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
-    print(coords.shape)
-    print("Count: ", coords.flatten().astype(np.uint32).size )
-    print("elem [2,3,5]: ", coords[4][2][1] )
-    socket_mist.send(new_coords)
-    print("Sent reordering")
-    message = socket_mist.recv()
-    print("received reordering reply")
-
+    
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
