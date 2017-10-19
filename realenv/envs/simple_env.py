@@ -20,7 +20,7 @@ class SimpleEnv(RealEnv):
   def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q", scale_up = 1):
     self.debug_mode = debug
     file_dir = os.path.dirname(__file__)
-    
+
     self.model_id  = model_id
     self.state_old = None
     self.scale_up  = scale_up
@@ -39,26 +39,26 @@ class SimpleEnv(RealEnv):
       with Profiler("Physics to screen"):
         if not self.debug_mode:
           pose, state = self.r_physics.renderOffScreen(action)
-        else:  
-          pose, state = self.r_physics.renderOffScreen(action)
-      
+        else:
+          pose, state = self.r_physics.renderToScreen(action)
+
       if not self.state_old:
         reward = 0
       else:
         reward = 5 * (self.state_old['distance_to_target'] - state['distance_to_target'])
       #self.r_displayer.add_reward(reward)
-      self.state_old = state        
+      self.state_old = state
 
       with Profiler("Render to screen"):
         if not self.debug_mode:
           visuals = self.r_visuals.renderOffScreen(pose)
         else:
-          visuals = self.r_visuals.renderOffScreen(pose)
+          visuals = self.r_visuals.renderToScreen(pose)
 
-        done = False        
+        done = False
 
       return visuals, reward, done, dict(state_old=self.state_old['distance_to_target'], state_new=state['distance_to_target'])
-    except Exception as e: 
+    except Exception as e:
       self._end()
       raise(e)
 
