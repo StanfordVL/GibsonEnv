@@ -209,6 +209,58 @@ __global__ void render_depth(float *points3d_polar, unsigned int * depth_render)
   }
 }
 
+__global__ void get_average(unsigned char * img, int * nz, int * average, int scale)
+{
+ int x = blockIdx.x * TILE_DIM + threadIdx.x;
+  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int width = gridDim.x * TILE_DIM;
+  int h = width /2;
+  
+  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
+  {
+     int iw = x;
+     int ih = y + j;
+     
+     if (img[3*(ih*width + iw)] + img[3*(ih*width + iw)+1] + img[3*(ih*width + iw)+2] > 0)
+     {
+         //nz[ih/3 * width + iw/3] += 1;
+         //average[3*(ih/3*width + iw/3)] += (int)img[3*(ih*width + iw)];
+         //average[3*(ih/3*width + iw/3)+1] += (int)img[3*(ih*width + iw)+1];
+         //average[3*(ih/3*width + iw/3)+2] += (int)img[3*(ih*width + iw)+2];
+         
+         atomicAdd(&(nz[ih/scale * width + iw/scale]), 1);
+         atomicAdd(&(average[3*(ih/scale*width + iw/scale)]), (int)img[3*(ih*width + iw)]);
+         atomicAdd(&(average[3*(ih/scale*width + iw/scale)+1]), (int)img[3*(ih*width + iw)+1]);
+         atomicAdd(&(average[3*(ih/scale*width + iw/scale)+2]), (int)img[3*(ih*width + iw)+2]);
+         
+     }
+     
+  }
+}
+
+
+__global__ void fill_with_average(unsigned char *img, int * nz, int * average, int scale)
+{
+ int x = blockIdx.x * TILE_DIM + threadIdx.x;
+  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int width = gridDim.x * TILE_DIM;
+  int h = width /2;
+  
+  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
+  {
+     int iw = x;
+     int ih = y + j;
+     
+     if ((img[3*(ih*width + iw)] + img[3*(ih*width + iw)+1] + img[3*(ih*width + iw)+2] == 0) && (nz[ih/scale * width + iw/scale] > 0))
+     {
+         img[3*(ih*width + iw)] = (unsigned char)(average[3*(ih/scale*width + iw/scale)] / nz[ih/scale * width + iw/scale]);
+         img[3*(ih*width + iw) + 1] = (unsigned char)(average[3*(ih/scale*width + iw/scale) + 1] / nz[ih/scale * width + iw/scale]);
+         img[3*(ih*width + iw) + 2] = (unsigned char)(average[3*(ih/scale*width + iw/scale) + 2] / nz[ih/scale * width + iw/scale]);
+     }
+     
+  }
+}
+
 
 
 __global__ void render_final(float *points3d_polar, float * selection, float * depth_render, int * img,  int * render, int s)
@@ -342,6 +394,9 @@ void render(int n, int h,int w, int s, unsigned char * img, float * depth,float 
     
     float * d_selection; 
     
+    int * nz;
+    int * average;
+    
     int *d_render2, *d_img2;
     
     cudaMalloc((void **)&d_img, frame_mem_size);
@@ -356,10 +411,16 @@ void render(int n, int h,int w, int s, unsigned char * img, float * depth,float 
     cudaMalloc((void **)&d_img2, render_mem_size * sizeof(int));
     cudaMalloc((void **)&d_selection, render_mem_size * sizeof(float) * n);
     
+    cudaMalloc((void **)&nz, render_mem_size * sizeof(int));
+    cudaMalloc((void **)&average, render_mem_size * sizeof(int) * 3);
     
     cudaMemcpy(d_depth_render, depth_render, render_mem_size * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemset(d_render_all, 0, render_mem_size * sizeof(unsigned char) * 3 * n);
     cudaMemset(d_selection, 0, render_mem_size * sizeof(float) * n);
+    
+    cudaMemset(nz, 0, render_mem_size * sizeof(int));
+    cudaMemset(average, 0, render_mem_size * sizeof(int) * 3);
+    
     
     int idx;
     for (idx = 0; idx < n; idx ++) {
@@ -386,10 +447,20 @@ void render(int n, int h,int w, int s, unsigned char * img, float * depth,float 
         //int_to_char <<< dimGrid2, dimBlock >>> (d_render2, d_render);
         int_to_char <<< dimGrid2, dimBlock >>> (d_render2, &(d_render_all[idx * nx * ny * s * s * 3]));
 
-        fill <<< dimGrid2, dimBlock >>> (&(d_render_all[idx * nx * ny * s * s * 3]));
+        //fill <<< dimGrid2, dimBlock >>> (&(d_render_all[idx * nx * ny * s * s * 3]));
     }
 
         merge <<< dimGrid2, dimBlock >>> (d_render_all, d_render, d_selection, n, nx * ny * s * s);
+        get_average <<< dimGrid2, dimBlock >>> (d_render, nz, average, 5);
+        fill_with_average <<< dimGrid2, dimBlock >>> (d_render, nz, average, 5);
+        cudaMemset(nz, 0, render_mem_size * sizeof(int));
+        cudaMemset(average, 0, render_mem_size * sizeof(int) * 3);
+        get_average <<< dimGrid2, dimBlock >>> (d_render, nz, average, 50);
+        fill_with_average <<< dimGrid2, dimBlock >>> (d_render, nz, average, 50);
+        cudaMemset(nz, 0, render_mem_size * sizeof(int));
+        cudaMemset(average, 0, render_mem_size * sizeof(int) * 3);
+        get_average <<< dimGrid2, dimBlock >>> (d_render, nz, average, 200);
+        fill_with_average <<< dimGrid2, dimBlock >>> (d_render, nz, average, 200);
         
         cudaMemcpy(render, d_render, render_mem_size * sizeof(unsigned char) * 3 , cudaMemcpyDeviceToHost);
         
