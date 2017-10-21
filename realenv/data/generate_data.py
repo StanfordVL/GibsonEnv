@@ -73,8 +73,12 @@ def generate_data(args):
     
     show, _ =  render(sources, source_depths, poses[0], poses, target_depth)
     print(show.shape)
-    Image.fromarray(show).save('%s/show%d.png' % (outf, idx))
-    Image.fromarray(target).save('%s/target%d.png' % (outf, idx))
+    
+    if idx % 100 == 0:
+        Image.fromarray(show).save('%s/show%d.png' % (outf, idx))
+        Image.fromarray(target).save('%s/target%d.png' % (outf, idx))
+    
+    np.savez(file = "%s/data_%d.npz" % (outf, idx), source = show, depth = target_depth, target = target)
     
     return show, target_depth, target
 
@@ -94,5 +98,4 @@ for i in range(len(d)):
     print(filename)
     if not os.path.isfile(filename):
         generate_data([i, d, opt.outf])
-
 
