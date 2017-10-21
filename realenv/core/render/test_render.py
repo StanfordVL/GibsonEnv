@@ -127,20 +127,3 @@ for i in range(5):
                       )
 
     Image.fromarray(show).save('imgs/test%04d.png' % i)
-# In[ ]:
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-

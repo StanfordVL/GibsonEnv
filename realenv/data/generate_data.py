@@ -32,15 +32,15 @@ def render(imgs, depths, pose, poses, tdepth):
     t0 = time.time()
     showsz = imgs[0].shape[0]
     nimgs = len(imgs)
-    show=np.zeros((nimgs, showsz,showsz * 2,3),dtype='uint8')
-    target_depth = tdepth[:,:,0]
+    show=np.zeros((showsz,showsz * 2,3),dtype='uint8')
+    target_depth = (128 * tdepth[:,:,0]).astype(np.float32)
 
     imgs = np.array(imgs)
-    depths = np.array(depths)
-    
+    depths = np.array(depths).flatten()
+
     pose_after = [pose.dot(np.linalg.inv(poses[0])).dot(poses[i]).astype(np.float32) for i in range(len(imgs))]
     pose_after = np.array(pose_after)
-    
+
     dll.render(ct.c_int(len(imgs)),
                ct.c_int(imgs[i].shape[0]),
                ct.c_int(imgs[i].shape[1]),
@@ -70,8 +70,12 @@ def generate_data(args):
     source_depths = data[2]
     target_depth = data[3]
     poses = [item.numpy() for item in data[-1]]
+    
     show, _ =  render(sources, source_depths, poses[0], poses, target_depth)
-
+    print(show.shape)
+    Image.fromarray(show).save('%s/show%d.png' % (outf, idx))
+    Image.fromarray(target).save('%s/target%d.png' % (outf, idx))
+    
     return show, target_depth, target
 
 
@@ -86,8 +90,8 @@ opt = parser.parse_args()
 d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False, train = False)
 
 for i in range(len(d)):
-
     filename = "%s/data_%d.npz" % (opt.outf, i)
+    print(filename)
     if not os.path.isfile(filename):
         generate_data([i, d, opt.outf])
 
