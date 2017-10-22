@@ -1,2 +1,3 @@
-models/
+*.urdf
 __pycache__
+drivers/baselines/

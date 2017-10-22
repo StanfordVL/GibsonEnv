@@ -2,7 +2,6 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import realenv
-from realenv.main import RealEnv
 from realenv.core.engine import Engine
 from realenv.core.render.profiler import Profiler
 from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
@@ -12,9 +11,10 @@ import time
 import os
 import random
 import cv2
+import gym
 
 
-class SimpleEnv(RealEnv):
+class SimpleEnv(gym.Env):
   """Bare bone room environment with no addtional constraint (disturbance, friction, gravity change)
   """
   def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q", scale_up = 1):
@@ -22,7 +22,6 @@ class SimpleEnv(RealEnv):
     file_dir = os.path.dirname(__file__)
 
     self.model_id  = model_id
-    self.state_old = None
     self.scale_up  = scale_up
 
     self.engine = Engine(model_id, human, debug)
@@ -31,23 +30,13 @@ class SimpleEnv(RealEnv):
     if self.debug_mode:
       self.r_displayer = RewardDisplayer()
 
-  def testShow3D(self):
-    return
-
   def _step(self, action):
     try:
       with Profiler("Physics to screen"):
-        if not self.debug_mode:
-          pose, state = self.r_physics.renderOffScreen(action)
-        else:
-          pose, state = self.r_physics.renderToScreen(action)
+        #pose, state = self.r_physics._render(action)
+        obs, reward, done, meta = self.r_physics.step(action)
 
-      if not self.state_old:
-        reward = 0
-      else:
-        reward = 5 * (self.state_old['distance_to_target'] - state['distance_to_target'])
-      #self.r_displayer.add_reward(reward)
-      self.state_old = state
+      pose = [meta['eye_pos'], meta['eye_quat']]
 
       with Profiler("Render to screen"):
         if not self.debug_mode:
@@ -55,14 +44,14 @@ class SimpleEnv(RealEnv):
         else:
           visuals = self.r_visuals.renderToScreen(pose)
 
-        done = False
-
-      return visuals, reward, done, dict(state_old=self.state_old['distance_to_target'], state_new=state['distance_to_target'])
+      return visuals, reward , done, {}
+      #return visuals, reward, done, dict(state_old=self.state_old['distance_to_target'], state_new=state['distance_to_target'])
     except Exception as e:
       self._end()
       raise(e)
 
   def _reset(self):
+    self.r_physics.reset()
     return
 
   def _render(self, mode='human', close=False):
@@ -73,6 +62,10 @@ class SimpleEnv(RealEnv):
     ## to reproduce bug, set human = false, debug_mode = false
     self.engine.cleanUp()
     return
+
+  @property
+  def action_space(self):
+    return self.r_physics.action_space
 
 
 if __name__ == "__main__":
