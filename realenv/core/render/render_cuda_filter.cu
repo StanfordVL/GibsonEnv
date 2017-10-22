@@ -477,6 +477,8 @@ void render(int n, int h,int w, int s, unsigned char * img, float * depth,float 
     cudaFree(d_pose);
     cudaFree(d_render_all);
     cudaFree(d_selection);
+    cudaFree(nz);
+    cudaFree(average);
 }
     
     

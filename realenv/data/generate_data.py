@@ -3,14 +3,12 @@ import ctypes as ct
 import cv2
 import sys
 import argparse
-from realenv.data.datasets import ViewDataSet3D
-from completion import CompletionNet
+from datasets import ViewDataSet3D
 import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 import time
 from numpy import cos, sin
-import utils
 import matplotlib.pyplot as plt
 from PIL import Image
 import os
@@ -78,7 +76,9 @@ def generate_data(args):
         Image.fromarray(show).save('%s/show%d.png' % (outf, idx))
         Image.fromarray(target).save('%s/target%d.png' % (outf, idx))
     
-    np.savez(file = "%s/data_%d.npz" % (outf, idx), source = show, depth = target_depth, target = target)
+    filename = "%s/data_%d.npz" % (outf, idx)
+    if not os.path.isfile(filename):
+        np.savez(file = filename, source = show, depth = target_depth, target = target)
     
     return show, target_depth, target
 
@@ -91,11 +91,14 @@ parser.add_argument('--outf'  , type = str, default = '', help='path of output f
 opt = parser.parse_args()
 
 
-d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False, train = False)
+d = ViewDataSet3D(root=opt.dataroot, transform = np.array, mist_transform = np.array, seqlen = 5, off_3d = False, train = True)
 
-for i in range(len(d)):
-    filename = "%s/data_%d.npz" % (opt.outf, i)
-    print(filename)
-    if not os.path.isfile(filename):
-        generate_data([i, d, opt.outf])
+p = Pool(6)
+p.map(generate_data, [(idx, d, opt.outf) for idx in range(len(d))])
+
+#for i in range(len(d)):
+#    filename = "%s/data_%d.npz" % (opt.outf, i)
+#    print(filename)
+#    if not os.path.isfile(filename):
+#        generate_data([i, d, opt.outf])
 
