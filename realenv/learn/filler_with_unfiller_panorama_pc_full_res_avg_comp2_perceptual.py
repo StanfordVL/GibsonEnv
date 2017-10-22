@@ -64,7 +64,6 @@ def main():
     parser.add_argument('--init', type=str, default = "iden", help='init method')
     parser.add_argument('--l1', type=float, default = 0, help='add l1 loss')
     parser.add_argument('--color_coeff', type=float, default = 0, help='add color match loss')
-    parser.add_argument('--cascade'  , action='store_true', help='debug mode')
     parser.add_argument('--unfiller'  , action='store_true', help='debug mode')
     
     
@@ -99,7 +98,7 @@ def main():
     img_original = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
-    comp = CompletionNet2(norm = nn.BatchNorm2d)
+    comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
     
     dis = Discriminator2(pano = False)
     current_epoch = opt.cepoch
@@ -120,8 +119,8 @@ def main():
         #dis.load_state_dict(torch.load(opt.model.replace("G", "D")))
         current_epoch = opt.cepoch
 
-    if opt.cascade:
-        comp2 = CompletionNet2(norm = nn.BatchNorm2d)
+    if opt.unfiller:
+        comp2 = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
         comp2 =  torch.nn.DataParallel(comp2).cuda()
         if opt.model != '':
             comp2.load_state_dict(torch.load(opt.model))
@@ -208,13 +207,12 @@ def main():
             
             loss.backward(retain_graph = True)
             
-            if opt.cascade:
+            if opt.unfiller:
                 optimizerG2.zero_grad()
-                
-                recon2 = comp2(torch.cat([recon, imgc[:,3:]], 1), maskvc)
-                loss2 = l2(p(recon2), p(img_originalc).detach())
+                recon2 = comp2(img_originalc, maskvc)
+                loss2 = l2(p(recon2), p(recon).detach())
                 for scale in [32]:
-                    img_originalc_patch = img_originalc.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1) 
+                    img_originalc_patch = recon.detach().view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1) 
                     recon2_patch = recon2.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1)    
                     img_originalc_patch_mean = img_originalc_patch.mean(dim=-1)
                     recon2_patch_mean = recon2_patch.mean(dim = -1)
@@ -307,9 +305,9 @@ def main():
                 recon = comp(imgc, maskvc)
                 comp.train()
                 
-                if opt.cascade:
+                if opt.unfiller:
                     comp2.eval()
-                    recon2 = comp2(torch.cat([recon, imgc[:,3:]], 1), maskvc)
+                    recon2 = comp2(img_originalc, maskvc)
                     comp2.train()
                     visual = torch.cat([imgc.data[:,:3,:,:], recon.data, recon2.data, img_originalc.data], 3)
                 else:
@@ -329,5 +327,7 @@ def main():
                 torch.save(comp.state_dict(), '%s/compG_epoch%d_%d.pth' % (opt.outf, epoch, i))
                 torch.save(dis.state_dict(), '%s/compD_epoch%d_%d.pth' % (opt.outf, epoch, i))
             
+                if opt.unfiller:
+                    torch.save(comp2.state_dict(), '%s/compG2_epoch%d_%d.pth' % (opt.outf, epoch, i))
 if __name__ == '__main__':
     main()
