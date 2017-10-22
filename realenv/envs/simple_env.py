@@ -13,19 +13,18 @@ import random
 import cv2
 import gym
 
-
 class SimpleEnv(gym.Env):
   """Bare bone room environment with no addtional constraint (disturbance, friction, gravity change)
   """
   def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q", scale_up = 1):
     self.debug_mode = debug
+    self.human      = human
+    self.model_id   = model_id
+    self.scale_up   = scale_up
+    self.engine = None
     file_dir = os.path.dirname(__file__)
 
-    self.model_id  = model_id
-    self.scale_up  = scale_up
-
-    self.engine = Engine(model_id, human, debug)
-
+  def _engine_setup(self):
     self.r_visuals, self.r_physics, self.p_channel = self.engine.setup_all()
     if self.debug_mode:
       self.r_displayer = RewardDisplayer()
@@ -33,7 +32,6 @@ class SimpleEnv(gym.Env):
   def _step(self, action):
     try:
       with Profiler("Physics to screen"):
-        #pose, state = self.r_physics._render(action)
         obs, reward, done, meta = self.r_physics.step(action)
 
       pose = [meta['eye_pos'], meta['eye_quat']]
@@ -45,7 +43,6 @@ class SimpleEnv(gym.Env):
           visuals = self.r_visuals.renderToScreen(pose)
 
       return visuals, reward , done, {}
-      #return visuals, reward, done, dict(state_old=self.state_old['distance_to_target'], state_new=state['distance_to_target'])
     except Exception as e:
       self._end()
       raise(e)
@@ -68,26 +65,22 @@ class SimpleEnv(gym.Env):
     return self.r_physics.action_space
 
 
-if __name__ == "__main__":
-  env = SimpleEnv()
-  t_start = time.time()
-  r_current = 0
-  try:
-    while True:
-      t0 = time.time()
-      img, reward = env._step({})
-      t1 = time.time()
-      t = t1-t0
-      r_current = r_current + 1
-      print('(Round %d) fps %.3f total time %.3f' %(r_current, 1/t, time.time() - t0))
-  except KeyboardInterrupt:
-    env._end()
-    print("Program finished")
-  '''
-  r_displayer = MPRewardDisplayer()
-  for i in range(10000):
-      num = random.random() * 100 - 30
-      r_displayer.add_reward(num)
-      if i % 40 == 0:
-          r_displayer.reset()
-  '''
+class HumanoidWalkingEnv(SimpleEnv):
+  def __init__(self):
+    SimpleEnv.__init__(self)
+    self.engine = Engine(self.model_id, self.human, self.debug_mode, "PhysicsHumanoidWalkingEnv-v0")
+    self._engine_setup()
+
+
+class AntWalkingEnv(SimpleEnv):
+  def __init__(self):
+    SimpleEnv.__init__(self)
+    self.engine = Engine(self.model_id, self.human, self.debug_mode, "PhysicsAntWalkingEnv-v0")
+    self._engine_setup()
+
+
+class HuskyWalkingEnv(SimpleEnv):
+  def __init__(self):
+    SimpleEnv.__init__(self)
+    self.engine = Engine(self.model_id, self.human, self.debug_mode, "PhysicsHuskyWalkingEnv-v0")
+    self._engine_setup()
