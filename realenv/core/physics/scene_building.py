@@ -17,8 +17,10 @@ class BuildingScene(Scene):
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         #filename = "/home/jerry/Desktop/realenv/realenv/data/dataset/11HB6XZSh1Q/modeldata/building.urdf"
         filename = "/home/jerry/Desktop/realenv/realenv/data/dataset/11HB6XZSh1Q/modeldata/out_z_up.obj"
-        collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], rgbaColor = [1, 0.2, 0.2, 0.3], specularColor=[0.4, 4.0])
+        original  = [1, 1, 1]
+        magnified = [2, 2, 2]
+        collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=original, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+        visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [1, 0.2, 0.2, 0.3], specularColor=[0.4, 4.0])
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
         #p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0.2, 0.2, 0.3], specularColor=[1, 1, 1])
         #self.building_obj = [collisionId]
@@ -28,7 +30,6 @@ class BuildingScene(Scene):
         p.changeDynamics(boundaryUid, -1, lateralFriction=0.8, spinningFriction=0.1, rollingFriction=0.1)
         self.building_obj = (boundaryUid, )
         #self.building_obj = (int(p.loadURDF(filename)), )
-        print("built building scene", self.building_obj)
         for i in self.building_obj:
             #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
             p.changeVisualShape(i,-1,rgbaColor=[1,0.2,0.2,0.3])

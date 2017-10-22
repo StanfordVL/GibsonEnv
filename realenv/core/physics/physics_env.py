@@ -15,7 +15,7 @@ from transforms3d import euler, quaternions
 from realenv.core.physics.physics_object import PhysicsObject
 from realenv.core.render.profiler import Profiler
 from realenv.core.physics.env_bases import MJCFBaseBulletEnv
-from realenv.core.physics.robot_locomotors import Humanoid
+from realenv.core.physics.robot_locomotors import Humanoid, Ant, Husky
 from .scene_building import SinglePlayerBuildingScene
 import gym
 
@@ -170,7 +170,6 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
         r = MJCFBaseBulletEnv._reset(self)
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
 
-        print("reset", self.building_scene.building_obj)
         self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
             self.building_scene.building_obj)
         #print(self.parts)
@@ -211,7 +210,7 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
 
         feet_collision_cost = 0.0
         for i,f in enumerate(self.robot.feet): # TODO: Maybe calculating feet contacts could be done within the robot code
-            print(f.contact_list())
+            #print(f.contact_list())
             contact_ids = set((x[2], x[4]) for x in f.contact_list())
             #print("CONTACT OF '%d' WITH %d" % (contact_ids, ",".join(contact_names)) )
             if (self.ground_ids & contact_ids):
@@ -220,7 +219,7 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
                 self.robot.feet_contact[i] = 1.0
             else:
                 self.robot.feet_contact[i] = 0.0
-        print(self.robot.feet_contact)
+        #print(self.robot.feet_contact)
 
         electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
         electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
@@ -266,4 +265,16 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
 class HumanoidWalkingEnv(PhysicsExtendedEnv):
     def __init__(self):
         self.robot = Humanoid()
+        PhysicsExtendedEnv.__init__(self, self.robot)
+        self.electricity_cost  = 4.25*PhysicsExtendedEnv.electricity_cost
+        self.stall_torque_cost = 4.25*PhysicsExtendedEnv.stall_torque_cost
+
+class AntWalkingEnv(PhysicsExtendedEnv):
+    def __init__(self):
+        self.robot = Ant()
+        PhysicsExtendedEnv.__init__(self, self.robot)
+
+class HuskyWalkingEnv(PhysicsExtendedEnv):
+    def __init__(self):
+        self.robot = Husky()
         PhysicsExtendedEnv.__init__(self, self.robot)
