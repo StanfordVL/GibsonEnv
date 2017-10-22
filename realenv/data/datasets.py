@@ -41,9 +41,9 @@ def get_model_path(idx=0):
 
 
 class ViewDataSet3D(data.Dataset):
-    def __init__(self, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
+    def __init__(self, root, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
         print ('Processing the data:')
-        self.root   = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dataset')
+        self.root = root
         self.fofn   = self.root + '_fofn'+str(int(train))+'.pkl'
         self.train  = train
         self.loader = loader
@@ -152,9 +152,9 @@ class ViewDataSet3D(data.Dataset):
             ## DEPTH DEBUG
             #p = p #np.dot(rotation, p)
             #rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
-            
+
             rotation = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-            
+
             p = np.dot(p, rotation)
             poses.append(p)
             f.close()
@@ -168,7 +168,7 @@ class ViewDataSet3D(data.Dataset):
         uuids = [item[1] for item in self.select[index]]
         #print("selection length", len(self.select), len(self.select[0]))
         #print(uuids)
-        
+
         #print(uuids)
         #poses = ([self.meta[scene][item][1:] for item in uuids])
         #poses = [item[0] + item[1] for item in poses]

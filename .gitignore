@@ -29,3 +29,6 @@ physics/*.txt
 physics/*.json
 # Physics assets
 physics/models
+
+
+*/events*

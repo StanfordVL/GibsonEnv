@@ -25,7 +25,7 @@ from numpy import cos, sin
 from profiler import Profiler
 from multiprocessing.dummy import Process
 
-from datasets import ViewDataSet3D
+from realenv.data.datasets import ViewDataSet3D
 
 
 # In[2]:
@@ -44,8 +44,8 @@ d = ViewDataSet3D(root='/home/fei/Downloads/highres_tiny/', transform = np.array
 # In[ ]:
 
 scene_dict = dict(zip(d.scenes, range(len(d.scenes))))
-   
-model_id = scene_dict.keys()[0]
+
+model_id = scene_dict.keys()[1]
 scene_id = scene_dict[model_id]
 
 uuids, rts = d.get_scene_info(scene_id)
@@ -104,7 +104,7 @@ poses = relative_poses_topk
 poses_after = [
     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
     for i in range(len(imgs_topk))]
-            
+
 
 
 # In[ ]:
@@ -113,33 +113,17 @@ showsz = 1024
 show   = np.zeros((showsz,showsz * 2,3),dtype='uint8')
 
 this_depth = (128 * depths[topk[0]]).astype(np.float32)
-for i in range(50):
+for i in range(5):
     with Profiler("Render pointcloud"):
-        cuda_pc.render(ct.c_int(len(imgs_topk)),                      
+        cuda_pc.render(ct.c_int(len(imgs_topk)),
                        ct.c_int(imgs_topk[0].shape[0]),
                        ct.c_int(imgs_topk[0].shape[1]),
+                       ct.c_int(1),
                        imgs_topk.ctypes.data_as(ct.c_void_p),
                        depths_topk.ctypes.data_as(ct.c_void_p),
                        np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
                        show.ctypes.data_as(ct.c_void_p),
                        this_depth.ctypes.data_as(ct.c_void_p)
                       )
-        
+
     Image.fromarray(show).save('imgs/test%04d.png' % i)
-# In[ ]:
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
