@@ -93,12 +93,11 @@ build_local() {
 	mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
 	mkdir -p ./realenv/core/channels/build
 	cd ./realenv/core/channels/build
-	cmake .. && make -j 10
+	cmake .. && make clean && make -j 10
 	cd -
 
 
 	cd ./realenv/core/render/
-	wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
 	pip install cython
 	bash build.sh
 	bash build_cuda.sh
@@ -124,6 +123,11 @@ download_data () {
 	wget --quiet https://www.dropbox.com/s/vb3pv4igllr39pi/models.zip
 	unzip -q models.zip && rm models.zip
 	cd -
+
+	cd ./realenv/core/render/
+	wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
+	cd -
+
 }
 
 ec2_install_conda() {

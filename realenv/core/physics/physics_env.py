@@ -253,7 +253,11 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
         self.HUD(state, a, done)
         self.reward += sum(self.rewards)
 
-        return state, sum(self.rewards), bool(done), {}
+        eye_pos = self.robot.eyes.current_position()
+        x, y, z ,w = self.robot.eyes.current_orientation()
+        eye_quat = [w, x, y, z]
+
+        return state, sum(self.rewards), bool(done), {"eye_pos":eye_pos, "eye_quat":eye_quat}
 
     def camera_adjust(self):
         x, y, z = self.body_xyz

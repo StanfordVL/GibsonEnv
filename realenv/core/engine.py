@@ -1,7 +1,7 @@
 from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.show_3d2 import PCRenderer, sync_coords
 from realenv.core.channels.depth_render import run_depth_render
-from realenv.core.physics.render_physics import PhysRenderer
+from realenv.core.physics.physics_env import PhysicsEnv
 from realenv import error
 
 import progressbar
@@ -11,6 +11,7 @@ import sys
 import zmq
 import socket
 import shlex
+import gym
 from realenv.data.datasets import get_model_path
 
 
@@ -42,12 +43,11 @@ class Engine(object):
         
         self._checkPortClear()
         self._setupChannel()
-        self._setupPhysics(self.human)
         self._setupVisuals()
         
         ## Sync initial poses
         pose_init = self.r_visuals.renderOffScreenInitialPose()
-        self.r_physics.initialize(pose_init)
+        self._setupPhysics(self.human, pose_init)
 
         if self.debug:
             self.r_visuals.renderToScreenSetup()
@@ -122,10 +122,16 @@ class Engine(object):
         renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
         self.r_visuals = renderer
 
-    def _setupPhysics(self, human):
+    def _setupPhysics(self, human, pose_init):
+        """
         framePerSec = 13
-        renderer = PhysRenderer(self.dataset.get_model_obj(), framePerSec, debug = self.debug, human = human)
+        renderer = PhysicsEnv(self.dataset.get_model_obj(), render_mode="human_play",fps=framePerSec, pose=pose_init)
         self.r_physics = renderer
+        """
+        env = gym.make("HumanoidWalkingEnv-v0")
+        env.render(mode="human")
+        env.reset()
+        self.r_physics = env
 
     def cleanUp(self):
         self.p_channel.terminate()

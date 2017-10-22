@@ -1,6 +1,7 @@
 from robot_bases import MJCFBasedRobot
 import numpy as np
 import pybullet as p
+import os
 from transforms3d.euler import euler2quat
 
 
@@ -147,8 +148,24 @@ class Humanoid(WalkerBase):
 	foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
 	def __init__(self):
-		WalkerBase.__init__(self, 'humanoid_symmetric.xml', 'torso', action_dim=17, obs_dim=44, power=0.41)
+		WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, obs_dim=44, power=0.41)
 		# 17 joints, 4 of them important for walking (hip, knee), others may as well be turned off, 17/4 = 4.25
+
+	def reset(self):
+		self.ordered_joints = []
+		print(os.path.join(os.path.dirname(os.path.abspath(__file__)),"models", self.model_path))
+		if self.self_collision:
+			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
+				p.loadMJCF(os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", self.model_path), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS))
+		else:
+			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
+				p.loadMJCF(os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", self.model_path)))
+
+		self.robot_specific_reset()
+
+		s = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
+		self.eyes = self.parts["eyes"]
+		return s
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
