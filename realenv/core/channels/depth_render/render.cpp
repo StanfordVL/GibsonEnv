@@ -380,7 +380,10 @@ int main( int argc, char * argv[] )
 
 
 	// Cull triangles which normal is not towards the camera
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
+
+    glDisable(GL_CULL_FACE);
+
 
 	GLuint VertexArrayID;     // VAO
 	glGenVertexArrays(1, &VertexArrayID);
