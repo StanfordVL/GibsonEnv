@@ -452,10 +452,10 @@ void render(int n, int h,int w, int s, unsigned char * img, float * depth,float 
 
         merge <<< dimGrid2, dimBlock >>> (d_render_all, d_render, d_selection, n, nx * ny * s * s);
         
-        int fill_size[8] = {3, 5, 10, 20, 50, 100};
+        int fill_size[10] = {3, 5, 10, 20, 50, 75, 100, 200, 600, 1024};
 
         //int fill_size[8] = {3, 5, 10, 20, 50, 100, 200};
-        for (int j = 0; j < 8; j++) {
+        for (int j = 0; j < 10; j++) {
             cudaMemset(nz, 0, render_mem_size * sizeof(int));
             cudaMemset(average, 0, render_mem_size * sizeof(int) * 3);
             get_average <<< dimGrid2, dimBlock >>> (d_render, nz, average, fill_size[j]);
