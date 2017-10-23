@@ -40,6 +40,7 @@ class SimpleEnv(gym.Env):
         if not self.debug_mode:
           visuals = self.r_visuals.renderOffScreen(pose)
         else:
+
           visuals = self.r_visuals.renderToScreen(pose)
 
       return visuals, reward , done, {}
