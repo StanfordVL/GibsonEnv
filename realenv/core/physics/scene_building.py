@@ -4,19 +4,21 @@ parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
 import pybullet_data
 
-
+from realenv.data.datasets import get_model_path
 from realenv.core.physics.scene_abstract import Scene
 import pybullet as p
 
 
 class BuildingScene(Scene):
     def episode_restart(self):
-        Scene.episode_restart(self)   # contains cpp_world.clean_everything()
+        Scene.episode_restart(self)   
+
+        # contains cpp_world.clean_everything()
         # stadium_pose = cpp_household.Pose()
         # if self.zero_at_running_strip_start_line:
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
-        #filename = "/home/jerry/Desktop/realenv/realenv/data/dataset/11HB6XZSh1Q/modeldata/building.urdf"
-        filename = "/home/jerry/Desktop/realenv/realenv/data/dataset/11HB6XZSh1Q/modeldata/out_z_up.obj"
+        
+        filename = os.path.join(get_model_path(), "modeldata", "out_z_up.obj")
         original  = [1, 1, 1]
         magnified = [2, 2, 2]
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=original, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
