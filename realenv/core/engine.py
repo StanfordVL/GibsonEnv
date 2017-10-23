@@ -1,7 +1,7 @@
 from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.show_3d2 import PCRenderer, sync_coords
 from realenv.core.channels.depth_render import run_depth_render
-from realenv.core.physics.render_physics import PhysRenderer
+from realenv.core.physics.physics_env import PhysicsEnv
 from realenv import error
 
 import progressbar
@@ -11,25 +11,26 @@ import sys
 import zmq
 import socket
 import shlex
+import gym
 from realenv.data.datasets import get_model_path
 
 
 class Engine(object):
-    def __init__(self, model_id, human, debug):
+    def __init__(self, model_id, human, debug, physics_env):
         self.dataset  = ViewDataSet3D(transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
         self.model_id  = model_id
         self.scale_up  = 1
         self.human = human
         self.debug = debug
+        self.physics_env = physics_env
+
         self.r_visuals = None
         self.r_physics = None
         self.p_channel = None
 
     def setup_all(self):
         def channel_excepthook(exctype, value, tb):
-            #if self.p_channel.is_alive():
             print("killing", self.p_channel)
-                #os.system("kill -9 {}".format(self.p_channel))
             self.p_channel.terminate()
             while tb:
                 filename = tb.tb_frame.f_code.co_filename
@@ -42,12 +43,11 @@ class Engine(object):
         
         self._checkPortClear()
         self._setupChannel()
-        self._setupPhysics(self.human)
         self._setupVisuals()
         
         ## Sync initial poses
         pose_init = self.r_visuals.renderOffScreenInitialPose()
-        self.r_physics.initialize(pose_init)
+        self._setupPhysics(self.human, pose_init)
 
         if self.debug:
             self.r_visuals.renderToScreenSetup()
@@ -122,10 +122,16 @@ class Engine(object):
         renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
         self.r_visuals = renderer
 
-    def _setupPhysics(self, human):
+    def _setupPhysics(self, human, pose_init):
+        """
         framePerSec = 13
-        renderer = PhysRenderer(self.dataset.get_model_obj(), framePerSec, debug = self.debug, human = human)
+        renderer = PhysicsEnv(self.dataset.get_model_obj(), render_mode="human_play",fps=framePerSec, pose=pose_init)
         self.r_physics = renderer
+        """
+        env = gym.make(self.physics_env)
+        env.render(mode="human")
+        env.reset()
+        self.r_physics = env
 
     def cleanUp(self):
         self.p_channel.terminate()

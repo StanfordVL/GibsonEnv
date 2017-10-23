@@ -67,7 +67,7 @@ void main(){
     //float B = gl_ProjectionMatrix[3].z;
     float zNear = 0.1f; //- B / (1.0 - A);
     float zFar  = 5000f;// B / (1.0 + A);
-	float depthN = (EyeDirection_cameraspace.z - zNear)/128;  // scale to a value in [0, 1]
+	float depthN = abs(EyeDirection_cameraspace.z - zNear)/128;  // scale to a value in [0, 1]
     vec3 depthNPack3 = fract(depthN*bitShift3);
     depthNPack3 -= depthNPack3.xxy*bitMask3;
 
@@ -75,11 +75,25 @@ void main(){
 
 	//depth = vec3(EyeDirection_cameraspace.z/128, EyeDirection_cameraspace.z/128, EyeDirection_cameraspace.z/128);
 
-	float m = sqrt(EyeDirection_cameraspace.x * EyeDirection_cameraspace.x + EyeDirection_cameraspace.y * EyeDirection_cameraspace.y + EyeDirection_cameraspace.z * EyeDirection_cameraspace.z);
+	//float m = sqrt(EyeDirection_cameraspace.x * EyeDirection_cameraspace.x + EyeDirection_cameraspace.y * EyeDirection_cameraspace.y + EyeDirection_cameraspace.z * EyeDirection_cameraspace.z);
+	float m = length(EyeDirection_cameraspace); 
 	// float cosine = sqrt(EyeDirection_cameraspace.x * EyeDirection_cameraspace.x + EyeDirection_cameraspace.y * EyeDirection_cameraspace.y) / sqrt(EyeDirection_cameraspace.x * EyeDirection_cameraspace.x + EyeDirection_cameraspace.y * EyeDirection_cameraspace.y + EyeDirection_cameraspace.z * EyeDirection_cameraspace.z);
 	//float cosine = 1;
 	
+	//if (dot(E, n) >= -0.05f ) {
+	//	m = 0.0f;
+	//} else {
+	//	m = 128.0f;
+	//}
+	
+
 	mist = vec3(m, m, m);
+	float cull_delta = 0.7f;  
+
+	//if (dot(EyeDirection_cameraspace, Normal_cameraspace) >= 0) {
+	//	mist = mist - cull_delta;
+	//}
+
 	//mist = vec3(cosine, cosine, cosine);
 
 	//depth = vec3(depthN * 65536, depthN * 65536, depthN * 65536);

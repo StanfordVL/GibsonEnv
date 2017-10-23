@@ -28,7 +28,7 @@ class Profiler(object):
     step_semicolon = ':' if step_name else ""
     if self.logger:
         level = level or self.level
-        self.logger.log( self.level, "{name}{step}: {secs} seconds".format( name=self.name, step=step_semicolon + step_name, secs=duration) )
+        self.logger.log( self.level, "{name}{step}: {fps:.2f} fps".format( name=self.name, step=step_semicolon + " " + step_name, secs=1/duration) )
     else:
-        print("{name}{step}: {secs} seconds".format( name=self.name, step=step_semicolon + step_name, secs=duration))
+        print("{name}{step}: {fps:.2f} fps, {duration:.5f} seconds".format( name=self.name, step=step_semicolon + " " + step_name, fps=1/duration, duration=duration))
     return duration
