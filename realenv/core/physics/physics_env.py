@@ -31,7 +31,7 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
         self.walk_target_y = 0
 
     def create_single_player_scene(self):
-        self.building_scene = SinglePlayerBuildingScene(gravity=9.8, timestep=0.0165/4, frame_skip=4)
+        self.building_scene = SinglePlayerBuildingScene(gravity=9.8, timestep=1.0/(4*15), frame_skip=4)
         return self.building_scene
 
     def _reset(self):

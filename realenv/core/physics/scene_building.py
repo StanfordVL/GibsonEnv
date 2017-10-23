@@ -22,7 +22,7 @@ class BuildingScene(Scene):
         original  = [1, 1, 1]
         magnified = [2, 2, 2]
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=original, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [1, 0.2, 0.2, 0.3], specularColor=[0.4, 4.0])
+        visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
         #p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0.2, 0.2, 0.3], specularColor=[1, 1, 1])
         #self.building_obj = [collisionId]
@@ -34,7 +34,7 @@ class BuildingScene(Scene):
         #self.building_obj = (int(p.loadURDF(filename)), )
         for i in self.building_obj:
             #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-            p.changeVisualShape(i,-1,rgbaColor=[1,0.2,0.2,0.3])
+            p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
 
 
 class SinglePlayerBuildingScene(BuildingScene):
