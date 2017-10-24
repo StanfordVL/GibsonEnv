@@ -51,7 +51,7 @@ def get_model_initial_pose(robot):
     if robot=="humanoid":
         if MODEL_ID == "11HB6XZSh1Q":
             # -3.38, -7, 1.4
-            return [0, 0, 3 * 3.14/2], [-6.76, -14, 1.4] ## small model living room
+            return [0, 0, 3 * 3.14/2], [-5, -5, 1.9] ## small model living room
         if MODEL_ID == "BbxejD15Etk":
             return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
     else:

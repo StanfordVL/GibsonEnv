@@ -82,12 +82,12 @@ class PCRenderer:
 
         self.scale_up = scale_up
 
-        
+
         self.show   = np.zeros((768, 768, 3),dtype='uint8')
         self.show_rgb   = np.zeros((768, 768 ,3),dtype='uint8')
-        
-        
-        
+
+
+
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
             self.org_pitch, self.org_yaw, self.org_x, self.org_y, self.org_z =\
@@ -207,13 +207,13 @@ class PCRenderer:
         w = 2*h
         n = ho/3
 
-        
+
         pano = False
         if pano:
             opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
         else:
             opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
-            
+
         def _render_depth(opengl_arr):
             #with Profiler("Render Depth"):
             cv2.imshow('target depth', opengl_arr/16.)
@@ -225,8 +225,8 @@ class PCRenderer:
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
                 #opengl_arr = np.zeros((h,w), dtype = np.float32)
-                
-                cuda_pc.render(ct.c_int(len(imgs)),                      
+
+                cuda_pc.render(ct.c_int(len(imgs)),
                                ct.c_int(imgs[0].shape[0]),
                                ct.c_int(imgs[0].shape[1]),
                                ct.c_int(768),
@@ -237,15 +237,15 @@ class PCRenderer:
                                show.ctypes.data_as(ct.c_void_p),
                                opengl_arr.ctypes.data_as(ct.c_void_p)
                               )
-                
+
         threads = [
             Process(target=_render_pc, args=(opengl_arr,)),
             Process(target=_render_depth, args=(opengl_arr,))]
         [t.start() for t in threads]
         [t.join() for t in threads]
 
-        
-        
+
+
         if model:
             tf = transforms.ToTensor()
             before = time.time()
@@ -321,7 +321,7 @@ class PCRenderer:
         t1 = time.time()
         t = t1-t0
         self.fps = 1/t
-        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
+        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,768-15),0,0.5,(255,255,255))
         cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
         cv2.imshow('show3d',self.show_rgb)

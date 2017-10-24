@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 if not done: continue
                 if restart_delay==0:
                     print("score=%0.2f in %i frames" % (score, frame))
-                    restart_delay = 20  # 2 sec at 60 fps
+                    restart_delay = 40  # 2 sec at 60 fps
                 else:
                     restart_delay -= 1
                     if restart_delay==0: break
