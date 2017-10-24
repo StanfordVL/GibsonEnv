@@ -17,7 +17,7 @@ class MJCFBasedRobot:
 
 	self_collision = True
 
-	def __init__(self, model_path, robot_name, action_dim, obs_dim):
+	def __init__(self, model_file, robot_name, action_dim, obs_dim):
 		self.parts = None
 		self.jdict = None
 		self.ordered_joints = None
@@ -28,8 +28,10 @@ class MJCFBasedRobot:
 		high = np.inf * np.ones([obs_dim])
 		self.observation_space = gym.spaces.Box(-high, high)
 
-		self.model_path = model_path
+		self.model_file = model_file
 		self.robot_name = robot_name
+		self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+		
 
 	def addToScene(self, bodies):
 		if self.parts is not None:
@@ -48,7 +50,6 @@ class MJCFBasedRobot:
 			ordered_joints = []
 
 		dump = 0
-		print("adding to scene", bodies)
 		for i in range(len(bodies)):
 			if p.getNumJoints(bodies[i]) == 0:
 				part_name, robot_name = p.getBodyInfo(bodies[i], 0)
@@ -87,28 +88,20 @@ class MJCFBasedRobot:
 
 	def reset(self):
 		self.ordered_joints = []
-
-		if ".urdf" in self.model_path:
-			if self.self_collision:
-				self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-					(p.loadURDF(os.path.join(pybullet_data.getDataPath(),"husky", self.model_path), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS),))
-			else:
-				self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-					p.loadURDF(os.path.join(pybullet_data.getDataPath(),"husky", self.model_path)))
-		if ".mjcf" in self.model_path:
-			if self.self_collision:
-				self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-					p.loadMJCF(os.path.join(pybullet_data.getDataPath(),"mjcf", self.model_path), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS))
-			else:
-				self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-					p.loadMJCF(os.path.join(pybullet_data.getDataPath(),"mjcf", self.model_path)))
+		#print(os.path.join(os.path.dirname(os.path.abspath(__file__)),"models", self.model_file))
+		if self.self_collision:
+			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
+				p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS))
+		else:
+			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
+				p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file)))
 
 		self.robot_specific_reset()
 
 		s = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
 		self.eyes = self.parts["eyes"]
-		print(self.eyes)
 		return s
+
 
 	def calc_potential(self):
 		return 0

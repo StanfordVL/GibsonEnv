@@ -3,6 +3,7 @@ import numpy as np
 import pybullet as p
 import os
 from transforms3d.euler import euler2quat
+from realenv.data.datasets import get_model_initial_pose
 
 
 def quatWXYZ2quatXYZW(wxyz):
@@ -16,6 +17,7 @@ class WalkerBase(MJCFBasedRobot):
 		self.walk_target_x = 1e3  # kilometer away
 		self.walk_target_y = 0
 		self.body_xyz=[0,0,0]
+
 	
 	def robot_specific_reset(self):
 		for j in self.ordered_joints:
@@ -23,10 +25,7 @@ class WalkerBase(MJCFBasedRobot):
 
 		self.feet = [self.parts[f] for f in self.foot_list]
 		self.feet_contact = np.array([0.0 for f in self.foot_list], dtype=np.float32)
-		yaw = 3 * 3.14/2
-		## (HARD CODED) Specific for humanoid starting point
-		#self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
-		#self.robot_body.reset_position([-6.76, -14, 1.4])
+	
 		self.scene.actor_introduce(self)
 		self.initial_z = None
 
@@ -151,24 +150,22 @@ class Humanoid(WalkerBase):
 		WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, obs_dim=44, power=0.41)
 		# 17 joints, 4 of them important for walking (hip, knee), others may as well be turned off, 17/4 = 4.25
 
-	def reset(self):
-		self.ordered_joints = []
-		print(os.path.join(os.path.dirname(os.path.abspath(__file__)),"models", self.model_path))
-		if self.self_collision:
-			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-				p.loadMJCF(os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", self.model_path), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS))
-		else:
-			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-				p.loadMJCF(os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", self.model_path)))
-
-		self.robot_specific_reset()
-
-		s = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
-		self.eyes = self.parts["eyes"]
-		return s
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
+		
+		humanoidId = -1
+		numBodies = p.getNumBodies()
+		for i in range (numBodies):
+		    bodyInfo = p.getBodyInfo(i)
+		    if bodyInfo[1] == 'humanoid':
+		        humanoidId = i
+		## Spherical radiance/glass shield to protect the robot's camera
+		glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))
+		print("setting up glass", glass_id, humanoidId)
+		p.changeVisualShape(glass_id[0], -1, rgbaColor=[0, 0, 0, 0])
+		cid = p.createConstraint(humanoidId, -1, glass_id[0],-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
+
 		self.motor_names  = ["abdomen_z", "abdomen_y", "abdomen_x"]
 		self.motor_power  = [100, 100, 100]
 		self.motor_names += ["right_hip_x", "right_hip_z", "right_hip_y", "right_knee"]
@@ -200,10 +197,17 @@ class Humanoid(WalkerBase):
 			self.robot_body.reset_position(position)
 			self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(orientation)))
 		self.initial_z = 0.8
-		yaw = 3 * 3.14/2
-		## (HARD CODED) Specific for humanoid starting point
-		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
-		self.robot_body.reset_position([-3.38, -7, 1.4])
+		
+		orientation, position = get_model_initial_pose("humanoid")
+		roll  = orientation[0]
+		pitch = orientation[1]
+		yaw   = orientation[2]
+		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
+		self.robot_body.reset_position(position)
+
+		## BbxejD15Etk
+
+	
 	random_yaw = False
 	random_lean = False
 
