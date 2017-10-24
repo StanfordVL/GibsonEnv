@@ -155,7 +155,10 @@ download_data () {
 
 	cd ./realenv/core/render/
 	wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
+    wget --quiet https://www.dropbox.com/s/e7far9okgv7oq8p/model.pth
 	cd -
+
+
 
 	rm realenv/data/*.pkl
 
