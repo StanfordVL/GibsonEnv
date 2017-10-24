@@ -140,10 +140,9 @@ class ViewDataSet3D(data.Dataset):
 
 
 
-    def get_model_obj(self, idx=0):
-        obj_files = [os.path.join(self.root, d, 'modeldata', 'out_z_up.obj') for d in (os.listdir(self.root))]
-        return obj_files[idx]
-
+    def get_model_obj(self):
+        obj_files = os.path.join(self.root, MODEL_ID, 'modeldata', 'out_z_up.obj')
+        return obj_files
 
     def get_scene_info(self, index):
         scene = self.scenes[index]
