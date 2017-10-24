@@ -29,6 +29,7 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
+        self.k = 5
 
     def create_single_player_scene(self):
         self.building_scene = SinglePlayerBuildingScene(gravity=9.8, timestep=1.0/(4*15), frame_skip=4)
@@ -133,6 +134,33 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
         self.camera_x = 0.98*self.camera_x + (1-0.98)*x
         self.camera.move_and_look_at(self.camera_x, y-2.0, 1.4, x, y, 1.0)
 
+    def find_best_k_views(self, eye_pos, all_dist, all_pos):
+        least_order = (np.argsort(all_dist))
+        #print(eye_pos, all_pos)
+        if len(all_pos) <= p.MAX_RAY_INTERSECTION_BATCH_SIZE:
+            collisions = list(p.rayTestBatch([eye_pos] * len(all_pos), all_pos))
+        else:
+            collisions = []
+            curr_i = 0
+            while (curr_i < len(all_pos)):
+                curr_n = min(len(all_pos), curr_i + p.MAX_RAY_INTERSECTION_BATCH_SIZE - 1)
+                collisions = collisions + list(p.rayTestBatch([eye_pos] * (curr_n - curr_i), all_pos[curr_i: curr_n]))
+                curr_i = curr_n
+        collisions  = [c[0] for c in collisions]
+        top_k = []
+        for i in range(len(least_order)):
+            if len(top_k) >= self.k:
+                break
+            if collisions[least_order[i]] < 0:
+                top_k.append(least_order[i])
+        if len(top_k) < self.k:
+            for o in least_order:
+                if o not in top_k:
+                    top_k.append(o)
+                if len(top_k) >= self.k:
+                    break 
+        print("Found %d views" % len(top_k), top_k)
+        return top_k
 
 
 class HumanoidWalkingEnv(PhysicsExtendedEnv):

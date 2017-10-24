@@ -19,7 +19,7 @@ import pickle
 
 ## Small model: 11HB6XZSh1Q
 ## Gates Huang: BbxejD15Etk
-MODEL_ID = "11HB6XZSh1Q"
+MODEL_ID = "BbxejD15Etk"
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -50,8 +50,9 @@ def get_model_path(idx=0):
 def get_model_initial_pose(robot):
     if robot=="humanoid":
         if MODEL_ID == "11HB6XZSh1Q":
-            # -3.38, -7, 1.4
-            return [0, 0, 3 * 3.14/2], [-5, -5, 1.9] ## small model living room
+            return [0, 0, 3 * 3.14/2], [-3.38, -7, 1.4] ## living room open area
+            #return [0, 0, 3 * 3.14/2], [-5, -5, 1.9]   ## living room kitchen table
+
         if MODEL_ID == "BbxejD15Etk":
             return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
     else:
@@ -140,10 +141,9 @@ class ViewDataSet3D(data.Dataset):
 
 
 
-    def get_model_obj(self, idx=0):
-        obj_files = [os.path.join(self.root, d, 'modeldata', 'out_z_up.obj') for d in (os.listdir(self.root))]
-        return obj_files[idx]
-
+    def get_model_obj(self):
+        obj_files = os.path.join(self.root, MODEL_ID, 'modeldata', 'out_z_up.obj')
+        return obj_files
 
     def get_scene_info(self, index):
         scene = self.scenes[index]

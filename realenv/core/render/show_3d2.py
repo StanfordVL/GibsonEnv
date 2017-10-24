@@ -230,11 +230,13 @@ class PCRenderer:
 
         def _render_pc(opengl_arr):
 
+
             with Profiler("Render pointcloud cuda"):
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
                 #opengl_arr = np.zeros((h,w), dtype = np.float32)
+
 
                 cuda_pc.render(ct.c_int(len(imgs)),
                                ct.c_int(imgs[0].shape[0]),
@@ -284,39 +286,46 @@ class PCRenderer:
         quat_xyzw = utils.quat_wxyz_to_xyzw(quat_wxyz).tolist()
         return pos, quat_xyzw
 
-    def renderOffScreen(self, pose):
-        with Profiler("top k selection"):
-            ## Query physics engine to get [x, y, z, roll, pitch, yaw]
-            new_pos, new_quat = pose[0], pose[1]
-            #print("receiving", new_pos, new_quat)
-            self.x, self.y, self.z = new_pos
-            self.quat = new_quat
+    def rankPosesByDistance(self, pose):
+        """ This function is called immediately before renderOffScreen in simple_env
+        (hzyjerry) I know this is really bad style but currently we'll have to stick this way
+        """
+        ## Query physics engine to get [x, y, z, roll, pitch, yaw]
+        new_pos, new_quat = pose[0], pose[1]
+        self.x, self.y, self.z = new_pos
+        self.quat = new_quat
 
-            v_cam2world = self.target_poses[0]
-            v_cam2cam   = self._getViewerRelativePose()
-            cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
+        v_cam2world = self.target_poses[0]
+        v_cam2cam   = self._getViewerRelativePose()
+        self.render_cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
 
-            ## Entry point for change of view
-            ## Optimization
-            #depth_buffer = np.zeros(self.imgs[0].shape[:2], dtype=np.float32)
+        ## Entry point for change of view
+        ## Optimization
+        #depth_buffer = np.zeros(self.imgs[0].shape[:2], dtype=np.float32)
 
-            relative_poses = np.copy(self.target_poses)
-            for i in range(len(relative_poses)):
-                relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
+        relative_poses = np.copy(self.target_poses)
+        for i in range(len(relative_poses)):
+            relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
+        self.relative_poses = relative_poses
 
-            poses_after = [cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
-            pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
+        poses_after = [self.render_cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
+        pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
+        pose_locations = [self.target_poses[i][:3,-1].tolist() for i in range(len(self.imgs))]
+        
 
-            topk = (np.argsort(pose_after_distance))[:self.k]
+        #topk = (np.argsort(pose_after_distance))[:self.k]
+        return pose_after_distance, pose_locations
 
-            if set(topk) != self.old_topk:
-                self.imgs_topk = np.array([self.imgs[i] for i in topk])
-                self.depths_topk = np.array([self.depths[i] for i in topk]).flatten()
-                self.relative_poses_topk = [relative_poses[i] for i in topk]
-                self.old_topk = set(topk)
+
+    def renderOffScreen(self, pose, k_views=None):
+        if set(k_views) != self.old_topk:
+            self.imgs_topk = np.array([self.imgs[i] for i in k_views])
+            self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
+            self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
+            self.old_topk = set(k_views)
 
         with Profiler("Render pointcloud all"):
-            self.render(self.imgs_topk, self.depths_topk, cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show)
+            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show)
 
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
 
@@ -329,9 +338,9 @@ class PCRenderer:
         cv2.moveWindow('target depth', 1140, 2048)
         cv2.setMouseCallback('show3d',self._onmouse)
 
-    def renderToScreen(self, pose):
+    def renderToScreen(self, pose, k_views=None):
         t0 = time.time()
-        self.renderOffScreen(pose)
+        self.renderOffScreen(pose, k_views)
         t1 = time.time()
         t = t1-t0
         self.fps = 1/t
