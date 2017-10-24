@@ -17,6 +17,7 @@ from realenv.core.render.profiler import Profiler
 from realenv.core.physics.env_bases import MJCFBaseBulletEnv
 from realenv.core.physics.robot_locomotors import Humanoid, Ant, Husky
 from .scene_building import SinglePlayerBuildingScene
+from realenv.data.datasets import get_engine_framerate
 import gym
 
 
@@ -31,8 +32,16 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
         self.walk_target_y = 0
         self.k = 5
 
+        ## Default
+        self.timestep=1.0/(4*9)
+        self.frame_skip=4
+
+    def configure(self, timestep, frame_skip):
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+
     def create_single_player_scene(self):
-        self.building_scene = SinglePlayerBuildingScene(gravity=9.8, timestep=1.0/(4*15), frame_skip=4)
+        self.building_scene = SinglePlayerBuildingScene(gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
         return self.building_scene
 
     def _reset(self):

@@ -155,12 +155,15 @@ download_data () {
 		cd -
 	fi
 
-	if [ ! -f ./realenv/core/render/coord.npy ]; then
-		cd ./realenv/core/render/
-		wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
-		cd -
-	fi
-
+	cd ./realenv/core/render/		
+		if [ ! -f coord.npy ]; then
+			wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
+		fi
+		if [ ! -f model.pth ]; then
+			wget --quiet https://www.dropbox.com/s/e7far9okgv7oq8p/model.pth
+		fi
+	cd -
+		
 	if [ -f realenv/data/*.pkl ]; then
 		rm realenv/data/*.pkl
 	fi

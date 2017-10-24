@@ -31,13 +31,15 @@ class SimpleEnv(gym.Env):
     self.human      = human
     self.model_id   = get_model_path()[1]
     self.scale_up   = scale_up
-    self.engine = None
+    self.engine     = None
+    self.r_physics  = None
+    self.r_visuals  = None
+    self.p_channel  = None
     file_dir = os.path.dirname(__file__)
 
-  def _engine_setup(self):
-    self.r_visuals, self.r_physics, self.p_channel = self.engine.setup_all()
-    if self.debug_mode:
-      self.r_displayer = RewardDisplayer()
+  def configure(self, timestep, frame_skip):
+    self.timestep = timestep
+    self.frame_skip = frame_skip
 
   def _step(self, action):
     try:
@@ -60,7 +62,12 @@ class SimpleEnv(gym.Env):
       raise(e)
 
   def _reset(self):
-    self.r_physics.reset()
+    if self.r_physics:
+      self.r_physics.reset()
+    else:
+      self.r_visuals, self.r_physics, self.p_channel = self.engine.setup_all(self.timestep, self.frame_skip)
+      if self.debug_mode:
+        self.r_displayer = RewardDisplayer()
     return
 
   def _render(self, mode='human', close=False):
@@ -81,22 +88,19 @@ class HumanoidWalkingEnv(SimpleEnv):
   def __init__(self):
     SimpleEnv.__init__(self)
     self.engine = Engine(self.model_id, self.human, self.debug_mode, "PhysicsHumanoidWalkingEnv-v0")
-    self._engine_setup()
-
+    
 
 class AntWalkingEnv(SimpleEnv):
   def __init__(self):
     SimpleEnv.__init__(self)
     self.engine = Engine(self.model_id, self.human, self.debug_mode, "PhysicsAntWalkingEnv-v0")
-    self._engine_setup()
-
+    
 
 class HuskyWalkingEnv(SimpleEnv):
   def __init__(self):
     SimpleEnv.__init__(self)
     self.engine = Engine(self.model_id, self.human, self.debug_mode, "PhysicsHuskyWalkingEnv-v0")
-    self._engine_setup()
-
+    
 
 
 ########### Old interface: only use for playing ##################

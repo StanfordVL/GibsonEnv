@@ -19,7 +19,7 @@ import pickle
 
 ## Small model: 11HB6XZSh1Q
 ## Gates Huang: BbxejD15Etk
-MODEL_ID = "BbxejD15Etk"
+MODEL_ID = "11HB6XZSh1Q"
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -50,12 +50,19 @@ def get_model_path(idx=0):
 def get_model_initial_pose(robot):
     if robot=="humanoid":
         if MODEL_ID == "11HB6XZSh1Q":
-            return [0, 0, 3 * 3.14/2], [-3.38, -7, 1.4] ## living room open area
-            #return [0, 0, 3 * 3.14/2], [-5, -5, 1.9]   ## living room kitchen table
+            #return [0, 0, 3 * 3.14/2], [-3.38, -7, 1.4] ## living room open area
+            #return [0, 0, 3 * 3.14/2], [-4.8, -5.2, 1.9]   ## living room kitchen table
+            return [0, 0, 3.14/2], [-4.655, -9.038, 1.532]  ## living room couch
+            #return [0, 0, 3.14], [-0.603, -1.24, 2.35]
         if MODEL_ID == "BbxejD15Etk":
             return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
     else:
         return [0, 0, 0], [0, 0, 1.4]
+
+def get_engine_framerate():
+    timestep=1.0/(4*14)
+    frame_skip=4
+    return timestep, frame_skip
 
 
 class ViewDataSet3D(data.Dataset):

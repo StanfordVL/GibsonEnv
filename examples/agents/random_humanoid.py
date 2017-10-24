@@ -30,15 +30,15 @@ class RandomAgent(object):
 
 if __name__ == '__main__':
     env = gym.make('HumanoidWalking-v0')
+    env.configure(timestep=1.0/(4 * 9), frame_skip=4)
+    env.reset()
     agent = RandomAgent(env.action_space)
     ob = None
     torsoId = -1
 
     for i in range (p.getNumBodies()):
-        print(p.getBodyInfo(i))
         if (p.getBodyInfo(i)[0].decode() == "torso"):
            torsoId=i
-           print("found humanoid torso")
     i = 0
 
     try:
@@ -54,15 +54,19 @@ if __name__ == '__main__':
                     obs, r, done, meta = env.step(a)
                 score += r
                 frame += 1
-                distance=2.5
-                yaw = 0
+                distance=2.5 ## demo: living room ,kitchen
+                #distance=1.7   ## demo: stairs
+                #yaw = 0     ## demo: living room
+                yaw = 30    ## demo: kitchen
+                #yaw = 90     ## demo: stairs
                 humanPos, humanOrn = p.getBasePositionAndOrientation(torsoId)
-                p.resetDebugVisualizerCamera(distance,yaw,-20,humanPos);
+                p.resetDebugVisualizerCamera(distance,yaw,-35,humanPos);       ## demo: kitchen, living room
+                #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
-                if not done: continue
+                if not done and frame < 60: continue
                 if restart_delay==0:
                     print("score=%0.2f in %i frames" % (score, frame))
-                    restart_delay = 20  # 2 sec at 60 fps
+                    restart_delay = 20 * 4  # 2 sec at 60 fps
                 else:
                     restart_delay -= 1
                     if restart_delay==0: break
