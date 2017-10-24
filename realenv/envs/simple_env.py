@@ -43,14 +43,15 @@ class SimpleEnv(gym.Env):
     try:
       with Profiler("Physics to screen"):
         obs, reward, done, meta = self.r_physics.step(action)
-
       pose = [meta['eye_pos'], meta['eye_quat']]
-
+      ## Select the nearest points
+      all_dist, all_pos = self.r_visuals.rankPosesByDistance(pose)
+      top_k = self.r_physics.find_best_k_views(meta['eye_pos'], all_dist, all_pos)
       with Profiler("Render to screen"):
         if not self.debug_mode:
-          visuals = self.r_visuals.renderOffScreen(pose)
+          visuals = self.r_visuals.renderOffScreen(pose, top_k)
         else:
-          visuals = self.r_visuals.renderToScreen(pose)
+          visuals = self.r_visuals.renderToScreen(pose, top_k)
 
       return visuals, reward , done, {}
     except Exception as e:
@@ -165,6 +166,7 @@ class SimpleDebugEnv(gym.Env):
         source_depth = data[2][0]
         pose = data[-1][0].numpy()
         targets.append(target)
+        print(target)
         poses.append(pose)
         sources.append(target)
         source_depths.append(target_depth)
