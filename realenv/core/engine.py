@@ -72,7 +72,7 @@ class Engine(object):
         return
 
     def _setupChannel(self):
-        model_path = get_model_path()
+        model_path, model_id = get_model_path()
         dr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)

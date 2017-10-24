@@ -17,6 +17,9 @@ import json
 from numpy.linalg import inv
 import pickle
 
+## Small model: 11HB6XZSh1Q
+## Gates Huang: BbxejD15Etk
+MODEL_ID = "11HB6XZSh1Q"
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -34,17 +37,31 @@ def depth_loader(path):
     img = Image.open(path).convert('I')
     return img
 
+
 def get_model_path(idx=0):
     data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dataset')
-    model_paths = [os.path.join(data_path, id) for id in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, id))]
-    return model_paths[idx]
+    model_paths = [(os.path.join(data_path, id), id) for id in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, id))]
+    if MODEL_ID:
+        return os.path.join(data_path, MODEL_ID), MODEL_ID
+    else:
+        return model_paths[idx]
+
+
+def get_model_initial_pose(robot):
+    if robot=="humanoid":
+        if MODEL_ID == "11HB6XZSh1Q":
+            # -3.38, -7, 1.4
+            return [0, 0, 3 * 3.14/2], [-6.76, -14, 1.4] ## small model living room
+        if MODEL_ID == "BbxejD15Etk":
+            return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
+    else:
+        return [0, 0, 0], [0, 0, 1.4]
 
 
 class ViewDataSet3D(data.Dataset):
-    def __init__(self, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
+    def __init__(self, train=False, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
         print ('Processing the data:')
         self.root   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dataset")
-        self.fofn   = self.root + '_fofn'+str(int(train))+'.pkl'
         self.train  = train
         self.loader = loader
         self.seqlen = seqlen
@@ -57,69 +74,58 @@ class ViewDataSet3D(data.Dataset):
         if not self.off_pc_render:
             self.dll=np.ctypeslib.load_library('render','.')
 
-        if not os.path.isfile(self.fofn):
 
-            self.scenes = sorted([d for d in (os.listdir(self.root)) if os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(os.path.join(self.root, d, 'sweep_locations.csv')) and os.path.isdir(os.path.join(self.root, d, 'pano'))])
+        self.scenes = sorted([d for d in (os.listdir(self.root)) if os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(os.path.join(self.root, d, 'sweep_locations.csv')) and os.path.isdir(os.path.join(self.root, d, 'pano'))])
 
-            num_scenes = len(self.scenes)
-            num_train = int(num_scenes * 0.9)
-            print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
-            if train:
-                self.scenes = self.scenes[:num_train]
-            else:
-                self.scenes = self.scenes[num_train:]
+        num_scenes = len(self.scenes)
+        num_train = int(num_scenes * 0.9)
+        print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
+        if train:
+            self.scenes = self.scenes[:num_train]
 
+        self.bar  = progressbar.ProgressBar(widgets=[
+                    ' [', progressbar.Timer(), '] ',
+                    progressbar.Bar(),
+                    ' (', progressbar.ETA(), ') ',
+                    ])
 
-            self.bar  = progressbar.ProgressBar(widgets=[
-                        ' [', progressbar.Timer(), '] ',
-                        progressbar.Bar(),
-                        ' (', progressbar.ETA(), ') ',
-                        ])
+        self.meta = {}
+        if debug:
+            last = 35
+        else:
+            last = len(self.scenes)
 
-            self.meta = {}
-            if debug:
-                last = 35
-            else:
-                last = len(self.scenes)
+        for scene in self.scenes[:last]:
+            posefile = os.path.join(self.root, scene, 'sweep_locations.csv')
+            with open(posefile) as f:
+                for line in f:
+                    l = line.strip().split(',')
+                    uuid = l[0]
+                    xyz  = map(float, l[1:4])
+                    quat = map(float, l[4:8])
+                    if not self.meta.has_key(scene):
+                        self.meta[scene] = {}
+                    metadata = (uuid, xyz, quat)
+                    #print(uuid, xyz)
 
-            for scene in self.scenes[:last]:
-                posefile = os.path.join(self.root, scene, 'sweep_locations.csv')
-                with open(posefile) as f:
-                    for line in f:
-                        l = line.strip().split(',')
-                        uuid = l[0]
-                        xyz  = map(float, l[1:4])
-                        quat = map(float, l[4:8])
-                        if not self.meta.has_key(scene):
-                            self.meta[scene] = {}
-                        metadata = (uuid, xyz, quat)
-                        #print(uuid, xyz)
+                    if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + uuid + '.json')):
+                        self.meta[scene][uuid] = metadata
+        print("Indexing")
 
-                        if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + uuid + '.json')):
-                            self.meta[scene][uuid] = metadata
-            print("Indexing")
+        for scene, meta in self.bar(self.meta.items()):
+            if len(meta) < self.seqlen:
+                continue
+            for uuid,v in meta.items():
+                dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in meta.items()]
+                dist_list = sorted(dist_list, key = lambda x:x[-1])
 
-            for scene, meta in self.bar(self.meta.items()):
-                if len(meta) < self.seqlen:
-                    continue
-                for uuid,v in meta.items():
-                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in meta.items()]
-                    dist_list = sorted(dist_list, key = lambda x:x[-1])
-
-                    if not dist_filter is None:
-                        if dist_list[1][-1] < dist_filter:
-                            self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
-
-                    else:
+                if not dist_filter is None:
+                    if dist_list[1][-1] < dist_filter:
                         self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
 
-            with open(self.fofn, 'wb') as fp:
-                pickle.dump([self.scenes, self.meta, self.select, num_scenes, num_train], fp)
+                else:
+                    self.select.append([[scene, dist_list[i][0], dist_list[i][1]] for i in range(self.seqlen)])
 
-        else:
-            with open(self.fofn, 'rb') as fp:
-                self.scenes, self.meta, self.select, num_scenes, num_train = pickle.load(fp)
-                print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
 
     def get_model_obj(self, idx=0):
         obj_files = [os.path.join(self.root, d, 'modeldata', 'out_z_up.obj') for d in (os.listdir(self.root))]
@@ -279,6 +285,11 @@ class ViewDataSet3D(data.Dataset):
 
     def __len__(self):
         return len(self.select)
+
+
+
+########### BELOW THIS POINT: Legacy code #################
+########### KEEPING ONLY FOR REFERENCE ####################
 
 
 class Places365Dataset(data.Dataset):

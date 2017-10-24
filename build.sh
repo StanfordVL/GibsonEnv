@@ -76,8 +76,6 @@ install() {
 	## Core renderer
 	echo $password | sudo -s apt install nvidia-cuda-toolkit -y	## Huge, 1121M
 
-
-
 	build_local
 	
 	download_data
@@ -85,12 +83,13 @@ install() {
 
 build_local() {
 	## Core renderer
-	[ ! -d ./realenv/core/channels/external/glfw-3.1.2 ] || rm -rf ./realenv/core/channels/external/glfw-3.1.2
+	if [ ! -d ./realenv/core/channels/external/glfw-3.1.2 ]; then
+		wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
+		unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
+		mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
+	fi
 	[ ! -d ./realenv/core/channels/build ] || rm -rf ./realenv/core/channels/build
 
-	wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
-	unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
-	mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
 	mkdir -p ./realenv/core/channels/build
 	cd ./realenv/core/channels/build
 	cmake .. && make clean && make -j 10
@@ -111,7 +110,37 @@ download_data () {
 	[ -d dataset ] || mkdir dataset
 	[ ! -d ./realenv/core/physics/models ] || rm -rf ./realenv/core/physics/models
 	
-	if [ ! -d 11HB6XZSh1Q ]; then
+
+	## Psych building -1F, 919Mb
+	if [ $dset_name="stanford_1" ] && [ ! -d dataset/BbxejD15Etk ]; then
+		wget --quiet https://www.dropbox.com/s/fj6cnvs9zhw9i3y/BbxejD15Etk.zip
+		unzip -q BbxejD15Etk.zip && rm BbxejD15Etk.zip
+		mv BbxejD15Etk dataset
+	fi
+
+	## Psych building 1F, 794.2Mb
+	if [ $dset_name="stanford_2" ] && [ ! -d dataset/sitktXish3E ]; then
+		wget --quiet https://www.dropbox.com/s/wv5ws6pxbbdhzel/sitktXish3E.zip
+		unzip -q sitktXish3E.zip && rm sitktXish3E.zip
+		mv sitktXish3E dataset
+	fi
+
+	## Gates building 1F, 616.1Mb
+	if [ $dset_name="stanford_3" ] && [ ! -d dataset/sRj553CTHiw ]; then
+		wget --quiet https://www.dropbox.com/s/iztghi2mt26uxed/sRj553CTHiw.zip
+		unzip -q sRj553CTHiw.zip && rm sRj553CTHiw.zip
+		mv sRj553CTHiw dataset
+	fi
+
+	## Gates building 2F, 294.1Mb
+	if [ $dset_name="stanford_4" ] && [ ! -d dataset/TVHnHa4MZwE ]; then
+		wget --quiet https://www.dropbox.com/s/gbz3yxikk7pdobi/TVHnHa4MZwE.zip
+		unzip -q TVHnHa4MZwE.zip && rm TVHnHa4MZwE.zip
+		mv TVHnHa4MZwE dataset
+	fi
+
+
+	if [ ! -d dataset/11HB6XZSh1Q ]; then
 		wget --quiet https://www.dropbox.com/s/gtg09zm5mwnvro8/11HB6XZSh1Q.zip
 		unzip -q 11HB6XZSh1Q.zip && rm 11HB6XZSh1Q.zip
 		mv 11HB6XZSh1Q dataset
@@ -128,7 +157,10 @@ download_data () {
 	wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
 	cd -
 
+	rm realenv/data/*.pkl
+
 }
+
 
 ec2_install_conda() {
     if [ ! -d ~/miniconda2 ]; then
@@ -145,6 +177,7 @@ hello() {
 }
 
 subcommand=$1
+dset_name=$2
 case "$subcommand" in                                                                                
   "install")
 	install
@@ -167,7 +200,7 @@ case "$subcommand" in
   "build_local")
 	build_local
 	;;
-  *)                                                                                     
+  *)                                                                 
     default "$@"                                       
     exit 1                                                                             
     ;;                                                                                 

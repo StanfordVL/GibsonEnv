@@ -5,6 +5,7 @@ import realenv
 from realenv.core.engine import Engine
 from realenv.core.render.profiler import Profiler
 from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
+from realenv.data.datasets import get_model_path
 import numpy as np
 import zmq
 import time
@@ -12,14 +13,16 @@ import os
 import random
 import cv2
 import gym
+import traceback
+
 
 class SimpleEnv(gym.Env):
   """Bare bone room environment with no addtional constraint (disturbance, friction, gravity change)
   """
-  def __init__(self, human=False, debug=True, model_id="11HB6XZSh1Q", scale_up = 1):
+  def __init__(self, human=False, debug=True, scale_up = 1):
     self.debug_mode = debug
     self.human      = human
-    self.model_id   = model_id
+    self.model_id   = get_model_path()[1]
     self.scale_up   = scale_up
     self.engine = None
     file_dir = os.path.dirname(__file__)
@@ -45,6 +48,7 @@ class SimpleEnv(gym.Env):
       return visuals, reward , done, {}
     except Exception as e:
       self._end()
+      traceback.print_exc()
       raise(e)
 
   def _reset(self):

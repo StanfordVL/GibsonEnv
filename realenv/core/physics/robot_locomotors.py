@@ -3,6 +3,7 @@ import numpy as np
 import pybullet as p
 import os
 from transforms3d.euler import euler2quat
+from realenv.data.datasets import get_model_initial_pose
 
 
 def quatWXYZ2quatXYZW(wxyz):
@@ -24,10 +25,7 @@ class WalkerBase(MJCFBasedRobot):
 
 		self.feet = [self.parts[f] for f in self.foot_list]
 		self.feet_contact = np.array([0.0 for f in self.foot_list], dtype=np.float32)
-		yaw = 3 * 3.14/2
-		## (HARD CODED) Specific for humanoid starting point
-		#self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
-		#self.robot_body.reset_position([-6.76, -14, 1.4])
+	
 		self.scene.actor_introduce(self)
 		self.initial_z = None
 
@@ -199,10 +197,17 @@ class Humanoid(WalkerBase):
 			self.robot_body.reset_position(position)
 			self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(orientation)))
 		self.initial_z = 0.8
-		yaw = 3 * 3.14/2
-		## (HARD CODED) Specific for humanoid starting point
-		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
-		self.robot_body.reset_position([-3.38, -7, 1.4])
+		
+		orientation, position = get_model_initial_pose("humanoid")
+		roll  = orientation[0]
+		pitch = orientation[1]
+		yaw   = orientation[2]
+		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
+		self.robot_body.reset_position(position)
+
+		## BbxejD15Etk
+
+	
 	random_yaw = False
 	random_lean = False
 

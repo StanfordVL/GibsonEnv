@@ -18,7 +18,7 @@ class BuildingScene(Scene):
         # if self.zero_at_running_strip_start_line:
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         
-        filename = os.path.join(get_model_path(), "modeldata", "out_z_up.obj")
+        filename = os.path.join(get_model_path()[0], "modeldata", "out_z_up.obj")
         original  = [1, 1, 1]
         magnified = [2, 2, 2]
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=original, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
