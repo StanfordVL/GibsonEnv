@@ -17,7 +17,7 @@ from realenv.data.datasets import get_model_path
 
 class Engine(object):
     def __init__(self, model_id, human, debug, physics_env):
-        self.dataset  = ViewDataSet3D(transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
+        self.dataset  = ViewDataSet3D(transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False, overwrite_fofn=True)
         self.model_id  = model_id
         self.scale_up  = 1
         self.human = human
