@@ -8,9 +8,8 @@ from torchvision import datasets, transforms
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 import torchvision.utils as vutils
-from datasets import PairDataset
-from completion import Discriminator2
-from completion2 import CompletionNet2, identity_init, Perceptual
+from realenv.data.datasets import PairDataset
+from completion2 import CompletionNet2, identity_init, Perceptual, Discriminator2
 from tensorboard import SummaryWriter
 from datetime import datetime
 import vision_utils
@@ -31,7 +30,7 @@ def weights_init(m):
 
 def crop(source, source_depth, target):
     bs = source.size(0)
-    source_cropped = Variable(torch.zeros(4*bs, 3 + 4, 256, 256)).cuda()
+    source_cropped = Variable(torch.zeros(4*bs, 3, 256, 256)).cuda()
     source_depth_cropped = Variable(torch.zeros(4*bs, 2, 256, 256)).cuda()
     target_cropped = Variable(torch.zeros(4*bs, 3, 256, 256)).cuda()
     
@@ -66,6 +65,7 @@ def main():
     parser.add_argument('--l1', type=float, default = 0, help='add l1 loss')
     parser.add_argument('--color_coeff', type=float, default = 0, help='add color match loss')
     parser.add_argument('--cascade'  , action='store_true', help='debug mode')
+    parser.add_argument('--unfiller'  , action='store_true', help='debug mode')
     
     
     
@@ -94,7 +94,7 @@ def main():
     dataloader = torch.utils.data.DataLoader(d, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = False)
     dataloader_test = torch.utils.data.DataLoader(d_test, batch_size=opt.batchsize, shuffle=True, num_workers=int(opt.workers), drop_last = True, pin_memory = False)
 
-    img = Variable(torch.zeros(opt.batchsize,3 + 4, 1024, 2048)).cuda()
+    img = Variable(torch.zeros(opt.batchsize,3 , 1024, 2048)).cuda()
     maskv = Variable(torch.zeros(opt.batchsize,2, 1024, 2048)).cuda()
     img_original = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
@@ -175,7 +175,6 @@ def main():
             #from IPython import embed; embed()
             recon = comp(imgc, maskvc)
             
-            
             if opt.loss == "train_init":
                 loss = l2(recon, imgc[:,:3,:,:])
             elif opt.loss == 'l1':    
@@ -200,8 +199,6 @@ def main():
                     
                     recon_patch_cov_cat = torch.cat(recon_patch_cov,1)
                     img_originalc_patch_cov_cat = torch.cat(img_originalc_patch_cov, 1)
-                    
-                    #from IPython import embed; embed()
                     
                     color_loss = l2(recon_patch_mean, img_originalc_patch_mean) + l2(recon_patch_cov_cat, img_originalc_patch_cov_cat.detach())
                     

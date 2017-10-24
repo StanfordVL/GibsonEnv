@@ -1,0 +1,44 @@
+<mujoco model="glass">
+    <compiler angle="degree" inertiafromgeom="false"/>
+    <default>
+        <joint armature="1" damping="1" limited="true"/>
+        <geom conaffinity="1" condim="1" contype="1" margin="0.001" material="geom" rgba="0.8 0.6 .4 1"/>
+        <motor ctrllimited="true" ctrlrange="-.4 .4"/>
+    </default>
+    <option integrator="RK4" iterations="50" solver="PGS" timestep="0.003">
+        <!-- <flags solverstat="enable" energy="enable"/>-->
+    </option>
+    <size nkey="5" nuser_geom="1"/>
+    <visual>
+        <map fogend="5" fogstart="3"/>
+    </visual>
+	<worldbody>
+		<body name="shield" pos="0 0 1.6">
+			<geom name="glass" pos="0.25 0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+			</geom>
+			<geom name="glass" pos="-0.25 0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+			</geom>
+			<geom name="glass" pos="0.25 -0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+			</geom>
+			<geom name="glass" pos="-0.25 -0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+			</geom>
+			<geom name="glass" pos="0.25 0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+			</geom>
+			<geom name="glass" pos="-0.25 0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+			</geom>
+			<geom name="glass" pos="0.25 -0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+			</geom>
+			<geom name="glass" pos="-0.25 -0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+			</geom>
+			
+		</body>
+	</worldbody>
+</mujoco>
