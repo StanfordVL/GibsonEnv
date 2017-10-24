@@ -52,6 +52,7 @@ def get_model_initial_pose(robot):
         if MODEL_ID == "11HB6XZSh1Q":
             return [0, 0, 3 * 3.14/2], [-3.38, -7, 1.4] ## living room open area
             #return [0, 0, 3 * 3.14/2], [-5, -5, 1.9]   ## living room kitchen table
+
         if MODEL_ID == "BbxejD15Etk":
             return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
     else:

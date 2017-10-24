@@ -20,6 +20,8 @@ from multiprocessing.dummy import Process
 
 from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.completion import CompletionNet
+from realenv.learn.completion2 import CompletionNet2
+import torch.nn as nn
 
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -81,6 +83,20 @@ class PCRenderer:
         self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
 
         self.scale_up = scale_up
+
+
+        self.show   = np.zeros((768, 768, 3),dtype='uint8')
+        self.show_rgb   = np.zeros((768, 768 ,3),dtype='uint8')
+
+        comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
+        comp = torch.nn.DataParallel(comp).cuda()
+        comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
+        self.model = comp.module
+        self.model.eval()
+
+        self.imgv = Variable(torch.zeros(1, 3 , 768, 768), volatile = True).cuda()
+        self.maskv = Variable(torch.zeros(1,2, 768, 768), volatile = True).cuda()
+
 
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
@@ -200,45 +216,62 @@ class PCRenderer:
         h = wo/3
         w = 2*h
         n = ho/3
-        opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
+
+
+        pano = False
+        if pano:
+            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
+        else:
+            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
 
         def _render_depth(opengl_arr):
             #with Profiler("Render Depth"):
             cv2.imshow('target depth', opengl_arr/16.)
 
         def _render_pc(opengl_arr):
-            #with Profiler("Render pointcloud"):
-            poses_after = [
-                pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
-                for i in range(len(imgs))]
 
-            with Profiler("CUDA PC rendering"):
+
+            with Profiler("Render pointcloud cuda"):
+                poses_after = [
+                    pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
+                    for i in range(len(imgs))]
+                #opengl_arr = np.zeros((h,w), dtype = np.float32)
+
+
                 cuda_pc.render(ct.c_int(len(imgs)),
-                           ct.c_int(imgs[0].shape[0]),
-                           ct.c_int(imgs[0].shape[1]),
-                           ct.c_int(self.scale_up),
-                           imgs.ctypes.data_as(ct.c_void_p),
-                           depths.ctypes.data_as(ct.c_void_p),
-                           np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                           show.ctypes.data_as(ct.c_void_p),
-                           opengl_arr.ctypes.data_as(ct.c_void_p)
-                          )
+                               ct.c_int(imgs[0].shape[0]),
+                               ct.c_int(imgs[0].shape[1]),
+                               ct.c_int(768),
+                               ct.c_int(768),
+                               imgs.ctypes.data_as(ct.c_void_p),
+                               depths.ctypes.data_as(ct.c_void_p),
+                               np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                               show.ctypes.data_as(ct.c_void_p),
+                               opengl_arr.ctypes.data_as(ct.c_void_p)
+                              )
+
         threads = [
             Process(target=_render_pc, args=(opengl_arr,)),
             Process(target=_render_depth, args=(opengl_arr,))]
         [t.start() for t in threads]
         [t.join() for t in threads]
 
-        if model:
+
+
+        if self.model:
             tf = transforms.ToTensor()
+            #from IPython import embed; embed()
             before = time.time()
             source = tf(show)
-            source_depth = tf(np.expand_dims(target_depth, 2).astype(np.float32)/65536 * 255)
-            imgv.data.copy_(source)
-            maskv.data.copy_(source_depth)
+            mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+            source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
+            print(mask.size(), source_depth.size())
+            mask = torch.cat([source_depth, mask], 0)
+            self.imgv.data.copy_(source)
+            self.maskv.data.copy_(mask)
             print('Transfer time', time.time() - before)
             before = time.time()
-            recon = model(imgv, maskv)
+            recon = model(self.imgv, self.maskv)
             print('NNtime:', time.time() - before)
             before = time.time()
             show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
@@ -311,7 +344,7 @@ class PCRenderer:
         t1 = time.time()
         t = t1-t0
         self.fps = 1/t
-        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
+        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,768-15),0,0.5,(255,255,255))
         cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
         cv2.imshow('show3d',self.show_rgb)
