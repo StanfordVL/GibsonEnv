@@ -19,7 +19,7 @@ import pickle
 
 ## Small model: 11HB6XZSh1Q
 ## Gates Huang: BbxejD15Etk
-MODEL_ID = "BbxejD15Etk"
+MODEL_ID = "11HB6XZSh1Q"
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',

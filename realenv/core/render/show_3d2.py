@@ -96,6 +96,7 @@ class PCRenderer:
 
         self.imgv = Variable(torch.zeros(1, 3 , 768, 768), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, 768, 768), volatile = True).cuda()
+        self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
 
     def _onmouse(self, *args):
@@ -264,6 +265,7 @@ class PCRenderer:
             before = time.time()
             source = tf(show)
             mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,768,768)
             source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
             print(mask.size(), source_depth.size())
             mask = torch.cat([source_depth, mask], 0)
@@ -274,7 +276,7 @@ class PCRenderer:
             recon = model(self.imgv, self.maskv)
             print('NNtime:', time.time() - before)
             before = time.time()
-            show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
+            show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
             show[:] = (show2[:] * 255).astype(np.uint8)
             print('Transfer to CPU time:', time.time() - before)
 
@@ -311,7 +313,7 @@ class PCRenderer:
         poses_after = [self.render_cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
         pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
         pose_locations = [self.target_poses[i][:3,-1].tolist() for i in range(len(self.imgs))]
-        
+
 
         #topk = (np.argsort(pose_after_distance))[:self.k]
         return pose_after_distance, pose_locations

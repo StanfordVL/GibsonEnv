@@ -480,9 +480,10 @@ void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * dep
 
         merge <<< dimGrid_out, dimBlock >>> (d_render_all, d_render, d_selection, n, output_mem_size);
         
-        int fill_size[10] = {3, 5, 10, 20, 50, 75, 100, 200, 400, 768};
+        //int fill_size[10] = {3, 5, 10, 20, 50, 75, 100, 200, 400, 768};
+        int fill_size[1] = {3};
 
-        for (int j = 0; j < 10; j++) {
+        for (int j = 0; j < 1; j++) {
             cudaMemset(nz, 0, output_mem_size * sizeof(int));
             cudaMemset(average, 0, output_mem_size * sizeof(int) * 3);
             get_average <<< dimGrid_out, dimBlock >>> (d_render, nz, average, fill_size[j]);
