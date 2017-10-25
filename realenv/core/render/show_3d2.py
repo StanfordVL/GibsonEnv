@@ -78,15 +78,15 @@ class PCRenderer:
         self.old_topk = set([])
         self.k = 5
 
-        self.showsz = 1024
-        self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
-        self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
+        self.showsz = 512
+        #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
+        #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
 
-        self.scale_up = scale_up
+        #self.scale_up = scale_up
 
-
-        self.show   = np.zeros((768, 768, 3),dtype='uint8')
-        self.show_rgb   = np.zeros((768, 768 ,3),dtype='uint8')
+        
+        self.show   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        self.show_rgb   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
 
         comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
         comp = torch.nn.DataParallel(comp).cuda()
@@ -94,8 +94,8 @@ class PCRenderer:
         self.model = comp.module
         self.model.eval()
 
-        self.imgv = Variable(torch.zeros(1, 3 , 768, 768), volatile = True).cuda()
-        self.maskv = Variable(torch.zeros(1,2, 768, 768), volatile = True).cuda()
+        self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
+        self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
 
@@ -211,7 +211,7 @@ class PCRenderer:
         message = socket_mist.recv()
 
         #with Profiler("Read from framebuffer and make pano"):
-        wo, ho = 768 * 4, 768 * 3
+        wo, ho = self.showsz * 4, self.showsz * 3
 
         # Calculate height and width of output image, and size of each square face
         h = wo/3
@@ -242,8 +242,8 @@ class PCRenderer:
                 cuda_pc.render(ct.c_int(len(imgs)),
                                ct.c_int(imgs[0].shape[0]),
                                ct.c_int(imgs[0].shape[1]),
-                               ct.c_int(768),
-                               ct.c_int(768),
+                               ct.c_int(self.showsz),
+                               ct.c_int(self.showsz),
                                imgs.ctypes.data_as(ct.c_void_p),
                                depths.ctypes.data_as(ct.c_void_p),
                                np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
@@ -257,15 +257,13 @@ class PCRenderer:
         [t.start() for t in threads]
         [t.join() for t in threads]
 
-
-
         if self.model:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
             before = time.time()
             source = tf(show)
             mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
-            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,768,768)
+            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
             source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
             print(mask.size(), source_depth.size())
             mask = torch.cat([source_depth, mask], 0)
@@ -346,7 +344,7 @@ class PCRenderer:
         t1 = time.time()
         t = t1-t0
         self.fps = 1/t
-        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,768-15),0,0.5,(255,255,255))
+        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
         cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
         cv2.imshow('show3d',self.show_rgb)

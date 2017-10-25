@@ -13,7 +13,7 @@ import socket
 import shlex
 import gym
 from realenv.data.datasets import get_model_path
-
+import cv2
 
 class Engine(object):
     def __init__(self, model_id, human, debug, physics_env):
@@ -102,6 +102,8 @@ class Engine(object):
             data = self.dataset[v]
             target = data[1]
             target_depth = data[3]
+            
+            self.scale_up = 2
             
             if self.scale_up !=1:
                 target =  cv2.resize(target,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)

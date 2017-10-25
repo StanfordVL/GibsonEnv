@@ -361,7 +361,7 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
                        newy = (itx - tx_offset) * it01 + it11 * (ity - ty_offset);
                        
                        //printf("%f %f\n", newx, newy);
-                       if ((newx > -0.05) && (newx < 1.05) && (newy > -0.05) && (newy < 1.05))
+                       if ((newx > -0.01) && (newx < 1.01) && (newy > -0.01) && (newy < 1.01))
                           { 
                           if (newx < 0) newx = 0;
                           if (newy < 0) newy = 0;
