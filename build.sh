@@ -150,7 +150,7 @@ download_data () {
 	## Physics Models
 	if [ ! -d ./realenv/core/physics/models ]; then
 		cd ./realenv/core/physics
-		wget --quiet https://www.dropbox.com/s/vb3pv4igllr39pi/models.zip
+		wget --quiet https://www.dropbox.com/s/3w9vxc8f071u1h0/models.zip
 		unzip -q models.zip && rm models.zip
 		cd -
 	fi

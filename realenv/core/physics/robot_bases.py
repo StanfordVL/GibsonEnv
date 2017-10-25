@@ -58,7 +58,7 @@ class MJCFBasedRobot:
 				parts[part_name] = BodyPart(part_name, bodies, i, -1)
 			for j in range(p.getNumJoints(bodies[i])):
 				p.setJointMotorControl2(bodies[i],j,p.POSITION_CONTROL,positionGain=0.1,velocityGain=0.1,force=0)
-				_,joint_name,_,_,_,_,_,_,_,_,_,_,part_name = p.getJointInfo(bodies[i], j)
+				_,joint_name,joint_type,_,_,_,_,_,_,_,_,_,part_name = p.getJointInfo(bodies[i], j)
 
 				joint_name = joint_name.decode("utf8")
 				part_name = part_name.decode("utf8")
@@ -79,7 +79,7 @@ class MJCFBasedRobot:
 					Joint(joint_name, bodies, i, j).disable_motor()
 					continue
 
-				if joint_name[:8] != "jointfix":
+				if joint_name[:8] != "jointfix" and joint_type != p.JOINT_FIXED:
 					joints[joint_name] = Joint(joint_name, bodies, i, j)
 					ordered_joints.append(joints[joint_name])
 
@@ -89,12 +89,19 @@ class MJCFBasedRobot:
 	def reset(self):
 		self.ordered_joints = []
 		#print(os.path.join(os.path.dirname(os.path.abspath(__file__)),"models", self.model_file))
+		object_ids = ()
 		if self.self_collision:
-			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-				p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS))
+			if ".xml" in self.model_file:
+				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
+			if ".urdf" in self.model_file:
+				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS), )
+			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 		else:
-			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-				p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file)))
+			if ".xml" in self.model_file:
+				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file))
+			if ".urdf" in self.model_file:
+				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file)), )
+			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 
 		self.robot_specific_reset()
 

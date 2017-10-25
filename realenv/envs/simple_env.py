@@ -46,6 +46,7 @@ class SimpleEnv(gym.Env):
       with Profiler("Physics to screen"):
         obs, reward, done, meta = self.r_physics.step(action)
       pose = [meta['eye_pos'], meta['eye_quat']]
+      print(pose)
       ## Select the nearest points
       all_dist, all_pos = self.r_visuals.rankPosesByDistance(pose)
       top_k = self.r_physics.find_best_k_views(meta['eye_pos'], all_dist, all_pos)

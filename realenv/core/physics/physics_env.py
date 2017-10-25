@@ -184,6 +184,10 @@ class AntWalkingEnv(PhysicsExtendedEnv):
         self.robot = Ant()
         PhysicsExtendedEnv.__init__(self, self.robot)
 
+
+
+
+
 class HuskyWalkingEnv(PhysicsExtendedEnv):
     def __init__(self):
         self.robot = Husky()
