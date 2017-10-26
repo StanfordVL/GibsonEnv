@@ -80,7 +80,7 @@ class PCRenderer:
         self.k = 5
 
         self.showsz = 512
-    
+
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
 
@@ -214,16 +214,16 @@ class PCRenderer:
         s = utils.mat_to_str(p)
 
         #with Profiler("Depth request round-trip"):
-        socket_mist.send(s)
+        socket_mist.send_string(s)
         message = socket_mist.recv()
 
         #with Profiler("Read from framebuffer and make pano"):
         wo, ho = self.showsz * 4, self.showsz * 3
 
         # Calculate height and width of output image, and size of each square face
-        h = wo/3
+        h = wo//3
         w = 2*h
-        n = ho/3
+        n = ho//3
 
 
         pano = False
@@ -254,11 +254,13 @@ class PCRenderer:
                                opengl_arr.ctypes.data_as(ct.c_void_p)
                               )
 
-        threads = [
-            Process(target=_render_pc, args=(opengl_arr,)),
-            Process(target=_render_depth, args=(opengl_arr,))]
-        [t.start() for t in threads]
-        [t.join() for t in threads]
+        #threads = [
+        #    Process(target=_render_pc, args=(opengl_arr,)),
+        #    Process(target=_render_depth, args=(opengl_arr,))]
+        #[t.start() for t in threads]
+        #[t.join() for t in threads]
+        _render_pc(opengl_arr)
+        _render_depth(opengl_arr)
 
         if self.compare_filler:
             show_unfilled[:, :, :] = show[:, :, :]
@@ -349,7 +351,7 @@ class PCRenderer:
         cv2.setMouseCallback('show3d',self._onmouse)
         if self.compare_filler:
             cv2.namedWindow('show3d unfilled')
-    
+
 
     def renderToScreen(self, pose, k_views=None):
         t0 = time.time()
@@ -370,11 +372,13 @@ class PCRenderer:
     
     @staticmethod
     def sync_coords():
+        """
         with Profiler("Transform coords"):
             new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
         socket_mist.send(new_coords)
         message = socket_mist.recv()
-
+        """
+        pass
 
 
 def show_target(target_img):

@@ -19,7 +19,7 @@ import cv2
 
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
-DEFAULT_FRAMESKIP = 5
+DEFAULT_FRAMESKIP = 4
 
 
 class SensorRobotEnv(MJCFBaseEnv):

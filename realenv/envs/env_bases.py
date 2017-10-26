@@ -62,6 +62,7 @@ class MJCFBaseEnv(gym.Env):
                 else:
                     self.physicsClientId = p.connect(p.DIRECT)
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
+        p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
 
         if self.scene is None:
             self.scene = self.create_single_player_scene()
