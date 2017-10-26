@@ -254,11 +254,13 @@ class PCRenderer:
                                opengl_arr.ctypes.data_as(ct.c_void_p)
                               )
 
-        threads = [
-            Process(target=_render_pc, args=(opengl_arr,)),
-            Process(target=_render_depth, args=(opengl_arr,))]
-        [t.start() for t in threads]
-        [t.join() for t in threads]
+        #threads = [
+        #    Process(target=_render_pc, args=(opengl_arr,)),
+        #    Process(target=_render_depth, args=(opengl_arr,))]
+        #[t.start() for t in threads]
+        #[t.join() for t in threads]
+        _render_pc(opengl_arr)
+        _render_depth(opengl_arr)
 
         if self.compare_filler:
             show_unfilled[:, :, :] = show[:, :, :]
@@ -372,10 +374,11 @@ def sync_coords():
     with Profiler("Transform coords"):
         #from IPython import embed; embed()
 
-        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
+        #new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
         #new_coords = memoryview(coords.flatten().astype(np.uint32))
-    socket_mist.send(new_coords)
-    message = socket_mist.recv()
+        pass
+    #socket_mist.send(new_coords)
+    #message = socket_mist.recv()
 
 
 def show_target(target_img):
