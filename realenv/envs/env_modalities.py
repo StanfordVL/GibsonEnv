@@ -196,6 +196,16 @@ class SensorRobotEnv(MJCFBaseEnv):
     def getExtendedObservation(self):
         pass
 
+
+    def renderToScreenSetup(self):
+        cv2.namedWindow('show3d')
+        cv2.namedWindow('target depth')
+        cv2.moveWindow('show3d',1140,0)
+        cv2.moveWindow('target depth', 1140, 2048)
+        cv2.setMouseCallback('show3d',self._onmouse)
+        if self.compare_filler:
+            cv2.namedWindow('show3d unfilled')
+
     
 
 class CameraRobotEnv(SensorRobotEnv):
@@ -209,8 +219,10 @@ class CameraRobotEnv(SensorRobotEnv):
         SensorRobotEnv._reset(self)
         if not self.r_camera_rgb or not self.r_camera_mul:
             self.check_port_available()
+            #PCRenderer.renderToScreenSetup()
             self.setup_camera_multi()
             self.setup_camera_rgb()
+
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
@@ -279,7 +291,7 @@ class CameraRobotEnv(SensorRobotEnv):
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
 
         PCRenderer.sync_coords()
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.isRender)
         self.r_camera_rgb = renderer
 
 
