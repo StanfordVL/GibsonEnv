@@ -16,7 +16,7 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from numpy import cos, sin
 from realenv.core.render.profiler import Profiler
-from multiprocessing.dummy import Process
+from multiprocessing import Process
 
 from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.completion import CompletionNet
@@ -30,6 +30,11 @@ coords  = np.load(os.path.join(file_dir, 'coord.npy'))
 context_mist = zmq.Context()
 socket_mist = context_mist.socket(zmq.REQ)
 socket_mist.connect("tcp://localhost:5555")
+
+LINUX_OFFSET = {
+    "x_delta": 10,
+    "y_delta": 100
+}
 
 
 class InImg(object):
@@ -54,7 +59,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -104,6 +109,20 @@ class PCRenderer:
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
+
+        if human:
+            self.renderToScreenSetup()
+
+    def renderToScreenSetup(self):
+        cv2.namedWindow('show3d')
+        cv2.namedWindow('target depth')
+        cv2.moveWindow('show3d', -30 , self.showsz + LINUX_OFFSET['y_delta'])
+        cv2.moveWindow('target depth', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+        cv2.imshow('show3d', self.show_rgb)
+        cv2.imshow('target depth', self.show_rgb)
+        cv2.setMouseCallback('show3d',self._onmouse)
+        if self.compare_filler:
+            cv2.namedWindow('show3d unfilled')
 
 
     def _onmouse(self, *args):
@@ -232,10 +251,6 @@ class PCRenderer:
         else:
             opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
 
-        def _render_depth(opengl_arr):
-            #with Profiler("Render Depth"):
-            cv2.imshow('target depth', opengl_arr/16.)
-
         def _render_pc(opengl_arr):
             with Profiler("Render pointcloud cuda"):
                 poses_after = [
@@ -260,7 +275,6 @@ class PCRenderer:
         #[t.start() for t in threads]
         #[t.join() for t in threads]
         _render_pc(opengl_arr)
-        _render_depth(opengl_arr)
 
         if self.compare_filler:
             show_unfilled[:, :, :] = show[:, :, :]
@@ -284,6 +298,10 @@ class PCRenderer:
             show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
             show[:] = (show2[:] * 255).astype(np.uint8)
             print('Transfer to CPU time:', time.time() - before)
+
+    
+        self.target_depth = opengl_arr ## target depth
+
 
 
     def renderOffScreenInitialPose(self):
@@ -343,15 +361,6 @@ class PCRenderer:
 
         #return self.show_rgb
 
-    def renderToScreenSetup(self):
-        cv2.namedWindow('show3d')
-        cv2.namedWindow('target depth')
-        cv2.moveWindow('show3d',1140,0)
-        cv2.moveWindow('target depth', 1140, 2048)
-        cv2.setMouseCallback('show3d',self._onmouse)
-        if self.compare_filler:
-            cv2.namedWindow('show3d unfilled')
-
 
     def renderToScreen(self, pose, k_views=None):
         t0 = time.time()
@@ -362,23 +371,47 @@ class PCRenderer:
         cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
         cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
-        cv2.imshow('show3d',self.show_rgb)
-        if self.compare_filler:
-            cv2.imshow('show3d unfilled', self.show_unfilled_rgb)
+        def _render_depth(depth):
+            #with Profiler("Render Depth"):
+            cv2.imshow('target depth', depth/16.)
 
+        def _render_rgb(rgb):
+            cv2.imshow('show3d',rgb)
+            cv2.moveWindow('show3d', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+
+        def _render_rgb_unfilled(unfilled_rgb):
+            cv2.imshow('show3d unfilled', show_unfilled_rgb)
+            cv2.moveWindow('target depth', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+
+        """
+        render_threads = [
+            Process(target=_render_depth, args=(self.target_depth, )),
+            Process(target=_render_rgb, args=(self.show_rgb, ))]
+        if self.compare_filler:
+            render_threads.append(Process(target=_render_rgb_unfilled, args=(self.show_unfilled_rgb, )))
+
+        [wt.start() for wt in render_threads]
+        [wt.join() for wt in render_threads]
+        """
+        _render_depth(self.target_depth)
+        _render_rgb(self.show_rgb)
+        if self.compare_filler:
+            _render_rgb_unfilled(self.show_unfilled_rgb)
+            #cv2.imshow('show3d unfilled', self.show_unfilled_rgb)
+                
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
         return self.show_rgb
-
-def sync_coords():
-    with Profiler("Transform coords"):
-        #from IPython import embed; embed()
-
-        #new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
-        #new_coords = memoryview(coords.flatten().astype(np.uint32))
+    
+    @staticmethod
+    def sync_coords():
+        """
+        with Profiler("Transform coords"):
+            new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
+        socket_mist.send(new_coords)
+        message = socket_mist.recv()
+        """
         pass
-    #socket_mist.send(new_coords)
-    #message = socket_mist.recv()
 
 
 def show_target(target_img):

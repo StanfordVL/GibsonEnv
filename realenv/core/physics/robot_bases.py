@@ -129,11 +129,15 @@ class Pose_Helper: # dummy class to comply to original interface
 class BodyPart:
 	def __init__(self, body_name, bodies, bodyIndex, bodyPartIndex):
 		self.bodies = bodies
+		self.body_name = body_name
 		self.bodyIndex = bodyIndex
 		self.bodyPartIndex = bodyPartIndex
 		self.initialPosition = self.current_position()
 		self.initialOrientation = self.current_orientation()
 		self.bp_pose = Pose_Helper(self)
+
+	def get_name(self):
+		return self.body_name
 
 	def state_fields_of_pose_of(self, body_id, link_id=-1):  # a method you will most probably need a lot to get pose and orientation
 		if link_id == -1:
