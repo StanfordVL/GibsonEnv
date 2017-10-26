@@ -2,7 +2,7 @@ from realenv.data.datasets import ViewDataSet3D
 from realenv.core.render.show_3d2 import PCRenderer, sync_coords
 from realenv.core.channels.depth_render import run_depth_render
 from realenv.core.physics.physics_env import PhysicsEnv
-from realenv import error
+from gym import error
 
 from tqdm import *
 import subprocess, os, signal
