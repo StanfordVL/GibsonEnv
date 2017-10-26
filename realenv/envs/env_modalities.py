@@ -1,11 +1,12 @@
-from realenv.envs.env_bases import MJCFRobotEnv
 from realenv.core.physics.scene_building import SinglePlayerBuildingScene
 from realenv.data.datasets import ViewDataSet3D, get_model_path
 from realenv.core.render.show_3d2 import PCRenderer
-from realenv.core.channels.depth_render import run_depth_render
 from realenv.core.physics.physics_env import PhysicsEnv
+from realenv.envs.env_bases import MJCFBaseEnv
+import realenv
 from gym import error
 from gym.utils import seeding
+import pybullet as p
 import progressbar
 import subprocess, os, signal
 import numpy as np
@@ -15,12 +16,15 @@ import socket
 import shlex
 import gym
 import cv2
-from realenv.envs.env_bases import MJCFBaseEnv
+
+
+DEFAULT_TIMESTEP  = 1.0/(4 * 9)
+DEFAULT_FRAMESKIP = 5
 
 
 class SensorRobotEnv(MJCFBaseEnv):
-    def __init__(self, robot, render, model_id, timestep=1.0/(4*9), frame_skip=5):
-        MJCFBaseEnv.__init__(self, robot, render)
+    def __init__(self, render=True, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP):
+        MJCFBaseEnv.__init__(self, render)
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
@@ -29,9 +33,8 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.timestep=timestep
         self.frame_skip=frame_skip
 
-        self.model_id  = model_id
+        self.model_id, self.model_path = get_model_path()
         self.scale_up  = 1
-        self.render = render
         self.r_physics = None
         self.dataset  = ViewDataSet3D(
             transform = np.array, 
@@ -40,34 +43,23 @@ class SensorRobotEnv(MJCFBaseEnv):
             off_3d = False, 
             train = False, 
             overwrite_fofn=True)
-
-    def _seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        return [seed]
-
+        self.ground_ids = None
+        
     def _reset(self):
         """
         framePerSec = 13
         renderer = PhysicsEnv(self.dataset.get_model_obj(), render_mode="human_play",fps=framePerSec, pose=pose_init)
         self.r_physics = renderer
         """
-        if not self.r_physics:
-            env = gym.make(self.physics_env)
-            env.render(mode="human")
-            env.configure(timestep=timestep, frame_skip=frame_skip)
-            env.reset()
-            self.r_physics = env
-                r = MJCFBaseEnv._reset(self)
-        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
-
-        self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
-            self.building_scene.building_obj)
-        #print(self.parts)
-        #self.ground_ids = set([(self.parts[f].bodies[self.parts[f].bodyIndex], self.parts[f].bodyPartIndex) for f in self.foot_ground_object_names])
-        self.ground_ids = set([(self.building_scene.building_obj, 0)])
-        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
-
-        return r
+        MJCFBaseEnv._reset(self)
+        if not self.ground_ids:
+            self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
+                self.building_scene.building_obj)
+            #print(self.parts)
+            #self.ground_ids = set([(self.parts[f].bodies[self.parts[f].bodyIndex], self.parts[f].bodyPartIndex) for f in self.foot_ground_object_names])
+            self.ground_ids = set([(self.building_scene.building_obj, 0)])
+            p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
+        #return r
 
     electricity_cost     = -2.0 # cost for using motors -- this parameter should be carefully tuned against reward for making progress, other values less improtant
     stall_torque_cost   = -0.1  # cost for running electric current through a motor even at zero rotational speed, small
@@ -195,32 +187,47 @@ class SensorRobotEnv(MJCFBaseEnv):
 
     
 
-
 class CameraRobotEnv(SensorRobotEnv):
-    def __init__(self, self, robot, render, model_id, timestep=1.0/(4*9), frame_skip=5, enable_sensors=False):
-
+    def __init__(self, render=True, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP, enable_sensors=False):
+        SensorRobotEnv.__init__(self, render, timestep, frame_skip)
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
-        pass
-
-
+        self.enable_sensors = enable_sensors
+        self.model_path, self.model_id = get_model_path()
+        
     def _reset(self):
+        SensorRobotEnv._reset(self)
         if not self.r_camera_rgb or not self.r_camera_mul:
             self.check_port_available()
-            self.setup_camera_rgb()
             self.setup_camera_multi()
-
+            self.setup_camera_rgb()
 
     def _step(self, a):
-        sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv.step(self, a)
-        eye_pos  = sensor_meta["eye_pos"]
-        eye_quat = sensor_meta["eye_quat"]
-        pass
+        sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
+        pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
+        
+        ## Select the nearest points
+        all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
+        top_k = self.find_best_k_views(sensor_meta['eye_pos'], all_dist, all_pos)
+        
+        sensor_meta.pop("eye_pos", None)
+        sensor_meta.pop("eye_quat", None)
+        
+        #with Profiler("Render to screen"):
+        #if not self.debug_mode:
+        #    visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        #else:
+        visuals = self.r_camera_rgb.renderToScreen(pose, top_k)
 
+        if self.enable_sensors:
+            sensor_meta["rgb"] = visuals
+            return sensor_state, sensor_reward , done, sensor_meta
+        else:
+            return visuals, sensor_reward, done, sensor_meta
+        #return sensor_state, sensor_reward, done, sensor_meta
 
     def _close(self):
         self.r_camera_mul.terminate()
-
 
     def setup_camera_rgb(self):
         scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
@@ -262,7 +269,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
         PCRenderer.sync_coords()
         renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
-        self.r_visuals = renderer
+        self.r_camera_rgb = renderer
 
 
     def setup_camera_multi(self):
@@ -278,11 +285,10 @@ class CameraRobotEnv(SensorRobotEnv):
             print ' %s: %s' %(exctype.__name__, value)
         sys.excepthook = camera_multi_excepthook
 
-        model_path, model_id = get_model_path()
-        dr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'channels', 'depth_render')
+        dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
-        cmd = "./depth_render --modelpath {}".format(model_path)
+        cmd = "./depth_render --modelpath {}".format(self.model_path)
         self.r_camera_mul = subprocess.Popen(shlex.split(cmd), shell=False)
         os.chdir(cur_path)
 

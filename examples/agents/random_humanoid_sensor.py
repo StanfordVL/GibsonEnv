@@ -29,8 +29,7 @@ class RandomAgent(object):
             return action
 
 if __name__ == '__main__':
-    env = gym.make('HumanoidWalking-v0')
-    env.configure(timestep=1.0/(4 * 9), frame_skip=4)
+    env = gym.make('HumanoidSensor-v0')
     env.reset()
     agent = RandomAgent(env.action_space)
     ob = None

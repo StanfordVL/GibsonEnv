@@ -1,17 +1,26 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from realenv.core.physics.robot_locomotors import Humanoid, Ant, Husky
+import gym
 
-
-class HumanoidEnv:
+class HumanoidEnv(gym.Env):
+    metadata = {
+        'render.modes' : ['human', 'rgb_array'],
+        'video.frames_per_second' : 30
+    }
+    timestep   = 1/(20 * 4)
+    frame_skip = 20
     def __init__(self):
         self.robot = Humanoid()
-        PhysicsExtendedEnv.__init__(self, self.robot)
-        self.electricity_cost  = 4.25*PhysicsExtendedEnv.electricity_cost
-        self.stall_torque_cost = 4.25*PhysicsExtendedEnv.stall_torque_cost
-
+        self.electricity_cost  = 4.25*SensorRobotEnv.electricity_cost
+        self.stall_torque_cost = 4.25*SensorRobotEnv.stall_torque_cost
 
 
 class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
-    pass
+    def __init__(self):
+        HumanoidEnv.__init__(self)
+        CameraRobotEnv.__init__(self)
 
 class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):
-    pass
+    def __init__(self):
+        HumanoidEnv.__init__(self)
+        SensorRobotEnv.__init__(self)

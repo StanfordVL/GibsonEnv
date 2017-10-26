@@ -1,4 +1,5 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from realenv.core.physics.robot_locomotors import Husky
 
 
 class HuskyEnv:

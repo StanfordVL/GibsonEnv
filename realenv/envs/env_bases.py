@@ -13,10 +13,10 @@ import numpy as np
 from transforms3d import euler, quaternions
 from realenv.core.physics.physics_object import PhysicsObject
 from realenv.core.render.profiler import Profiler
-from realenv.core.physics.robot_locomotors import Humanoid, Ant, Husky
-from .scene_building import SinglePlayerBuildingScene
+from realenv.core.physics.scene_building import SinglePlayerBuildingScene
 from realenv.data.datasets import get_engine_framerate
 import gym, gym.spaces, gym.utils, gym.utils.seeding
+import sys
 
 
 class MJCFBaseEnv(gym.Env):
@@ -31,12 +31,12 @@ class MJCFBaseEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self, robot, render=False):
+    def __init__(self, render=True):
         self.scene = None
         self.physicsClientId=-1
         self.camera = Camera()
         self.isRender = render
-        self.robot = robot
+        #self.robot = robot     ## Instantiated in xxx_env.py
         self._seed()
         self._cam_dist = 3
         self._cam_yaw = 0
@@ -44,8 +44,8 @@ class MJCFBaseEnv(gym.Env):
         self._render_width =320
         self._render_height = 240
 
-        self.action_space = robot.action_space
-        self.observation_space = robot.observation_space
+        self.action_space = self.robot.action_space
+        self.observation_space = self.robot.observation_space
     def configure(self, args):
         self.robot.args = args
     def _seed(self, seed=None):

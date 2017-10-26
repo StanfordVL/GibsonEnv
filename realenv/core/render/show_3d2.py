@@ -368,6 +368,7 @@ class PCRenderer:
         cv2.waitKey(1)
         return self.show_rgb
     
+    @staticmethod
     def sync_coords():
         with Profiler("Transform coords"):
             new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
