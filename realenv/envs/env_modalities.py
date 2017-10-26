@@ -1,13 +1,12 @@
 from realenv.core.physics.scene_building import SinglePlayerBuildingScene
 from realenv.data.datasets import ViewDataSet3D, get_model_path
 from realenv.core.render.show_3d2 import PCRenderer
-from realenv.core.physics.physics_env import PhysicsEnv
 from realenv.envs.env_bases import MJCFBaseEnv
 import realenv
 from gym import error
 from gym.utils import seeding
 import pybullet as p
-import progressbar
+from tqdm import *
 import subprocess, os, signal
 import numpy as np
 import sys
@@ -55,6 +54,7 @@ class SensorRobotEnv(MJCFBaseEnv):
             self.ground_ids = set([(self.building_scene.building_obj, 0)])
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
         for i in range (p.getNumBodies()):
+            print(p.getBodyInfo(i)[0].decode(), self.robot_body.get_name())
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
         i = 0
@@ -263,10 +263,8 @@ class CameraRobotEnv(SensorRobotEnv):
         uuids, rts = self.dataset.get_scene_info(scene_id)
 
         targets, sources, source_depths, poses = [], [], [], []
-        pbar  = progressbar.ProgressBar(widgets=[
-            ' [ Initializing Environment ] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ',])
         
-        for k,v in pbar(uuids):
+        for k,v in tqdm((uuids)):
             data = self.dataset[v]
             target, target_depth = data[1], data[3]
             if self.scale_up !=1:
@@ -303,9 +301,9 @@ class CameraRobotEnv(SensorRobotEnv):
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
                 lineno = tb.tb_lineno
-                print '   File "%.500s", line %d, in %.500s' %(filename, lineno, name)
+                print('   File "%.500s", line %d, in %.500s' %(filename, lineno, name))
                 tb = tb.tb_next
-            print ' %s: %s' %(exctype.__name__, value)
+            print(' %s: %s' %(exctype.__name__, value))
         sys.excepthook = camera_multi_excepthook
 
         dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')

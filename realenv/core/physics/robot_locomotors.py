@@ -224,8 +224,22 @@ class Humanoid(WalkerBase):
 class Husky(WalkerBase):
 	foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
-	def __init__(self):
+	def __init__(self, is_discrete):
+		self.is_discrete = is_discrete
 		WalkerBase.__init__(self, "husky.urdf", "husky_robot", action_dim=4, obs_dim=20, power=2.5)
+		if self.is_discrete:
+			self.action_space = gym.spaces.Discrete(2 ** action_dim)
+
+	def _step(self, action):
+		if self.is_discrete:
+			realaction = []
+			action_count = action + 1
+			while action_count > 0:
+				realaction.append(int(action_count/2))
+			action = action_count
+		else:
+			realaction = action
+		WalkerBase.step(self, action)
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground

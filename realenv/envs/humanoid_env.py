@@ -1,5 +1,5 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
-from realenv.core.physics.robot_locomotors import Humanoid, Ant, Husky
+from realenv.core.physics.robot_locomotors import Humanoid
 import gym
 
 HUMANOID_TIMESTEP  = 1.0/(4 * 22)
