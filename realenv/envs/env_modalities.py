@@ -23,8 +23,8 @@ DEFAULT_FRAMESKIP = 5
 
 
 class SensorRobotEnv(MJCFBaseEnv):
-    def __init__(self, render=True, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP):
-        MJCFBaseEnv.__init__(self, render)
+    def __init__(self, human, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP):
+        MJCFBaseEnv.__init__(self, human)
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
@@ -32,10 +32,10 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.k = 5
         self.timestep=timestep
         self.frame_skip=frame_skip
+        self.robot_tracking_id = -1
 
-        self.model_id, self.model_path = get_model_path()
+        self.model_path, self.model_id = get_model_path()
         self.scale_up  = 1
-        self.r_physics = None
         self.dataset  = ViewDataSet3D(
             transform = np.array, 
             mist_transform = np.array, 
@@ -46,11 +46,6 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.ground_ids = None
         
     def _reset(self):
-        """
-        framePerSec = 13
-        renderer = PhysicsEnv(self.dataset.get_model_obj(), render_mode="human_play",fps=framePerSec, pose=pose_init)
-        self.r_physics = renderer
-        """
         MJCFBaseEnv._reset(self)
         if not self.ground_ids:
             self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
@@ -59,6 +54,12 @@ class SensorRobotEnv(MJCFBaseEnv):
             #self.ground_ids = set([(self.parts[f].bodies[self.parts[f].bodyIndex], self.parts[f].bodyPartIndex) for f in self.foot_ground_object_names])
             self.ground_ids = set([(self.building_scene.building_obj, 0)])
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
+        for i in range (p.getNumBodies()):
+            if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
+               self.robot_tracking_id=i
+        i = 0
+
+        ## TODO (hzyjerry), the original reset() in gym interface returns an env, 
         #return r
 
     electricity_cost     = -2.0 # cost for using motors -- this parameter should be carefully tuned against reward for making progress, other values less improtant
@@ -129,6 +130,16 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.HUD(state, a, done)
         self.reward += sum(self.rewards)
 
+        if self.isRender:
+            distance=2.5 ## demo: living room ,kitchen
+            #distance=1.7   ## demo: stairs
+            #yaw = 0     ## demo: living room
+            yaw = 30    ## demo: kitchen
+            #yaw = 90     ## demo: stairs
+            humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
+            p.resetDebugVisualizerCamera(distance,yaw,-35,humanPos);       ## demo: kitchen, living room
+            #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
+
         eye_pos = self.robot.eyes.current_position()
         x, y, z ,w = self.robot.eyes.current_orientation()
         eye_quat = [w, x, y, z]
@@ -188,12 +199,11 @@ class SensorRobotEnv(MJCFBaseEnv):
     
 
 class CameraRobotEnv(SensorRobotEnv):
-    def __init__(self, render=True, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP, enable_sensors=False):
-        SensorRobotEnv.__init__(self, render, timestep, frame_skip)
+    def __init__(self, human, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP, enable_sensors=False):
+        SensorRobotEnv.__init__(self, human, timestep, frame_skip)
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
         self.enable_sensors = enable_sensors
-        self.model_path, self.model_id = get_model_path()
         
     def _reset(self):
         SensorRobotEnv._reset(self)
@@ -225,6 +235,7 @@ class CameraRobotEnv(SensorRobotEnv):
         else:
             return visuals, sensor_reward, done, sensor_meta
         #return sensor_state, sensor_reward, done, sensor_meta
+        
 
     def _close(self):
         self.r_camera_mul.terminate()

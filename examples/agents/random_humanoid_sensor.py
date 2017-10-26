@@ -5,6 +5,7 @@ import sys
 import gym
 from PIL import Image
 from realenv.core.render.profiler import Profiler
+from realenv.envs.humanoid_env import HumanoidSensorEnv
 import pybullet as p
 
 
@@ -24,12 +25,13 @@ class RandomAgent(object):
             self.time = 0
             action = np.zeros(self.action_space.shape[0])
             #action[np.random.randint(0, len(action))] = 1
-            action = [0] * self.action_space.shape[0]
+            #action = [0] * self.action_space.shape[0]
             self.action_last = action
             return action
 
 if __name__ == '__main__':
-    env = gym.make('HumanoidSensor-v0')
+    #env = gym.make('HumanoidSensor-v0')
+    env = HumanoidSensorEnv(human=True)
     env.reset()
     agent = RandomAgent(env.action_space)
     ob = None
@@ -53,15 +55,7 @@ if __name__ == '__main__':
                     obs, r, done, meta = env.step(a)
                 score += r
                 frame += 1
-                distance=2.5 ## demo: living room ,kitchen
-                #distance=1.7   ## demo: stairs
-                #yaw = 0     ## demo: living room
-                yaw = 30    ## demo: kitchen
-                #yaw = 90     ## demo: stairs
-                humanPos, humanOrn = p.getBasePositionAndOrientation(torsoId)
-                p.resetDebugVisualizerCamera(distance,yaw,-35,humanPos);       ## demo: kitchen, living room
-                #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
-
+                
                 if not done and frame < 60: continue
                 if restart_delay==0:
                     print("score=%0.2f in %i frames" % (score, frame))

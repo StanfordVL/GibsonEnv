@@ -31,11 +31,11 @@ class MJCFBaseEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self, render=True):
+    def __init__(self, human=True):
         self.scene = None
         self.physicsClientId=-1
         self.camera = Camera()
-        self.isRender = render
+        self.isRender = human
         #self.robot = robot     ## Instantiated in xxx_env.py
         self._seed()
         self._cam_dist = 3
@@ -56,7 +56,7 @@ class MJCFBaseEnv(gym.Env):
     def _reset(self):
         if (self.physicsClientId<0):
             self.physicsClientId = p.connect(p.SHARED_MEMORY)
-            if (self.physicsClientId<0):
+            if (self.physicsClientId < 0):
                 if (self.isRender):
                     self.physicsClientId = p.connect(p.GUI)
                 else:
@@ -118,7 +118,6 @@ class MJCFBaseEnv(gym.Env):
         if (self.physicsClientId>=0):
             p.disconnect(self.physicsClientId)
             self.physicsClientId = -1
-
 
     def HUD(self, state, a, done):
         pass

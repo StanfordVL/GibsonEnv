@@ -16,11 +16,11 @@ class HumanoidEnv(gym.Env):
 
 
 class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
-    def __init__(self):
+    def __init__(self, human=True, enable_sensors=False):
         HumanoidEnv.__init__(self)
-        CameraRobotEnv.__init__(self)
+        CameraRobotEnv.__init__(self, human, enable_sensors=enable_sensors)
 
 class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):
-    def __init__(self):
+    def __init__(self, human=True):
         HumanoidEnv.__init__(self)
-        SensorRobotEnv.__init__(self)
+        SensorRobotEnv.__init__(self, human)
