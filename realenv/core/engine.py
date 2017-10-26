@@ -4,7 +4,7 @@ from realenv.core.channels.depth_render import run_depth_render
 from realenv.core.physics.physics_env import PhysicsEnv
 from realenv import error
 
-import progressbar
+from tqdm import *
 import subprocess, os, signal
 import numpy as np
 import sys
@@ -36,15 +36,15 @@ class Engine(object):
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
                 lineno = tb.tb_lineno
-                print '   File "%.500s", line %d, in %.500s' %(filename, lineno, name)
+                print('   File "%.500s", line %d, in %.500s' %(filename, lineno, name) )
                 tb = tb.tb_next
-            print ' %s: %s' %(exctype.__name__, value)
+            print (' %s: %s' %(exctype.__name__, value))
         sys.excepthook = channel_excepthook
-        
+
         self._checkPortClear()
         self._setupChannel()
         self._setupVisuals()
-        
+
         ## Sync initial poses
         pose_init = self.r_visuals.renderOffScreenInitialPose()
         self._setupPhysics(self.human, pose_init)
@@ -79,7 +79,7 @@ class Engine(object):
         cmd = "./depth_render --modelpath {}".format(model_path)
         self.p_channel = subprocess.Popen(shlex.split(cmd), shell=False)
         os.chdir(cur_path)
-      
+
 
     def _setupVisuals(self):
         scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
@@ -93,22 +93,17 @@ class Engine(object):
         sources = []
         source_depths = []
         poses = []
-        pbar  = progressbar.ProgressBar(widgets=[
-                            ' [ Initializing Environment ] ',
-                            progressbar.Bar(),
-                            ' (', progressbar.ETA(), ') ',
-                            ])
-        for k,v in pbar(uuids):
+        for k,v in tqdm(uuids):
             data = self.dataset[v]
             target = data[1]
             target_depth = data[3]
-            
+
             self.scale_up = 2
-            
+
             if self.scale_up !=1:
                 target =  cv2.resize(target,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)
                 target_depth =  cv2.resize(target_depth,None,fx=1.0/self.scale_up, fy=1.0/self.scale_up, interpolation = cv2.INTER_CUBIC)
-            
+
             pose = data[-1][0].numpy()
             targets.append(target)
             poses.append(pose)
@@ -137,4 +132,4 @@ class Engine(object):
 
     def cleanUp(self):
         self.p_channel.terminate()
-        
+

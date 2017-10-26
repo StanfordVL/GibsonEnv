@@ -7,7 +7,7 @@ import sys
 import torch
 import argparse
 import time
-import utils
+import realenv.core.render.utils as utils
 import transforms3d
 import json
 import zmq
@@ -84,7 +84,7 @@ class PCRenderer:
 
         #self.scale_up = scale_up
 
-        
+
         self.show   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
         self.show_rgb   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
 
@@ -355,6 +355,7 @@ class PCRenderer:
 
 def sync_coords():
     with Profiler("Transform coords"):
+
         new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
     socket_mist.send(new_coords)
     message = socket_mist.recv()

@@ -1,4 +1,4 @@
-from robot_bases import MJCFBasedRobot
+from realenv.core.physics.robot_bases import MJCFBasedRobot
 import numpy as np
 import pybullet as p
 import os
@@ -18,14 +18,14 @@ class WalkerBase(MJCFBasedRobot):
 		self.walk_target_y = 0
 		self.body_xyz=[0,0,0]
 
-	
+
 	def robot_specific_reset(self):
 		for j in self.ordered_joints:
 			j.reset_current_position(self.np_random.uniform(low=-0.1, high=0.1), 0)
 
 		self.feet = [self.parts[f] for f in self.foot_list]
 		self.feet_contact = np.array([0.0 for f in self.foot_list], dtype=np.float32)
-	
+
 		self.scene.actor_introduce(self)
 		self.initial_z = None
 
@@ -153,7 +153,7 @@ class Humanoid(WalkerBase):
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
-		
+
 		humanoidId = -1
 		numBodies = p.getNumBodies()
 		for i in range (numBodies):
@@ -164,7 +164,7 @@ class Humanoid(WalkerBase):
 		glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))
 		print("setting up glass", glass_id, humanoidId)
 		p.changeVisualShape(glass_id[0], -1, rgbaColor=[0, 0, 0, 0])
-		cid = p.createConstraint(humanoidId, -1, glass_id[0],-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
+		#cid = p.createConstraint(humanoidId, -1, glass_id[0],-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
 
 		self.motor_names  = ["abdomen_z", "abdomen_y", "abdomen_x"]
 		self.motor_power  = [100, 100, 100]
@@ -197,7 +197,7 @@ class Humanoid(WalkerBase):
 			self.robot_body.reset_position(position)
 			self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(orientation)))
 		self.initial_z = 0.8
-		
+
 		orientation, position = get_model_initial_pose("humanoid")
 		roll  = orientation[0]
 		pitch = orientation[1]
@@ -207,7 +207,7 @@ class Humanoid(WalkerBase):
 
 		## BbxejD15Etk
 
-	
+
 	random_yaw = False
 	random_lean = False
 

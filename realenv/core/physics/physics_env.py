@@ -10,7 +10,7 @@ import argparse
 import os
 import json
 import numpy as np
-import settings
+import realenv.core.physics.settings as settings
 from transforms3d import euler, quaternions
 from realenv.core.physics.physics_object import PhysicsObject
 from realenv.core.render.profiler import Profiler
@@ -25,7 +25,7 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
     def __init__(self, robot, render=False):
         print("PhysicsExtendedEnv::__init__")
         MJCFBaseBulletEnv.__init__(self, robot, render)
-        
+
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
@@ -36,7 +36,7 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
         return self.building_scene
 
     def _reset(self):
-        
+
         r = MJCFBaseBulletEnv._reset(self)
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,0)
 
@@ -158,7 +158,7 @@ class PhysicsExtendedEnv(MJCFBaseBulletEnv):
                 if o not in top_k:
                     top_k.append(o)
                 if len(top_k) >= self.k:
-                    break 
+                    break
         print("Found %d views" % len(top_k), top_k)
         return top_k
 
@@ -204,7 +204,7 @@ class PhysicsEnv(MJCFBaseBulletEnv):
         ## engine running at a minimum 100 frames per sec
         self.action_repeat  = int(math.ceil(100.0 / update_freq))
         self.time_step      = 1.0 / (update_freq * self.action_repeat)
-        
+
         self._setup_context(obj_path)
         self._set_gravity()
         self._set_frame_skip()
@@ -264,13 +264,13 @@ class PhysicsEnv(MJCFBaseBulletEnv):
         elif self.r_mode == "human_play":
             self.robot.getUpdateFromKeyboard(restart=restart)
         else:
-            raise Exception 
+            raise Exception
 
         print("action repeat", self.action_repeat)
         with Profiler("Physics internal"):
             for s in range(self.action_repeat):
                 p.stepSimulation()
-        
+
         self._update_debug_panels()
 
         pos_xyz, quat_wxyz = self.robot.getViewPosAndOrientation()
@@ -278,7 +278,7 @@ class PhysicsEnv(MJCFBaseBulletEnv):
             'distance_to_target': np.sum(np.square(pos_xyz - self.target_pos))
         }
         print(pos_xyz)
-        return [pos_xyz, quat_wxyz], state        
+        return [pos_xyz, quat_wxyz], state
 
     def _update_debug_panels(self):
         if not (self.r_mode == "human_eye" or self.r_mode == "human_play"):
@@ -301,7 +301,7 @@ class PhysicsEnv(MJCFBaseBulletEnv):
             cameraDist = p.readUserDebugParameter(self.debug_sliders['dist'])
             cameraYaw  = p.readUserDebugParameter(self.debug_sliders['yaw'])
             cameraPitch = p.readUserDebugParameter(self.debug_sliders['pitch'])
-            
+
             pos_xyz, quat_wxyz = self.robot.getViewPosAndOrientation()
             p.getCameraImage(256, 256, viewMatrix = self.viewMatrix, projectionMatrix = self.projMatrix)
             p.resetDebugVisualizerCamera(cameraDist, cameraYaw, cameraPitch, pos_xyz)

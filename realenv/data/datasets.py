@@ -9,8 +9,8 @@ import json
 import codecs
 import numpy as np
 import ctypes as ct
-import progressbar
 import sys
+from tqdm import *
 import torchvision.transforms as transforms
 import argparse
 import json
@@ -88,12 +88,6 @@ class ViewDataSet3D(data.Dataset):
             if train:
                 self.scenes = self.scenes[:num_train]
 
-            self.bar  = progressbar.ProgressBar(widgets=[
-                        ' [', progressbar.Timer(), '] ',
-                        progressbar.Bar(),
-                        ' (', progressbar.ETA(), ') ',
-                        ])
-
             self.meta = {}
             if debug:
                 last = 35
@@ -106,9 +100,9 @@ class ViewDataSet3D(data.Dataset):
                     for line in f:
                         l = line.strip().split(',')
                         uuid = l[0]
-                        xyz  = map(float, l[1:4])
-                        quat = map(float, l[4:8])
-                        if not self.meta.has_key(scene):
+                        xyz  = list(map(float, l[1:4]))
+                        quat = list(map(float, l[4:8]))
+                        if not scene in self.meta:
                             self.meta[scene] = {}
                         metadata = (uuid, xyz, quat)
                         #print(uuid, xyz)
@@ -117,11 +111,11 @@ class ViewDataSet3D(data.Dataset):
                             self.meta[scene][uuid] = metadata
             print("Indexing")
 
-            for scene, meta in self.bar(self.meta.items()):
+            for scene, meta in tqdm(list(self.meta.items())):
                 if len(meta) < self.seqlen:
                     continue
-                for uuid,v in meta.items():
-                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in meta.items()]
+                for uuid,v in list(meta.items()):
+                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in list(meta.items())]
                     dist_list = sorted(dist_list, key = lambda x:x[-1])
 
                     if not dist_filter is None:

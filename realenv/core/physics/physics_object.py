@@ -1,5 +1,5 @@
 import numpy as np
-import settings
+import realenv.core.physics.settings as settings
 from transforms3d import euler, quaternions
 
 
