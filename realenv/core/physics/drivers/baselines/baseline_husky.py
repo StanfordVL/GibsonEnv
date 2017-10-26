@@ -32,15 +32,15 @@ class SmallReactivePolicy:
 
 def main():
     env = gym.make("HuskyWalkingEnv-v0")
-    env.render(mode="human")
+    env.configure(timestep=1.0/(4 * 9), frame_skip=4)
     #pi = SmallReactivePolicy(env.observation_space, env.action_space)
     env.reset()
-    #torsoId = -1
+    huskyId = -1
     for i in range (p.getNumBodies()):
         print(p.getBodyInfo(i))
-    #    if (p.getBodyInfo(i)[0].decode() == "torso"):
-    #       torsoId=i
-    #       print("found humanoid torso")
+        if (p.getBodyInfo(i)[0].decode() == "torso"):
+            huskyId=i
+            print("found husky robot")
     while 1:
         frame = 0
         score = 0
@@ -53,12 +53,12 @@ def main():
             a = [1] * env.action_space.shape[0]
             obs, r, done, _ = env.step(a)
             print("observations", len(obs))
-    #        score += r
-    #        frame += 1
-    #        distance=5
+            score += r
+            frame += 1
+            distance=5
             yaw = 0
-    #        humanPos, humanOrn = p.getBasePositionAndOrientation(torsoId)
-    #        p.resetDebugVisualizerCamera(distance,yaw,-20,humanPos);
+            huskyPos, huskyOrn = p.getBasePositionAndOrientation(huskyId)
+            p.resetDebugVisualizerCamera(distance,yaw,-20,humanPos);
 
             still_open = env.render("human")
             if still_open==False:

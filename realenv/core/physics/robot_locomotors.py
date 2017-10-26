@@ -31,9 +31,7 @@ class WalkerBase(MJCFBasedRobot):
 
 	def apply_action(self, a):
 		assert (np.isfinite(a).all())
-		print("ordered joints", len(self.ordered_joints))
 		for n, j in enumerate(self.ordered_joints):
-			print(n, a[n])
 			j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
 
 	def calc_state(self):
@@ -162,7 +160,7 @@ class Humanoid(WalkerBase):
 		        humanoidId = i
 		## Spherical radiance/glass shield to protect the robot's camera
 		glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))
-		print("setting up glass", glass_id, humanoidId)
+		#print("setting up glass", glass_id, humanoidId)
 		p.changeVisualShape(glass_id[0], -1, rgbaColor=[0, 0, 0, 0])
 		#cid = p.createConstraint(humanoidId, -1, glass_id[0],-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
 
@@ -227,7 +225,7 @@ class Husky(WalkerBase):
 	foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 	def __init__(self):
-		WalkerBase.__init__(self, "husky.urdf", "husky_robot", action_dim=10, obs_dim=32, power=2.5)
+		WalkerBase.__init__(self, "husky.urdf", "husky_robot", action_dim=4, obs_dim=20, power=2.5)
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground

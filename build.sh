@@ -150,24 +150,20 @@ download_data () {
 	## Physics Models
 	if [ ! -d ./realenv/core/physics/models ]; then
 		cd ./realenv/core/physics
-		wget --quiet https://www.dropbox.com/s/vb3pv4igllr39pi/models.zip
+		wget --quiet https://www.dropbox.com/s/3w9vxc8f071u1h0/models.zip
 		unzip -q models.zip && rm models.zip
 		cd -
 	fi
 
-	if [ ! -f ./realenv/core/render/coord.npy ]; then
-		cd ./realenv/core/render/
-		wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
-		cd -
-	fi
-  
-  if [ ! -f ./realenv/core/render/model.pth ]; then
-		cd ./realenv/core/render/
-		wget --quiet https://www.dropbox.com/s/e7far9okgv7oq8p/model.pth
-		cd -
-	fi
-
-
+	cd ./realenv/core/render/		
+		if [ ! -f coord.npy ]; then
+			wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
+		fi
+		if [ ! -f model.pth ]; then
+			wget --quiet https://www.dropbox.com/s/e7far9okgv7oq8p/model.pth
+		fi
+	cd -
+		
 	if [ -f realenv/data/*.pkl ]; then
 		rm realenv/data/*.pkl
 	fi

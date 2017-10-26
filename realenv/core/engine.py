@@ -28,7 +28,7 @@ class Engine(object):
         self.r_physics = None
         self.p_channel = None
 
-    def setup_all(self):
+    def setup_all(self, timestep, frame_skip):
         def channel_excepthook(exctype, value, tb):
             print("killing", self.p_channel)
             self.p_channel.terminate()
@@ -46,14 +46,14 @@ class Engine(object):
         self._setupVisuals()
 
         ## Sync initial poses
-        pose_init = self.r_visuals.renderOffScreenInitialPose()
-        self._setupPhysics(self.human, pose_init)
+        self._setupPhysics(self.human, timestep, frame_skip)
 
         if self.debug:
             self.r_visuals.renderToScreenSetup()
             #self.r_displayer = RewardDisplayer() #MPRewardDisplayer()
 
         return self.r_visuals, self.r_physics, self.p_channel
+
 
     def _checkPortClear(self):
         # TODO (hzyjerry) not working
@@ -119,7 +119,7 @@ class Engine(object):
         renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
         self.r_visuals = renderer
 
-    def _setupPhysics(self, human, pose_init):
+    def _setupPhysics(self, human, timestep, frame_skip):
         """
         framePerSec = 13
         renderer = PhysicsEnv(self.dataset.get_model_obj(), render_mode="human_play",fps=framePerSec, pose=pose_init)
@@ -127,6 +127,7 @@ class Engine(object):
         """
         env = gym.make(self.physics_env)
         env.render(mode="human")
+        env.configure(timestep=timestep, frame_skip=frame_skip)
         env.reset()
         self.r_physics = env
 

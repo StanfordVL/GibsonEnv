@@ -76,9 +76,11 @@ class PCRenderer:
         self.target = target
         self.model = None
         self.old_topk = set([])
+        self.compare_filler = False
         self.k = 5
 
         self.showsz = 512
+    
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
 
@@ -87,6 +89,11 @@ class PCRenderer:
 
         self.show   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
         self.show_rgb   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
+
+        self.show_unfilled  = None
+        if self.compare_filler:
+            self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+
 
         comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
         comp = torch.nn.DataParallel(comp).cuda()
@@ -200,7 +207,7 @@ class PCRenderer:
         return pos, quat_wxyz
 
 
-    def render(self, imgs, depths, pose, model, poses, target_pose, show):
+    def render(self, imgs, depths, pose, model, poses, target_pose, show, show_unfilled=None):
         v_cam2world = target_pose
         p = (v_cam2world).dot(np.linalg.inv(pose))
         p = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
@@ -230,15 +237,11 @@ class PCRenderer:
             cv2.imshow('target depth', opengl_arr/16.)
 
         def _render_pc(opengl_arr):
-
-
             with Profiler("Render pointcloud cuda"):
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
                 #opengl_arr = np.zeros((h,w), dtype = np.float32)
-
-
                 cuda_pc.render(ct.c_int(len(imgs)),
                                ct.c_int(imgs[0].shape[0]),
                                ct.c_int(imgs[0].shape[1]),
@@ -257,6 +260,8 @@ class PCRenderer:
         [t.start() for t in threads]
         [t.join() for t in threads]
 
+        if self.compare_filler:
+            show_unfilled[:, :, :] = show[:, :, :]
         if self.model:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
@@ -318,6 +323,9 @@ class PCRenderer:
 
 
     def renderOffScreen(self, pose, k_views=None):
+        if not k_views:
+            all_dist, _ = self.rankPosesByDistance(pose)
+            k_views = (np.argsort(all_dist))[:self.k]
         if set(k_views) != self.old_topk:
             self.imgs_topk = np.array([self.imgs[i] for i in k_views])
             self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
@@ -325,9 +333,11 @@ class PCRenderer:
             self.old_topk = set(k_views)
 
         with Profiler("Render pointcloud all"):
-            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show)
+            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
 
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
+            if self.compare_filler:
+                self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
 
         #return self.show_rgb
 
@@ -337,6 +347,9 @@ class PCRenderer:
         cv2.moveWindow('show3d',1140,0)
         cv2.moveWindow('target depth', 1140, 2048)
         cv2.setMouseCallback('show3d',self._onmouse)
+        if self.compare_filler:
+            cv2.namedWindow('show3d unfilled')
+    
 
     def renderToScreen(self, pose, k_views=None):
         t0 = time.time()
@@ -348,6 +361,8 @@ class PCRenderer:
         cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
         cv2.imshow('show3d',self.show_rgb)
+        if self.compare_filler:
+            cv2.imshow('show3d unfilled', self.show_unfilled_rgb)
 
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
