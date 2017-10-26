@@ -61,7 +61,8 @@ install() {
 	read -s password
 
 	## Core rendering functionality
-	conda install -c menpo opencv -y
+	#conda install -c menpo opencv -y
+	pip install opencv-python			## python3
 	conda install pytorch torchvision cuda80 -c soumith -y
 	
 

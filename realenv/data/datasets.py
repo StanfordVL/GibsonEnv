@@ -56,6 +56,8 @@ def get_model_initial_pose(robot):
             #return [0, 0, 3.14], [-0.603, -1.24, 2.35]
         if MODEL_ID == "BbxejD15Etk":
             return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
+    elif robot=="husky":
+        return [0, 0, 3.14], [-2, 3.5, 0.4]
     else:
         return [0, 0, 0], [0, 0, 1.4]
 

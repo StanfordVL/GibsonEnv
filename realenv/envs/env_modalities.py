@@ -5,6 +5,7 @@ from realenv.envs.env_bases import MJCFBaseEnv
 import realenv
 from gym import error
 from gym.utils import seeding
+from transforms3d import quaternions
 import pybullet as p
 from tqdm import *
 import subprocess, os, signal
@@ -19,9 +20,20 @@ import cv2
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
+DEFAULT_DEBUG_CAMERA = {
+    'yaw': 30,
+    'distance': 2.5
+}
 
+#distance=2.5 ## demo: living room ,kitchen
+#distance=1.7   ## demo: stairs
+#yaw = 0     ## demo: living room
+#yaw = 30    ## demo: kitchen
+#yaw = 90     ## demo: stairs
 
 class SensorRobotEnv(MJCFBaseEnv):
+
+
     def __init__(self, human, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP):
         MJCFBaseEnv.__init__(self, human)
         self.camera_x = 0
@@ -43,6 +55,7 @@ class SensorRobotEnv(MJCFBaseEnv):
             train = False, 
             overwrite_fofn=True)
         self.ground_ids = None
+        self.tracking_camera = DEFAULT_DEBUG_CAMERA
         
     def _reset(self):
         MJCFBaseEnv._reset(self)
@@ -131,18 +144,13 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.reward += sum(self.rewards)
 
         if self.isRender:
-            distance=2.5 ## demo: living room ,kitchen
-            #distance=1.7   ## demo: stairs
-            #yaw = 0     ## demo: living room
-            yaw = 30    ## demo: kitchen
-            #yaw = 90     ## demo: stairs
             humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
-            p.resetDebugVisualizerCamera(distance,yaw,-35,humanPos);       ## demo: kitchen, living room
+            p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'],-35,humanPos);       ## demo: kitchen, living room
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
         x, y, z ,w = self.robot.eyes.current_orientation()
-        eye_quat = [w, x, y, z]
+        eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
 
         return state, sum(self.rewards), bool(done), {"eye_pos":eye_pos, "eye_quat":eye_quat}
 
