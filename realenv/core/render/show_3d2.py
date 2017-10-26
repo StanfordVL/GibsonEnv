@@ -367,13 +367,13 @@ class PCRenderer:
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
         return self.show_rgb
+    
+    def sync_coords():
+        with Profiler("Transform coords"):
+            new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
+        socket_mist.send(new_coords)
+        message = socket_mist.recv()
 
-def sync_coords():
-    with Profiler("Transform coords"):
-
-        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
-    socket_mist.send(new_coords)
-    message = socket_mist.recv()
 
 
 def show_target(target_img):

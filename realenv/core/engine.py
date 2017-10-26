@@ -1,5 +1,5 @@
 from realenv.data.datasets import ViewDataSet3D
-from realenv.core.render.show_3d2 import PCRenderer, sync_coords
+from realenv.core.render.show_3d2 import PCRenderer
 from realenv.core.channels.depth_render import run_depth_render
 from realenv.core.physics.physics_env import PhysicsEnv
 from realenv import error
@@ -114,7 +114,7 @@ class Engine(object):
         socket_mist.connect("tcp://localhost:5555")
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        sync_coords()
+        PCRenderer.sync_coords()
 
         renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up)
         self.r_visuals = renderer
