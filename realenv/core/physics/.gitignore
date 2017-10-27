@@ -4,4 +4,3 @@ __pycache__
 drivers/baselines/
 archive/
 drivers/test/
-models/*

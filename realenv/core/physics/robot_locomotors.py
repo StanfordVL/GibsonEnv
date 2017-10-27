@@ -2,6 +2,7 @@ from realenv.core.physics.robot_bases import MJCFBasedRobot
 import numpy as np
 import pybullet as p
 import os
+import gym, gym.spaces
 from transforms3d.euler import euler2quat
 from realenv.data.datasets import get_model_initial_pose
 
@@ -18,6 +19,7 @@ class WalkerBase(MJCFBasedRobot):
 		self.walk_target_y = 0
 		self.body_xyz=[0,0,0]
 		self.eye_offset_orn = euler2quat(0, 0, 0)
+		self.action_dim = action_dim
 
 
 	def robot_specific_reset(self):
@@ -229,16 +231,18 @@ class Husky(WalkerBase):
 		self.is_discrete = is_discrete
 		WalkerBase.__init__(self, "husky.urdf", "husky_robot", action_dim=4, obs_dim=20, power=2.5)
 		if self.is_discrete:
-			self.action_space = gym.spaces.Discrete(2 ** action_dim)
+			self.action_space = gym.spaces.Discrete(2 ** self.action_dim)
 		## specific offset for husky.urdf
-		self.eye_offset_orn = euler2quat(np.pi/2, 0, -np.pi/2, axes='sxyz')
+		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+		##self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 
 	def _step(self, action):
 		if self.is_discrete:
 			realaction = []
 			action_count = action + 1
 			while action_count > 0:
-				realaction.append(int(action_count/2))
+				realaction.append(-1) if action_count % 2 == 0 else realaction.append(1)
+				action_count = action_count/2
 			action = action_count
 		else:
 			realaction = action

@@ -22,7 +22,9 @@ DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
 DEFAULT_DEBUG_CAMERA = {
     'yaw': 30,
-    'distance': 2.5
+    'distance': 2.5,
+    'pitch': -35,
+    'z_offset': 0
 }
 
 #distance=2.5 ## demo: living room ,kitchen
@@ -67,7 +69,6 @@ class SensorRobotEnv(MJCFBaseEnv):
             self.ground_ids = set([(self.building_scene.building_obj, 0)])
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
         for i in range (p.getNumBodies()):
-            print(p.getBodyInfo(i)[0].decode(), self.robot_body.get_name())
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
         i = 0
@@ -145,7 +146,9 @@ class SensorRobotEnv(MJCFBaseEnv):
 
         if self.isRender:
             humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
-            p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'],-35,humanPos);       ## demo: kitchen, living room
+            humanPos = (humanPos[0], humanPos[1], humanPos[2] + self.tracking_camera['z_offset'])
+            
+            p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],humanPos);       ## demo: kitchen, living room
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
