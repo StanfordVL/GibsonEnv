@@ -18,7 +18,7 @@ from numpy import cos, sin
 from realenv.core.render.profiler import Profiler
 from multiprocessing import Process
 
-from realenv.data.datasets import ViewDataSet3D, MAKE_VIDEO, HIGH_RES_MONITOR
+from realenv.data.datasets import ViewDataSet3D, MAKE_VIDEO, HIGH_RES_MONITOR, LIVE_DEMO
 from realenv.core.render.completion import CompletionNet
 from realenv.learn.completion2 import CompletionNet2
 import torch.nn as nn
@@ -123,9 +123,13 @@ class PCRenderer:
             cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
             cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
 
-        cv2.imshow('RGB cam', self.show_rgb)
-        cv2.imshow('Depth cam', self.show_rgb)
-        cv2.setMouseCallback('RGB cam',self._onmouse)
+        if LIVE_DEMO:
+            cv2.moveWindow('RGB cam', -1 , 768)
+            cv2.moveWindow('Depth cam', 512 + LINUX_OFFSET['x_delta'], 768)
+
+        #cv2.imshow('RGB cam', self.show_rgb)
+        #cv2.imshow('Depth cam', self.show_rgb)
+        #cv2.setMouseCallback('RGB cam',self._onmouse)
 
 
     def _onmouse(self, *args):
