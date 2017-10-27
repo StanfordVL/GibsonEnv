@@ -25,7 +25,8 @@ class BuildingScene(Scene):
         print(filename)
         #visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = 0)
-        #p.changeVisualShape(boundaryUid, -1, rgbaColor=[1, 0.2, 0.2, 0.3], specularColor=[1, 1, 1])
+        #visualId = p.loadTexture(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tex256.png"))
+        #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
         #self.building_obj = [collisionId]
         #planeName = os.path.join(pybullet_data.getDataPath(),"mjcf/ground_plane.xml")
         #self.ground_plane_mjcf = p.loadMJCF(planeName)
@@ -33,10 +34,12 @@ class BuildingScene(Scene):
         p.changeDynamics(boundaryUid, -1, lateralFriction=0.8, spinningFriction=0.1, rollingFriction=0.1)
         self.building_obj = (boundaryUid, )
         #self.building_obj = (int(p.loadURDF(filename)), )
-        for i in self.building_obj:
+        
+        #for i in self.building_obj:
             #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-            p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
-
+            #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
+            #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
+        
 
 class SinglePlayerBuildingScene(BuildingScene):
     multiplayer = False

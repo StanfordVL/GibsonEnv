@@ -21,13 +21,13 @@ class RandomAgent(object):
         else:
             action = np.zeros(self.action_space.shape[0])
             if (np.random.random() < 0.5):
-                action[np.random.choice(action.shape[0], 1)] = np.random.randint(0, 2)
+                action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
         return action
 
 if __name__ == '__main__':
-    env = HuskyCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True, is_discrete = True)
+    env = HuskyCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True, is_discrete = False)
     env.reset()
-    agent = RandomAgent(env.action_space, is_discrete = True)
+    agent = RandomAgent(env.action_space, is_discrete = False)
     ob = None
 
     while 1:
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         restart_delay = 0
         obs = env.reset()
         while True:
-            time.sleep(0.03)
+            time.sleep(0.01)
             a = agent.act(obs)
             with Profiler("Agent step function"):
                 obs, r, done, meta = env.step(a)

@@ -61,11 +61,15 @@ class MJCFBaseEnv(gym.Env):
                 if (self.human):
                     self.physicsClientId = p.connect(p.GUI)
                     if MAKE_VIDEO:
-                        self.set_window(-1, -1, 1024, 512)
+                        #self.set_window(-1, -1, 1024, 512)
+                        self.set_window(-1, -1, 512, 512)
                 else:
                     self.physicsClientId = p.connect(p.DIRECT)
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
         p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
+        p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
+        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
+        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 
         if self.scene is None:
             self.scene = self.create_single_player_scene()
@@ -124,16 +128,19 @@ class MJCFBaseEnv(gym.Env):
             self.physicsClientId = -1
     
     def set_window(self, posX, posY, sizeX, sizeY):
-        values = {        
+        values = {      
+            'name': "robot",  
             'gravity': 0,
             'posX': int(posX),
             'posY': int(posY),
             'sizeX': int(sizeX),
             'sizeY': int(sizeY)
         }
-        #os.system('wmctrl -r :ACTIVE: -e {},{},{},{},{}'.format(0, posX, posY, sizeX, sizeY))
-        cmd = 'wmctrl -r :ACTIVE: -e {gravity},{posX},{posY},{sizeX},{sizeY}'.format(**values)
+        cmd = "xdotool search --name \"Bullet Physics\" set_window --name \"robot's world\""
         os.system(cmd)
+        cmd = 'wmctrl -r {name} -e {gravity},{posX},{posY},{sizeX},{sizeY}'.format(**values)
+        os.system(cmd)
+        
 
     def HUD(self, state, a, done):
         pass
