@@ -19,6 +19,7 @@ import pickle
 
 HIGH_RES_MONITOR = False
 MAKE_VIDEO = False
+LIVE_DEMO = True
 
 ## Small model: 11HB6XZSh1Q
 ## Gates Huang: BbxejD15Etk

@@ -237,7 +237,7 @@ class Husky(WalkerBase):
 		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 
 		self.torque = 0.1
-		self.action_list = [[0, 0,self.torque,self.torque], [0,0,-self.torque,-self.torque], [self.torque,-self.torque,self.torque,-self.torque],[-self.torque,self.torque,-self.torque,self.torque], [0, 0, 0, 0]]
+		self.action_list = [[0, 0, 0.9 *self.torque, 0.9*self.torque], [- 1.5* self.torque,- 1.5* self.torque, 0, 0], [self.torque,-self.torque,self.torque,-self.torque],[-self.torque,self.torque,-self.torque,self.torque], [0, 0, 0, 0]]
 		self.setup_keys_to_action()
         
 	def apply_action(self, action):

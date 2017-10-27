@@ -27,15 +27,16 @@ class HuskyCameraEnv(HuskyEnv, CameraRobotEnv):
         HuskyEnv.__init__(self, is_discrete)
         CameraRobotEnv.__init__(self)
 
-        self.tracking_camera['pitch'] = -45 ## stairs
+        #self.tracking_camera['pitch'] = -45 ## stairs
         #yaw = 0     ## demo: living room
         #yaw = 30    ## demo: kitchen
-        self.tracking_camera['yaw'] = 90     ## demo: stairs
+        
+        #self.tracking_camera['yaw'] = 90     ## demo: stairs
 
-        '''
-        self.tracking_camera['yaw'] = 80
+        
+        self.tracking_camera['yaw'] = 90   ## living roon
         self.tracking_camera['pitch'] = -10
-        '''
+        
         self.tracking_camera['distance'] = 1.2
         self.tracking_camera['z_offset'] = 0.5
 

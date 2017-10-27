@@ -98,7 +98,7 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
         #    assert False, env.spec.id + " does not have explicit key to action mapping, " + \
         #                  "please specify one manually"
     relevant_keys = set(sum(map(list, keys_to_action.keys()),[]))
-
+    relevant_keys.add(ord('r'))
     '''
     if transpose:
         video_size = env.observation_space.shape[1], env.observation_space.shape[0]
@@ -116,11 +116,13 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
     print("keys to actions", keys_to_action)
 
     obs = env.reset()
+
+    do_restart = False
     while running:
-        #if env_done:
-        #    env_done = False
-        #    obs = env.reset()
-        #else:
+        if do_restart:
+            do_restart = False
+            env.reset()
+            continue
         if len(pressed_keys) == 0:
             action = keys_to_action[()]
             obs, rew, env_done, info = env.step(action)
@@ -145,7 +147,6 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
         print(events)
         key_codes = events.keys()
         for key in key_codes:
-            print(key, events[key], p.KEY_IS_DOWN, p.KEY_WAS_RELEASED)
             if key not in relevant_keys:
                 continue
             # test events, set key states
@@ -158,6 +159,11 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
                 #if event.key in relevant_keys:
                 if key in pressed_keys:
                     pressed_keys.remove(key)
+
+            print(ord('r') in key_codes)
+            if ord('r') in key_codes and events[ord('r')] == p.KEY_IS_DOWN:
+                do_restart = True
+                pressed_keys = []
             #print(pressed_keys)
             '''
             elif event.type == pygame.QUIT:
