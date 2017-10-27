@@ -31,12 +31,13 @@ class MJCFBaseEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self, human=True):
+    def __init__(self):
+        ## Properties already instantiated from SensorEnv/CameraEnv
+        #   @self.human
+        #   @self.robot
         self.scene = None
         self.physicsClientId=-1
         self.camera = Camera()
-        self.isRender = human
-        #self.robot = robot     ## Instantiated in xxx_env.py
         self._seed()
         self._cam_dist = 3
         self._cam_yaw = 0
@@ -57,7 +58,7 @@ class MJCFBaseEnv(gym.Env):
         if (self.physicsClientId<0):
             self.physicsClientId = p.connect(p.SHARED_MEMORY)
             if (self.physicsClientId < 0):
-                if (self.isRender):
+                if (self.human):
                     self.physicsClientId = p.connect(p.GUI)
                     self.set_window(-1, -1, 1024, 512)
                 else:
@@ -82,7 +83,7 @@ class MJCFBaseEnv(gym.Env):
 
     def _render(self, mode, close):
         if (mode=="human"):
-            self.isRender = True
+            self.human = True
         if mode != "rgb_array":
             return np.array([])
         

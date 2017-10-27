@@ -34,17 +34,19 @@ DEFAULT_DEBUG_CAMERA = {
 #yaw = 90     ## demo: stairs
 
 class SensorRobotEnv(MJCFBaseEnv):
+    def __init__(self):
+        MJCFBaseEnv.__init__(self)
+        ## The following properties are already instantiated inside xxx_env.py:
+        #   @self.human
+        #   @self.timestep
+        #   @self.frame_skip
+        #   @self.enable_sensors
 
-
-    def __init__(self, human, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP):
-        MJCFBaseEnv.__init__(self, human)
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
 
         self.k = 5
-        self.timestep=timestep
-        self.frame_skip=frame_skip
         self.robot_tracking_id = -1
 
         self.model_path, self.model_id = get_model_path()
@@ -144,7 +146,7 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.HUD(state, a, done)
         self.reward += sum(self.rewards)
 
-        if self.isRender:
+        if self.human:
             humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
             humanPos = (humanPos[0], humanPos[1], humanPos[2] + self.tracking_camera['z_offset'])
             
@@ -220,11 +222,15 @@ class SensorRobotEnv(MJCFBaseEnv):
     
 
 class CameraRobotEnv(SensorRobotEnv):
-    def __init__(self, human, timestep=DEFAULT_TIMESTEP, frame_skip=DEFAULT_FRAMESKIP, enable_sensors=False):
-        SensorRobotEnv.__init__(self, human, timestep, frame_skip)
+    def __init__(self):
+        SensorRobotEnv.__init__(self)
+        ## The following properties are already instantiated inside xxx_env.py:
+        #   @self.human
+        #   @self.timestep
+        #   @self.frame_skip
+        #   @self.enable_sensors
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
-        self.enable_sensors = enable_sensors
         
     def _reset(self):
         SensorRobotEnv._reset(self)
@@ -233,7 +239,6 @@ class CameraRobotEnv(SensorRobotEnv):
             #PCRenderer.renderToScreenSetup()
             self.setup_camera_multi()
             self.setup_camera_rgb()
-
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
@@ -247,17 +252,16 @@ class CameraRobotEnv(SensorRobotEnv):
         sensor_meta.pop("eye_quat", None)
         
         #with Profiler("Render to screen"):
-        #if not self.debug_mode:
-        #    visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
-        #else:
-        visuals = self.r_camera_rgb.renderToScreen(pose, top_k)
+        if not self.human:
+            visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        else:
+            visuals = self.r_camera_rgb.renderToScreen(pose, top_k)
 
         if self.enable_sensors:
             sensor_meta["rgb"] = visuals
             return sensor_state, sensor_reward , done, sensor_meta
         else:
             return visuals, sensor_reward, done, sensor_meta
-        #return sensor_state, sensor_reward, done, sensor_meta
         
 
     def _close(self):
@@ -300,7 +304,7 @@ class CameraRobotEnv(SensorRobotEnv):
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
 
         PCRenderer.sync_coords()
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.isRender)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human)
         self.r_camera_rgb = renderer
 
 

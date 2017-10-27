@@ -88,7 +88,6 @@ class PCRenderer:
 
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
-
         #self.scale_up = scale_up
 
 
@@ -358,8 +357,7 @@ class PCRenderer:
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
             if self.compare_filler:
                 self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
-
-        #return self.show_rgb
+        return self.show_rgb
 
 
     def renderToScreen(self, pose, k_views=None):
