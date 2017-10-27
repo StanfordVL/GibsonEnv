@@ -18,7 +18,7 @@ from numpy import cos, sin
 from realenv.core.render.profiler import Profiler
 from multiprocessing import Process
 
-from realenv.data.datasets import ViewDataSet3D
+from realenv.data.datasets import ViewDataSet3D, MAKE_VIDEO
 from realenv.core.render.completion import CompletionNet
 from realenv.learn.completion2 import CompletionNet2
 import torch.nn as nn
@@ -81,7 +81,7 @@ class PCRenderer:
         self.target = target
         self.model = None
         self.old_topk = set([])
-        self.compare_filler = False
+        self.compare_filler = MAKE_VIDEO
         self.k = 5
 
         self.showsz = 512
@@ -115,8 +115,9 @@ class PCRenderer:
     def renderToScreenSetup(self):
         cv2.namedWindow('show3d')
         cv2.namedWindow('target depth')
-        cv2.moveWindow('show3d', -30 , self.showsz + LINUX_OFFSET['y_delta'])
-        cv2.moveWindow('target depth', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+        if self.compare_filler:
+            cv2.moveWindow('show3d', -30 , self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.moveWindow('target depth', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
         cv2.imshow('show3d', self.show_rgb)
         cv2.imshow('target depth', self.show_rgb)
         cv2.setMouseCallback('show3d',self._onmouse)
@@ -285,7 +286,7 @@ class PCRenderer:
             mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
             source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
             source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
-            print(mask.size(), source_depth.size())
+            #print(mask.size(), source_depth.size())
             mask = torch.cat([source_depth, mask], 0)
             self.imgv.data.copy_(source)
             self.maskv.data.copy_(mask)
@@ -375,11 +376,13 @@ class PCRenderer:
 
         def _render_rgb(rgb):
             cv2.imshow('show3d',rgb)
-            cv2.moveWindow('show3d', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+            if self.compare_filler:
+                cv2.moveWindow('show3d', -1 , self.showsz + LINUX_OFFSET['y_delta'])
 
         def _render_rgb_unfilled(unfilled_rgb):
-            cv2.imshow('show3d unfilled', show_unfilled_rgb)
-            cv2.moveWindow('target depth', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.imshow('show3d unfilled', unfilled_rgb)
+            if self.compare_filler:
+                cv2.moveWindow('target depth', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
 
         """
         render_threads = [

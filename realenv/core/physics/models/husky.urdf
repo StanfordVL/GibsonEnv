@@ -101,7 +101,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <!-- Robot camera -->
   <link name="eyes"/>
   <joint name="eyes_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0.19 0 0.149"/>
+    <!-- camera is located at front bar -->
+    <origin rpy="0 0 0" xyz="-0.4 0 0.149"/>
     <parent link="base_link"/>
     <child link="eyes"/>
   </joint>

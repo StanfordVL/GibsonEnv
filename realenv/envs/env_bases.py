@@ -14,7 +14,7 @@ from transforms3d import euler, quaternions
 from realenv.core.physics.physics_object import PhysicsObject
 from realenv.core.render.profiler import Profiler
 from realenv.core.physics.scene_building import SinglePlayerBuildingScene
-from realenv.data.datasets import get_engine_framerate
+from realenv.data.datasets import get_engine_framerate, MAKE_VIDEO
 import gym, gym.spaces, gym.utils, gym.utils.seeding
 import sys
 
@@ -60,7 +60,8 @@ class MJCFBaseEnv(gym.Env):
             if (self.physicsClientId < 0):
                 if (self.human):
                     self.physicsClientId = p.connect(p.GUI)
-                    self.set_window(-1, -1, 1024, 512)
+                    if MAKE_VIDEO:
+                        self.set_window(-1, -1, 1024, 512)
                 else:
                     self.physicsClientId = p.connect(p.DIRECT)
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)

@@ -27,6 +27,14 @@ class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
         self.enable_sensors = enable_sensors
         HumanoidEnv.__init__(self)
         CameraRobotEnv.__init__(self)
+        self.tracking_camera['yaw'] = 60
+        self.tracking_camera['distance'] = 1.5
+        #distance=2.5 ## demo: living room ,kitchen
+        #distance=1.7   ## demo: stairs
+        #yaw = 0     ## demo: living room
+        #yaw = 30    ## demo: kitchen
+        #yaw = 90     ## demo: stairs
+
 
 class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
