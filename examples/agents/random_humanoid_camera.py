@@ -13,21 +13,14 @@ class RandomAgent(object):
     """The world's simplest agent"""
     def __init__(self, action_space):
         self.action_space = action_space
-        self.time = 0
-        self.repeat = 1
-        self.action_last  = np.zeros(self.action_space.shape[0])
-
+        
     def act(self, observation, reward=None):
-        if self.time < self.repeat:
-            self.time = self.time + 1
-            return self.action_last
-        else:
-            self.time = 0
-            action = np.zeros(self.action_space.shape[0])
-            #action[np.random.randint(0, len(action))] = 1
-            action = [0] * self.action_space.shape[0]
-            self.action_last = action
-            return action
+        action = np.zeros(self.action_space.shape[0])
+        #action[np.random.randint(0, len(action))] = 1
+        if (np.random.random() < 0.7):
+            action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
+        self.action_last = action
+        return action
 
 if __name__ == '__main__':
     env = HumanoidCameraEnv(human=True, enable_sensors=True)
