@@ -22,7 +22,7 @@ def callback(lcl, glb):
 
 def main():
   
-    env = HuskySensorEnv(human=True, is_discrete=True)
+    env = HuskySensorEnv(human=True, is_discrete=True, enable_sensors=True)
     model = deepq.models.mlp([64])
     act = deepq.learn(
         env,

@@ -252,17 +252,16 @@ class CameraRobotEnv(SensorRobotEnv):
         sensor_meta.pop("eye_quat", None)
         
         #with Profiler("Render to screen"):
-        #if not self.debug_mode:
-        #    visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
-        #else:
-        visuals = self.r_camera_rgb.renderToScreen(pose, top_k)
+        if not self.human:
+            visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        else:
+            visuals = self.r_camera_rgb.renderToScreen(pose, top_k)
 
         if self.enable_sensors:
             sensor_meta["rgb"] = visuals
             return sensor_state, sensor_reward , done, sensor_meta
         else:
             return visuals, sensor_reward, done, sensor_meta
-        #return sensor_state, sensor_reward, done, sensor_meta
         
 
     def _close(self):
