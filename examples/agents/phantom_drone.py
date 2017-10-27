@@ -3,7 +3,7 @@ import time
 import numpy as np
 import sys
 from PIL import Image
-from realenv.envs.simple_env import SimpleEnv
+from realenv.envs.simple_env import SimpleEnv, SimpleDebugEnv
 from generate_actions import *
 from realenv.core.render.profiler import Profiler
 
@@ -30,18 +30,18 @@ class RandomAgent(object):
 if __name__ == '__main__':
     action_space = generate_actions()
     agent = RandomAgent(action_space)
-    env = SimpleEnv(human=True, debug=True, scale_up = 1)
+    env = SimpleDebugEnv(human=True, debug=True)
     ob = None
 
     i = 0
     try:
         while True:
             if (i <= 14):
-                observation, reward, done, info = env._step({})
+                observation, reward = env._step({})
             else:
                 action = agent.act(ob)
                 with Profiler("Agent step function"):
-                    observation, reward, done, info = env._step(action)
+                    observation, reward = env._step(action)
                 print("Husky action", action, "reward %.3f"% reward)
             i = i + 1
             print("current step", i)

@@ -9,13 +9,16 @@ import json
 import codecs
 import numpy as np
 import ctypes as ct
-import progressbar
 import sys
+from tqdm import *
 import torchvision.transforms as transforms
 import argparse
 import json
 from numpy.linalg import inv
 import pickle
+
+
+MAKE_VIDEO = False
 
 ## Small model: 11HB6XZSh1Q
 ## Gates Huang: BbxejD15Etk
@@ -50,12 +53,21 @@ def get_model_path(idx=0):
 def get_model_initial_pose(robot):
     if robot=="humanoid":
         if MODEL_ID == "11HB6XZSh1Q":
-            # -3.38, -7, 1.4
-            return [0, 0, 3 * 3.14/2], [-5, -5, 1.9] ## small model living room
+            #return [0, 0, 3 * 3.14/2], [-3.38, -7, 1.4] ## living room open area
+            #return [0, 0, 3 * 3.14/2], [-4.8, -5.2, 1.9]   ## living room kitchen table
+            return [0, 0, 3.14/2], [-4.655, -9.038, 1.532]  ## living room couch
+            #return [0, 0, 3.14], [-0.603, -1.24, 2.35]
         if MODEL_ID == "BbxejD15Etk":
             return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
+    elif robot=="husky":
+        return [0, 0, 3.14], [-2, 3.5, 0.4]
     else:
         return [0, 0, 0], [0, 0, 1.4]
+
+def get_engine_framerate():
+    timestep=1.0/(4*14)
+    frame_skip=4
+    return timestep, frame_skip
 
 
 class ViewDataSet3D(data.Dataset):
@@ -87,12 +99,6 @@ class ViewDataSet3D(data.Dataset):
             if train:
                 self.scenes = self.scenes[:num_train]
 
-            self.bar  = progressbar.ProgressBar(widgets=[
-                        ' [', progressbar.Timer(), '] ',
-                        progressbar.Bar(),
-                        ' (', progressbar.ETA(), ') ',
-                        ])
-
             self.meta = {}
             if debug:
                 last = 35
@@ -105,9 +111,9 @@ class ViewDataSet3D(data.Dataset):
                     for line in f:
                         l = line.strip().split(',')
                         uuid = l[0]
-                        xyz  = map(float, l[1:4])
-                        quat = map(float, l[4:8])
-                        if not self.meta.has_key(scene):
+                        xyz  = list(map(float, l[1:4]))
+                        quat = list(map(float, l[4:8]))
+                        if not scene in self.meta:
                             self.meta[scene] = {}
                         metadata = (uuid, xyz, quat)
                         #print(uuid, xyz)
@@ -116,11 +122,11 @@ class ViewDataSet3D(data.Dataset):
                             self.meta[scene][uuid] = metadata
             print("Indexing")
 
-            for scene, meta in self.bar(self.meta.items()):
+            for scene, meta in tqdm(list(self.meta.items())):
                 if len(meta) < self.seqlen:
                     continue
-                for uuid,v in meta.items():
-                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in meta.items()]
+                for uuid,v in list(meta.items()):
+                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in list(meta.items())]
                     dist_list = sorted(dist_list, key = lambda x:x[-1])
 
                     if not dist_filter is None:
@@ -140,10 +146,9 @@ class ViewDataSet3D(data.Dataset):
 
 
 
-    def get_model_obj(self, idx=0):
-        obj_files = [os.path.join(self.root, d, 'modeldata', 'out_z_up.obj') for d in (os.listdir(self.root))]
-        return obj_files[idx]
-
+    def get_model_obj(self):
+        obj_files = os.path.join(self.root, MODEL_ID, 'modeldata', 'out_z_up.obj')
+        return obj_files
 
     def get_scene_info(self, index):
         scene = self.scenes[index]

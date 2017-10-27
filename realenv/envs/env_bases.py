@@ -1,13 +1,29 @@
-import gym, gym.spaces, gym.utils, gym.utils.seeding
-import numpy as np
+## Issue related to time resolution/smoothness
+#  http://bulletphysics.org/mediawiki-1.5.8/index.php/Stepping_The_World
+
 import pybullet as p
+import time
+import random
+import zmq
+import math
+import argparse
+import os
+import json
+import numpy as np
+from transforms3d import euler, quaternions
+from realenv.core.physics.physics_object import PhysicsObject
+from realenv.core.render.profiler import Profiler
+from realenv.core.physics.scene_building import SinglePlayerBuildingScene
+from realenv.data.datasets import get_engine_framerate, MAKE_VIDEO
+import gym, gym.spaces, gym.utils, gym.utils.seeding
+import sys
 
 
-class MJCFBaseBulletEnv(gym.Env):
+class MJCFBaseEnv(gym.Env):
     """
-    Base class for Bullet physics simulation loading MJCF (MuJoCo .xml) environments in a Scene.
-    These environments create single-player scenes and behave like normal Gym environments, if
-    you don't use multiplayer.
+    Base class for loading MJCF (MuJoCo .xml) environments in a Scene.
+    These environments create single-player scenes and behave like normal Gym environments.
+    Multiplayer is not yet supported
     """
 
     metadata = {
@@ -15,12 +31,13 @@ class MJCFBaseBulletEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self, robot, render=False):
+    def __init__(self):
+        ## Properties already instantiated from SensorEnv/CameraEnv
+        #   @self.human
+        #   @self.robot
         self.scene = None
         self.physicsClientId=-1
         self.camera = Camera()
-        self.isRender = render
-        self.robot = robot
         self._seed()
         self._cam_dist = 3
         self._cam_yaw = 0
@@ -28,8 +45,8 @@ class MJCFBaseBulletEnv(gym.Env):
         self._render_width =320
         self._render_height = 240
 
-        self.action_space = robot.action_space
-        self.observation_space = robot.observation_space
+        self.action_space = self.robot.action_space
+        self.observation_space = self.robot.observation_space
     def configure(self, args):
         self.robot.args = args
     def _seed(self, seed=None):
@@ -40,12 +57,15 @@ class MJCFBaseBulletEnv(gym.Env):
     def _reset(self):
         if (self.physicsClientId<0):
             self.physicsClientId = p.connect(p.SHARED_MEMORY)
-            if (self.physicsClientId<0):
-                if (self.isRender):
+            if (self.physicsClientId < 0):
+                if (self.human):
                     self.physicsClientId = p.connect(p.GUI)
+                    if MAKE_VIDEO:
+                        self.set_window(-1, -1, 1024, 512)
                 else:
                     self.physicsClientId = p.connect(p.DIRECT)
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
+        p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
 
         if self.scene is None:
             self.scene = self.create_single_player_scene()
@@ -64,7 +84,7 @@ class MJCFBaseBulletEnv(gym.Env):
 
     def _render(self, mode, close):
         if (mode=="human"):
-            self.isRender = True
+            self.human = True
         if mode != "rgb_array":
             return np.array([])
         
@@ -102,10 +122,23 @@ class MJCFBaseBulletEnv(gym.Env):
         if (self.physicsClientId>=0):
             p.disconnect(self.physicsClientId)
             self.physicsClientId = -1
-
+    
+    def set_window(self, posX, posY, sizeX, sizeY):
+        values = {        
+            'gravity': 0,
+            'posX': int(posX),
+            'posY': int(posY),
+            'sizeX': int(sizeX),
+            'sizeY': int(sizeY)
+        }
+        #os.system('wmctrl -r :ACTIVE: -e {},{},{},{},{}'.format(0, posX, posY, sizeX, sizeY))
+        cmd = 'wmctrl -r :ACTIVE: -e {gravity},{posX},{posY},{sizeX},{sizeY}'.format(**values)
+        os.system(cmd)
 
     def HUD(self, state, a, done):
         pass
+
+
 
 class Camera:
     def __init__(self):
@@ -116,3 +149,5 @@ class Camera:
         distance = 10
         yaw = 10
         p.resetDebugVisualizerCamera(distance, yaw, -20, lookat)
+
+

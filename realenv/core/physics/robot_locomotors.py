@@ -1,7 +1,8 @@
-from robot_bases import MJCFBasedRobot
+from realenv.core.physics.robot_bases import MJCFBasedRobot
 import numpy as np
 import pybullet as p
 import os
+import gym, gym.spaces
 from transforms3d.euler import euler2quat
 from realenv.data.datasets import get_model_initial_pose
 
@@ -17,23 +18,23 @@ class WalkerBase(MJCFBasedRobot):
 		self.walk_target_x = 1e3  # kilometer away
 		self.walk_target_y = 0
 		self.body_xyz=[0,0,0]
+		self.eye_offset_orn = euler2quat(0, 0, 0)
+		self.action_dim = action_dim
 
-	
+
 	def robot_specific_reset(self):
 		for j in self.ordered_joints:
 			j.reset_current_position(self.np_random.uniform(low=-0.1, high=0.1), 0)
 
 		self.feet = [self.parts[f] for f in self.foot_list]
 		self.feet_contact = np.array([0.0 for f in self.foot_list], dtype=np.float32)
-	
+
 		self.scene.actor_introduce(self)
 		self.initial_z = None
 
 	def apply_action(self, a):
 		assert (np.isfinite(a).all())
-		print("ordered joints", len(self.ordered_joints))
 		for n, j in enumerate(self.ordered_joints):
-			print(n, a[n])
 			j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
 
 	def calc_state(self):
@@ -153,7 +154,7 @@ class Humanoid(WalkerBase):
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
-		
+
 		humanoidId = -1
 		numBodies = p.getNumBodies()
 		for i in range (numBodies):
@@ -162,9 +163,9 @@ class Humanoid(WalkerBase):
 		        humanoidId = i
 		## Spherical radiance/glass shield to protect the robot's camera
 		glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))
-		print("setting up glass", glass_id, humanoidId)
+		#print("setting up glass", glass_id, humanoidId)
 		p.changeVisualShape(glass_id[0], -1, rgbaColor=[0, 0, 0, 0])
-		cid = p.createConstraint(humanoidId, -1, glass_id[0],-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
+		#cid = p.createConstraint(humanoidId, -1, glass_id[0],-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
 
 		self.motor_names  = ["abdomen_z", "abdomen_y", "abdomen_x"]
 		self.motor_power  = [100, 100, 100]
@@ -193,11 +194,11 @@ class Humanoid(WalkerBase):
 				orientation = [roll, pitch, yaw]
 			else:
 				position = [0, 0, 1.4]
-				orientation = [0, 0, yaw]  # just face random direction, but stay straight otherwise
 			self.robot_body.reset_position(position)
-			self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(orientation)))
+			# just face random direction, but stay straight otherwise
+			self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
 		self.initial_z = 0.8
-		
+
 		orientation, position = get_model_initial_pose("humanoid")
 		roll  = orientation[0]
 		pitch = orientation[1]
@@ -207,7 +208,7 @@ class Humanoid(WalkerBase):
 
 		## BbxejD15Etk
 
-	
+
 	random_yaw = False
 	random_lean = False
 
@@ -226,8 +227,33 @@ class Humanoid(WalkerBase):
 class Husky(WalkerBase):
 	foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
-	def __init__(self):
-		WalkerBase.__init__(self, "husky.urdf", "husky_robot", action_dim=10, obs_dim=32, power=2.5)
+	def __init__(self, is_discrete):
+		self.is_discrete = is_discrete
+		WalkerBase.__init__(self, "husky.urdf", "husky_robot", action_dim=4, obs_dim=20, power=2.5)
+		if self.is_discrete:
+			self.action_space = gym.spaces.Discrete(4)
+		## specific offset for husky.urdf
+		#self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+
+		self.torque = 0.1
+		self.action_list = [[self.torque,self.torque,self.torque,self.torque], [-self.torque,-self.torque,-self.torque,-self.torque], [self.torque,-self.torque,self.torque,-self.torque],[-self.torque,self.torque,-self.torque,self.torque]]
+        
+	def apply_action(self, action):
+		if self.is_discrete:
+			realaction = self.action_list[action]
+		else:
+			realaction = action
+		WalkerBase.apply_action(self, realaction)
+
+	def robot_specific_reset(self):
+		WalkerBase.robot_specific_reset(self)
+		orientation, position = get_model_initial_pose("husky")
+		roll  = orientation[0]
+		pitch = orientation[1]
+		yaw   = orientation[2]
+		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
+		self.robot_body.reset_position(position)
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground

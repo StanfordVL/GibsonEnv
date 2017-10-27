@@ -8,7 +8,7 @@ Install opencv, pytorch and others
 ```shell
 conda install -c menpo opencv -y
 conda install pytorch torchvision cuda80 -c soumith
-conda install progressbar pillow
+conda install pillow
 pip install zmq
 ```
 

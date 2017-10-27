@@ -57,8 +57,8 @@ using namespace std;
 
 
 // We would expect width and height to be 1024 and 768
-int windowWidth = 768;
-int windowHeight = 768;
+int windowWidth = 512;
+int windowHeight = 512;
 size_t panoWidth = 2048;
 size_t panoHeight = 1024;
 int cudaDevice = -1;
@@ -71,7 +71,7 @@ static glXMakeContextCurrentARBProc   glXMakeContextCurrentARB   = NULL;
 #define checkCudaErrors(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
-   if (code != cudaSuccess) 
+   if (code != cudaSuccess)
    {
       fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
       if (abort) exit(code);
@@ -214,7 +214,7 @@ std::vector<size_t> str_to_vec(std::string str) {
 	    str.erase(0, pos + delimiter.length());
 	    idx += 1;
 	}
-	longs.push_back(std::stoul(str));	
+	longs.push_back(std::stoul(str));
 	return longs;
 }
 
@@ -462,7 +462,7 @@ int main( int argc, char * argv[] )
 
 	// The texture we're going to render to
 	GLuint renderedTexture;
-	
+
 	glGenTextures(1, &renderedTexture);
 
 	// "Bind" the newly created texture : all future texture functions will modify this texture
@@ -547,38 +547,40 @@ int main( int argc, char * argv[] )
     socket.bind ("tcp://127.0.0.1:5555");
 	cudaGetDevice( &cudaDevice );
 	//int g_cuda_device = 0;
-	cudaSetDevice(cudaDevice);	
+	cudaSetDevice(cudaDevice);
 	cudaGLSetGLDevice(cudaDevice);
-	cudaGraphicsResource* resource;			
+	cudaGraphicsResource* resource;
 	checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
 	std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
     int pose_idx = 0;
 	zmq::message_t request;
-	
-	socket.recv (&request);
+
+	//socket.recv (&request);
 	// std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
 	// std::vector<size_t> new_idxs = str_to_vec(request_str);
-	size_t img_size = request.size();
-	typedef boost::multi_array<uint, 3> array_type;
-	const int ndims=3;	
-	boost::multi_array<uint, 3> reordering{boost::extents[img_size / sizeof(uint)][1][1]};
-	// boost::array<array_type::size_type,ndims> orig_dims = {{img_size / sizeof(uint),1,1}};	
-	boost::array<array_type::index,ndims> dims = {{1024, 2048, 3}};       	
-	
+    //size_t img_size = request.size();
+    //size_t img_size = 1024 * 2048 * 3;
+	//typedef boost::multi_array<uint, 3> array_type;
+	//const int ndims=3;
+	//boost::multi_array<uint, 3> reordering{boost::extents[img_size / sizeof(uint)][1][1]};
+	// boost::array<array_type::size_type,ndims> orig_dims = {{img_size / sizeof(uint),1,1}};
+	//boost::array<array_type::index,ndims> dims = {{1024, 2048, 3}};
+
 	// multi_array reordering(orig_dims);
 
-	for (int i = 0; i < (img_size / sizeof(uint)) ; i++) {
-		reordering[i][0][0] = ((uint*)request.data())[i];
-	}
-	
-	reordering.reshape(dims);
+	//for (int i = 0; i < (img_size / sizeof(uint)) ; i++) {
+        //reordering[i][0][0] = ((uint*)request.data())[i];
+	//	reordering[i][0][0] = 0;
+	//}
+
+	//reordering.reshape(dims);
 
 	std::vector<uint> cubeMapCoordToPanoCoord;
 	for(size_t ycoord = 0; ycoord < panoHeight; ycoord++){
 		for(size_t xcoord = 0; xcoord < panoWidth; xcoord++){
-			size_t ind = reordering[ycoord][xcoord][0];
-			size_t corrx = reordering[ycoord][xcoord][1];
-			size_t corry = reordering[ycoord][xcoord][2];
+			size_t ind = 0;//reordering[ycoord][xcoord][0];
+			size_t corrx = 0;//reordering[ycoord][xcoord][1];
+			size_t corry = 0;//reordering[ycoord][xcoord][2];
 
 			cubeMapCoordToPanoCoord.push_back(
 				ind * windowWidth * windowHeight +
@@ -588,9 +590,9 @@ int main( int argc, char * argv[] )
 	}
 
 	uint *d_cubeMapCoordToPanoCoord = copyToGPU(&(cubeMapCoordToPanoCoord[0]), cubeMapCoordToPanoCoord.size());
-	zmq::message_t reply0 (sizeof(float));
-	socket.send(reply0);
-	
+	//zmq::message_t reply0 (sizeof(float));
+	//socket.send(reply0);
+
 	float *cubeMapGpuBuffer = allocateBufferOnGPU(windowHeight * windowWidth * 6);
     cudaMemset(cubeMapGpuBuffer, 0, windowHeight * windowWidth * 6 * sizeof(float));
 
@@ -602,7 +604,7 @@ int main( int argc, char * argv[] )
         //  Wait for next request from client
         socket.recv (&request);
 		boost::timer t;
-        
+
         std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
 
         glm::mat4 viewMat = str_to_mat(request_str);
@@ -636,11 +638,11 @@ int main( int argc, char * argv[] )
         //if (!dataBuffer_c) return false;
 
         bool pano = False;
-        
+
         if (pano)
         {
-            
-        
+
+
             for (int k = 0; k < 6; k ++ )
             {
                 // Render to our framebuffer
@@ -814,7 +816,7 @@ int main( int argc, char * argv[] )
 
                 //glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
                 // float* loc = dataBuffer + windowWidth*windowHeight * k;
-                // glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, 
+                // glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT,
                     // (nSize/3)*sizeof(float), loc);
 
                 // Map the OpenGL texture buffer to CUDA memory space
@@ -831,7 +833,7 @@ int main( int argc, char * argv[] )
 
             }
             checkCudaErrors(cudaStreamSynchronize(0));
-            zmq::message_t reply (panoWidth*panoHeight*sizeof(float));							
+            zmq::message_t reply (panoWidth*panoHeight*sizeof(float));
             projectCubeMapToEquirectangular((float*)reply.data(), cubeMapGpuBuffer, d_cubeMapCoordToPanoCoord, cubeMapCoordToPanoCoord.size(), (size_t) nSize/3);
 
             std::cout << "Render time: " << t.elapsed() << std::endl;
@@ -842,7 +844,7 @@ int main( int argc, char * argv[] )
         }
         else {
         //Pinhole mode
-            
+
             // Render to our framebuffer
 
                 // Clear the screen
@@ -858,7 +860,7 @@ int main( int argc, char * argv[] )
                 glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
                 glm::mat4 ViewMatrix =  getView(viewMat, 2);
                 glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
-               
+
                 glm::mat4 ModelMatrix = glm::mat4(1.0);
 
                 glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
@@ -928,16 +930,16 @@ int main( int argc, char * argv[] )
                 glDisableVertexAttribArray(0);
                 glDisableVertexAttribArray(1);
                 glDisableVertexAttribArray(2);
-            
+
                 zmq::message_t reply (windowWidth*windowHeight*sizeof(float));
                 float * reply_data_handle = (float*)reply.data();
                 glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, windowWidth * windowHeight *sizeof(float), reply_data_handle);
-            
+
                 std::cout << "Render time: " << t.elapsed() << std::endl;
-            
-            
+
+
                 float tmp;
-                
+
                 for (int i = 0; i < windowHeight/2; i++)
                     for (int j = 0; j < windowWidth; j++) {
                     tmp = reply_data_handle[i * windowWidth + j];
@@ -948,7 +950,7 @@ int main( int argc, char * argv[] )
 
                 //free(dataBuffer);
                 //free(dataBuffer_c);
-            
+
         }
 
 
