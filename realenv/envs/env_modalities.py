@@ -82,6 +82,7 @@ class SensorRobotEnv(MJCFBaseEnv):
     foot_ground_object_names = set(["buildingFloor"])  # to distinguish ground and other objects
     joints_at_limit_cost = -0.1 # discourage stuck joints
 
+
     def _step(self, a=None):
         # dummy state if a is None
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
@@ -226,12 +227,12 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = None     ## Multi channel rendering engine
         
     def _reset(self):
-        obs = SensorRobotEnv._reset(self)
         if not self.r_camera_rgb or not self.r_camera_mul:
             self.check_port_available()
             #PCRenderer.renderToScreenSetup()
             self.setup_camera_multi()
             self.setup_camera_rgb()
+        obs = SensorRobotEnv._reset(self)
         return obs
 
     def _step(self, a):
