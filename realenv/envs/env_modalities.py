@@ -226,12 +226,13 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = None     ## Multi channel rendering engine
         
     def _reset(self):
-        SensorRobotEnv._reset(self)
+        obs = SensorRobotEnv._reset(self)
         if not self.r_camera_rgb or not self.r_camera_mul:
             self.check_port_available()
             #PCRenderer.renderToScreenSetup()
             self.setup_camera_multi()
             self.setup_camera_rgb()
+        return obs
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
