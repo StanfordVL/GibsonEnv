@@ -1,5 +1,5 @@
 from realenv.core.physics.scene_building import SinglePlayerBuildingScene
-from realenv.data.datasets import ViewDataSet3D, get_model_path
+from realenv.data.datasets import ViewDataSet3D, get_model_path, MAKE_VIDEO
 from realenv.core.render.show_3d2 import PCRenderer
 from realenv.envs.env_bases import MJCFBaseEnv
 import realenv
@@ -26,12 +26,6 @@ DEFAULT_DEBUG_CAMERA = {
     'pitch': -35,
     'z_offset': 0
 }
-
-#distance=2.5 ## demo: living room ,kitchen
-#distance=1.7   ## demo: stairs
-#yaw = 0     ## demo: living room
-#yaw = 30    ## demo: kitchen
-#yaw = 90     ## demo: stairs
 
 class SensorRobotEnv(MJCFBaseEnv):
     def __init__(self):
@@ -197,7 +191,6 @@ class SensorRobotEnv(MJCFBaseEnv):
                     top_k.append(o)
                 if len(top_k) >= self.k:
                     break 
-        print("Found %d views" % len(top_k), top_k)
         return top_k
 
 
@@ -208,16 +201,6 @@ class SensorRobotEnv(MJCFBaseEnv):
 
     def getExtendedObservation(self):
         pass
-
-
-    def renderToScreenSetup(self):
-        cv2.namedWindow('show3d')
-        cv2.namedWindow('target depth')
-        cv2.moveWindow('show3d',1140,0)
-        cv2.moveWindow('target depth', 1140, 2048)
-        cv2.setMouseCallback('show3d',self._onmouse)
-        if self.compare_filler:
-            cv2.namedWindow('show3d unfilled')
 
     
 

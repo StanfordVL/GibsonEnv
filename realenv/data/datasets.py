@@ -17,6 +17,9 @@ import json
 from numpy.linalg import inv
 import pickle
 
+
+MAKE_VIDEO = False
+
 ## Small model: 11HB6XZSh1Q
 ## Gates Huang: BbxejD15Etk
 MODEL_ID = "11HB6XZSh1Q"

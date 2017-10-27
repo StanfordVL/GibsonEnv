@@ -20,8 +20,8 @@ class RandomAgent(object):
             action = np.random.randint(self.action_space.n)
         else:
             action = np.zeros(self.action_space.shape[0])
-            if (np.random.random() < 0.2):
-                action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
+            if (np.random.random() < 0.5):
+                action[np.random.choice(action.shape[0], 1)] = np.random.randint(0, 2)
         return action
 
 if __name__ == '__main__':
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         restart_delay = 0
         obs = env.reset()
         while True:
-            time.sleep(0.07)
+            time.sleep(0.03)
             a = agent.act(obs)
             with Profiler("Agent step function"):
                 obs, r, done, meta = env.step(a)
@@ -46,7 +46,7 @@ if __name__ == '__main__':
             if not done and frame < 60: continue
             if restart_delay==0:
                 print("score=%0.2f in %i frames" % (score, frame))
-                restart_delay = 20 * 4  # 2 sec at 60 fps
+                restart_delay = 20 * 6  # 2 sec at 60 fps
             else:
                 restart_delay -= 1
                 if restart_delay==0: break
