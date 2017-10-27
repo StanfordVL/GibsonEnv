@@ -11,19 +11,23 @@ import pybullet as p
 
 class RandomAgent(object):
     """The world's simplest agent"""
-    def __init__(self, action_space):
+    def __init__(self, action_space, is_discrete = False):
         self.action_space = action_space
+        self.is_discrete = is_discrete
         
     def act(self, observation, reward=None):
-        action = np.zeros(self.action_space.shape[0])
-        if (np.random.random() < 0.2):
-            action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
+        if self.is_discrete:
+            action = np.random.randint(self.action_space.n)
+        else:
+            action = np.zeros(self.action_space.shape[0])
+            if (np.random.random() < 0.2):
+                action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
         return action
 
 if __name__ == '__main__':
-    env = HuskySensorEnv(human=True, enable_sensors=True)
+    env = HuskySensorEnv(human=True, enable_sensors=True, is_discrete = True)
     env.reset()
-    agent = RandomAgent(env.action_space)
+    agent = RandomAgent(env.action_space,  is_discrete = True)
     ob = None
 
     while 1:
