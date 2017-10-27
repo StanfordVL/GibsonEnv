@@ -21,7 +21,7 @@ class RandomAgent(object):
         return action
 
 if __name__ == '__main__':
-    env = HuskyCameraEnv(human=True, enable_sensors=True)
+    env = HuskyCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
     env.reset()
     agent = RandomAgent(env.action_space)
     ob = None
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         restart_delay = 0
         obs = env.reset()
         while True:
-            time.sleep(0.01)
+            time.sleep(0.07)
             a = agent.act(obs)
             with Profiler("Agent step function"):
                 obs, r, done, meta = env.step(a)

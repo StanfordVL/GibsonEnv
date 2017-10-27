@@ -22,7 +22,7 @@ class RandomAgent(object):
 
 if __name__ == '__main__':
     #env = gym.make('HumanoidSensor-v0')
-    env = HumanoidSensorEnv(human=True)
+    env = HumanoidSensorEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
     env.reset()
     agent = RandomAgent(env.action_space)
     ob = None

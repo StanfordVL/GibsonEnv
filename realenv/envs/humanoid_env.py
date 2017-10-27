@@ -21,12 +21,19 @@ class HumanoidEnv(gym.Env):
 class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
         frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False):
+        self.human = human
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        self.enable_sensors = enable_sensors
         HumanoidEnv.__init__(self)
-        CameraRobotEnv.__init__(self, human, timestep=timestep, 
-            frame_skip=frame_skip, enable_sensors=enable_sensors)
+        CameraRobotEnv.__init__(self)
 
 class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
         frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False):
+        self.human = human
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        self.enable_sensors = enable_sensors
         HumanoidEnv.__init__(self)
-        SensorRobotEnv.__init__(self, human)
+        SensorRobotEnv.__init__(self)
