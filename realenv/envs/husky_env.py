@@ -17,9 +17,12 @@ class HuskyCameraEnv(HuskyEnv, CameraRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
         frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False,
         is_discrete=False):
+        self.human = human
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        self.enable_sensors = enable_sensors
         HuskyEnv.__init__(self, is_discrete)
-        CameraRobotEnv.__init__(self, human, timestep=timestep, 
-            frame_skip=frame_skip, enable_sensors=enable_sensors)
+        CameraRobotEnv.__init__(self)
         self.tracking_camera['yaw'] = 80
         self.tracking_camera['pitch'] = -10
         self.tracking_camera['distance'] = 1.5
@@ -29,8 +32,11 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
         frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False,
         is_discrete=False):
+        self.human = human
+        self.timestep = timestep
+        self.frame_skip = frame_skip
         HuskyEnv.__init__(self, is_discrete)
-        SensorRobotEnv.__init__(self, human)
+        SensorRobotEnv.__init__(self)
 
 
 
