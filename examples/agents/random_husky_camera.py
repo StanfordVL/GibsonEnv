@@ -24,7 +24,8 @@ class RandomAgent(object):
         else:
             self.time = 0
             action = np.zeros(self.action_space.shape[0])
-            #action[np.random.choice(action.shape[0], 1)] = np.random.choice(2, 1) - 1
+            if (np.random.random() < 0.7):
+                action[np.random.choice(action.shape[0], 1)] = np.random.choice(2, 1) - 1
             self.action_last = action
             return action
 
