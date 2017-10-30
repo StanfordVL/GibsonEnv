@@ -99,7 +99,39 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <child link="imu_link"/>
   </joint>
   <!-- Robot camera -->
-  <link name="eyes"/>
+  <link name="eyes">
+  <visual>
+  <origin xyz="0 0 0" rpy="0 1.5708 0" />
+  <geometry>
+         <cylinder radius="0.03" length="0.02"/>
+  </geometry>
+  <material name="Black">
+    <color rgba="0 0 0 1.0"/>
+  </material>
+  </visual>
+
+ <visual>
+  <origin xyz="0 0 0" rpy="0 1.5708 0" />
+  <geometry>
+         <sphere radius="0.08"/>
+  </geometry>
+  <material name="Black2">
+    <color rgba="0.1 0.1 0.1 0.3"/>
+  </material>
+  </visual>
+
+  <collision>
+  <origin xyz="0 0 0" rpy="0 1.5708 0" />
+  <geometry>
+         <sphere radius="0.08"/>
+  </geometry>
+  <material name="Black">
+    <color rgba="0.1 0.1 0.1 1.0"/>
+  </material>
+  </collision>
+
+
+  </link>
   <joint name="eyes_joint" type="fixed">
     <!-- camera is located at front bar -->
     <origin rpy="0 0 0" xyz="-0.4 0 0.149"/>
@@ -352,6 +384,14 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </geometry>
       <material name="DarkGrey"/>
     </visual>
+
+    <collision>
+      <geometry>
+        <mesh filename="husky_meshes/bumper.stl"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </collision>
+
   </link>
   <joint name="front_bumper" type="fixed">
     <origin rpy="0 0 0" xyz="0.48 0 0.091"/>
@@ -368,6 +408,14 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </geometry>
       <material name="DarkGrey"/>
     </visual>
+
+    <collision>
+      <geometry>
+        <mesh filename="husky_meshes/bumper.stl"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </collision>
+
   </link>
   <joint name="rear_bumper" type="fixed">
     <origin rpy="0 0 3.14159" xyz="-0.48 0 0.091"/>
@@ -377,5 +425,36 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <gazebo reference="rear_bumper_link">
     <material>Gazebo/DarkGrey</material>
   </gazebo>
+
+
+
+   <link name="top_bumper_link">
+
+    <visual>
+      <geometry>
+        <mesh filename="husky_meshes/bumper.stl"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </visual>
+
+    <collision>
+      <geometry>
+        <mesh filename="husky_meshes/bumper.stl"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </collision>
+
+  </link>
+  <joint name="top_bumper" type="fixed">
+    <origin rpy="0 -1.57 0" xyz="0 0 0.27"/>
+    <parent link="base_link"/>
+    <child link="top_bumper_link"/>
+  </joint>
+  <gazebo reference="top_bumper_link">
+    <material>Gazebo/DarkGrey</material>
+  </gazebo>
+
+
+
 </robot>
 
