@@ -13,7 +13,11 @@ class HuskyEnv:
         'video.frames_per_second' : 30
     }
     def __init__(self, is_discrete=False):
+        self.physicsClientId=-1
         self.robot = Husky(is_discrete)
+
+    def get_keys_to_action(self):
+        return self.robot.keys_to_action
         
 
 class HuskyCameraEnv(HuskyEnv, CameraRobotEnv):
@@ -26,10 +30,20 @@ class HuskyCameraEnv(HuskyEnv, CameraRobotEnv):
         self.enable_sensors = enable_sensors
         HuskyEnv.__init__(self, is_discrete)
         CameraRobotEnv.__init__(self)
-        self.tracking_camera['yaw'] = 80
+
+        #self.tracking_camera['pitch'] = -45 ## stairs
+        yaw = 90     ## demo: living room
+        #yaw = 30    ## demo: kitchen
+        offset = 0.5
+        distance = 1.2 ## living room
+        #self.tracking_camera['yaw'] = 90     ## demo: stairs
+
+        
+        self.tracking_camera['yaw'] = yaw   ## living roon
         self.tracking_camera['pitch'] = -10
-        self.tracking_camera['distance'] = 1.5
-        self.tracking_camera['z_offset'] = 0.5
+        
+        self.tracking_camera['distance'] = distance
+        self.tracking_camera['z_offset'] = offset
 
 class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
@@ -136,7 +150,16 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
         print(sum(self.rewards))
         return state, sum(self.rewards), bool(done), {"eye_pos": eye_pos, "eye_quat": eye_quat}
 
+        #self.tracking_camera['pitch'] = -45 ## stairs
+        yaw = 90     ## demo: living room
+        #yaw = 30    ## demo: kitchen
+        offset = 0.5
+        distance = 1.2 ## living room
+        #self.tracking_camera['yaw'] = 90     ## demo: stairs
 
-
-
-
+        
+        self.tracking_camera['yaw'] = yaw   ## living roon
+        self.tracking_camera['pitch'] = -10
+        
+        self.tracking_camera['distance'] = distance
+        self.tracking_camera['z_offset'] = offset

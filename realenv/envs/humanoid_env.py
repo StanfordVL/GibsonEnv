@@ -14,6 +14,7 @@ class HumanoidEnv(gym.Env):
     frame_skip = 20
     def __init__(self):
         self.robot = Humanoid()
+        self.physicsClientId=-1
         self.electricity_cost  = 4.25*SensorRobotEnv.electricity_cost
         self.stall_torque_cost = 4.25*SensorRobotEnv.stall_torque_cost
 
@@ -27,13 +28,17 @@ class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
         self.enable_sensors = enable_sensors
         HumanoidEnv.__init__(self)
         CameraRobotEnv.__init__(self)
-        self.tracking_camera['yaw'] = 60
-        self.tracking_camera['distance'] = 1.5
+        #self.tracking_camera['yaw'] = 30    ## living room
+        #self.tracking_camera['distance'] = 1.5
+        #self.tracking_camera['pitch'] = -45 ## stairs
+
         #distance=2.5 ## demo: living room ,kitchen
-        #distance=1.7   ## demo: stairs
+        self.tracking_camera['distance'] = 1.7   ## demo: stairs
+        self.tracking_camera['pitch'] = -45 ## stairs
+
         #yaw = 0     ## demo: living room
         #yaw = 30    ## demo: kitchen
-        #yaw = 90     ## demo: stairs
+        self.tracking_camera['yaw'] = 70     ## demo: stairs
 
 
 class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):

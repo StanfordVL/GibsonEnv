@@ -2,6 +2,7 @@
 
 import pybullet as p
 import gym, gym.spaces, gym.utils
+from realenv.data.datasets import MODEL_SCALING
 import numpy as np
 import os, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -101,6 +102,7 @@ class MJCFBasedRobot:
 				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), globalScaling = self.scale)
 			if ".urdf" in self.model_file:
 				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), globalScaling = self.scale), )
+
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 
 		self.robot_specific_reset()

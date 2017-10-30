@@ -26,12 +26,6 @@ if __name__ == '__main__':
     env.reset()
     agent = RandomAgent(env.action_space)
     ob = None
-    torsoId = -1
-
-    for i in range (p.getNumBodies()):
-        if (p.getBodyInfo(i)[0].decode() == "torso"):
-           torsoId=i
-    i = 0
 
     while 1:
         frame = 0

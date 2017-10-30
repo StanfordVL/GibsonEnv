@@ -236,11 +236,15 @@ class Husky(WalkerBase):
 		#self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 
-		self.torque = 0.2
+
+		self.torque = 0.1
 		self.action_list = [[self.torque, self.torque, self.torque, self.torque],
 							[-self.torque, -self.torque, -self.torque, -self.torque],
 							[self.torque, -self.torque, self.torque, -self.torque],
-							[-self.torque, self.torque, -self.torque, self.torque], [0, 0, 0, 0]]
+							[-self.torque, self.torque, -self.torque, self.torque],
+							[0, 0, 0, 0]]
+
+		self.setup_keys_to_action()
 
 	def apply_action(self, action):
 		if self.is_discrete:
@@ -260,3 +264,12 @@ class Husky(WalkerBase):
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
+
+	def setup_keys_to_action(self):
+		self.keys_to_action = {
+	        (ord('s'), ): 0, ## backward
+	        (ord('w'), ): 1, ## forward
+	        (ord('d'), ): 2, ## turn right
+	        (ord('a'), ): 3, ## turn left
+	        (): 4
+        }

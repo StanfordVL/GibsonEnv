@@ -18,7 +18,7 @@ from numpy import cos, sin
 from realenv.core.render.profiler import Profiler
 from multiprocessing import Process
 
-from realenv.data.datasets import ViewDataSet3D, MAKE_VIDEO
+from realenv.data.datasets import ViewDataSet3D, MAKE_VIDEO, HIGH_RES_MONITOR, LIVE_DEMO
 from realenv.core.render.completion import CompletionNet
 from realenv.learn.completion2 import CompletionNet2
 import torch.nn as nn
@@ -81,7 +81,6 @@ class PCRenderer:
         self.target = target
         self.model = None
         self.old_topk = set([])
-        self.compare_filler = MAKE_VIDEO
         self.k = 5
 
         self.showsz = 512
@@ -95,7 +94,7 @@ class PCRenderer:
         self.show_rgb   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
 
         self.show_unfilled  = None
-        if self.compare_filler:
+        if MAKE_VIDEO:
             self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
 
 
@@ -113,16 +112,24 @@ class PCRenderer:
             self.renderToScreenSetup()
 
     def renderToScreenSetup(self):
-        cv2.namedWindow('show3d')
-        cv2.namedWindow('target depth')
-        if self.compare_filler:
-            cv2.moveWindow('show3d', -30 , self.showsz + LINUX_OFFSET['y_delta'])
-            cv2.moveWindow('target depth', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
-        cv2.imshow('show3d', self.show_rgb)
-        cv2.imshow('target depth', self.show_rgb)
-        cv2.setMouseCallback('show3d',self._onmouse)
-        if self.compare_filler:
-            cv2.namedWindow('show3d unfilled')
+        cv2.namedWindow('RGB cam')
+        cv2.namedWindow('Depth cam')
+        if MAKE_VIDEO:
+            cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
+            cv2.namedWindow('RGB unfilled')
+            cv2.moveWindow('RGB unfilled', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+        elif HIGH_RES_MONITOR:
+            cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+
+        if LIVE_DEMO:
+            cv2.moveWindow('RGB cam', -1 , 768)
+            cv2.moveWindow('Depth cam', 512, 768)
+
+        #cv2.imshow('RGB cam', self.show_rgb)
+        #cv2.imshow('Depth cam', self.show_rgb)
+        #cv2.setMouseCallback('RGB cam',self._onmouse)
 
 
     def _onmouse(self, *args):
@@ -276,7 +283,7 @@ class PCRenderer:
         #[t.join() for t in threads]
         _render_pc(opengl_arr)
 
-        if self.compare_filler:
+        if MAKE_VIDEO:
             show_unfilled[:, :, :] = show[:, :, :]
         if self.model:
             tf = transforms.ToTensor()
@@ -356,7 +363,7 @@ class PCRenderer:
             self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
 
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
-            if self.compare_filler:
+            if MAKE_VIDEO:
                 self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
         return self.show_rgb
 
@@ -372,18 +379,19 @@ class PCRenderer:
 
         def _render_depth(depth):
             #with Profiler("Render Depth"):
-            cv2.imshow('target depth', depth/16.)
+            cv2.imshow('Depth cam', depth/16.)
+            if HIGH_RES_MONITOR and not MAKE_VIDEO:
+                cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], LINUX_OFFSET['y_delta'])        
 
         def _render_rgb(rgb):
-            cv2.imshow('show3d',rgb)
-            if self.compare_filler:
-                cv2.moveWindow('show3d', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.imshow('RGB cam',rgb)
+            if HIGH_RES_MONITOR and not MAKE_VIDEO:
+                cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
 
         def _render_rgb_unfilled(unfilled_rgb):
-            cv2.imshow('show3d unfilled', unfilled_rgb)
-            if self.compare_filler:
-                cv2.moveWindow('target depth', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
-
+            assert(MAKE_VIDEO)
+            cv2.imshow('RGB unfilled', unfilled_rgb)
+            
         """
         render_threads = [
             Process(target=_render_depth, args=(self.target_depth, )),
@@ -396,9 +404,8 @@ class PCRenderer:
         """
         _render_depth(self.target_depth)
         _render_rgb(self.show_rgb)
-        if self.compare_filler:
+        if MAKE_VIDEO:
             _render_rgb_unfilled(self.show_unfilled_rgb)
-            #cv2.imshow('show3d unfilled', self.show_unfilled_rgb)
                 
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
