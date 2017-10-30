@@ -109,7 +109,7 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
         self.rewards = [
             #alive,
             progress,
-            electricity_cost,
+            #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
         ]

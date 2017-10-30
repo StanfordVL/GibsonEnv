@@ -229,16 +229,16 @@ class Husky(WalkerBase):
 
 	def __init__(self, is_discrete):
 		self.is_discrete = is_discrete
-		WalkerBase.__init__(self, "husky.urdf", "husky_robot", action_dim=4, obs_dim=20, power=2.5, scale = 0.6)
+		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, power=2.5, scale = 0.6)
 		if self.is_discrete:
 			self.action_space = gym.spaces.Discrete(5)
 		## specific offset for husky.urdf
 		#self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 
-		self.torque = 0.3
-		self.action_list = [[0, 0, 0.9 * self.torque, 0.9 * self.torque],
-							[- 1.5 * self.torque, - 1.5 * self.torque, 0, 0],
+		self.torque = 0.2
+		self.action_list = [[self.torque, self.torque, self.torque, self.torque],
+							[-self.torque, -self.torque, -self.torque, -self.torque],
 							[self.torque, -self.torque, self.torque, -self.torque],
 							[-self.torque, self.torque, -self.torque, self.torque], [0, 0, 0, 0]]
 

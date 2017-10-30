@@ -67,6 +67,7 @@ class SensorRobotEnv(MJCFBaseEnv):
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
+            print(p.getBodyInfo(i)[0].decode())
         i = 0
 
         ## TODO (hzyjerry), the original reset() in gym interface returns an env, 
