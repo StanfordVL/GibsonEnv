@@ -107,11 +107,11 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
             print(feet_collision_cost)
 
         self.rewards = [
-            alive,
+            #alive,
             progress,
             electricity_cost,
-            joints_at_limit_cost,
-            feet_collision_cost
+            #joints_at_limit_cost,
+            #feet_collision_cost
         ]
         if (debugmode):
             print("rewards=")
@@ -133,7 +133,7 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
         eye_pos = self.robot.eyes.current_position()
         x, y, z, w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
-
+        print(sum(self.rewards))
         return state, sum(self.rewards), bool(done), {"eye_pos": eye_pos, "eye_quat": eye_quat}
 
 

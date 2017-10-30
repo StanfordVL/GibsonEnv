@@ -17,7 +17,7 @@ class MJCFBasedRobot:
 
 	self_collision = True
 
-	def __init__(self, model_file, robot_name, action_dim, obs_dim):
+	def __init__(self, model_file, robot_name, action_dim, obs_dim, scale = 1):
 		self.parts = None
 		self.jdict = None
 		self.ordered_joints = None
@@ -31,7 +31,7 @@ class MJCFBasedRobot:
 		self.model_file = model_file
 		self.robot_name = robot_name
 		self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
-		
+		self.scale = scale
 
 	def addToScene(self, bodies):
 		if self.parts is not None:
@@ -92,15 +92,15 @@ class MJCFBasedRobot:
 		object_ids = ()
 		if self.self_collision:
 			if ".xml" in self.model_file:
-				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
+				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale)
 			if ".urdf" in self.model_file:
-				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS), )
+				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 		else:
 			if ".xml" in self.model_file:
-				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file))
+				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), globalScaling = self.scale)
 			if ".urdf" in self.model_file:
-				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file)), )
+				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), globalScaling = self.scale), )
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 
 		self.robot_specific_reset()
