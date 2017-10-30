@@ -36,7 +36,6 @@ class MJCFBaseEnv(gym.Env):
         #   @self.human
         #   @self.robot
         self.scene = None
-        self.physicsClientId=-1
         self.camera = Camera()
         self._seed()
         self._cam_dist = 3
@@ -47,14 +46,6 @@ class MJCFBaseEnv(gym.Env):
 
         self.action_space = self.robot.action_space
         self.observation_space = self.robot.observation_space
-    def configure(self, args):
-        self.robot.args = args
-    def _seed(self, seed=None):
-        self.np_random, seed = gym.utils.seeding.np_random(seed)
-        self.robot.np_random = self.np_random # use the same np_randomizer for robot as for env
-        return [seed]
-
-    def _reset(self):
         if (self.physicsClientId<0):
             self.physicsClientId = p.connect(p.SHARED_MEMORY)
             if (self.physicsClientId < 0):
@@ -65,11 +56,20 @@ class MJCFBaseEnv(gym.Env):
                         self.set_window(-1, -1, 512, 512)
                 else:
                     self.physicsClientId = p.connect(p.DIRECT)
+        
+    def configure(self, args):
+        self.robot.args = args
+    def _seed(self, seed=None):
+        self.np_random, seed = gym.utils.seeding.np_random(seed)
+        self.robot.np_random = self.np_random # use the same np_randomizer for robot as for env
+        return [seed]
+
+    def _reset(self):
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
         p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
         p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
         p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
-        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+        #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 
         if self.scene is None:
             self.scene = self.create_single_player_scene()
@@ -136,9 +136,10 @@ class MJCFBaseEnv(gym.Env):
             'sizeX': int(sizeX),
             'sizeY': int(sizeY)
         }
-        cmd = "xdotool search --name \"Bullet Physics\" set_window --name \"robot's world\""
+        cmd = 'wmctrl -r \"Bullet Physics\" -e {gravity},{posX},{posY},{sizeX},{sizeY}'.format(**values)
         os.system(cmd)
-        cmd = 'wmctrl -r {name} -e {gravity},{posX},{posY},{sizeX},{sizeY}'.format(**values)
+
+        cmd = "xdotool search --name \"Bullet Physics\" set_window --name \"robot's world\""
         os.system(cmd)
         
 

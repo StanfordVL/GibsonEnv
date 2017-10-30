@@ -237,7 +237,9 @@ class Husky(WalkerBase):
 		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 
 		self.torque = 0.1
-		self.action_list = [[0, 0, 0.9 *self.torque, 0.9*self.torque], [- 1.5* self.torque,- 1.5* self.torque, 0, 0], [self.torque,-self.torque,self.torque,-self.torque],[-self.torque,self.torque,-self.torque,self.torque], [0, 0, 0, 0]]
+		#self.action_list = [[0, 0, 0.9 *self.torque, 0.9*self.torque], [- 1.5* self.torque,- 1.5* self.torque, 0, 0], [self.torque,-self.torque,self.torque,-self.torque],[-self.torque,self.torque,-self.torque,self.torque], [0, 0, 0, 0]]
+		r_f = 0.7
+		self.action_list = [[0.1 * self.torque, 0.1 * self.torque, self.torque, self.torque], [-0.2 * self.torque, -0.2 * self.torque,  -1.2 * self.torque,  -1.2 * self.torque], [r_f * self.torque,-r_f * self.torque,r_f * self.torque,-r_f * self.torque],[-r_f * self.torque,r_f * self.torque,-r_f * self.torque,r_f * self.torque],[-0.5 * self.torque, -0.5 * self.torque,  -2 * self.torque,  -2 * self.torque], [0, 0, 0, 0]]
 		self.setup_keys_to_action()
         
 	def apply_action(self, action):
@@ -265,5 +267,6 @@ class Husky(WalkerBase):
 	        (ord('w'), ): 1, ## forward
 	        (ord('d'), ): 2, ## turn right
 	        (ord('a'), ): 3, ## turn left
-	        (): 4
+	        (ord('q'), ): 4, ## turn left
+	        (): 5
         }

@@ -2,6 +2,7 @@
 
 import pybullet as p
 import gym, gym.spaces, gym.utils
+from realenv.data.datasets import MODEL_SCALING
 import numpy as np
 import os, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -91,15 +92,15 @@ class MJCFBasedRobot:
 		#print(os.path.join(os.path.dirname(os.path.abspath(__file__)),"models", self.model_file))
 		object_ids = ()
 		if self.self_collision:
-			if ".xml" in self.model_file:
+			if self.model_file and ".xml" in self.model_file:
 				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
-			if ".urdf" in self.model_file:
-				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS), )
+			if self.model_file and ".urdf" in self.model_file:
+				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling=MODEL_SCALING), )
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 		else:
-			if ".xml" in self.model_file:
+			if self.model_file and ".xml" in self.model_file:
 				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file))
-			if ".urdf" in self.model_file:
+			if self.model_file and ".urdf" in self.model_file:
 				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file)), )
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 

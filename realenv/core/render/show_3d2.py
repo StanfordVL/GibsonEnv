@@ -125,7 +125,7 @@ class PCRenderer:
 
         if LIVE_DEMO:
             cv2.moveWindow('RGB cam', -1 , 768)
-            cv2.moveWindow('Depth cam', 512 + LINUX_OFFSET['x_delta'], 768)
+            cv2.moveWindow('Depth cam', 512, 768)
 
         #cv2.imshow('RGB cam', self.show_rgb)
         #cv2.imshow('Depth cam', self.show_rgb)
