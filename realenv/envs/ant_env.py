@@ -23,7 +23,7 @@ class AntCameraEnv(AntEnv, CameraRobotEnv):
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.enable_sensors = enable_sensors
-        AntEnv.__init__(self, is_discrete, rgb=False)
+        AntEnv.__init__(self, is_discrete, rgb=True)
         CameraRobotEnv.__init__(self)
 
         #self.tracking_camera['pitch'] = -45 ## stairs

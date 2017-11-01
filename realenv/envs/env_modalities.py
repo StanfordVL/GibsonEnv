@@ -67,10 +67,15 @@ class SensorRobotEnv(MJCFBaseEnv):
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
+            print(p.getBodyInfo(i)[0].decode())
         i = 0
 
         ## TODO (hzyjerry), the original reset() in gym interface returns an env, 
         #return r
+
+        obs, _, _, _ = self._step(None)
+        return obs
+
 
     electricity_cost     = -2.0 # cost for using motors -- this parameter should be carefully tuned against reward for making progress, other values less improtant
     stall_torque_cost   = -0.1  # cost for running electric current through a motor even at zero rotational speed, small
@@ -78,9 +83,12 @@ class SensorRobotEnv(MJCFBaseEnv):
     foot_ground_object_names = set(["buildingFloor"])  # to distinguish ground and other objects
     joints_at_limit_cost = -0.1 # discourage stuck joints
 
-    def _step(self, a):
+
+    def _step(self, a=None):
+        # dummy state if a is None
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
-            self.robot.apply_action(a)
+            if not a is None:
+                self.robot.apply_action(a)
             self.scene.global_step()
 
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
@@ -140,7 +148,8 @@ class SensorRobotEnv(MJCFBaseEnv):
             print(self.rewards)
             print("sum rewards")
             print(sum(self.rewards))
-        self.HUD(state, a, done)
+        if not a is None:
+            self.HUD(state, a, done)
         self.reward += sum(self.rewards)
 
         if self.human:
@@ -219,12 +228,13 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = None     ## Multi channel rendering engine
         
     def _reset(self):
-        SensorRobotEnv._reset(self)
         if not self.r_camera_rgb or not self.r_camera_mul:
             self.check_port_available()
             #PCRenderer.renderToScreenSetup()
             self.setup_camera_multi()
             self.setup_camera_rgb()
+        obs = SensorRobotEnv._reset(self)
+        return obs
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)

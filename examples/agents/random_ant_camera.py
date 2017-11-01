@@ -24,6 +24,8 @@ if __name__ == '__main__':
     #env = gym.make('HumanoidSensor-v0')
     env = AntCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
     env.reset()
+    print(env.observation_space, env.action_space)
+    sys.exit()
     agent = RandomAgent(env.action_space)
     ob = None
 

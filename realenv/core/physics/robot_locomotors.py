@@ -11,16 +11,16 @@ def quatWXYZ2quatXYZW(wxyz):
 	return np.concatenate((wxyz[1:], wxyz[:1]))
 
 class WalkerBase(MJCFBasedRobot):
-	def __init__(self, fn, robot_name, action_dim, obs_dim, power):
-		MJCFBasedRobot.__init__(self, fn, robot_name, action_dim, obs_dim)
+	def __init__(self, fn, robot_name, action_dim, obs_dim, power, scale = 1):
+		MJCFBasedRobot.__init__(self, fn, robot_name, action_dim, obs_dim, scale)
 		self.power = power
 		self.camera_x = 0
-		self.walk_target_x = 1e3  # kilometer away
+		self.walk_target_x = 1  # kilometer away
 		self.walk_target_y = 0
 		self.body_xyz=[0,0,0]
 		self.eye_offset_orn = euler2quat(0, 0, 0)
 		self.action_dim = action_dim
-
+		self.scale = scale
 
 	def robot_specific_reset(self):
 		for j in self.ordered_joints:
@@ -253,19 +253,23 @@ class Husky(WalkerBase):
 
 	def __init__(self, is_discrete):
 		self.is_discrete = is_discrete
-		WalkerBase.__init__(self, "husky.urdf", "husky_robot", action_dim=4, obs_dim=20, power=2.5)
+		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, power=2.5, scale = 0.6)
 		if self.is_discrete:
-			self.action_space = gym.spaces.Discrete(4)
+			self.action_space = gym.spaces.Discrete(5)
 		## specific offset for husky.urdf
 		#self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 
+
 		self.torque = 0.1
-		#self.action_list = [[0, 0, 0.9 *self.torque, 0.9*self.torque], [- 1.5* self.torque,- 1.5* self.torque, 0, 0], [self.torque,-self.torque,self.torque,-self.torque],[-self.torque,self.torque,-self.torque,self.torque], [0, 0, 0, 0]]
-		r_f = 0.7
-		self.action_list = [[0.1 * self.torque, 0.1 * self.torque, self.torque, self.torque], [-0.2 * self.torque, -0.2 * self.torque,  -1.2 * self.torque,  -1.2 * self.torque], [r_f * self.torque,-r_f * self.torque,r_f * self.torque,-r_f * self.torque],[-r_f * self.torque,r_f * self.torque,-r_f * self.torque,r_f * self.torque],[-0.5 * self.torque, -0.5 * self.torque,  -2 * self.torque,  -2 * self.torque], [0, 0, 0, 0]]
+		self.action_list = [[self.torque, self.torque, self.torque, self.torque],
+							[-self.torque, -self.torque, -self.torque, -self.torque],
+							[self.torque, -self.torque, self.torque, -self.torque],
+							[-self.torque, self.torque, -self.torque, self.torque],
+							[0, 0, 0, 0]]
+
 		self.setup_keys_to_action()
-        
+
 	def apply_action(self, action):
 		if self.is_discrete:
 			realaction = self.action_list[action]
@@ -291,6 +295,5 @@ class Husky(WalkerBase):
 	        (ord('w'), ): 1, ## forward
 	        (ord('d'), ): 2, ## turn right
 	        (ord('a'), ): 3, ## turn left
-	        (ord('q'), ): 4, ## turn left
-	        (): 5
+	        (): 4
         }

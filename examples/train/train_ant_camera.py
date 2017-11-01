@@ -27,7 +27,8 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = AntSensorEnv(human=True, is_discrete=False, enable_sensors=False)
+    env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False)
+    
     def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
         return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space)
 
