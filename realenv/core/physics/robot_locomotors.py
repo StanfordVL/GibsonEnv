@@ -33,6 +33,8 @@ class WalkerBase(MJCFBasedRobot):
 		self.initial_z = None
 
 	def apply_action(self, a):
+		if a == None:
+			return
 		assert (np.isfinite(a).all())
 		for n, j in enumerate(self.ordered_joints):
 			j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
@@ -136,8 +138,30 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
 	foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-	def __init__(self):
-		WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=28, power=2.5)
+	def __init__(self, is_discrete, obs_dim=28):
+		WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=obs_dim, power=2.5)
+		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+		self.is_discrete = is_discrete
+		if self.is_discrete:
+			self.action_space = gym.spaces.Discrete(2**8)
+			#self.action_list = [[0.1 * self.torque, 0.1 * self.torque, self.torque, self.torque], [-0.2 * self.torque, -0.2 * self.torque,  -1.2 * self.torque,  -1.2 * self.torque], [r_f * self.torque,-r_f * self.torque,r_f * self.torque,-r_f * self.torque],[-r_f * self.torque,r_f * self.torque,-r_f * self.torque,r_f * self.torque],[-0.5 * self.torque, -0.5 * self.torque,  -2 * self.torque,  -2 * self.torque], [0, 0, 0, 0]]
+
+	def apply_action(self, action):
+		if self.is_discrete:
+			realaction = self.action_list[action]
+		else:
+			realaction = action
+		WalkerBase.apply_action(self, realaction)
+
+	def robot_specific_reset(self):
+		WalkerBase.robot_specific_reset(self)
+		orientation, position = get_model_initial_pose("ant")
+		roll  = orientation[0]
+		pitch = orientation[1]
+		yaw   = orientation[2]
+		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
+		self.robot_body.reset_position(position)
+
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground

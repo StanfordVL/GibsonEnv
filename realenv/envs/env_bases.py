@@ -68,8 +68,9 @@ class MJCFBaseEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
         p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
         p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
-        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
-        #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
+        p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
+        #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 
         if self.scene is None:
             self.scene = self.create_single_player_scene()
@@ -129,7 +130,7 @@ class MJCFBaseEnv(gym.Env):
     
     def set_window(self, posX, posY, sizeX, sizeY):
         values = {      
-            'name': "robot",  
+            'name': "Robot",  
             'gravity': 0,
             'posX': int(posX),
             'posY': int(posY),
@@ -139,7 +140,7 @@ class MJCFBaseEnv(gym.Env):
         cmd = 'wmctrl -r \"Bullet Physics\" -e {gravity},{posX},{posY},{sizeX},{sizeY}'.format(**values)
         os.system(cmd)
 
-        cmd = "xdotool search --name \"Bullet Physics\" set_window --name \"robot's world\""
+        cmd = "xdotool search --name \"Bullet Physics\" set_window --name \"Robot's world\""
         os.system(cmd)
         
 

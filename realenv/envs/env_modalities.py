@@ -1,5 +1,5 @@
 from realenv.core.physics.scene_building import SinglePlayerBuildingScene
-from realenv.data.datasets import ViewDataSet3D, get_model_path, MAKE_VIDEO
+from realenv.data.datasets import ViewDataSet3D, get_model_path, MAKE_VIDEO, USE_MJCF, MJCF_SCALING
 from realenv.core.render.show_3d2 import PCRenderer
 from realenv.envs.env_bases import MJCFBaseEnv
 import realenv
@@ -63,7 +63,7 @@ class SensorRobotEnv(MJCFBaseEnv):
             #print(self.parts)
             #self.ground_ids = set([(self.parts[f].bodies[self.parts[f].bodyIndex], self.parts[f].bodyPartIndex) for f in self.foot_ground_object_names])
             self.ground_ids = set([(self.building_scene.building_obj, 0)])
-            p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
+            #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
@@ -108,8 +108,11 @@ class SensorRobotEnv(MJCFBaseEnv):
                 self.robot.feet_contact[i] = 0.0
         #print(self.robot.feet_contact)
 
-        electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
-        electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        if a != None:
+            electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
+            electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        else:
+            electricity_cost = 0
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode=0
@@ -151,7 +154,7 @@ class SensorRobotEnv(MJCFBaseEnv):
         x, y, z ,w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
 
-        return state, sum(self.rewards), bool(done), {"eye_pos":eye_pos, "eye_quat":eye_quat}
+        return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
 
 
     def move_robot(self, init_x, init_y, init_z):
@@ -225,7 +228,10 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
+        if USE_MJCF:
+            sensor_meta['eye_pos'] = (np.array(sensor_meta['eye_pos']) * MJCF_SCALING).tolist()
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
+
         
         ## Select the nearest points
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)

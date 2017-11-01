@@ -33,12 +33,12 @@ class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
         #self.tracking_camera['pitch'] = -45 ## stairs
 
         #distance=2.5 ## demo: living room ,kitchen
-        self.tracking_camera['distance'] = 1.7   ## demo: stairs
-        self.tracking_camera['pitch'] = -45 ## stairs
+        self.tracking_camera['distance'] = 1.3   ## demo: stairs
+        self.tracking_camera['pitch'] = -35 ## stairs
 
         #yaw = 0     ## demo: living room
         #yaw = 30    ## demo: kitchen
-        self.tracking_camera['yaw'] = 70     ## demo: stairs
+        self.tracking_camera['yaw'] = -60     ## demo: stairs
 
 
 class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):
@@ -50,3 +50,9 @@ class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):
         self.enable_sensors = enable_sensors
         HumanoidEnv.__init__(self)
         SensorRobotEnv.__init__(self)
+        self.tracking_camera['distance'] = 1.3   ## demo: stairs
+        self.tracking_camera['pitch'] = -35 ## stairs
+
+        #yaw = 0     ## demo: living room
+        #yaw = 30    ## demo: kitchen
+        self.tracking_camera['yaw'] = -60     ## demo: stairs

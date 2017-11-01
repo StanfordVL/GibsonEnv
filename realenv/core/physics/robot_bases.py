@@ -2,7 +2,7 @@
 
 import pybullet as p
 import gym, gym.spaces, gym.utils
-from realenv.data.datasets import MODEL_SCALING
+from realenv.data.datasets import MJCF_SCALING, MODEL_SCALING
 import numpy as np
 import os, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -26,12 +26,20 @@ class MJCFBasedRobot:
 
 		high = np.ones([action_dim])
 		self.action_space = gym.spaces.Box(-high, high)
-		high = np.inf * np.ones([obs_dim])
-		self.observation_space = gym.spaces.Box(-high, high)
+		self.obs_dim = obs_dim
+		self.get_obs_space()
 
 		self.model_file = model_file
 		self.robot_name = robot_name
 		self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+
+	def get_obs_space(self):
+		if type(self.obs_dim) == list and len(self.obs_dim) == 1:
+			high = np.inf * np.ones([self.obs_dim])
+			self.observation_space = gym.spaces.Box(-high, high)
+		else:
+			high = np.inf * np.ones(self.obs_dim)
+			self.observation_space = gym.spaces.Box(-high, high)
 		
 
 	def addToScene(self, bodies):
@@ -101,7 +109,7 @@ class MJCFBasedRobot:
 			if self.model_file and ".xml" in self.model_file:
 				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file))
 			if self.model_file and ".urdf" in self.model_file:
-				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file)), )
+				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file,), globalScaling=MODEL_SCALING), )
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 
 		self.robot_specific_reset()

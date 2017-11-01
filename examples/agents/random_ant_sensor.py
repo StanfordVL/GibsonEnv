@@ -5,7 +5,7 @@ import sys
 import gym
 from PIL import Image
 from realenv.core.render.profiler import Profiler
-from realenv.envs.humanoid_env import HumanoidCameraEnv
+from realenv.envs.ant_env import AntSensorEnv
 import pybullet as p
 
 
@@ -13,17 +13,17 @@ class RandomAgent(object):
     """The world's simplest agent"""
     def __init__(self, action_space):
         self.action_space = action_space
+        print("total shape", action_space.shape[0])
         
     def act(self, observation, reward=None):
         action = np.zeros(self.action_space.shape[0])
-        #action[np.random.randint(0, len(action))] = 1
-        if (np.random.random() < 0.7):
+        if (np.random.random() < 1):
             action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
-        self.action_last = action
         return action
 
 if __name__ == '__main__':
-    env = HumanoidCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
+    #env = gym.make('HumanoidSensor-v0')
+    env = AntSensorEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
     env.reset()
     agent = RandomAgent(env.action_space)
     ob = None
@@ -34,17 +34,17 @@ if __name__ == '__main__':
         restart_delay = 0
         obs = env.reset()
         while True:
-            time.sleep(0.5)
+            time.sleep(0.01)
             a = agent.act(obs)
-            with Profiler("Agent step function"):
-                obs, r, done, meta = env.step(a)
+            #with Profiler("Agent step function"):
+            obs, r, done, meta = env.step(a)
             score += r
             frame += 1
-
+            
             if not done and frame < 60: continue
             if restart_delay==0:
                 print("score=%0.2f in %i frames" % (score, frame))
-                restart_delay = 3 * 4  # 2 sec at 60 fps
+                restart_delay = 20000 * 4  # 2 sec at 60 fps
             else:
                 restart_delay -= 1
                 if restart_delay==0: break
