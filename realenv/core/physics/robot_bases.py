@@ -93,7 +93,7 @@ class MJCFBasedRobot:
 		object_ids = ()
 		if self.self_collision:
 			if ".xml" in self.model_file:
-				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale)
+				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
 			if ".urdf" in self.model_file:
 				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
