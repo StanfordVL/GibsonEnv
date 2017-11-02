@@ -230,10 +230,9 @@ class CameraRobotEnv(SensorRobotEnv):
         pose = [eye_pos, eye_quat]
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
-        visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
-        if self.robot.mode == "grey":
-            visuals = np.mean(visuals, axis=2, keepdims=True)
+        visuals = self.get_visuals(rgb, depth)
         return visuals
 
 
@@ -253,20 +252,36 @@ class CameraRobotEnv(SensorRobotEnv):
         
         #with Profiler("Render to screen"):
         if not self.human:
-            visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
+            rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
         else:
-            visuals = self.r_camera_rgb.renderToScreen(pose, top_k)
+            rgb, depth = self.r_camera_rgb.renderToScreen(pose, top_k)
 
         if self.enable_sensors:
             sensor_meta["sensors"] = sensor_state
         
-        if self.robot.mode == "grey":
-            visuals = np.mean(visuals, axis=2, keepdims=True)
+        visuals = self.get_visuals(rgb, depth)
+        #elif self.robot.mode == "rgbd":
+        #    visuals = np.
         return visuals, sensor_reward, done, sensor_meta
         
 
     def _close(self):
         self.r_camera_mul.terminate()
+
+
+    def get_visuals(self, rgb, depth):
+        if self.robot.mode == "GREY":
+            visuals = np.mean(rgb, axis=2, keepdims=True)
+        elif self.robot.mode == "RGB":
+            visuals = rgb
+        elif self.robot.mode == "RGBD":
+            visuals = np.append(rgb, depth, axis=2)
+        elif self.robot.mode == "DEPTH":
+            visuals = depth
+        else:
+            print("Visual mode not supported: {}".format(self.robot.mode))
+            raise AssertionError()
+        return visuals
 
     def setup_camera_rgb(self):
         scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))

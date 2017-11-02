@@ -12,8 +12,8 @@ class HumanoidEnv(gym.Env):
     }
     timestep   = 1/(20 * 4)
     frame_skip = 20
-    def __init__(self):
-        self.robot = Humanoid()
+    def __init__(self, mode="SENSOR"):
+        self.robot = Humanoid(mode)
         self.physicsClientId=-1
         self.electricity_cost  = 4.25*SensorRobotEnv.electricity_cost
         self.stall_torque_cost = 4.25*SensorRobotEnv.stall_torque_cost
@@ -21,12 +21,12 @@ class HumanoidEnv(gym.Env):
 
 class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
-        frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False):
+        frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False, mode='RGBD'):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.enable_sensors = enable_sensors
-        HumanoidEnv.__init__(self)
+        HumanoidEnv.__init__(self, mode)
         CameraRobotEnv.__init__(self)
         #self.tracking_camera['yaw'] = 30    ## living room
         #self.tracking_camera['distance'] = 1.5

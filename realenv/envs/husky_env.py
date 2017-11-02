@@ -12,9 +12,9 @@ class HuskyEnv:
         'render.modes' : ['human', 'rgb_array'],
         'video.frames_per_second' : 30
     }
-    def __init__(self, is_discrete=False):
+    def __init__(self, is_discrete=False, mode="SENSOR"):
         self.physicsClientId=-1
-        self.robot = Husky(is_discrete)
+        self.robot = Husky(is_discrete, mode)
 
     def get_keys_to_action(self):
         return self.robot.keys_to_action
@@ -23,12 +23,12 @@ class HuskyEnv:
 class HuskyCameraEnv(HuskyEnv, CameraRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
         frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False,
-        is_discrete=False):
+        is_discrete=False, mode="RGBD"):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.enable_sensors = enable_sensors
-        HuskyEnv.__init__(self, is_discrete)
+        HuskyEnv.__init__(self, is_discrete, mode)
         CameraRobotEnv.__init__(self)
 
         #self.tracking_camera['pitch'] = -45 ## stairs

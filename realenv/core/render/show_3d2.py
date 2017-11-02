@@ -60,7 +60,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD"):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -83,6 +83,7 @@ class PCRenderer:
         self.model = None
         self.old_topk = set([])
         self.k = 5
+        self.render_mode = render_mode
 
         self.showsz = 256
 
@@ -234,6 +235,8 @@ class PCRenderer:
         quat_wxyz  = utils.quat_xyzw_to_wxyz(utils.mat_to_quat_xyzw(p))
         return pos, quat_wxyz
 
+    def set_render_mode(self, mode):
+        self.render_mode = mode
 
     def render(self, imgs, depths, pose, model, poses, target_pose, show, show_unfilled=None):
         v_cam2world = target_pose
@@ -369,7 +372,7 @@ class PCRenderer:
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
             if MAKE_VIDEO:
                 self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
-        return self.show_rgb
+        return self.show_rgb, self.target_depth[:, :, None]
 
 
     def renderToScreen(self, pose, k_views=None):
@@ -413,7 +416,7 @@ class PCRenderer:
                 
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
-        return self.show_rgb
+        return self.show_rgb, self.target_depth[:, :, None]
     
     @staticmethod
     def sync_coords():
