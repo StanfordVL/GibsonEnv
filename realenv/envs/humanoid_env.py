@@ -21,13 +21,14 @@ class HumanoidEnv(gym.Env):
 
 class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
-        frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False, mode='RGBD'):
+        frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False, 
+        mode='RGBD', use_filler=True):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.enable_sensors = enable_sensors
         HumanoidEnv.__init__(self, mode)
-        CameraRobotEnv.__init__(self)
+        CameraRobotEnv.__init__(self, use_filler)
         #self.tracking_camera['yaw'] = 30    ## living room
         #self.tracking_camera['distance'] = 1.5
         #self.tracking_camera['pitch'] = -45 ## stairs

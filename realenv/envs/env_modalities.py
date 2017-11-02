@@ -210,7 +210,7 @@ class SensorRobotEnv(BaseEnv):
     
 
 class CameraRobotEnv(SensorRobotEnv):
-    def __init__(self):
+    def __init__(self, use_filler):
         SensorRobotEnv.__init__(self)
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
@@ -219,6 +219,7 @@ class CameraRobotEnv(SensorRobotEnv):
         #   @self.enable_sensors
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
+        self.use_filler   = use_filler
         
     def _reset(self):
         if not self.r_camera_rgb or not self.r_camera_mul:
@@ -320,7 +321,7 @@ class CameraRobotEnv(SensorRobotEnv):
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
 
         PCRenderer.sync_coords()
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self.use_filler)
         self.r_camera_rgb = renderer
 
 

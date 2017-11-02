@@ -60,7 +60,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD"):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -84,6 +84,7 @@ class PCRenderer:
         self.old_topk = set([])
         self.k = 5
         self.render_mode = render_mode
+        self.use_filler = use_filler
 
         self.showsz = 256
 
@@ -291,7 +292,7 @@ class PCRenderer:
         if MAKE_VIDEO:
             show_unfilled[:, :, :] = show[:, :, :]
 
-        if self.model:
+        if self.use_filler and self.model:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
             before = time.time()
