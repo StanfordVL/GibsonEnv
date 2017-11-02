@@ -9,7 +9,7 @@ class Scene:
     "A base class for single- and multiplayer scenes"
 
     def __init__(self, gravity, timestep, frame_skip):
-        self.np_random, seed = gym.utils.seeding.np_random(None)
+        #self.np_random, seed = gym.utils.seeding.np_random(None)
         self.timestep = timestep
         self.frame_skip = frame_skip
 

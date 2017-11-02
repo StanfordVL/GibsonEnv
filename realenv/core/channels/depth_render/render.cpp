@@ -57,8 +57,8 @@ using namespace std;
 
 
 // We would expect width and height to be 1024 and 768
-int windowWidth = 512;
-int windowHeight = 512;
+int windowWidth = 256;
+int windowHeight = 256;
 size_t panoWidth = 2048;
 size_t panoHeight = 1024;
 int cudaDevice = -1;
