@@ -599,7 +599,7 @@ int main( int argc, char * argv[] )
 	do{
 
 
-		std::cout << "Realenv Channel Renderer: waiting for pose" << std::endl;
+		//std::cout << "Realenv Channel Renderer: waiting for pose" << std::endl;
 
         //  Wait for next request from client
         socket.recv (&request);
@@ -836,7 +836,7 @@ int main( int argc, char * argv[] )
             zmq::message_t reply (panoWidth*panoHeight*sizeof(float));
             projectCubeMapToEquirectangular((float*)reply.data(), cubeMapGpuBuffer, d_cubeMapCoordToPanoCoord, cubeMapCoordToPanoCoord.size(), (size_t) nSize/3);
 
-            std::cout << "Render time: " << t.elapsed() << std::endl;
+            //std::cout << "Render time: " << t.elapsed() << std::endl;
             socket.send (reply);
 
             //free(dataBuffer);
@@ -935,7 +935,7 @@ int main( int argc, char * argv[] )
                 float * reply_data_handle = (float*)reply.data();
                 glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, windowWidth * windowHeight *sizeof(float), reply_data_handle);
 
-                std::cout << "Render time: " << t.elapsed() << std::endl;
+                //std::cout << "Render time: " << t.elapsed() << std::endl;
 
 
                 float tmp;

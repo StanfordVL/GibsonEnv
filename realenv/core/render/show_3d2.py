@@ -265,7 +265,7 @@ class PCRenderer:
             opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
 
         def _render_pc(opengl_arr):
-            with Profiler("Render pointcloud cuda"):
+            with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
@@ -295,24 +295,20 @@ class PCRenderer:
         if self.use_filler and self.model:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
-            before = time.time()
-            source = tf(show)
-            mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
-            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
-            source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
-            #print(mask.size(), source_depth.size())
-            mask = torch.cat([source_depth, mask], 0)
-            self.imgv.data.copy_(source)
-            self.maskv.data.copy_(mask)
-            print('Transfer time', time.time() - before)
-            before = time.time()
-            recon = model(self.imgv, self.maskv)
-            print('NNtime:', time.time() - before)
-            before = time.time()
-            show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
-            show[:] = (show2[:] * 255).astype(np.uint8)
-            print('Transfer to CPU time:', time.time() - before)
-
+            with Profiler("Transfer time", enable= ENABLE_PROFILING):
+                source = tf(show)
+                mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+                source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
+                source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
+                #print(mask.size(), source_depth.size())
+                mask = torch.cat([source_depth, mask], 0)
+                self.imgv.data.copy_(source)
+                self.maskv.data.copy_(mask)
+            with Profiler("NNtime", enable=ENABLE_PROFILING):
+                recon = model(self.imgv, self.maskv)
+            with Profiler("Transfer to CPU time", enable=ENABLE_PROFILING):
+                show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
+                show[:] = (show2[:] * 255).astype(np.uint8)
 
         self.target_depth = opengl_arr ## target depth
 
@@ -366,7 +362,7 @@ class PCRenderer:
             self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
             self.old_topk = set(k_views)
 
-        with Profiler("Render pointcloud all"):
+        with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
             self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
 
             self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))

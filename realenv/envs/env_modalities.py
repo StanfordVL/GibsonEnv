@@ -60,7 +60,7 @@ class SensorRobotEnv(BaseEnv):
         BaseEnv._reset(self)
         if not self.ground_ids:
             self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
-                self.building_scene.building_obj)
+                (self.building_scene.building_obj, ))
             self.ground_ids = set([(self.building_scene.building_obj, 0)])
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
@@ -81,61 +81,10 @@ class SensorRobotEnv(BaseEnv):
 
 
     def _step(self, a):
-        if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
-            self.robot.apply_action(a)
-            self.scene.global_step()
-
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
 
-        alive = float(self.robot.alive_bonus(state[0]+self.robot.initial_z, self.robot.body_rpy[1]))   # state[0] is body height above ground, body_rpy[1] is pitch
-        done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
-        potential_old = self.potential
-        self.potential = self.robot.calc_potential()
-        progress = float(self.potential - potential_old)
-
-        feet_collision_cost = 0.0
-        for i,f in enumerate(self.robot.feet): # TODO: Maybe calculating feet contacts could be done within the robot code
-            #print(f.contact_list())
-            contact_ids = set((x[2], x[4]) for x in f.contact_list())
-            #print("CONTACT OF '%d' WITH %d" % (contact_ids, ",".join(contact_names)) )
-            if (self.ground_ids & contact_ids):
-                            #see Issue 63: https://github.com/openai/roboschool/issues/63
-                #feet_collision_cost += self.foot_collision_cost
-                self.robot.feet_contact[i] = 1.0
-            else:
-                self.robot.feet_contact[i] = 0.0
-        #print(self.robot.feet_contact)
-
-
-        electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
-        electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
-        
-
-        joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        self.rewards, done = self.calc_rewards(a, state)
         debugmode=0
-        if(debugmode):
-            print("alive=")
-            print(alive)
-            print("progress")
-            print(progress)
-            print("electricity_cost")
-            print(electricity_cost)
-            print("joints_at_limit_cost")
-            print(joints_at_limit_cost)
-            print("feet_collision_cost")
-            print(feet_collision_cost)
-
-        self.rewards = [
-            alive,
-            progress,
-            electricity_cost,
-            joints_at_limit_cost,
-            feet_collision_cost
-            ]
         if (debugmode):
             print("rewards=")
             print(self.rewards)
@@ -156,6 +105,9 @@ class SensorRobotEnv(BaseEnv):
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
 
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
+
+    def calc_rewards(self, a):
+        return -1, False
 
     def get_eye_pos_orientation(self):
         """Used in CameraEnv.setup"""

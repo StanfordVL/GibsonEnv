@@ -4,11 +4,16 @@ import pybullet as p
 import os
 import gym, gym.spaces
 from transforms3d.euler import euler2quat
-from realenv.configs import *
-
+import transforms3d.quaternions as quat
+import realenv.configs as configs
+import sys
 
 def quatWXYZ2quatXYZW(wxyz):
 	return np.concatenate((wxyz[1:], wxyz[:1]))
+
+def quatXYZW2quatWXYZ(wxyz):
+	return np.concatenate((wxyz[-1:], wxyz[:-1]))
+
 
 class WalkerBase(BaseRobot):
 	def __init__(self, 
@@ -18,7 +23,8 @@ class WalkerBase(BaseRobot):
 		power,
 		mode='RGBD',
 		obs_dim=None, 	# observation dimension, needed when mode="sensor"
-		scale = 1
+		scale = 1,
+		target_pos = [1, 0, 0]
 	):
 		assert (type(obs_dim) == int or len(obs_dim) == 3), "Observation space needs to be either integer (sensor) or length 3 list (image). Passed in length is {}".format(len(obs_dim))
 		if mode == "SENSOR":
@@ -39,8 +45,8 @@ class WalkerBase(BaseRobot):
 		self.mode = mode
 		self.power = power
 		self.camera_x = 0
-		self.walk_target_x = 1  # kilometer away
-		self.walk_target_y = 0
+		self.walk_target_x = target_pos[0]  # kilometer away
+		self.walk_target_y = target_pos[1]
 		self.body_xyz=[0,0,0]
 		self.eye_offset_orn = euler2quat(0, 0, 0)
 		self.action_dim = action_dim
@@ -55,6 +61,28 @@ class WalkerBase(BaseRobot):
 
 		self.scene.actor_introduce(self)
 		self.initial_z = None
+
+	def reset_base_position(self, enabled):
+		if not enabled:
+			pass
+		pos = self.robot_body.current_position()
+		orn = self.robot_body.current_orientation()
+		delta_pos = 0.3
+		delta_deg = np.pi/3
+
+		print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
+
+		while True:
+			new_pos = [ pos[0] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
+						pos[1] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
+						pos[2] + self.np_random.uniform(low=-delta_pos, high=delta_pos)]
+			new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_deg, high=delta_deg)), orn)
+			self.robot_body.reset_orientation(new_orn)
+			self.robot_body.reset_position(new_pos)
+			if (len(p.getContactPoints(self.robot_body.bodyIndex)) == 0):
+				break
+			print("collision", p.getContactPoints(self.robot_body.bodyIndex))
+		
 
 	def apply_action(self, a):
 		for n, j in enumerate(self.ordered_joints):
@@ -102,6 +130,8 @@ class WalkerBase(BaseRobot):
 		if (debugmode):
 			print("calc_potential: self.walk_target_dist")
 			print(self.walk_target_dist)
+			print("robot position, target position")
+			print(self.body_xyz, [self.walk_target_x, self.walk_target_y])
 			print("self.scene.dt")
 			print(self.scene.dt)
 			print("self.scene.frame_skip")
@@ -186,7 +216,7 @@ class Ant(WalkerBase):
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
-		orientation, position = INITIAL_POSE["ant"][MODEL_ID][0]
+		orientation, position = configs.INITIAL_POSE["ant"][configs.MODEL_ID][0]
 		roll  = orientation[0]
 		pitch = orientation[1]
 		yaw   = orientation[2]
@@ -255,7 +285,7 @@ class Humanoid(WalkerBase):
 			self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
 		self.initial_z = 0.8
 
-		orientation, position = INITIAL_POSE["humanoid"][MODEL_ID][0]
+		orientation, position = configs.INITIAL_POSE["humanoid"][configs.MODEL_ID][0]
 		roll  = orientation[0]
 		pitch = orientation[1]
 		yaw   = orientation[2]
@@ -283,10 +313,10 @@ class Humanoid(WalkerBase):
 class Husky(WalkerBase):
 	foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
-	def __init__(self, is_discrete, mode='RGBD'):
+	def __init__(self, is_discrete, target_pos, mode='RGBD'):
 		self.model_type = "URDF"
 		self.is_discrete = is_discrete
-		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, mode=mode, power=2.5, scale = 0.6)
+		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, mode=mode, power=2.5, scale = 0.6, target_pos=target_pos)
 		if self.is_discrete:
 			self.action_space = gym.spaces.Discrete(5)
 		## specific offset for husky.urdf
@@ -295,14 +325,20 @@ class Husky(WalkerBase):
 
 
 		self.torque = 0.1
-		self.action_list = [[self.torque, self.torque, self.torque, self.torque],
+		'''self.action_list = [[self.torque, self.torque, self.torque, self.torque],
 							[-self.torque, -self.torque, -self.torque, -self.torque],
+							[self.torque, -self.torque, self.torque, -self.torque],
+							[-self.torque, self.torque, -self.torque, self.torque],
+							[0, 0, 0, 0]]
+		'''
+		self.action_list = [[self.torque/2, self.torque/2, self.torque/2, self.torque/2],
+							[-self.torque/2, -self.torque/2, -self.torque/2, -self.torque/2],
 							[self.torque, -self.torque, self.torque, -self.torque],
 							[-self.torque, self.torque, -self.torque, self.torque],
 							[0, 0, 0, 0]]
 
 		self.setup_keys_to_action()
-
+		
 	def apply_action(self, action):
 		if self.is_discrete:
 			realaction = self.action_list[action]
@@ -312,12 +348,15 @@ class Husky(WalkerBase):
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
-		orientation, position = INITIAL_POSE["husky"][MODEL_ID][0]
+		orientation, position = configs.INITIAL_POSE["husky"][configs.MODEL_ID][0]
 		roll  = orientation[0]
 		pitch = orientation[1]
 		yaw   = orientation[2]
 		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
 		self.robot_body.reset_position(position)
+
+		self.reset_base_position(configs.RANDOM_INITIAL_POSE)
+
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
