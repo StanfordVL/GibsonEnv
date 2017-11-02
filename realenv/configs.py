@@ -1,6 +1,6 @@
 ## Scene configurations
-SCENE_TYPE = 'building'
-#SCENE_TYPE = 'stadium'
+#SCENE_TYPE = 'building'
+SCENE_TYPE = 'stadium'
 
 
 ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because

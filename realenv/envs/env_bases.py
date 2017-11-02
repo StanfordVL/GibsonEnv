@@ -171,6 +171,7 @@ class Camera:
         lookat = [x,y,z]
         distance = 10
         yaw = 10
-        p.resetDebugVisualizerCamera(distance, yaw, -20, lookat)
+        if MAKE_VIDEO:
+            p.resetDebugVisualizerCamera(distance, yaw, -20, lookat)
 
 
