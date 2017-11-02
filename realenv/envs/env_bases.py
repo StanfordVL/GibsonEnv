@@ -72,8 +72,8 @@ class BaseEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
         p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
         p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
-        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
-        p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
+        #p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
+        #p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
         #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     
         #visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
@@ -171,6 +171,7 @@ class Camera:
         lookat = [x,y,z]
         distance = 10
         yaw = 10
-        p.resetDebugVisualizerCamera(distance, yaw, -20, lookat)
+        if MAKE_VIDEO:
+            p.resetDebugVisualizerCamera(distance, yaw, -20, lookat)
 
 

@@ -26,7 +26,7 @@ DEBUG_CAMERA_FOLLOW = True
 
 ## Render window settings
 HIGH_RES_MONITOR = False
-MAKE_VIDEO = False
+MAKE_VIDEO = True
 LIVE_DEMO = False
 
 
