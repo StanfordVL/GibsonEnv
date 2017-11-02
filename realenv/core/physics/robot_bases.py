@@ -27,24 +27,13 @@ class MJCFBasedRobot:
 		high = np.ones([action_dim])
 		self.action_space = gym.spaces.Box(-high, high)
 		self.obs_dim = obs_dim
-		self.get_obs_space()
+		high = np.inf * np.ones(self.obs_dim)
+		self.observation_space = gym.spaces.Box(-high, high)
 
 		self.model_file = model_file
 		self.robot_name = robot_name
 		self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 		self.scale = scale
-
-
-	def get_obs_space(self):
-		if type(self.obs_dim) == int:
-			high = np.inf * np.ones([self.obs_dim, 1])
-			self.observation_space = gym.spaces.Box(-high, high)
-		else:
-			if not len(self.obs_dim) == 3:
-				print("Observation space needs to be either integer (sensor) or length 3 list (image). Passed in length is %d" % len(self.obs_dim))
-				raise AssertionError()
-			high = np.inf * np.ones(self.obs_dim)
-			self.observation_space = gym.spaces.Box(-high, high)
 
 	def addToScene(self, bodies):
 		if self.parts is not None:

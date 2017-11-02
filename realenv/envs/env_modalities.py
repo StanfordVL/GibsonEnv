@@ -46,8 +46,8 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.model_path, self.model_id = get_model_path()
         self.scale_up  = 1
         self.dataset  = ViewDataSet3D(
-            transform = np.array, 
-            mist_transform = np.array, 
+            transform = np.array,
+            mist_transform = np.array,
             seqlen = 2, 
             off_3d = False, 
             train = False, 
@@ -60,10 +60,7 @@ class SensorRobotEnv(MJCFBaseEnv):
         if not self.ground_ids:
             self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
                 self.building_scene.building_obj)
-            #print(self.parts)
-            #self.ground_ids = set([(self.parts[f].bodies[self.parts[f].bodyIndex], self.parts[f].bodyPartIndex) for f in self.foot_ground_object_names])
             self.ground_ids = set([(self.building_scene.building_obj, 0)])
-            #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,1)
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
@@ -180,7 +177,6 @@ class SensorRobotEnv(MJCFBaseEnv):
 
     def find_best_k_views(self, eye_pos, all_dist, all_pos):
         least_order = (np.argsort(all_dist))
-        #print(eye_pos, all_pos)
         if len(all_pos) <= p.MAX_RAY_INTERSECTION_BATCH_SIZE:
             collisions = list(p.rayTestBatch([eye_pos] * len(all_pos), all_pos))
         else:
@@ -195,6 +191,7 @@ class SensorRobotEnv(MJCFBaseEnv):
         for i in range(len(least_order)):
             if len(top_k) >= self.k:
                 break
+            ## (hzyjerry): disabling ray_casting-based view selection because it gives unstable behaviour right now.
             #if collisions[least_order[i]] < 0:
             top_k.append(least_order[i])
         if len(top_k) < self.k:
@@ -230,7 +227,6 @@ class CameraRobotEnv(SensorRobotEnv):
     def _reset(self):
         if not self.r_camera_rgb or not self.r_camera_mul:
             self.check_port_available()
-            #PCRenderer.renderToScreenSetup()
             self.setup_camera_multi()
             self.setup_camera_rgb()
         state = SensorRobotEnv._reset(self)

@@ -20,8 +20,9 @@ class WalkerBase(MJCFBasedRobot):
 		obs_dim=None, 	# observation dimension, needed when mode="sensor" 
 		scale = 1
 	):
+		assert (type(obs_dim) == int or len(obs_dim) == 3), "Observation space needs to be either integer (sensor) or length 3 list (image). Passed in length is {}".format(len(obs_dim))
 		if mode == "sensor":
-			pass
+			obs_dim=[obs_dim, 1]
 		elif mode == "grey":
 			obs_dim=[256, 256, 1]
 		elif mode == "rgb":

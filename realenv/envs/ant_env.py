@@ -7,7 +7,7 @@ ANT_TIMESTEP  = 1.0/(4 * 22)
 ANT_FRAMESKIP = 4
 
 class AntEnv:
-    def __init__(self, is_discrete=False, mode="rgb"):
+    def __init__(self, is_discrete=False, mode="sensor"):
         self.is_discrete = is_discrete
         self.robot = Ant(is_discrete, mode)
         self.physicsClientId=-1
@@ -15,12 +15,12 @@ class AntEnv:
 class AntCameraEnv(AntEnv, CameraRobotEnv):
     def __init__(self, human=True, timestep=ANT_TIMESTEP, 
         frame_skip=ANT_FRAMESKIP, enable_sensors=False,
-        is_discrete=False):
+        is_discrete=False, mode="grey"):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.enable_sensors = enable_sensors
-        AntEnv.__init__(self, is_discrete, mode="grey")
+        AntEnv.__init__(self, is_discrete, mode=mode)
         CameraRobotEnv.__init__(self)
 
         #self.tracking_camera['pitch'] = -45 ## stairs
@@ -48,11 +48,11 @@ class AntCameraEnv(AntEnv, CameraRobotEnv):
 
 class AntSensorEnv(AntEnv, SensorRobotEnv):
     def __init__(self, human=True, timestep=ANT_TIMESTEP, 
-        frame_skip=ANT_FRAMESKIP, is_discrete=False, mode="sensor"):
+        frame_skip=ANT_FRAMESKIP, is_discrete=False):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
-        AntEnv.__init__(self, is_discrete, mode)
+        AntEnv.__init__(self, is_discrete)
         SensorRobotEnv.__init__(self)
 
         #self.tracking_camera['pitch'] = -45 ## stairs
