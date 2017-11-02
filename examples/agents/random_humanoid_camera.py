@@ -23,7 +23,7 @@ class RandomAgent(object):
         return action
 
 if __name__ == '__main__':
-    env = HumanoidCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
+    env = HumanoidCameraEnv(human=False, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True, mode="RGBD", use_filler=False)
     obs = env.reset()
     agent = RandomAgent(env.action_space)
     

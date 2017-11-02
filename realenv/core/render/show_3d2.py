@@ -60,7 +60,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -83,6 +83,8 @@ class PCRenderer:
         self.model = None
         self.old_topk = set([])
         self.k = 5
+        self.render_mode = render_mode
+        self.use_filler = use_filler
 
         self.showsz = 256
 
@@ -234,6 +236,8 @@ class PCRenderer:
         quat_wxyz  = utils.quat_xyzw_to_wxyz(utils.mat_to_quat_xyzw(p))
         return pos, quat_wxyz
 
+    def set_render_mode(self, mode):
+        self.render_mode = mode
 
     def render(self, imgs, depths, pose, model, poses, target_pose, show, show_unfilled=None):
         v_cam2world = target_pose
@@ -261,7 +265,7 @@ class PCRenderer:
             opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
 
         def _render_pc(opengl_arr):
-            with Profiler("Render pointcloud cuda"):
+            with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
                 poses_after = [
                     pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                     for i in range(len(imgs))]
@@ -288,27 +292,23 @@ class PCRenderer:
         if MAKE_VIDEO:
             show_unfilled[:, :, :] = show[:, :, :]
 
-        if self.model:
+        if self.use_filler and self.model:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
-            before = time.time()
-            source = tf(show)
-            mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
-            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
-            source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
-            #print(mask.size(), source_depth.size())
-            mask = torch.cat([source_depth, mask], 0)
-            self.imgv.data.copy_(source)
-            self.maskv.data.copy_(mask)
-            print('Transfer time', time.time() - before)
-            before = time.time()
-            recon = model(self.imgv, self.maskv)
-            print('NNtime:', time.time() - before)
-            before = time.time()
-            show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
-            show[:] = (show2[:] * 255).astype(np.uint8)
-            print('Transfer to CPU time:', time.time() - before)
-
+            with Profiler("Transfer time", enable= ENABLE_PROFILING):
+                source = tf(show)
+                mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+                source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
+                source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
+                #print(mask.size(), source_depth.size())
+                mask = torch.cat([source_depth, mask], 0)
+                self.imgv.data.copy_(source)
+                self.maskv.data.copy_(mask)
+            with Profiler("NNtime", enable=ENABLE_PROFILING):
+                recon = model(self.imgv, self.maskv)
+            with Profiler("Transfer to CPU time", enable=ENABLE_PROFILING):
+                show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
+                show[:] = (show2[:] * 255).astype(np.uint8)
 
         self.target_depth = opengl_arr ## target depth
 
@@ -362,14 +362,14 @@ class PCRenderer:
             self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
             self.old_topk = set(k_views)
 
-        with Profiler("Render pointcloud all"):
+        with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
             self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
 
             self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
             if MAKE_VIDEO:
                 self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
-        return self.show_rgb
+        return self.show_rgb, self.target_depth[:, :, None]
 
 
     def renderToScreen(self, pose, k_views=None):
@@ -413,7 +413,7 @@ class PCRenderer:
                 
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
-        return self.show_rgb
+        return self.show_rgb, self.target_depth[:, :, None]
     
     @staticmethod
     def sync_coords():

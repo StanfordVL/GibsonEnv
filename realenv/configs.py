@@ -1,7 +1,12 @@
 ## Scene configurations
-#SCENE_TYPE = 'building'
-SCENE_TYPE = 'stadium'
+SCENE_TYPE = 'building'
+#SCENE_TYPE = 'stadium'
 
+## Randomize agent initial position & orientation
+RANDOM_INITIAL_POSE = True
+
+
+ENABLE_PROFILING = False
 
 ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
 ## pybullet doesn't yet support downscaling of MJCF objects
@@ -13,7 +18,7 @@ USE_MJCF = True
 ## Gates 1st: sRj553CTHiw
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
-MODEL_ID = "11HB6XZSh1Q"
+MODEL_ID = "sRj553CTHiw"
 
 
 ## Human view camera settings
@@ -21,7 +26,7 @@ DEBUG_CAMERA_FOLLOW = True
 
 ## Render window settings
 HIGH_RES_MONITOR = False
-MAKE_VIDEO = False
+MAKE_VIDEO = True
 LIVE_DEMO = False
 
 
@@ -48,7 +53,9 @@ INITIAL_POSE = {
             [[0, 0, 0], [-0.203, -1.74, 1.8]]  ## stairs
         ],
         "sRj553CTHiw": [
-            [[0, 0, 3.14], [-7, 2.6, 0.8]],
+            [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],
+            [[0, 0, 3.14], [-7, 2.6, 0.5]], 
+            [[0, 0, 3.14/2], [-14.7, 26.85, 0.5]]
         ],
         "BbxejD15Etk": [
             [[0, 0, 3.14], [0, 0, 0.4]],

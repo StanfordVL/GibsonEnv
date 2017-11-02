@@ -3,10 +3,11 @@ import logging
 import time
 
 class Profiler(object):
-  def __init__(self, name, logger=None, level=logging.INFO):
+  def __init__(self, name, logger=None, level=logging.INFO, enable=True):
     self.name = name
     self.logger = logger
     self.level = level
+    self.enable = enable
 
   def step( self, name ):
     """ Returns the duration and stepname since last step/start """
@@ -21,7 +22,8 @@ class Profiler(object):
     return self
  
   def __exit__( self, exception_type, exception_value, traceback ):
-    self.summarize_step( self.start, step_name="complete" )
+    if self.enable:
+        self.summarize_step( self.start, step_name="complete" )
 
   def summarize_step( self, start, step_name="", level=None ):
     duration = time.time() - start
