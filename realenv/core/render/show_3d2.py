@@ -83,7 +83,7 @@ class PCRenderer:
         self.old_topk = set([])
         self.k = 5
 
-        self.showsz = 512
+        self.showsz = 256
 
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
@@ -103,6 +103,7 @@ class PCRenderer:
         comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         self.model = comp.module
         self.model.eval()
+
 
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
@@ -285,6 +286,7 @@ class PCRenderer:
 
         if MAKE_VIDEO:
             show_unfilled[:, :, :] = show[:, :, :]
+
         if self.model:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
@@ -306,7 +308,7 @@ class PCRenderer:
             show[:] = (show2[:] * 255).astype(np.uint8)
             print('Transfer to CPU time:', time.time() - before)
 
-    
+
         self.target_depth = opengl_arr ## target depth
 
 

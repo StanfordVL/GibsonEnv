@@ -195,8 +195,8 @@ class SensorRobotEnv(MJCFBaseEnv):
         for i in range(len(least_order)):
             if len(top_k) >= self.k:
                 break
-            if collisions[least_order[i]] < 0:
-                top_k.append(least_order[i])
+            #if collisions[least_order[i]] < 0:
+            top_k.append(least_order[i])
         if len(top_k) < self.k:
             for o in least_order:
                 if o not in top_k:
@@ -266,7 +266,7 @@ class CameraRobotEnv(SensorRobotEnv):
     def setup_camera_rgb(self):
         scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
         ## Todo: (hzyjerry) more error handling
-        self.scale_up = 2
+        self.scale_up = 4
         if not self.model_id in scene_dict.keys():
              raise error.Error("Dataset not found: model {} cannot be loaded".format(self.model_id))
         else:
