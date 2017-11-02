@@ -24,10 +24,9 @@ class RandomAgent(object):
 if __name__ == '__main__':
     #env = gym.make('HumanoidSensor-v0')
     env = AntSensorEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
-    env.reset()
+    obs = env.reset()
     agent = RandomAgent(env.action_space)
-    ob = None
-
+    
     while 1:
         frame = 0
         score = 0

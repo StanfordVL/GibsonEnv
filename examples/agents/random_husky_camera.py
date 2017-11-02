@@ -26,9 +26,9 @@ class RandomAgent(object):
 
 if __name__ == '__main__':
     env = HuskyCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True, is_discrete = False)
-    env.reset()
+    obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
-    ob = None
+    assert(not obs is None)
 
     while 1:
         frame = 0

@@ -70,11 +70,9 @@ class SensorRobotEnv(MJCFBaseEnv):
             print(p.getBodyInfo(i)[0].decode())
         i = 0
 
-        ## TODO (hzyjerry), the original reset() in gym interface returns an env, 
-        #return r
+        state = self.robot.calc_state()
 
-        obs, _, _, _ = self._step(None)
-        return obs
+        return state
 
 
     electricity_cost     = -2.0 # cost for using motors -- this parameter should be carefully tuned against reward for making progress, other values less improtant
@@ -84,11 +82,9 @@ class SensorRobotEnv(MJCFBaseEnv):
     joints_at_limit_cost = -0.1 # discourage stuck joints
 
 
-    def _step(self, a=None):
-        # dummy state if a is None
+    def _step(self, a):
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
-            if not a is None:
-                self.robot.apply_action(a)
+            self.robot.apply_action(a)
             self.scene.global_step()
 
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
@@ -116,11 +112,10 @@ class SensorRobotEnv(MJCFBaseEnv):
                 self.robot.feet_contact[i] = 0.0
         #print(self.robot.feet_contact)
 
-        if a != None:
-            electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
-            electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
-        else:
-            electricity_cost = 0
+
+        electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
+        electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode=0
@@ -148,8 +143,7 @@ class SensorRobotEnv(MJCFBaseEnv):
             print(self.rewards)
             print("sum rewards")
             print(sum(self.rewards))
-        if not a is None:
-            self.HUD(state, a, done)
+        self.HUD(state, a, done)
         self.reward += sum(self.rewards)
 
         if self.human:
@@ -165,6 +159,12 @@ class SensorRobotEnv(MJCFBaseEnv):
 
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
 
+    def get_eye_pos_orientation(self):
+        """Used in CameraEnv.setup"""
+        eye_pos = self.robot.eyes.current_position()
+        x, y, z ,w = self.robot.eyes.current_orientation()
+        eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
+        return eye_pos, eye_quat        
 
     def move_robot(self, init_x, init_y, init_z):
         "Used by multiplayer building to move sideways, to another running lane."
@@ -233,8 +233,14 @@ class CameraRobotEnv(SensorRobotEnv):
             #PCRenderer.renderToScreenSetup()
             self.setup_camera_multi()
             self.setup_camera_rgb()
-        obs = SensorRobotEnv._reset(self)
-        return obs
+        state = SensorRobotEnv._reset(self)
+        eye_pos, eye_quat = self.get_eye_pos_orientation()
+        pose = [eye_pos, eye_quat]
+        all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
+        top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
+        visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        return visuals
+
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
@@ -257,10 +263,9 @@ class CameraRobotEnv(SensorRobotEnv):
             visuals = self.r_camera_rgb.renderToScreen(pose, top_k)
 
         if self.enable_sensors:
-            sensor_meta["rgb"] = visuals
-            return sensor_state, sensor_reward , done, sensor_meta
-        else:
-            return visuals, sensor_reward, done, sensor_meta
+            sensor_meta["sensors"] = sensor_state
+        
+        return visuals, sensor_reward, done, sensor_meta
         
 
     def _close(self):

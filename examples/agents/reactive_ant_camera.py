@@ -29,17 +29,16 @@ class SmallReactivePolicy:
 def main():
     #env = gym.make('HumanoidSensor-v0')
     env = AntCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
-    env.reset()
+    obs = env.reset()
     print(env.observation_space.shape, env.action_space.shape, weights_dense1_w.shape, weights_final_w.shape)
+    #(512, 512, 1) (8,) (28, 128) (64, 8)
     agent = SmallReactivePolicy(env.observation_space, env.action_space)
-    ob = None
-
+    
     while 1:
         frame = 0
         score = 0
         restart_delay = 0
         obs = env.reset()
-        obs, r, done, meta = env.step(None)
         while True:
             time.sleep(0.01)
             a = agent.act(obs)
