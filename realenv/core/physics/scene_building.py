@@ -24,7 +24,7 @@ class BuildingScene(Scene):
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=original, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
         print(filename)
         #visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
-        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = 0)
+        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = -1)
         #visualId = p.loadTexture(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tex256.png"))
         #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
         #self.building_obj = [collisionId]
@@ -39,7 +39,9 @@ class BuildingScene(Scene):
             #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
             #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
             #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
-        
+
 
 class SinglePlayerBuildingScene(BuildingScene):
     multiplayer = False
+
+
