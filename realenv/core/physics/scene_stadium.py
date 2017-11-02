@@ -8,6 +8,10 @@ class StadiumScene(Scene):
     stadium_halflen   = 105*0.25    # FOOBALL_FIELD_HALFLEN
     stadium_halfwidth = 50*0.25  # FOOBALL_FIELD_HALFWID
 
+    def __init__(self, robot, gravity, timestep, frame_skip):
+        Scene.__init__(self, gravity, timestep, frame_skip)
+
+
     def episode_restart(self):
         Scene.episode_restart(self)   # contains cpp_world.clean_everything()
         # stadium_pose = cpp_household.Pose()
@@ -20,8 +24,6 @@ class StadiumScene(Scene):
         self.ground_plane_mjcf = p.loadMJCF(planeName)
         for i in self.ground_plane_mjcf:
             p.changeVisualShape(i,-1,rgbaColor=[0,0,0,0])
-
-
 
         self.building_obj = self.stadium
 
