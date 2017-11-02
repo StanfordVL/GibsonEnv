@@ -68,7 +68,7 @@ class WalkerBase(BaseRobot):
 		pos = self.robot_body.current_position()
 		orn = self.robot_body.current_orientation()
 		delta_pos = 0.3
-		delta_deg = np.pi/3
+		delta_deg = np.pi/6
 
 		print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
