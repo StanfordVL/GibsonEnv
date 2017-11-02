@@ -15,9 +15,9 @@ class WalkerBase(MJCFBasedRobot):
 		filename,  		# robot file name 
 		robot_name, 	# robot name
 		action_dim, 	# action dimension
-		mode, 
 		power,
-		obs_dim=None, 	# observation dimension, needed when mode="sensor" 
+		mode='rgbd',
+		obs_dim=None, 	# observation dimension, needed when mode="sensor"
 		scale = 1
 	):
 		if mode == "sensor":
@@ -271,7 +271,7 @@ class Humanoid(WalkerBase):
 class Husky(WalkerBase):
 	foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
-	def __init__(self, is_discrete, mode):
+	def __init__(self, is_discrete, mode='rgbd'):
 		self.is_discrete = is_discrete
 		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, mode=mode, power=2.5, scale = 0.6)
 		if self.is_discrete:

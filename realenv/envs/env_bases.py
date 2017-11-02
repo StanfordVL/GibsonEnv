@@ -56,7 +56,7 @@ class MJCFBaseEnv(gym.Env):
                         self.set_window(-1, -1, 512, 512)
                 else:
                     self.physicsClientId = p.connect(p.DIRECT)
-        
+
     def configure(self, args):
         self.robot.args = args
     def _seed(self, seed=None):
@@ -72,10 +72,19 @@ class MJCFBaseEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
         #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 
+        SCENE = 'building'
+        ##TODO: move to config file
+
         if self.scene is None:
-            self.scene = self.create_single_player_scene()
+            self.scene = self.create_single_player_scene(SCENE)
         if not self.scene.multiplayer:
             self.scene.episode_restart()
+
+        #visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
+        #                               meshScale=[0.3, 0.3, 0.3], rgbaColor=[1, 0, 0, 0.7])
+        #physicsid = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=[0, 0, 2])
+        #keep code here for reference
+
 
         self.robot.scene = self.scene
 

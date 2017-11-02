@@ -27,7 +27,7 @@ class BuildingScene(Scene):
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
         print(filename)
         #visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
-        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = 0)
+        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = -1)
         #visualId = p.loadTexture(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tex256.png"))
         #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
         #self.building_obj = [collisionId]
@@ -41,10 +41,15 @@ class BuildingScene(Scene):
         for i in self.building_obj:
             #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
             #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
+            #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
+
             #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.55], specularColor=[0.4, 0.4, 0.4])
             #p.changeVisualShape(i,-1,rgbaColor=[229/255.0,209/255.0, 119/255.0,0.75], specularColor=[1, 1, 1])
             p.changeVisualShape(i,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[1, 1, 1])
         
 
+
 class SinglePlayerBuildingScene(BuildingScene):
     multiplayer = False
+
+

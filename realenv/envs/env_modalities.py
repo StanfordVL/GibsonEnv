@@ -1,4 +1,7 @@
 from realenv.core.physics.scene_building import SinglePlayerBuildingScene
+from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
+
+from realenv.data.datasets import ViewDataSet3D, get_model_path, MAKE_VIDEO
 from realenv.data.datasets import ViewDataSet3D, get_model_path, MAKE_VIDEO, USE_MJCF, MJCF_SCALING
 from realenv.core.render.show_3d2 import PCRenderer
 from realenv.envs.env_bases import MJCFBaseEnv
@@ -206,8 +209,14 @@ class SensorRobotEnv(MJCFBaseEnv):
         return top_k
 
 
-    def create_single_player_scene(self):
-        self.building_scene = SinglePlayerBuildingScene(gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+    def create_single_player_scene(self, scene = 'building'):
+        if scene == 'building':
+            self.building_scene = SinglePlayerBuildingScene(gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        elif scene == 'stadium':
+            self.building_scene = SinglePlayerStadiumScene(gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        else:
+            self.building_scene = None
+            print("Scene not created")
         return self.building_scene
 
 

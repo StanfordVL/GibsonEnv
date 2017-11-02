@@ -56,6 +56,8 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
         SensorRobotEnv.__init__(self)
         self.nframe = 0
 
+
+
     def  _reset(self):
         obs = SensorRobotEnv._reset(self)
         self.nframe = 0
