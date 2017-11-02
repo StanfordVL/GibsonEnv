@@ -17,15 +17,24 @@ import json
 from numpy.linalg import inv
 import pickle
 
-HIGH_RES_MONITOR = False
+HIGH_RES_MONITOR = True
 MAKE_VIDEO = True
 LIVE_DEMO = False
 
 MODEL_SCALING = 0.7
 
+USE_GRAY_SCALE = False
+
+## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
+## pybullet doesn't yet support downscaling of MJCF objects
+MJCF_SCALING  = 0.6
+USE_MJCF = True
+
 ## Small model: 11HB6XZSh1Q
 ## Psych model: BbxejD15Etk
 ## Gates 1st: sRj553CTHiw
+## Basement: 13wHkWg1BWZ
+## Street scene: 15N3xPvXqFR
 MODEL_ID = "11HB6XZSh1Q"
 
 IMG_EXTENSIONS = [
@@ -59,10 +68,12 @@ def get_model_initial_pose(robot):
         if MODEL_ID == "11HB6XZSh1Q":
             #return [0, 0, 3 * 3.14/2], [-3.38, -7, 1.4] ## living room open area
             #return [0, 0, 3 * 3.14/2], [-4.8, -5.2, 1.9]   ## living room kitchen table
-            #return [0, 0, 3.14/2], [-4.655, -9.038, 1.532]  ## living room couch
-            return [0, 0, 3.14], [-0.603, -1.24, 2.35]  ## stairs
+            return [0, 0, 3.14/2], [-4.655, -9.038, 1.532]  ## living room couch
+            #return [0, 0, 3.14], [-0.603, -1.24, 2.35]  ## stairs
         if MODEL_ID == "BbxejD15Etk":
             return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
+        if MODEL_ID == "15N3xPvXqFR":
+            return [0, 0, 3 * 3.14/2], [-0, -0, 1.4]
     elif robot=="husky":
         if MODEL_ID == "11HB6XZSh1Q":
             return [0, 0, 3.14], [-2, 3.5, 0.4]  ## living room
@@ -71,9 +82,15 @@ def get_model_initial_pose(robot):
             return [0, 0, 3.14], [-7, 2.6, 0.8]
         elif MODEL_ID == "BbxejD15Etk":
             return [0, 0, 3.14], [0, 0, 0.4]
+        elif MODEL_ID == "13wHkWg1BWZ":  # basement house
+            return [0, 0, 3.14], [-1, -1, -0.4]
+        else:
+            return [0, 0, 3.14], [0, 0, 0.4]
     elif robot=="quadruped":
         return [0, 0, 3.14], [-2, 3.5, 0.4]  ## living room
         #return [0, 0, 0], [-0.203, -1.74, 1.8]  ## stairs
+    elif robot=="ant":
+        return  [0, 0, 3.14], [-2.5, 5.5, 0.4] ## living room couch
     else:
         return [0, 0, 0], [0, 0, 1.4]
 

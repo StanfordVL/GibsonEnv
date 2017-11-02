@@ -4,7 +4,7 @@ parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
 import pybullet_data
 
-from realenv.data.datasets import get_model_path
+from realenv.data.datasets import get_model_path, USE_MJCF, MJCF_SCALING
 from realenv.core.physics.scene_abstract import Scene
 import pybullet as p
 
@@ -19,9 +19,12 @@ class BuildingScene(Scene):
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         
         filename = os.path.join(get_model_path()[0], "modeldata", "out_z_up.obj")
-        original  = [1, 1, 1]
+        if USE_MJCF:
+            scaling = [1.0/MJCF_SCALING, 1.0/MJCF_SCALING, 1.0/MJCF_SCALING]
+        else:
+            scaling  = [1, 1, 1]
         magnified = [2, 2, 2]
-        collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=original, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+        collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
         print(filename)
         #visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = -1)
@@ -35,10 +38,15 @@ class BuildingScene(Scene):
         self.building_obj = (boundaryUid, )
         #self.building_obj = (int(p.loadURDF(filename)), )
         
-        #for i in self.building_obj:
+        for i in self.building_obj:
             #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
             #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
             #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
+
+            #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.55], specularColor=[0.4, 0.4, 0.4])
+            #p.changeVisualShape(i,-1,rgbaColor=[229/255.0,209/255.0, 119/255.0,0.75], specularColor=[1, 1, 1])
+            p.changeVisualShape(i,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[1, 1, 1])
+        
 
 
 class SinglePlayerBuildingScene(BuildingScene):

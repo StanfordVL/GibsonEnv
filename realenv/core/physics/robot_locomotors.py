@@ -11,8 +11,31 @@ def quatWXYZ2quatXYZW(wxyz):
 	return np.concatenate((wxyz[1:], wxyz[:1]))
 
 class WalkerBase(MJCFBasedRobot):
-	def __init__(self, fn, robot_name, action_dim, obs_dim, power, scale = 1):
-		MJCFBasedRobot.__init__(self, fn, robot_name, action_dim, obs_dim, scale)
+	def __init__(self, 
+		filename,  		# robot file name 
+		robot_name, 	# robot name
+		action_dim, 	# action dimension
+		power,
+		mode='rgbd',
+		obs_dim=None, 	# observation dimension, needed when mode="sensor"
+		scale = 1
+	):
+		if mode == "sensor":
+			pass
+		elif mode == "grey":
+			obs_dim=[256, 256, 1]
+		elif mode == "rgb":
+			obs_dim=[256, 256, 3]
+		elif mode == "depth":
+			obs_dim=[256, 256, 1]
+		elif mode == "rgbd":
+			obs_dim=[256, 256, 4]
+		else:
+			print("Environment mode must be rgb/rgbd/depth/sensor")
+			raise AssertionError()
+
+		MJCFBasedRobot.__init__(self, filename, robot_name, action_dim, obs_dim, scale)
+		self.mode = mode
 		self.power = power
 		self.camera_x = 0
 		self.walk_target_x = 1  # kilometer away
@@ -33,7 +56,6 @@ class WalkerBase(MJCFBasedRobot):
 		self.initial_z = None
 
 	def apply_action(self, a):
-		assert (np.isfinite(a).all())
 		for n, j in enumerate(self.ordered_joints):
 			j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
 
@@ -91,8 +113,8 @@ class WalkerBase(MJCFBasedRobot):
 class Hopper(WalkerBase):
 	foot_list = ["foot"]
 
-	def __init__(self):
-		WalkerBase.__init__(self, "hopper.xml", "torso", action_dim=3, obs_dim=15, power=0.75)
+	def __init__(self, mode):
+		WalkerBase.__init__(self, "hopper.xml", "torso", action_dim=3, obs_dim=15, mode=mode, power=0.75)
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
@@ -101,8 +123,8 @@ class Hopper(WalkerBase):
 class Walker2D(WalkerBase):
 	foot_list = ["foot", "foot_left"]
 
-	def __init__(self):
-		WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, obs_dim=22, power=0.40)
+	def __init__(self, mode):
+		WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, obs_dim=22, mode=mode, power=0.40)
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
@@ -116,8 +138,8 @@ class Walker2D(WalkerBase):
 class HalfCheetah(WalkerBase):
 	foot_list = ["ffoot", "fshin", "fthigh",  "bfoot", "bshin", "bthigh"]  # track these contacts with ground
 
-	def __init__(self):
-		WalkerBase.__init__(self, "half_cheetah.xml", "torso", action_dim=6, obs_dim=26, power=0.90)
+	def __init__(self, mode):
+		WalkerBase.__init__(self, "half_cheetah.xml", "torso", action_dim=6, obs_dim=26, mode=mode, power=0.90)
 
 	def alive_bonus(self, z, pitch):
 		# Use contact other than feet to terminate episode: due to a lot of strange walks using knees
@@ -136,8 +158,30 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
 	foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-	def __init__(self):
-		WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=28, power=2.5)
+	def __init__(self, is_discrete, mode):
+		WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=28, mode=mode, power=2.5)
+		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+		self.is_discrete = is_discrete
+		if self.is_discrete:
+			self.action_space = gym.spaces.Discrete(2**8)
+			#self.action_list = [[0.1 * self.torque, 0.1 * self.torque, self.torque, self.torque], [-0.2 * self.torque, -0.2 * self.torque,  -1.2 * self.torque,  -1.2 * self.torque], [r_f * self.torque,-r_f * self.torque,r_f * self.torque,-r_f * self.torque],[-r_f * self.torque,r_f * self.torque,-r_f * self.torque,r_f * self.torque],[-0.5 * self.torque, -0.5 * self.torque,  -2 * self.torque,  -2 * self.torque], [0, 0, 0, 0]]
+
+	def apply_action(self, action):
+		if self.is_discrete:
+			realaction = self.action_list[action]
+		else:
+			realaction = action
+		WalkerBase.apply_action(self, realaction)
+
+	def robot_specific_reset(self):
+		WalkerBase.robot_specific_reset(self)
+		orientation, position = get_model_initial_pose("ant")
+		roll  = orientation[0]
+		pitch = orientation[1]
+		yaw   = orientation[2]
+		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
+		self.robot_body.reset_position(position)
+
 
 	def alive_bonus(self, z, pitch):
 		return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
@@ -147,8 +191,8 @@ class Humanoid(WalkerBase):
 	self_collision = True
 	foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
-	def __init__(self):
-		WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, obs_dim=44, power=0.41)
+	def __init__(self, mode):
+		WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, obs_dim=44, mode=mode, power=0.41)
 		# 17 joints, 4 of them important for walking (hip, knee), others may as well be turned off, 17/4 = 4.25
 
 
@@ -158,9 +202,9 @@ class Humanoid(WalkerBase):
 		humanoidId = -1
 		numBodies = p.getNumBodies()
 		for i in range (numBodies):
-		    bodyInfo = p.getBodyInfo(i)
-		    if bodyInfo[1] == 'humanoid':
-		        humanoidId = i
+			bodyInfo = p.getBodyInfo(i)
+			if bodyInfo[1] == 'humanoid':
+				humanoidId = i
 		## Spherical radiance/glass shield to protect the robot's camera
 		glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))
 		#print("setting up glass", glass_id, humanoidId)
@@ -227,9 +271,9 @@ class Humanoid(WalkerBase):
 class Husky(WalkerBase):
 	foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
-	def __init__(self, is_discrete):
+	def __init__(self, is_discrete, mode='rgbd'):
 		self.is_discrete = is_discrete
-		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, power=2.5, scale = 0.6)
+		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, mode=mode, power=2.5, scale = 0.6)
 		if self.is_discrete:
 			self.action_space = gym.spaces.Discrete(5)
 		## specific offset for husky.urdf
@@ -267,9 +311,9 @@ class Husky(WalkerBase):
 
 	def setup_keys_to_action(self):
 		self.keys_to_action = {
-	        (ord('s'), ): 0, ## backward
-	        (ord('w'), ): 1, ## forward
-	        (ord('d'), ): 2, ## turn right
-	        (ord('a'), ): 3, ## turn left
-	        (): 4
-        }
+			(ord('s'), ): 0, ## backward
+			(ord('w'), ): 1, ## forward
+			(ord('d'), ): 2, ## turn right
+			(ord('a'), ): 3, ## turn left
+			(): 4
+		}

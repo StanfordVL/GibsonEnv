@@ -156,7 +156,7 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
         yaw = 90     ## demo: living room
         #yaw = 30    ## demo: kitchen
         offset = 0.5
-        distance = 1.2 ## living room
+        distance = 0.7 ## living room
         #self.tracking_camera['yaw'] = 90     ## demo: stairs
 
         

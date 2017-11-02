@@ -2,7 +2,7 @@
 
 import pybullet as p
 import gym, gym.spaces, gym.utils
-from realenv.data.datasets import MODEL_SCALING
+from realenv.data.datasets import MJCF_SCALING, MODEL_SCALING
 import numpy as np
 import os, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -26,13 +26,25 @@ class MJCFBasedRobot:
 
 		high = np.ones([action_dim])
 		self.action_space = gym.spaces.Box(-high, high)
-		high = np.inf * np.ones([obs_dim])
-		self.observation_space = gym.spaces.Box(-high, high)
+		self.obs_dim = obs_dim
+		self.get_obs_space()
 
 		self.model_file = model_file
 		self.robot_name = robot_name
 		self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 		self.scale = scale
+
+
+	def get_obs_space(self):
+		if type(self.obs_dim) == int:
+			high = np.inf * np.ones([self.obs_dim, 1])
+			self.observation_space = gym.spaces.Box(-high, high)
+		else:
+			if not len(self.obs_dim) == 3:
+				print("Observation space needs to be either integer (sensor) or length 3 list (image). Passed in length is %d" % len(self.obs_dim))
+				raise AssertionError()
+			high = np.inf * np.ones(self.obs_dim)
+			self.observation_space = gym.spaces.Box(-high, high)
 
 	def addToScene(self, bodies):
 		if self.parts is not None:
@@ -98,11 +110,10 @@ class MJCFBasedRobot:
 				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 		else:
-			if ".xml" in self.model_file:
-				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), globalScaling = self.scale)
-			if ".urdf" in self.model_file:
-				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), globalScaling = self.scale), )
-
+			if self.model_file and ".xml" in self.model_file:
+				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file))
+			if self.model_file and ".urdf" in self.model_file:
+				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file,), globalScaling = self.scale),)
 			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
 
 		self.robot_specific_reset()

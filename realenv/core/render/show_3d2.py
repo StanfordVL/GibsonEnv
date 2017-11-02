@@ -118,8 +118,8 @@ class PCRenderer:
         if MAKE_VIDEO:
             cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
             cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
-            cv2.namedWindow('RGB unfilled')
-            cv2.moveWindow('RGB unfilled', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.namedWindow('RGB prefilled')
+            cv2.moveWindow('RGB prefilled', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
         elif HIGH_RES_MONITOR:
             cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
             cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
@@ -364,6 +364,7 @@ class PCRenderer:
         with Profiler("Render pointcloud all"):
             self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
 
+            self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
             if MAKE_VIDEO:
                 self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
@@ -392,7 +393,7 @@ class PCRenderer:
 
         def _render_rgb_unfilled(unfilled_rgb):
             assert(MAKE_VIDEO)
-            cv2.imshow('RGB unfilled', unfilled_rgb)
+            cv2.imshow('RGB prefilled', unfilled_rgb)
             
         """
         render_threads = [
