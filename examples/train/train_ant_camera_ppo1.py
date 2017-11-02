@@ -17,6 +17,9 @@ from baselines import bench
 import os.path as osp
 import random
 
+## Training code adapted from: https://github.com/openai/baselines/blob/master/baselines/ppo1/run_atari.py
+
+
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
     sess = U.single_threaded_session()
@@ -27,7 +30,7 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = AntSensorEnv(human=True, is_discrete=False, enable_sensors=False)
+    env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False)
     def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
         return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space)
 
@@ -57,23 +60,6 @@ def callback(lcl, glb):
 
 
 def main():
-    '''
-    env = AntSensorEnv(human=True, is_discrete=False, enable_sensors=True)
-    model = deepq.models.mlp([64])
-    act = deepq.learn(
-        env,
-        q_func=model,
-        lr=1e-3,
-        max_timesteps=10000,
-        buffer_size=50000,
-        exploration_fraction=0.1,
-        exploration_final_eps=0.02,
-        print_freq=10,
-        callback=callback
-    )
-    print("Saving model to humanoid_sensor_model.pkl")
-    act.save("humanoid_sensor_model.pkl")
-    '''
     train(num_timesteps=10000, seed=5)
 
 if __name__ == '__main__':

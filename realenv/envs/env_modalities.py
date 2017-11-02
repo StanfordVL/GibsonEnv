@@ -239,6 +239,9 @@ class CameraRobotEnv(SensorRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
         visuals = self.r_camera_rgb.renderOffScreen(pose, top_k)
+
+        if self.robot.mode == "grey":
+            visuals = np.mean(visuals, axis=2, keepdims=True)
         return visuals
 
 
@@ -265,6 +268,8 @@ class CameraRobotEnv(SensorRobotEnv):
         if self.enable_sensors:
             sensor_meta["sensors"] = sensor_state
         
+        if self.robot.mode == "grey":
+            visuals = np.mean(visuals, axis=2, keepdims=True)
         return visuals, sensor_reward, done, sensor_meta
         
 
