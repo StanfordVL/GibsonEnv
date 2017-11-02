@@ -17,25 +17,6 @@ import json
 from numpy.linalg import inv
 import pickle
 
-HIGH_RES_MONITOR = True
-MAKE_VIDEO = True
-LIVE_DEMO = False
-
-MODEL_SCALING = 0.7
-
-USE_GRAY_SCALE = False
-
-## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
-## pybullet doesn't yet support downscaling of MJCF objects
-MJCF_SCALING  = 0.6
-USE_MJCF = True
-
-## Small model: 11HB6XZSh1Q
-## Psych model: BbxejD15Etk
-## Gates 1st: sRj553CTHiw
-## Basement: 13wHkWg1BWZ
-## Street scene: 15N3xPvXqFR
-MODEL_ID = "11HB6XZSh1Q"
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -54,13 +35,10 @@ def depth_loader(path):
     return img
 
 
-def get_model_path(idx=0):
+def get_model_path(model_id):
     data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dataset')
-    model_paths = [(os.path.join(data_path, id), id) for id in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, id))]
-    if MODEL_ID:
-        return os.path.join(data_path, MODEL_ID), MODEL_ID
-    else:
-        return model_paths[idx]
+    assert(model_id in os.listdir(data_path)), "Model {} does not exist".format(model_id)
+    return os.path.join(data_path, model_id)
 
 
 def get_model_initial_pose(robot):
@@ -93,11 +71,6 @@ def get_model_initial_pose(robot):
         return  [0, 0, 3.14], [-2.5, 5.5, 0.4] ## living room couch
     else:
         return [0, 0, 0], [0, 0, 1.4]
-
-def get_engine_framerate():
-    timestep=1.0/(4*14)
-    frame_skip=4
-    return timestep, frame_skip
 
 
 class ViewDataSet3D(data.Dataset):

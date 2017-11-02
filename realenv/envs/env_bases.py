@@ -1,6 +1,8 @@
 ## Issue related to time resolution/smoothness
 #  http://bulletphysics.org/mediawiki-1.5.8/index.php/Stepping_The_World
 
+from realenv.core.physics.scene_building import SinglePlayerBuildingScene
+from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet as p
 import time
 import random
@@ -13,13 +15,12 @@ import numpy as np
 from transforms3d import euler, quaternions
 from realenv.core.physics.physics_object import PhysicsObject
 from realenv.core.render.profiler import Profiler
-from realenv.core.physics.scene_building import SinglePlayerBuildingScene
-from realenv.data.datasets import get_engine_framerate, MAKE_VIDEO
+from realenv.configs import *
 import gym, gym.spaces, gym.utils, gym.utils.seeding
 import sys
 
 
-class MJCFBaseEnv(gym.Env):
+class BaseEnv(gym.Env):
     """
     Base class for loading MJCF (MuJoCo .xml) environments in a Scene.
     These environments create single-player scenes and behave like normal Gym environments.
@@ -35,17 +36,6 @@ class MJCFBaseEnv(gym.Env):
         ## Properties already instantiated from SensorEnv/CameraEnv
         #   @self.human
         #   @self.robot
-        self.scene = None
-        self.camera = Camera()
-        self._seed()
-        self._cam_dist = 3
-        self._cam_yaw = 0
-        self._cam_pitch = -30
-        self._render_width =320
-        self._render_height = 240
-
-        self.action_space = self.robot.action_space
-        self.observation_space = self.robot.observation_space
         if (self.physicsClientId<0):
             self.physicsClientId = p.connect(p.SHARED_MEMORY)
             if (self.physicsClientId < 0):
@@ -56,6 +46,20 @@ class MJCFBaseEnv(gym.Env):
                         self.set_window(-1, -1, 512, 512)
                 else:
                     self.physicsClientId = p.connect(p.DIRECT)
+
+        self.scene = self.create_single_player_scene(SCENE_TYPE)
+        self.robot.scene = self.scene
+
+        self.camera = Camera()
+        self._seed()
+        self._cam_dist = 3
+        self._cam_yaw = 0
+        self._cam_pitch = -30
+        self._render_width =320
+        self._render_height = 240
+
+        self.action_space = self.robot.action_space
+        self.observation_space = self.robot.observation_space
 
     def configure(self, args):
         self.robot.args = args
@@ -71,28 +75,19 @@ class MJCFBaseEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
         p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
         #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-
-        SCENE = 'building'
-        ##TODO: move to config file
-
-        if self.scene is None:
-            self.scene = self.create_single_player_scene(SCENE)
-        if not self.scene.multiplayer:
-            self.scene.episode_restart()
-
+    
         #visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
         #                               meshScale=[0.3, 0.3, 0.3], rgbaColor=[1, 0, 0, 0.7])
         #physicsid = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=[0, 0, 2])
         #keep code here for reference
 
 
-        self.robot.scene = self.scene
-
         self.frame = 0
         self.done = 0
         self.reward = 0
         dump = 0
         s = self.robot.reset()
+        self.scene.episode_restart()
         self.potential = self.robot.calc_potential()
         return s
 
@@ -151,6 +146,16 @@ class MJCFBaseEnv(gym.Env):
 
         cmd = "xdotool search --name \"Bullet Physics\" set_window --name \"Robot's world\""
         os.system(cmd)
+
+    def create_single_player_scene(self, scene ='building'):
+        if scene == 'building':
+            self.building_scene = SinglePlayerBuildingScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        elif scene == 'stadium':
+            self.building_scene = SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        else:
+            self.building_scene = None
+            print("Scene not created")
+        return self.building_scene
         
 
     def HUD(self, state, a, done):

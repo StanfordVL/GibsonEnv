@@ -2,7 +2,6 @@
 
 import pybullet as p
 import gym, gym.spaces, gym.utils
-from realenv.data.datasets import MJCF_SCALING, MODEL_SCALING
 import numpy as np
 import os, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -11,18 +10,18 @@ os.sys.path.insert(0,parentdir)
 import pybullet_data
 
 
-class MJCFBasedRobot:
+class BaseRobot:
 	"""
-	Base class for mujoco .xml based agents.
+	Base class for mujoco .xml/ROS urdf based agents.
 	"""
-
-	self_collision = True
 
 	def __init__(self, model_file, robot_name, action_dim, obs_dim, scale = 1):
 		self.parts = None
 		self.jdict = None
 		self.ordered_joints = None
 		self.robot_body = None
+
+		self.robot_ids = None
 
 		high = np.ones([action_dim])
 		self.action_space = gym.spaces.Box(-high, high)
@@ -67,7 +66,6 @@ class MJCFBasedRobot:
 
 				if dump: print("ROBOT PART '%s'" % part_name)
 				if dump: print("ROBOT JOINT '%s'" % joint_name) # limits = %+0.2f..%+0.2f effort=%0.3f speed=%0.3f" % ((joint_name,) + j.limits()) )
-
 				parts[part_name] = BodyPart(part_name, bodies, i, j)
 
 				if part_name == self.robot_name:
@@ -89,22 +87,19 @@ class MJCFBasedRobot:
 		return parts, joints, ordered_joints, self.robot_body
 
 	def reset(self):
+		#if self.parts:
+		#	[p.removeBody(self.parts[p_name].bodyIndex) for p_name in self.parts]
 		self.ordered_joints = []
 		#print(os.path.join(os.path.dirname(os.path.abspath(__file__)),"models", self.model_file))
-		object_ids = ()
-		if self.self_collision:
-			if ".xml" in self.model_file:
-				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
-			if ".urdf" in self.model_file:
-				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
-			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
-		else:
-			if self.model_file and ".xml" in self.model_file:
-				object_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file))
-			if self.model_file and ".urdf" in self.model_file:
-				object_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file,), globalScaling = self.scale),)
-			self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(object_ids)
-
+		## Use self-collision
+		if self.robot_ids:
+			for robot_id in self.robot_ids:
+				p.removeBody(robot_id)
+		if self.model_type == "MJCF":
+			self.robot_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
+		if self.model_type == "URDF":
+			self.robot_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
+		self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(self.robot_ids)
 		self.robot_specific_reset()
 
 		s = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use

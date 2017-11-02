@@ -1,16 +1,16 @@
-from realenv.core.physics.robot_bases import MJCFBasedRobot
+from realenv.core.physics.robot_bases import BaseRobot
 import numpy as np
 import pybullet as p
 import os
 import gym, gym.spaces
 from transforms3d.euler import euler2quat
-from realenv.data.datasets import get_model_initial_pose
+from realenv.configs import *
 
 
 def quatWXYZ2quatXYZW(wxyz):
 	return np.concatenate((wxyz[1:], wxyz[:1]))
 
-class WalkerBase(MJCFBasedRobot):
+class WalkerBase(BaseRobot):
 	def __init__(self, 
 		filename,  		# robot file name 
 		robot_name, 	# robot name
@@ -35,7 +35,7 @@ class WalkerBase(MJCFBasedRobot):
 			print("Environment mode must be rgb/rgbd/depth/sensor")
 			raise AssertionError()
 
-		MJCFBasedRobot.__init__(self, filename, robot_name, action_dim, obs_dim, scale)
+		BaseRobot.__init__(self, filename, robot_name, action_dim, obs_dim, scale)
 		self.mode = mode
 		self.power = power
 		self.camera_x = 0
@@ -115,6 +115,8 @@ class Hopper(WalkerBase):
 	foot_list = ["foot"]
 
 	def __init__(self, mode):
+		self.model_type = "MJCF"
+		self.mjcf_scaling = 1
 		WalkerBase.__init__(self, "hopper.xml", "torso", action_dim=3, obs_dim=15, mode=mode, power=0.75)
 
 	def alive_bonus(self, z, pitch):
@@ -125,6 +127,8 @@ class Walker2D(WalkerBase):
 	foot_list = ["foot", "foot_left"]
 
 	def __init__(self, mode):
+		self.model_type = "MJCF"
+		self.mjcf_scaling = 1
 		WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, obs_dim=22, mode=mode, power=0.40)
 
 	def alive_bonus(self, z, pitch):
@@ -140,6 +144,8 @@ class HalfCheetah(WalkerBase):
 	foot_list = ["ffoot", "fshin", "fthigh",  "bfoot", "bshin", "bthigh"]  # track these contacts with ground
 
 	def __init__(self, mode):
+		self.model_type = "MJCF"
+		self.mjcf_scaling = 1
 		WalkerBase.__init__(self, "half_cheetah.xml", "torso", action_dim=6, obs_dim=26, mode=mode, power=0.90)
 
 	def alive_bonus(self, z, pitch):
@@ -160,6 +166,10 @@ class Ant(WalkerBase):
 	foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
 	def __init__(self, is_discrete, mode):
+		## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
+		## pybullet doesn't yet support downscaling of MJCF objects
+		self.model_type = "MJCF"
+		self.mjcf_scaling = 0.6
 		WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=28, mode=mode, power=2.5)
 		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 		self.is_discrete = is_discrete
@@ -176,7 +186,7 @@ class Ant(WalkerBase):
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
-		orientation, position = get_model_initial_pose("ant")
+		orientation, position = INITIAL_POSE["ant"][MODEL_ID][0]
 		roll  = orientation[0]
 		pitch = orientation[1]
 		yaw   = orientation[2]
@@ -193,9 +203,10 @@ class Humanoid(WalkerBase):
 	foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
 	def __init__(self, mode):
+		self.model_type = "MJCF"
+		self.mjcf_scaling = 1
 		WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, obs_dim=44, mode=mode, power=0.41)
 		# 17 joints, 4 of them important for walking (hip, knee), others may as well be turned off, 17/4 = 4.25
-
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
@@ -244,7 +255,7 @@ class Humanoid(WalkerBase):
 			self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
 		self.initial_z = 0.8
 
-		orientation, position = get_model_initial_pose("humanoid")
+		orientation, position = INITIAL_POSE["humanoid"][MODEL_ID][0]
 		roll  = orientation[0]
 		pitch = orientation[1]
 		yaw   = orientation[2]
@@ -273,6 +284,7 @@ class Husky(WalkerBase):
 	foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 	def __init__(self, is_discrete, mode='rgbd'):
+		self.model_type = "URDF"
 		self.is_discrete = is_discrete
 		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, mode=mode, power=2.5, scale = 0.6)
 		if self.is_discrete:
@@ -300,7 +312,7 @@ class Husky(WalkerBase):
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
-		orientation, position = get_model_initial_pose("husky")
+		orientation, position = INITIAL_POSE["husky"][MODEL_ID][0]
 		roll  = orientation[0]
 		pitch = orientation[1]
 		yaw   = orientation[2]

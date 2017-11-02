@@ -56,19 +56,19 @@ class SingleRobotEmptyScene(Scene):
 
 class World:
 
-	def __init__(self, gravity, timestep, frame_skip):
-		self.gravity = gravity
-		self.timestep = timestep
-		self.frame_skip = frame_skip
-		self.clean_everything()
+    def __init__(self, gravity, timestep, frame_skip):
+        self.gravity = gravity
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        self.clean_everything()
 
-	def clean_everything(self):
-		p.resetSimulation()
-		p.setGravity(0, 0, -self.gravity)
-		p.setDefaultContactERP(0.9)
-		p.setPhysicsEngineParameter(fixedTimeStep=self.timestep*self.frame_skip, numSolverIterations=5, numSubSteps=self.frame_skip)
+    def clean_everything(self):
+        #p.resetSimulation()
+        p.setGravity(0, 0, -self.gravity)
+        p.setDefaultContactERP(0.9)
+        p.setPhysicsEngineParameter(fixedTimeStep=self.timestep*self.frame_skip, numSolverIterations=5, numSubSteps=self.frame_skip)
 
-	def step(self, frame_skip):
-		p.stepSimulation()
+    def step(self, frame_skip):
+        p.stepSimulation()
 
 

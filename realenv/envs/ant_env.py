@@ -1,5 +1,4 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
-from realenv.data.datasets import USE_GRAY_SCALE
 from realenv.core.physics.robot_locomotors import Ant
 import numpy as np
 
@@ -38,12 +37,7 @@ class AntCameraEnv(AntEnv, CameraRobotEnv):
 
     def _step(self, action):
         visuals, sensor_reward, done, sensor_meta = CameraRobotEnv._step(self, action)
-        if USE_GRAY_SCALE:
-            print("Visuals shape", visuals.shape)
-            visual_single = np.sum(visuals, axis=2, keepdims=True)
-            return visual_single, sensor_reward, done, sensor_meta
-        else:
-            return visuals, sensor_reward, done, sensor_meta
+        return visuals, sensor_reward, done, sensor_meta
 
 
 class AntSensorEnv(AntEnv, SensorRobotEnv):

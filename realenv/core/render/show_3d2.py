@@ -18,7 +18,8 @@ from numpy import cos, sin
 from realenv.core.render.profiler import Profiler
 from multiprocessing import Process
 
-from realenv.data.datasets import ViewDataSet3D, MAKE_VIDEO, HIGH_RES_MONITOR, LIVE_DEMO
+from realenv.data.datasets import ViewDataSet3D
+from realenv.configs import *
 from realenv.core.render.completion import CompletionNet
 from realenv.learn.completion2 import CompletionNet2
 import torch.nn as nn

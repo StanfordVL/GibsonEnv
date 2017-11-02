@@ -1,10 +1,7 @@
-from realenv.core.physics.scene_building import SinglePlayerBuildingScene
-from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
-
-from realenv.data.datasets import ViewDataSet3D, get_model_path, MAKE_VIDEO
-from realenv.data.datasets import ViewDataSet3D, get_model_path, MAKE_VIDEO, USE_MJCF, MJCF_SCALING
+from realenv.data.datasets import ViewDataSet3D, get_model_path
+from realenv.configs import *
 from realenv.core.render.show_3d2 import PCRenderer
-from realenv.envs.env_bases import MJCFBaseEnv
+from realenv.envs.env_bases import BaseEnv
 import realenv
 from gym import error
 from gym.utils import seeding
@@ -30,9 +27,9 @@ DEFAULT_DEBUG_CAMERA = {
     'z_offset': 0
 }
 
-class SensorRobotEnv(MJCFBaseEnv):
+class SensorRobotEnv(BaseEnv):
     def __init__(self):
-        MJCFBaseEnv.__init__(self)
+        BaseEnv.__init__(self)
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
         #   @self.timestep
@@ -46,7 +43,8 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.k = 5
         self.robot_tracking_id = -1
 
-        self.model_path, self.model_id = get_model_path()
+        self.model_path = get_model_path(MODEL_ID)
+        self.model_id  = MODEL_ID
         self.scale_up  = 1
         self.dataset  = ViewDataSet3D(
             transform = np.array,
@@ -59,7 +57,7 @@ class SensorRobotEnv(MJCFBaseEnv):
         self.tracking_camera = DEFAULT_DEBUG_CAMERA
         
     def _reset(self):
-        MJCFBaseEnv._reset(self)
+        BaseEnv._reset(self)
         if not self.ground_ids:
             self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
                 self.building_scene.building_obj)
@@ -206,17 +204,6 @@ class SensorRobotEnv(MJCFBaseEnv):
         return top_k
 
 
-    def create_single_player_scene(self, scene = 'building'):
-        if scene == 'building':
-            self.building_scene = SinglePlayerBuildingScene(gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
-        elif scene == 'stadium':
-            self.building_scene = SinglePlayerStadiumScene(gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
-        else:
-            self.building_scene = None
-            print("Scene not created")
-        return self.building_scene
-
-
     def getExtendedObservation(self):
         pass
 
@@ -252,8 +239,8 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
-        if USE_MJCF:
-            sensor_meta['eye_pos'] = (np.array(sensor_meta['eye_pos']) * MJCF_SCALING).tolist()
+        if self.robot.model_type == "MJCF":
+            sensor_meta['eye_pos'] = (np.array(sensor_meta['eye_pos']) * self.robot.mjcf_scaling).tolist()
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
 
         
