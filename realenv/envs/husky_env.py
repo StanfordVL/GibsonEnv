@@ -157,21 +157,8 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
         x, y, z, w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
         print(sum(self.rewards))
+
         return state, sum(self.rewards), bool(done), {"eye_pos": eye_pos, "eye_quat": eye_quat}
-
-        #self.tracking_camera['pitch'] = -45 ## stairs
-        yaw = 90     ## demo: living room
-        #yaw = 30    ## demo: kitchen
-        offset = 0.5
-        distance = 0.7 ## living room
-        #self.tracking_camera['yaw'] = 90     ## demo: stairs
-
-        
-        self.tracking_camera['yaw'] = yaw   ## living roon
-        self.tracking_camera['pitch'] = -10
-        
-        self.tracking_camera['distance'] = distance
-        self.tracking_camera['z_offset'] = offset
 
 
 class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
@@ -240,7 +227,7 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
 
-        done = False
+        done = self.nframe > 2000
         print(self.nframe)
         # done = alive < 0
         if not np.isfinite(state).all():
@@ -317,18 +304,6 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         x, y, z, w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
         print(sum(self.rewards))
+        print(state.shape)
+
         return state, sum(self.rewards), bool(done), {"eye_pos": eye_pos, "eye_quat": eye_quat}
-
-        # self.tracking_camera['pitch'] = -45 ## stairs
-        yaw = 90  ## demo: living room
-        # yaw = 30    ## demo: kitchen
-        offset = 0.5
-        distance = 0.7  ## living room
-        # self.tracking_camera['yaw'] = 90     ## demo: stairs
-
-
-        self.tracking_camera['yaw'] = yaw  ## living roon
-        self.tracking_camera['pitch'] = -10
-
-        self.tracking_camera['distance'] = distance
-        self.tracking_camera['z_offset'] = offset

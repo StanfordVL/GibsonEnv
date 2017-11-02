@@ -22,7 +22,8 @@ class WalkerBase(BaseRobot):
 	):
 		assert (type(obs_dim) == int or len(obs_dim) == 3), "Observation space needs to be either integer (sensor) or length 3 list (image). Passed in length is {}".format(len(obs_dim))
 		if mode == "sensor":
-			obs_dim=[obs_dim, 1]
+			#obs_dim=[obs_dim, 1]
+			pass
 		elif mode == "grey":
 			obs_dim=[256, 256, 1]
 		elif mode == "rgb":
@@ -283,7 +284,7 @@ class Humanoid(WalkerBase):
 class Husky(WalkerBase):
 	foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
-	def __init__(self, is_discrete, mode='rgbd'):
+	def __init__(self, is_discrete, mode='sensor'):
 		self.model_type = "URDF"
 		self.is_discrete = is_discrete
 		WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, mode=mode, power=2.5, scale = 0.6)
