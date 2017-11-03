@@ -74,7 +74,7 @@ class BaseEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
         #p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
         #p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
-        #p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     
         #visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
         #                               meshScale=[0.3, 0.3, 0.3], rgbaColor=[1, 0, 0, 0.7])

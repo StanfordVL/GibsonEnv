@@ -17,7 +17,7 @@ def callback(lcl, glb):
     # stop training if reward exceeds 199
     total = sum(lcl['episode_rewards'][-101:-1]) / 100
     totalt = lcl['t']
-    is_solved = totalt > 20 and total >= 100
+    is_solved = totalt > 20 and total >= 80
     return is_solved
 
 

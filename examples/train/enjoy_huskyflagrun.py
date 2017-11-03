@@ -27,6 +27,9 @@ def main():
     act = deepq.load("husky_flagrun_model.pkl")
 
     obs = env.reset()
+
+    from IPython import embed; embed()
+
     assert (not obs is None)
     obs = obs.reshape(1,20)
     while 1:

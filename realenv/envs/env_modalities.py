@@ -72,7 +72,7 @@ class SensorRobotEnv(BaseEnv):
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
-            print(p.getBodyInfo(i)[0].decode())
+            #print(p.getBodyInfo(i)[0].decode())
         i = 0
 
         state = self.robot.calc_state()

@@ -72,7 +72,7 @@ class WalkerBase(BaseRobot):
 		delta_pos = 0.3
 		delta_deg = np.pi/6
 
-		print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
+		#print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
 		while True:
 			new_pos = [ pos[0] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
@@ -83,7 +83,7 @@ class WalkerBase(BaseRobot):
 			self.robot_body.reset_position(new_pos)
 			if (len(p.getContactPoints(self.robot_body.bodyIndex)) == 0):
 				break
-			print("collision", p.getContactPoints(self.robot_body.bodyIndex))
+			#print("collision", p.getContactPoints(self.robot_body.bodyIndex))
 		
 
 	def apply_action(self, a):
@@ -250,9 +250,9 @@ class Humanoid(WalkerBase):
 			if bodyInfo[1] == 'humanoid':
 				humanoidId = i
 		## Spherical radiance/glass shield to protect the robot's camera
-		glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))
+		#glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))
 		#print("setting up glass", glass_id, humanoidId)
-		p.changeVisualShape(glass_id[0], -1, rgbaColor=[0, 0, 0, 0])
+		#p.changeVisualShape(glass_id[0], -1, rgbaColor=[0, 0, 0, 0])
 		#cid = p.createConstraint(humanoidId, -1, glass_id[0],-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
 
 		self.motor_names  = ["abdomen_z", "abdomen_y", "abdomen_x"]
@@ -327,18 +327,13 @@ class Husky(WalkerBase):
 		self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
 
 
-		self.torque = 0.1
-		'''self.action_list = [[self.torque, self.torque, self.torque, self.torque],
+		self.torque = 0.2
+		self.action_list = [[self.torque, self.torque, self.torque, self.torque],
 							[-self.torque, -self.torque, -self.torque, -self.torque],
 							[self.torque, -self.torque, self.torque, -self.torque],
 							[-self.torque, self.torque, -self.torque, self.torque],
 							[0, 0, 0, 0]]
-		'''
-		self.action_list = [[self.torque/2, self.torque/2, self.torque/2, self.torque/2],
-							[-self.torque/2, -self.torque/2, -self.torque/2, -self.torque/2],
-							[self.torque, -self.torque, self.torque, -self.torque],
-							[-self.torque, self.torque, -self.torque, self.torque],
-							[0, 0, 0, 0]]
+
 
 		self.setup_keys_to_action()
 		

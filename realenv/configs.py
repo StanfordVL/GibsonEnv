@@ -1,6 +1,6 @@
 ## Scene configurations
-SCENE_TYPE = 'building'
-#SCENE_TYPE = 'stadium'
+#SCENE_TYPE = 'building'
+SCENE_TYPE = 'stadium'
 
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = True
@@ -26,7 +26,7 @@ DEBUG_CAMERA_FOLLOW = True
 
 ## Render window settings
 HIGH_RES_MONITOR = False
-MAKE_VIDEO = True
+MAKE_VIDEO = False
 LIVE_DEMO = False
 
 

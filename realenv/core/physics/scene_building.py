@@ -46,7 +46,7 @@ class BuildingScene(Scene):
 
         #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.55], specularColor=[0.4, 0.4, 0.4])
         #p.changeVisualShape(i,-1,rgbaColor=[229/255.0,209/255.0, 119/255.0,0.75], specularColor=[1, 1, 1])
-        p.changeVisualShape(self.building_obj,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[1, 1, 1])
+        #p.changeVisualShape(self.building_obj,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[1, 1, 1])
     
     def episode_restart(self):
         Scene.episode_restart(self)

@@ -196,12 +196,16 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
 
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
 
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+        alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        if alive == 0:
+            alive_score = 0.1
+        else:
+            alive_score = -0.1
 
-        done = self.nframe > 2000
-        print(self.nframe)
-        # done = alive < 0
+        #done = self.nframe > 500
+        #print(self.nframe)
+        done = alive > 0 or self.nframe > 500
+
         if not np.isfinite(state).all():
             print("~INF~", state)
             done = True
@@ -246,14 +250,16 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
             print(feet_collision_cost)
 
         self.rewards = [
-            # alive,
+            alive_score,
             progress,
             # electricity_cost,
             # joints_at_limit_cost,
             # feet_collision_cost
         ]
 
-        print(self.robot.walk_target_dist)
+
+
+        #print(self.robot.walk_target_dist)
         if (debugmode):
             print("rewards=")
             print(self.rewards)
@@ -275,7 +281,7 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         eye_pos = self.robot.eyes.current_position()
         x, y, z, w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
-        print(sum(self.rewards))
-        print(state.shape)
+        #print(sum(self.rewards))
+        #print(state.shape)
 
         return state, sum(self.rewards), bool(done), {"eye_pos": eye_pos, "eye_quat": eye_quat}
