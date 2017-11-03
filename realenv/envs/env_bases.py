@@ -72,7 +72,7 @@ class BaseEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
         p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
         p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
-        #p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
+        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
         #p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     

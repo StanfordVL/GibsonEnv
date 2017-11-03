@@ -49,6 +49,10 @@ def main():
             frame += 1
             print(obs)
             if not done and frame < 60: continue
+
+            if done:
+                env.reset()
+
             if restart_delay == 0:
                 print("score=%0.2f in %i frames" % (score, frame))
                 restart_delay = 200 * 4  # 2 sec at 60 fps

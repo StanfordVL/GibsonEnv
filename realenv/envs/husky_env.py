@@ -132,7 +132,7 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
         SensorRobotEnv.__init__(self)
         self.nframe = 0
     def  _reset(self):
-        obs = CameraRobotEnv._reset(self)
+        obs = SensorRobotEnv._reset(self)
         self.nframe = 0
         return obs
 
@@ -150,7 +150,8 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         assert (isinstance(self.scene, SinglePlayerStadiumScene))
         self.flag_timeout = 1
 
-        self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+        self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
+                                            meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
 
         self.lastid = None
 
@@ -190,6 +191,8 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
 
         self.nframe += 1
         self.flag_timeout -= 1
+
+
 
         # dummy state if a is None
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
