@@ -23,7 +23,7 @@ import random
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
     #sess = U.single_threaded_session()
-    sess = U.get_session(args.single_gpu)
+    sess = U.make_gpu_session(args.num_gpu)
     sess.__enter__()
     if rank == 0:
         logger.configure()
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="rgb")
-    parser.add_argument('--single_gpu', type=bool, default=False)
+    parser.add_argument('--num_gpu', type=int, default=1)
     args = parser.parse_args()
     
     main()

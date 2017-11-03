@@ -10,7 +10,7 @@ from realenv.envs.ant_env import AntSensorEnv, AntCameraEnv
 from baselines.common import set_global_seeds
 from baselines import deepq
 from baselines.ppo1 import pposgd_simple, cnn_policy
-import baselines.common.tf_util as U
+import tf_util as U
 import datetime
 from baselines import logger
 from baselines import bench

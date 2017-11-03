@@ -1,29 +1,27 @@
-#add parent dir to find package. Only needed for source code build, pip install doesn't need it.
+## Camrbria learning code using DQN, adapted from OpenAI baselines
+#  Note this file might be a bit long, because original learning code is included, in order
+#   to support tensorflow config for single GPU learning + rendering.
+
 import os, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
-
 import gym
 from realenv.envs.husky_env import HuskyCameraEnv
-
 from baselines import deepq
 import tempfile
 import tensorflow as tf
 import zipfile
 import cloudpickle
+import datetime
 import numpy as np
-import baselines.common.tf_util as U
+import tf_util as U
 from baselines import logger
 from baselines.common.schedules import LinearSchedule
 from baselines import deepq
 from baselines.deepq.replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
 
-import datetime
 
-
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.6)
-    
 
 def callback(lcl, glb):
     # stop training if reward exceeds 199
@@ -35,7 +33,12 @@ def callback(lcl, glb):
 
 
 def main():
-    env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="RGB")
+    if args.mode =="RGB" or args.mode == "rgb":
+        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="RGB")
+    elif args.mode =="GREY" or args.mode == "grey":
+        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="GREY")
+    elif args.mode =="RGBD" or args.mode == "rgbd":
+        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="RGBD")
     model = deepq.models.cnn_to_mlp(
         convs=[(128, 8, 4), (64, 4, 2), (64, 3, 1)],
         hiddens=[256],
@@ -57,7 +60,6 @@ def main():
 
 
 
-
 class ActWrapper(object):
     def __init__(self, act, act_params):
         self._act = act
@@ -68,7 +70,7 @@ class ActWrapper(object):
         with open(path, "rb") as f:
             model_data, act_params = cloudpickle.load(f)
         act = deepq.build_act(**act_params)
-        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+        sess = U.get_session(args.single_gpu)
         sess.__enter__()
         with tempfile.TemporaryDirectory() as td:
             arc_path = os.path.join(td, "packed.zip")
@@ -140,7 +142,8 @@ def learn(env,
           prioritized_replay_beta_iters=None,
           prioritized_replay_eps=1e-6,
           param_noise=False,
-          callback=None):
+          callback=None,
+          single_gpu=False):
     """Train a deepq model.
 
     Parameters
@@ -207,8 +210,8 @@ def learn(env,
         See header of baselines/deepq/categorical.py for details on the act function.
     """
     # Create all the functions necessary to train the model
-    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-    sess.__enter__()
+    sess = U.make_gpu_session(args.num_gpu)
+    sess.__enter__()    
 
     # capture the shape outside the closure so that the env object is not serialized
     # by cloudpickle when serializing make_obs_ph
@@ -343,5 +346,11 @@ def learn(env,
 
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--mode', type=str, default="rgb")
+    parser.add_argument('--num_gpu', type=int, default=1)
+    args = parser.parse_args()
+    
     main()
 
