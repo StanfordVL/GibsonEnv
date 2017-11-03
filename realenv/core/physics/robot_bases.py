@@ -89,27 +89,21 @@ class BaseRobot:
     def reset(self):
         #if self.parts:
         #    [p.removeBody(self.parts[p_name].bodyIndex) for p_name in self.parts]
-        self.ordered_joints = []
         #print(os.path.join(os.path.dirname(os.path.abspath(__file__)),"models", self.model_file))
         ## Use self-collision
-
-        #if self.robot_ids:
-        #    for robot_id in self.robot_ids:
-        #        p.removeBody(robot_id)
 
         if self.robot_ids is None:
             if self.model_type == "MJCF":
                 self.robot_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
             if self.model_type == "URDF":
                 self.robot_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
-
-
-
-        self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(self.robot_ids)
-
+        
+            self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(self.robot_ids)
+        #print("body before", self.robot_body)
+    
+        #print("body after", self.robot_body)
         self.robot_specific_reset()
 
-        print(p.getNumBodies())
 
         s = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
         self.eyes = self.parts["eyes"]

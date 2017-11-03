@@ -5,7 +5,6 @@ import time
 import matplotlib
 import time
 import pybullet as p
-
 '''
 try:
     matplotlib.use('GTK3Agg')

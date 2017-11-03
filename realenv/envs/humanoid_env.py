@@ -1,6 +1,7 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from realenv.core.physics.robot_locomotors import Humanoid
 import gym
+import numpy as np
 
 HUMANOID_TIMESTEP  = 1.0/(4 * 22)
 HUMANOID_FRAMESKIP = 4

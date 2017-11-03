@@ -64,6 +64,7 @@ class WalkerBase(BaseRobot):
 		self.scene.actor_introduce(self)
 		self.initial_z = None
 
+
 	def reset_base_position(self, enabled):
 		if not enabled:
 			pass
@@ -74,15 +75,15 @@ class WalkerBase(BaseRobot):
 
 		#print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
-		while True:
-			new_pos = [ pos[0] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
-						pos[1] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
-						pos[2] + self.np_random.uniform(low=-delta_pos, high=delta_pos)]
-			new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_deg, high=delta_deg)), orn)
-			self.robot_body.reset_orientation(new_orn)
-			self.robot_body.reset_position(new_pos)
-			if (len(p.getContactPoints(self.robot_body.bodyIndex)) == 0):
-				break
+		#while True:
+		new_pos = [ pos[0] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
+					pos[1] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
+					pos[2] + self.np_random.uniform(low=0, high=delta_pos)]
+		new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_deg, high=delta_deg)), orn)
+		self.robot_body.reset_orientation(new_orn)
+		self.robot_body.reset_position(new_pos)
+			#if (len(p.getContactPoints(self.robot_body.bodyIndex)) == 0):
+			#	break
 			#print("collision", p.getContactPoints(self.robot_body.bodyIndex))
 		
 
@@ -237,23 +238,25 @@ class Humanoid(WalkerBase):
 	def __init__(self, mode='RGBD'):
 		self.model_type = "MJCF"
 		self.mjcf_scaling = 1
+		self.glass_id = None
 		WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, obs_dim=44, mode=mode, power=0.41)
 		# 17 joints, 4 of them important for walking (hip, knee), others may as well be turned off, 17/4 = 4.25
 
 	def robot_specific_reset(self):
 		WalkerBase.robot_specific_reset(self)
-
+		
 		humanoidId = -1
 		numBodies = p.getNumBodies()
 		for i in range (numBodies):
 			bodyInfo = p.getBodyInfo(i)
-			if bodyInfo[1] == 'humanoid':
+			if bodyInfo[1].decode("ascii") == 'humanoid':
 				humanoidId = i
 		## Spherical radiance/glass shield to protect the robot's camera
-		#glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))
-		#print("setting up glass", glass_id, humanoidId)
-		#p.changeVisualShape(glass_id[0], -1, rgbaColor=[0, 0, 0, 0])
-		#cid = p.createConstraint(humanoidId, -1, glass_id[0],-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
+		if self.glass_id is None:
+			glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))[0]
+			#print("setting up glass", glass_id, humanoidId)
+			p.changeVisualShape(glass_id, -1, rgbaColor=[0, 0, 0, 0])
+			cid = p.createConstraint(humanoidId, -1, glass_id,-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
 
 		self.motor_names  = ["abdomen_z", "abdomen_y", "abdomen_x"]
 		self.motor_power  = [100, 100, 100]
@@ -293,8 +296,7 @@ class Humanoid(WalkerBase):
 		yaw   = orientation[2]
 		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
 		self.robot_body.reset_position(position)
-
-		## BbxejD15Etk
+		self.reset_base_position(configs.RANDOM_INITIAL_POSE)
 
 
 	random_yaw = False
@@ -353,6 +355,7 @@ class Husky(WalkerBase):
 		self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
 		self.robot_body.reset_position(position)
 
+		print("specific reset pos", position)
 		self.reset_base_position(configs.RANDOM_INITIAL_POSE)
 
 
