@@ -9,7 +9,7 @@ import gym
 from realenv.envs.husky_env import HuskyFlagRunEnv
 
 from baselines import deepq
-
+import matplotlib.pyplot as plt
 import datetime
 
 
@@ -17,8 +17,7 @@ def callback(lcl, glb):
     # stop training if reward exceeds 199
     total = sum(lcl['episode_rewards'][-101:-1]) / 100
     totalt = lcl['t']
-    is_solved = totalt > 2000 and total >= -50
-    is_solved = False
+    is_solved = totalt > 20 and total >= 100
     return is_solved
 
 
@@ -36,8 +35,8 @@ def main():
         print_freq=10,
         callback=callback
     )
-    print("Saving model to humanoid_sensor_model.pkl")
-    act.save("humanoid_sensor_model.pkl")
+    print("Saving model to husky_flagrun_model.pkl")
+    act.save("husky_flagrun_model.pkl")
 
 
 if __name__ == '__main__':
