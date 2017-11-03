@@ -31,11 +31,11 @@ def train(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
     if args.mode =="RGB" or args.mode == "rgb":
-        env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False, mode="RGB")
+        env = AntCameraEnv(human=args.human, is_discrete=False, enable_sensors=False, mode="RGB")
     elif args.mode =="GREY" or args.mode == "grey":
-        env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False, mode="GREY")
+        env = AntCameraEnv(human=args.human, is_discrete=False, enable_sensors=False, mode="GREY")
     elif args.mode =="RGBD" or args.mode == "rgbd":
-        env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False, mode="RGBD")
+        env = AntCameraEnv(human=args.human, is_discrete=False, enable_sensors=False, mode="RGBD")
     def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
         return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space)
 
@@ -72,6 +72,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="rgb")
     parser.add_argument('--num_gpu', type=int, default=1)
+    parser.add_argument('--human', type=bool, default=False)
     args = parser.parse_args()
     
     main()

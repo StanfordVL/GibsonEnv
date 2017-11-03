@@ -32,11 +32,11 @@ def train(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
     if args.mode =="RGB" or args.mode == "rgb":
-        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="RGB")
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGB")
     elif args.mode =="GREY" or args.mode == "grey":
-        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="GREY")
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="GREY")
     elif args.mode =="RGBD" or args.mode == "rgbd":
-        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="RGBD")
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGBD")
     def policy_fn(name, ob_space, ac_space):
         return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
 
@@ -73,6 +73,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="rgb")
     parser.add_argument('--num_gpu', type=int, default=1)
+    parser.add_argument('--human', type=bool, default=False)
     args = parser.parse_args()
     
     main()

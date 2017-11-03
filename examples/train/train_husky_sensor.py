@@ -23,7 +23,7 @@ def callback(lcl, glb):
 
 def main():
   
-    env = HuskySensorEnv(human=True, is_discrete=True, enable_sensors=True)
+    env = HuskySensorEnv(human=args.human, is_discrete=True, enable_sensors=True)
     model = deepq.models.mlp([64])
     act = deepq.learn(
         env,
@@ -41,4 +41,8 @@ def main():
 
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--human', type=bool, default=False)
+    args = parser.parse_args()
     main()

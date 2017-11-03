@@ -34,11 +34,11 @@ def callback(lcl, glb):
 
 def main():
     if args.mode =="RGB" or args.mode == "rgb":
-        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="RGB")
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGB")
     elif args.mode =="GREY" or args.mode == "grey":
-        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="GREY")
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="GREY")
     elif args.mode =="RGBD" or args.mode == "rgbd":
-        env = HuskyCameraEnv(human=True, is_discrete=True, enable_sensors=True, mode="RGBD")
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGBD")
     model = deepq.models.cnn_to_mlp(
         convs=[(128, 8, 4), (64, 4, 2), (64, 3, 1)],
         hiddens=[256],
@@ -350,6 +350,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="rgb")
     parser.add_argument('--num_gpu', type=int, default=1)
+    parser.add_argument('--human', type=bool, default=False)
     args = parser.parse_args()
     
     main()
