@@ -10,7 +10,7 @@ from realenv.envs.ant_env import AntSensorEnv, AntCameraEnv
 from baselines.common import set_global_seeds
 from baselines import deepq
 from baselines.ppo1 import pposgd_simple, cnn_policy
-import baselines.common.tf_util as U
+import tf_util as U
 import datetime
 from baselines import logger
 from baselines import bench
@@ -22,7 +22,7 @@ import random
 
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
-    sess = U.single_threaded_session()
+    sess = U.get_session(args.single_gpu)
     sess.__enter__()
     if rank == 0:
         logger.configure()
@@ -30,7 +30,12 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False, mode="GREY")
+    if args.mode =="RGB" or args.mode == "rgb":
+        env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False, mode="RGB")
+    elif args.mode =="GREY" or args.mode == "grey":
+        env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False, mode="GREY")
+    elif args.mode =="RGBD" or args.mode == "rgbd":
+        env = AntCameraEnv(human=True, is_discrete=False, enable_sensors=False, mode="RGBD")
     def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
         return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space)
 
@@ -63,4 +68,10 @@ def main():
     train(num_timesteps=10000, seed=5)
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--mode', type=str, default="rgb")
+    parser.add_argument('--single_gpu', type=bool, default=False)
+    args = parser.parse_args()
+    
     main()

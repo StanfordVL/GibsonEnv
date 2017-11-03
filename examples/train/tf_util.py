@@ -192,12 +192,13 @@ def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
 # Global session
 # ================================================================
 
-def get_session():
+def get_session(single_gpu=False):
     """Returns recently made Tensorflow session"""
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.6)
-    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-    
-    #return tf.get_default_session()
+    if single_gpu:
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.6)
+        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+    else:
+        sess = tf.get_default_session()
     return sess
 
 def make_session(num_cpu):

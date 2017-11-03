@@ -113,7 +113,7 @@ class SensorRobotEnv(BaseEnv):
 
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
 
-    def calc_rewards(self, a):
+    def calc_rewards(self, a, state):
         return -1, False
 
     def get_eye_pos_orientation(self):

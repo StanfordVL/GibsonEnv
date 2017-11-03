@@ -131,6 +131,10 @@ class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
         HuskyEnv.__init__(self, is_discrete)
         SensorRobotEnv.__init__(self)
         self.nframe = 0
+    def  _reset(self):
+        obs = CameraRobotEnv._reset(self)
+        self.nframe = 0
+        return obs
 
 
 class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
@@ -146,8 +150,7 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         assert (isinstance(self.scene, SinglePlayerStadiumScene))
         self.flag_timeout = 1
 
-        self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
-                                       meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+        self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
 
         self.lastid = None
 
