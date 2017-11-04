@@ -150,7 +150,8 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         assert (isinstance(self.scene, SinglePlayerStadiumScene))
         self.flag_timeout = 1
 
-        self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
+        if self.human:
+            self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
                                             meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
 
         self.lastid = None
@@ -176,10 +177,11 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         self.flag_timeout = 600 / self.scene.frame_skip
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
-        if self.lastid:
-            p.removeBody(self.lastid)
+        if self.human:
+            if self.lastid:
+                p.removeBody(self.lastid)
 
-        self.lastid = p.createMultiBody(baseVisualShapeIndex=self.visualid, baseCollisionShapeIndex=-1, basePosition=[self.walk_target_x, self.walk_target_y, 0.5])
+            self.lastid = p.createMultiBody(baseVisualShapeIndex=self.visualid, baseCollisionShapeIndex=-1, basePosition=[self.walk_target_x, self.walk_target_y, 0.5])
 
         self.robot.walk_target_x = self.walk_target_x
         self.robot.walk_target_y = self.walk_target_y
@@ -191,8 +193,6 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
 
         self.nframe += 1
         self.flag_timeout -= 1
-
-
 
         # dummy state if a is None
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
@@ -208,8 +208,7 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         else:
             alive_score = -0.1
 
-        #done = self.nframe > 500
-        #print(self.nframe)
+
         done = alive > 0 or self.nframe > 500
 
         if not np.isfinite(state).all():
@@ -219,20 +218,6 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
-
-        feet_collision_cost = 0.0
-        for i, f in enumerate(
-                self.robot.feet):  # TODO: Maybe calculating feet contacts could be done within the robot code
-            # print(f.contact_list())
-            contact_ids = set((x[2], x[4]) for x in f.contact_list())
-            # print("CONTACT OF '%d' WITH %d" % (contact_ids, ",".join(contact_names)) )
-            if (self.ground_ids & contact_ids):
-                # see Issue 63: https://github.com/openai/roboschool/issues/63
-                # feet_collision_cost += self.foot_collision_cost
-                self.robot.feet_contact[i] = 1.0
-            else:
-                self.robot.feet_contact[i] = 0.0
-        # print(self.robot.feet_contact)
 
         if not a is None:
             electricity_cost = self.electricity_cost * float(np.abs(
@@ -248,31 +233,12 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
             print(alive)
             print("progress")
             print(progress)
-            print("electricity_cost")
-            print(electricity_cost)
-            print("joints_at_limit_cost")
-            print(joints_at_limit_cost)
-            print("feet_collision_cost")
-            print(feet_collision_cost)
 
         self.rewards = [
             alive_score,
             progress,
-            # electricity_cost,
-            # joints_at_limit_cost,
-            # feet_collision_cost
         ]
 
-
-
-        #print(self.robot.walk_target_dist)
-        if (debugmode):
-            print("rewards=")
-            print(self.rewards)
-            print("sum rewards")
-            print(sum(self.rewards))
-        if not a is None:
-            self.HUD(state, a, done)
         self.reward += sum(self.rewards)
 
         if self.human:
@@ -287,7 +253,5 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         eye_pos = self.robot.eyes.current_position()
         x, y, z, w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
-        #print(sum(self.rewards))
-        #print(state.shape)
 
         return state, sum(self.rewards), bool(done), {"eye_pos": eye_pos, "eye_quat": eye_quat}
