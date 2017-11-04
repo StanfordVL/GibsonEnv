@@ -169,7 +169,7 @@ class SensorRobotEnv(BaseEnv):
     
 
 class CameraRobotEnv(SensorRobotEnv):
-    def __init__(self, use_filler):
+    def __init__(self, use_filler, gpu_count=0):
         SensorRobotEnv.__init__(self)
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
@@ -179,6 +179,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
         self.use_filler   = use_filler
+        self.gpu_count    = gpu_count
         
     def _reset(self):
         if not self.r_camera_rgb or not self.r_camera_mul:
@@ -300,7 +301,7 @@ class CameraRobotEnv(SensorRobotEnv):
         dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
-        cmd = "./depth_render --modelpath {}".format(self.model_path)
+        cmd = "./depth_render --modelpath {} --GPU {}".format(self.model_path, self.gpu_count)
         self.r_camera_mul = subprocess.Popen(shlex.split(cmd), shell=False)
         os.chdir(cur_path)
 

@@ -94,13 +94,13 @@ class HuskyEnv:
 class HuskyCameraEnv(HuskyEnv, CameraRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
         frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False,
-        is_discrete=False, mode="RGBD", use_filler=True):
+        is_discrete=False, mode="RGBD", use_filler=True, gpu_count=0):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.enable_sensors = enable_sensors
         HuskyEnv.__init__(self, is_discrete, mode)
-        CameraRobotEnv.__init__(self, use_filler)
+        CameraRobotEnv.__init__(self, use_filler, gpu_count)
 
         #self.tracking_camera['pitch'] = -45 ## stairs
         yaw = 90     ## demo: living room
