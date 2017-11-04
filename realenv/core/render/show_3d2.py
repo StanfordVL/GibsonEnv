@@ -28,9 +28,6 @@ import torch.nn as nn
 file_dir = os.path.dirname(os.path.abspath(__file__))
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
 coords  = np.load(os.path.join(file_dir, 'coord.npy'))
-context_mist = zmq.Context()
-socket_mist = context_mist.socket(zmq.REQ)
-socket_mist.connect("tcp://localhost:5555")
 
 LINUX_OFFSET = {
     "x_delta": 10,
@@ -60,7 +57,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True, gpu_count=0):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -74,8 +71,12 @@ class PCRenderer:
         self.overlay    = False
         self.show_depth = False
         self._context_phys = zmq.Context()
-        self.socket_phys = self._context_phys.socket(zmq.REP)
-        self.socket_phys.connect("tcp://localhost:%d" % port)
+        #self.socket_phys = self._context_phys.socket(zmq.REP)
+        #self.socket_phys.connect("tcp://localhost:%d" % port)
+        self._context_mist = zmq.Context()
+        self.socket_mist = self._context_mist.socket(zmq.REQ)
+        self.socket_mist.connect("tcp://localhost:{}".format(5555 + gpu_count))
+
         self.target_poses = target_poses
         self.imgs = imgs
         self.depths = depths
@@ -246,8 +247,8 @@ class PCRenderer:
         s = utils.mat_to_str(p)
 
         #with Profiler("Depth request round-trip"):
-        socket_mist.send_string(s)
-        message = socket_mist.recv()
+        self.socket_mist.send_string(s)
+        message = self.socket_mist.recv()
 
         #with Profiler("Read from framebuffer and make pano"):
         wo, ho = self.showsz * 4, self.showsz * 3
