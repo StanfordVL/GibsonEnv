@@ -5,11 +5,14 @@ parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 
 import gym, logging
-from mpi4py import MPI
 from baselines.common import set_global_seeds
+from baselines.ppo1 import pposgd_simple
 from baselines import deepq
-from baselines.ppo1 import pposgd_simple, cnn_policy
-from realenv.envs.ant_env import AntSensorEnv, AntCameraEnv
+
+from mpi4py import MPI
+from realenv.envs.husky_env import HuskyCameraEnv, HuskySensorEnv, HuskyFlagRunEnv
+from realenv.envs.ant_env import AntCameraEnv, AntSensorEnv
+import resnet_policy
 import tf_util as U
 import datetime
 from baselines import logger
@@ -19,9 +22,9 @@ import random
 
 ## Training code adapted from: https://github.com/openai/baselines/blob/master/baselines/ppo1/run_atari.py
 
-
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
+    #sess = U.single_threaded_session()
     sess = U.make_gpu_session(args.num_gpu)
     sess.__enter__()
     if rank == 0:
@@ -31,29 +34,18 @@ def train(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
     if args.mode =="RGB" or args.mode == "rgb":
-        env = AntCameraEnv(human=args.human, is_discrete=False, enable_sensors=False, mode="RGB")
+        env = AntCameraEnv(human=args.human, is_discrete=False, enable_sensors=True, mode="RGB")
     elif args.mode =="GREY" or args.mode == "grey":
-        env = AntCameraEnv(human=args.human, is_discrete=False, enable_sensors=False, mode="GREY")
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="GREY", gpu_count=args.gpu_count)
     elif args.mode =="RGBD" or args.mode == "rgbd":
-        env = AntCameraEnv(human=args.human, is_discrete=False, enable_sensors=False, mode="RGBD")
-    def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
-        return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space)
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGBD", gpu_count=args.gpu_count)
 
-    env = bench.Monitor(env, logger.get_dir() and
-        osp.join(logger.get_dir(), str(rank)))
-    env.seed(workerseed)
-    gym.logger.setLevel(logging.WARN)
-
-
-    pposgd_simple.learn(env, policy_fn,
-        max_timesteps=int(num_timesteps * 1.1),
-        timesteps_per_actorbatch=256,
-        clip_param=0.2, entcoeff=0.01,
-        optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
-        gamma=0.99, lam=0.95,
-        schedule='linear'
-    )
-    env.close()
+    ob = env.reset()
+    act_sp = env.action_space
+    print(ob.shape)
+    print(act_sp.shape)
+    print(type(act_sp))
+    print(act_sp.n)
 
 
 def callback(lcl, glb):
@@ -65,7 +57,7 @@ def callback(lcl, glb):
 
 
 def main():
-    train(num_timesteps=10000, seed=5)
+    train(num_timesteps=1000000, seed=5)
 
 if __name__ == '__main__':
     import argparse
@@ -73,6 +65,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default="rgb")
     parser.add_argument('--num_gpu', type=int, default=1)
     parser.add_argument('--human', type=bool, default=False)
+    parser.add_argument('--gpu_count', type=int, default=0)
     args = parser.parse_args()
     
     main()

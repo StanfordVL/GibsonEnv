@@ -19,6 +19,7 @@ dev/transfer.c
 *.bmp
 *.bak
 *.zip
+.*.swp
 
 
 # vscode

@@ -5,11 +5,12 @@ parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 
 import gym, logging
+from baselines.common import set_global_seeds
+from baselines.ppo1 import pposgd_simple
+from baselines import deepq
+
 from mpi4py import MPI
 from realenv.envs.husky_env import HuskyCameraEnv
-from baselines.common import set_global_seeds
-from baselines import deepq
-from baselines.ppo1 import pposgd_simple
 import cnn_policy
 import tf_util as U
 import datetime
