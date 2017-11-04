@@ -1,5 +1,5 @@
 # Real Environment for Training Real World AI
-You shouldn't play video games all day, same for your AI. In this project we build a virtual environment that offers real world experience. You can think of it like [The Matrix](https://www.youtube.com/watch?v=3Ep_rnYweaI).
+You shouldn't play video games all day, so shouldn't your AI. In this project we build a virtual environment that offers real world experience. You can think of it like [The Matrix](https://www.youtube.com/watch?v=3Ep_rnYweaI).
 
 ## Note
 This is a 0.0.1 alpha release, for use in Stanford SVL only. 
