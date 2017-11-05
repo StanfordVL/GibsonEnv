@@ -10,10 +10,11 @@ from baselines.ppo1 import pposgd_simple
 from baselines import deepq
 
 from mpi4py import MPI
-from realenv.envs.husky_env import HuskyCameraEnv, HuskySensorEnv, HuskyFlagRunEnv
-from realenv.envs.ant_env import AntCameraEnv, AntSensorEnv
+from realenv.envs.husky_env import HuskyNavigateEnv, HuskyFlagRunEnv
+#from realenv.envs.ant_env import AntCameraEnv, AntSensorEnv
 import resnet_policy
-import tf_util as U
+import baselines.common.tf_util as U
+import utils
 import datetime
 from baselines import logger
 from baselines import bench
@@ -25,7 +26,7 @@ import random
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
     #sess = U.single_threaded_session()
-    sess = U.make_gpu_session(args.num_gpu)
+    sess = utils.make_gpu_session(args.num_gpu)
     sess.__enter__()
     if rank == 0:
         logger.configure()
@@ -33,19 +34,17 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    if args.mode =="RGB" or args.mode == "rgb":
-        env = AntCameraEnv(human=args.human, is_discrete=False, enable_sensors=True, mode="RGB")
-    elif args.mode =="GREY" or args.mode == "grey":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="GREY", gpu_count=args.gpu_count)
-    elif args.mode =="RGBD" or args.mode == "rgbd":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGBD", gpu_count=args.gpu_count)
+    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count)
 
     ob = env.reset()
     act_sp = env.action_space
-    print(ob.shape)
-    print(act_sp.shape)
-    print(type(act_sp))
-    print(act_sp.n)
+    print("Initial obs shape ", ob.shape)
+    print("Obs space shape   ", env.observation_space.shape)
+    print("Sensor space shape", env.sensor_space.shape)
+    print("Action space shape", act_sp.shape)
+    print("Action space type ", type(act_sp))
+    print("Sensor space type ", env.sensor_space.shape)
+    print("Action space n    ", act_sp.n)
 
 
 def callback(lcl, glb):
@@ -62,10 +61,11 @@ def main():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--mode', type=str, default="rgb")
+    parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--human', type=bool, default=False)
+    parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
+    parser.add_argument('--disable_filler', action='store_true', default=False)
     args = parser.parse_args()
     
     main()
