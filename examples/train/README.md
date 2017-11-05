@@ -60,13 +60,13 @@ The following training schemes are currently supported.
 
 PPO1
 
-* train\_ant\_camera\_ppo (cnn\_policy)
-* train\_husky\_camera\_ppo (cnn\_policy)
+* train\_ant\_camera\_ppo1 (cnn\_policy)
+* train\_husky\_navigate\_ppo1 (mode: RGB/RGBD/DEPTH/GREY/SENSOR)
 
 DQN
 
-* train\_husky\_flagrun\_dqn
-* train\_husky\_navigate\_dqn
+* train\_husky\_flagrun\_dqn (mode: default SENSOR)
+* train\_husky\_navigate\_dqn (mode: RGB/RGBD/DEPTH/GREY/SENSOR)
 
 
 ### Under Development
