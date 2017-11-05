@@ -232,28 +232,26 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
-        if not self.requires_camera_input:
-            return sensor_state, sensor_reward, done, sensor_meta
-
         if self.robot.model_type == "MJCF":
             sensor_meta['eye_pos'] = (np.array(sensor_meta['eye_pos']) * self.robot.mjcf_scaling).tolist()
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
+        sensor_meta.pop("eye_pos", None)
+        sensor_meta.pop("eye_quat", None)
+        sensor_meta["sensor"] = sensor_state
 
+        if not self.requires_camera_input:
+            visuals = self.get_blank_visuals()
+            return visuals, sensor_reward, done, sensor_meta
         
         ## Select the nearest points
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(sensor_meta['eye_pos'], all_dist, all_pos)
-        
-        sensor_meta.pop("eye_pos", None)
-        sensor_meta.pop("eye_quat", None)
-        
+                
         #with Profiler("Render to screen"):
         if not self.human:
             rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
         else:
             rgb, depth = self.r_camera_rgb.renderToScreen(pose, top_k)
-
-        sensor_meta["sensors"] = sensor_state
         
         visuals = self.get_visuals(rgb, depth)
         return visuals, sensor_reward, done, sensor_meta
@@ -264,6 +262,9 @@ class CameraRobotEnv(SensorRobotEnv):
             return
         self.r_camera_mul.terminate()
 
+
+    def get_blank_visuals(self):
+        return np.zeros((256, 256, 4))
 
     def get_visuals(self, rgb, depth):
         ## Camera specific

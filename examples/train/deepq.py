@@ -254,7 +254,11 @@ def learn(env,
             else:
                 env_action = action
             reset = False
-            new_obs, rew, done, _ = env.step(env_action)
+            new_obs, rew, done, meta = env.step(env_action)
+
+            if mode == "SENSOR":
+                new_obs = meta["sensor"]
+
             # Store transition in the replay buffer.
             replay_buffer.add(obs, action, rew, new_obs, float(done))
             obs = new_obs
