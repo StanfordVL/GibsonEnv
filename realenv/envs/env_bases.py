@@ -30,7 +30,10 @@ def create_single_player_stadium_scene(env):
 
 class BaseEnv(gym.Env):
     """
-    Base class for loading MJCF (MuJoCo .xml) environments in a Scene.
+    Base class for loading environments in a Scene.
+    Handles scene loading, robot loading, pybullet client setting,
+        camera setting
+
     These environments create single-player scenes and behave like normal Gym environments.
     Multiplayer is not yet supported
     """
@@ -62,9 +65,6 @@ class BaseEnv(gym.Env):
         self._cam_pitch = -30
         self._render_width = 320
         self._render_height = 240
-
-        self.action_space = self.robot.action_space
-        self.observation_space = self.robot.observation_space
 
         self.scene_fn = scene_fn
         self.setup_environment_scene()

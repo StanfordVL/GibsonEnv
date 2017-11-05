@@ -20,10 +20,10 @@ class HuskyEnv:
         'render.modes' : ['human', 'rgb_array'],
         'video.frames_per_second' : 30
     }
-    def __init__(self, is_discrete=False, mode="SENSOR"):
+    def __init__(self, is_discrete=False):
         self.physicsClientId=-1
         target_orn, target_pos = INITIAL_POSE["husky"][MODEL_ID][-1]
-        self.robot = Husky(is_discrete, mode=mode, target_pos=target_pos)
+        self.robot = Husky(is_discrete, target_pos=target_pos)
         self.nframe = 0
 
     def get_keys_to_action(self):
@@ -100,8 +100,8 @@ class HuskyCameraEnv(HuskyEnv, CameraRobotEnv):
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.enable_sensors = enable_sensors
-        HuskyEnv.__init__(self, is_discrete, mode)
-        CameraRobotEnv.__init__(self, use_filler, gpu_count)
+        HuskyEnv.__init__(self, is_discrete)
+        CameraRobotEnv.__init__(self, use_filler, mode, gpu_count)
 
         #self.tracking_camera['pitch'] = -45 ## stairs
         yaw = 90     ## demo: living room
@@ -145,7 +145,7 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
-        HuskyEnv.__init__(self, is_discrete=is_discrete, mode="SENSOR")
+        HuskyEnv.__init__(self, is_discrete=is_discrete)
         SensorRobotEnv.__init__(self, scene_fn=create_single_player_stadium_scene)
         self.nframe = 0
         self.flag_timeout = 1

@@ -28,6 +28,10 @@ DEFAULT_DEBUG_CAMERA = {
 }
 
 class SensorRobotEnv(BaseEnv):
+    """Based on BaseEnv
+    Handles action, reward
+    """
+
     def __init__(self, scene_fn=create_single_player_building_scene):
         BaseEnv.__init__(self, scene_fn)
         ## The following properties are already instantiated inside xxx_env.py:
@@ -55,6 +59,12 @@ class SensorRobotEnv(BaseEnv):
             overwrite_fofn=True)
         self.ground_ids = None
         self.tracking_camera = DEFAULT_DEBUG_CAMERA
+
+        self.action_space = self.robot.action_space
+        ## Robot's eye observation, in sensor mode black pixels are returned
+        self.observation_space = self.robot.observation_space
+        self.sensor_space = self.robot.sensor_space
+
         
     def _reset(self):
         BaseEnv._reset(self)
@@ -164,7 +174,7 @@ class SensorRobotEnv(BaseEnv):
     
 
 class CameraRobotEnv(SensorRobotEnv):
-    def __init__(self, use_filler, gpu_count=0):
+    def __init__(self, use_filler, mode, gpu_count=0):
         SensorRobotEnv.__init__(self)
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
@@ -175,6 +185,9 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = None     ## Multi channel rendering engine
         self.use_filler   = use_filler
         self.gpu_count    = gpu_count
+        assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
+        self.mode = mode
+
         
     def _reset(self):
         if not self.r_camera_rgb or not self.r_camera_mul:
@@ -216,8 +229,6 @@ class CameraRobotEnv(SensorRobotEnv):
             sensor_meta["sensors"] = sensor_state
         
         visuals = self.get_visuals(rgb, depth)
-        #elif self.robot.mode == "rgbd":
-        #    visuals = np.
         return visuals, sensor_reward, done, sensor_meta
         
 
@@ -226,16 +237,17 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
     def get_visuals(self, rgb, depth):
-        if self.robot.mode == "GREY":
-            visuals = np.mean(rgb, axis=2, keepdims=True)
-        elif self.robot.mode == "RGB":
-            visuals = rgb
-        elif self.robot.mode == "RGBD":
+        if self.mode == "GREY":
+            rgb = np.mean(rgb, axis=2, keepdims=True)
             visuals = np.append(rgb, depth, axis=2)
-        elif self.robot.mode == "DEPTH":
-            visuals = depth
+        elif self.mode == "RGBD" or self.mode == "RGB":
+            visuals = np.append(rgb, depth, axis=2)
+        elif self.mode == "DEPTH":
+            visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
+        elif self.mode == "SENSOR":
+            visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
         else:
-            print("Visual mode not supported: {}".format(self.robot.mode))
+            print("Visual mode not supported: {}".format(self.mode))
             raise AssertionError()
         return visuals
 
@@ -276,7 +288,7 @@ class CameraRobotEnv(SensorRobotEnv):
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
 
         PCRenderer.sync_coords()
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self.use_filler, gpu_count=self.gpu_count)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count)
         self.r_camera_rgb = renderer
 
 

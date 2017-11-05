@@ -37,6 +37,19 @@ To run the code on aws, use conda 3 python environment
 source activate universe3
 ```
 
+### Environment Modality
+
+obs, done, reward, meta = env.step(action)
+
+|Env  Mode|Obs[0] Obs[1] Obs[2] Obs[3] Meta['sensor']
+|RGB  |R 	G 	 	B 		D 		SENSOR
+|RGBD |R 	G 		B 		D 		SENSOR
+|DEPTH| - 	- 	 	- 		D  		SENSOR
+|SENSOR| - 	- 		- 		D 		SENSOR
+
+Sensor dimension: env.sensor_space.shape
+Observation dimension: env.observation_space.shape
+
 
 ### What are you actually training the agents for?
 **Husky camera** : train the husky to navigate 20 meters along Gates 1F hallway. Starting location: end of hallway near copy room, target location near Silvio's office. Rich reward: negative delta distance. 
@@ -47,12 +60,16 @@ Goal: navigate and avoid collision using only RGB input. In the future we want t
 (to be continued)
 
 
+
 ### Tuning Environment
 Beside tuning algorithm, you might want to also fine tune the environment.
 
 THis is because reward function, state function, and done condition of the environment might not suit the specific task that you're training. For example, you might want to tune collision penalty score to make husky better learn to navigate, or you might not want to immediately terminate the episode if ant's body scratches the floor while climbing stairs. To do these environment tuning efficiently, contact hzyjerry or fxia.
 
-The original openAI baselines do not have very good GPU support. Here we include customized cnn_policy.py and tf_util.py to support single GPU support, you can overrite these files with your own configurations.
 
+
+### Modified from Baseline
+tf_utils.get_session() -> utils.make_gpu_session(): multi gpu support
+tf_utils.deepq -> deepq: multi gpu support, mode for depth vs rgbd
 The customized functions:
-	tf_utils.make_gpu_session()
+	
