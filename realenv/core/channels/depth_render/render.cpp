@@ -62,6 +62,7 @@ int windowHeight = 256;
 size_t panoWidth = 2048;
 size_t panoHeight = 1024;
 int cudaDevice = -1;
+float camera_fov = 120.0f;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
@@ -656,7 +657,7 @@ int main( int argc, char * argv[] )
                 // Compute the MVP matrix from keyboard and mouse input
                 //computeMatricesFromInputs();
                 //computeMatricesFromFile(name_loc);
-                float fov = glm::radians(90.0f);
+                float fov = glm::radians(camera_fov);
                 glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
                 glm::mat4 ViewMatrix =  getView(viewMat, k);
                 //glm::mat4 ViewMatrix = getViewMatrix();
@@ -856,7 +857,7 @@ int main( int argc, char * argv[] )
                 // Compute the MVP matrix from keyboard and mouse input
                 //computeMatricesFromInputs();
                 //computeMatricesFromFile(name_loc);
-                float fov = glm::radians(90.0f);
+                float fov = glm::radians(camera_fov);
                 glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
                 glm::mat4 ViewMatrix =  getView(viewMat, 2);
                 glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
