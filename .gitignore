@@ -32,3 +32,9 @@ physics/models
 
 
 */events*
+0_VRDemoSettings.txt
+
+
+
+cnn_policy*
+checkpoint

@@ -9,8 +9,8 @@ import json
 import codecs
 import numpy as np
 import ctypes as ct
-import progressbar
 import sys
+from tqdm import *
 import torchvision.transforms as transforms
 import argparse
 import json
@@ -34,17 +34,52 @@ def depth_loader(path):
     img = Image.open(path).convert('I')
     return img
 
-def get_model_path(idx=0):
+
+def get_model_path(model_id):
     data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dataset')
-    model_paths = [os.path.join(data_path, id) for id in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, id))]
-    return model_paths[idx]
+    assert(model_id in os.listdir(data_path)), "Model {} does not exist".format(model_id)
+    return os.path.join(data_path, model_id)
+
+
+def get_model_initial_pose(robot):
+    if robot=="humanoid":
+        if MODEL_ID == "11HB6XZSh1Q":
+            #return [0, 0, 3 * 3.14/2], [-3.38, -7, 1.4] ## living room open area
+            #return [0, 0, 3 * 3.14/2], [-4.8, -5.2, 1.9]   ## living room kitchen table
+            return [0, 0, 3.14/2], [-4.655, -9.038, 1.532]  ## living room couch
+            #return [0, 0, 3.14], [-0.603, -1.24, 2.35]  ## stairs
+        if MODEL_ID == "BbxejD15Etk":
+            return [0, 0, 3 * 3.14/2], [-6.76, -12, 1.4] ## Gates Huang
+        if MODEL_ID == "15N3xPvXqFR":
+            return [0, 0, 3 * 3.14/2], [-0, -0, 1.4]
+    elif robot=="husky":
+        if MODEL_ID == "11HB6XZSh1Q":
+            return [0, 0, 3.14], [-2, 3.5, 0.4]  ## living room
+            #return [0, 0, 0], [-0.203, -1.74, 1.8]  ## stairs
+        elif MODEL_ID == "sRj553CTHiw":
+            return [0, 0, 3.14], [-7, 2.6, 0.8]
+        elif MODEL_ID == "BbxejD15Etk":
+            return [0, 0, 3.14], [0, 0, 0.4]
+        elif MODEL_ID == "13wHkWg1BWZ":  # basement house
+            return [0, 0, 3.14], [-1, -1, -0.4]
+        else:
+            return [0, 0, 3.14], [0, 0, 0.4]
+    elif robot=="quadruped":
+        return [0, 0, 3.14], [-2, 3.5, 0.4]  ## living room
+        #return [0, 0, 0], [-0.203, -1.74, 1.8]  ## stairs
+    elif robot=="ant":
+        return  [0, 0, 3.14], [-2.5, 5.5, 0.4] ## living room couch
+    else:
+        return [0, 0, 0], [0, 0, 1.4]
 
 
 class ViewDataSet3D(data.Dataset):
-    def __init__(self, root, train=True, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True):
+    def __init__(self, root=None, train=False, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True, overwrite_fofn=False):
         print ('Processing the data:')
-        self.root = root
-        self.fofn   = self.root + '_fofn'+str(int(train))+'.pkl'
+        if not root:
+            self.root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dataset")
+        else:
+            self.root = root
         self.train  = train
         self.loader = loader
         self.seqlen = seqlen
@@ -53,12 +88,12 @@ class ViewDataSet3D(data.Dataset):
         self.depth_trans = mist_transform
         self.off_3d = off_3d
         self.select = []
+        self.fofn   = self.root + '_fofn'+str(int(train))+'.pkl'
         self.off_pc_render = off_pc_render
         if not self.off_pc_render:
             self.dll=np.ctypeslib.load_library('render','.')
 
-        if not os.path.isfile(self.fofn):
-
+        if overwrite_fofn or not os.path.isfile(self.fofn):
             self.scenes = sorted([d for d in (os.listdir(self.root)) if os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(os.path.join(self.root, d, 'sweep_locations.csv')) and os.path.isdir(os.path.join(self.root, d, 'pano'))])
 
             num_scenes = len(self.scenes)
@@ -66,15 +101,6 @@ class ViewDataSet3D(data.Dataset):
             print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
             if train:
                 self.scenes = self.scenes[:num_train]
-            else:
-                self.scenes = self.scenes[num_train:]
-
-
-            self.bar  = progressbar.ProgressBar(widgets=[
-                        ' [', progressbar.Timer(), '] ',
-                        progressbar.Bar(),
-                        ' (', progressbar.ETA(), ') ',
-                        ])
 
             self.meta = {}
             if debug:
@@ -88,9 +114,9 @@ class ViewDataSet3D(data.Dataset):
                     for line in f:
                         l = line.strip().split(',')
                         uuid = l[0]
-                        xyz  = map(float, l[1:4])
-                        quat = map(float, l[4:8])
-                        if not self.meta.has_key(scene):
+                        xyz  = list(map(float, l[1:4]))
+                        quat = list(map(float, l[4:8]))
+                        if not scene in self.meta:
                             self.meta[scene] = {}
                         metadata = (uuid, xyz, quat)
                         #print(uuid, xyz)
@@ -99,11 +125,11 @@ class ViewDataSet3D(data.Dataset):
                             self.meta[scene][uuid] = metadata
             print("Indexing")
 
-            for scene, meta in self.bar(self.meta.items()):
+            for scene, meta in tqdm(list(self.meta.items())):
                 if len(meta) < self.seqlen:
                     continue
-                for uuid,v in meta.items():
-                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in meta.items()]
+                for uuid,v in list(meta.items()):
+                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2,v2 in list(meta.items())]
                     dist_list = sorted(dist_list, key = lambda x:x[-1])
 
                     if not dist_filter is None:
@@ -121,10 +147,11 @@ class ViewDataSet3D(data.Dataset):
                 self.scenes, self.meta, self.select, num_scenes, num_train = pickle.load(fp)
                 print("Total %d scenes %d train %d test" %(num_scenes, num_train, num_scenes - num_train))
 
-    def get_model_obj(self, idx=0):
-        obj_files = [os.path.join(self.root, d, 'modeldata', 'out_z_up.obj') for d in (os.listdir(self.root))]
-        return obj_files[idx]
 
+
+    def get_model_obj(self):
+        obj_files = os.path.join(self.root, MODEL_ID, 'modeldata', 'out_z_up.obj')
+        return obj_files
 
     def get_scene_info(self, index):
         scene = self.scenes[index]
@@ -279,6 +306,11 @@ class ViewDataSet3D(data.Dataset):
 
     def __len__(self):
         return len(self.select)
+
+
+
+########### BELOW THIS POINT: Legacy code #################
+########### KEEPING ONLY FOR REFERENCE ####################
 
 
 class Places365Dataset(data.Dataset):

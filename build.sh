@@ -61,7 +61,8 @@ install() {
 	read -s password
 
 	## Core rendering functionality
-	conda install -c menpo opencv -y
+	#conda install -c menpo opencv -y
+	pip install opencv-python			## python3
 	conda install pytorch torchvision cuda80 -c soumith -y
 	
 
@@ -72,11 +73,10 @@ install() {
 	echo $password | sudo -s apt autoremove
 	echo $password | sudo -s apt install cmake -y
 	echo $password | sudo -s apt install golang libjpeg-turbo8-dev unzip -y
+	echo $password | sudo -s apt install wmctrl xdotool -y
 
 	## Core renderer
 	echo $password | sudo -s apt install nvidia-cuda-toolkit -y	## Huge, 1121M
-
-
 
 	build_local
 	
@@ -85,20 +85,20 @@ install() {
 
 build_local() {
 	## Core renderer
-	[ ! -d ./realenv/core/channels/external/glfw-3.1.2 ] || rm -rf ./realenv/core/channels/external/glfw-3.1.2
+	if [ ! -d ./realenv/core/channels/external/glfw-3.1.2 ]; then
+		wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
+		unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
+		mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
+	fi
 	[ ! -d ./realenv/core/channels/build ] || rm -rf ./realenv/core/channels/build
 
-	wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
-	unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
-	mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
 	mkdir -p ./realenv/core/channels/build
 	cd ./realenv/core/channels/build
-	cmake .. && make -j 10
+	cmake .. && make clean && make -j 10
 	cd -
 
 
 	cd ./realenv/core/render/
-	wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
 	pip install cython
 	bash build.sh
 	bash build_cuda.sh
@@ -112,19 +112,65 @@ download_data () {
 	[ -d dataset ] || mkdir dataset
 	[ ! -d ./realenv/core/physics/models ] || rm -rf ./realenv/core/physics/models
 	
-	if [ ! -d 11HB6XZSh1Q ]; then
-		wget --quiet https://www.dropbox.com/s/gtg09zm5mwnvro8/11HB6XZSh1Q.zip
+
+	## Psych building -1F, 919Mb
+	if [ $dset_name="stanford_1" ] && [ ! -d dataset/BbxejD15Etk ]; then
+		wget https://www.dropbox.com/s/fj6cnvs9zhw9i3y/BbxejD15Etk.zip
+		unzip -q BbxejD15Etk.zip && rm BbxejD15Etk.zip
+		mv BbxejD15Etk dataset
+	fi
+
+	## Psych building 1F, 794.2Mb
+	if [ $dset_name="stanford_2" ] && [ ! -d dataset/sitktXish3E ]; then
+		wget https://www.dropbox.com/s/wv5ws6pxbbdhzel/sitktXish3E.zip
+		unzip -q sitktXish3E.zip && rm sitktXish3E.zip
+		mv sitktXish3E dataset
+	fi
+
+	## Gates building 1F, 616.1Mb
+	if [ $dset_name="stanford_3" ] && [ ! -d dataset/sRj553CTHiw ]; then
+		wget https://www.dropbox.com/s/iztghi2mt26uxed/sRj553CTHiw.zip
+		unzip -q sRj553CTHiw.zip && rm sRj553CTHiw.zip
+		mv sRj553CTHiw dataset
+	fi
+
+	## Gates building 2F, 294.1Mb
+	if [ $dset_name="stanford_4" ] && [ ! -d dataset/TVHnHa4MZwE ]; then
+		wget https://www.dropbox.com/s/gbz3yxikk7pdobi/TVHnHa4MZwE.zip
+		unzip -q TVHnHa4MZwE.zip && rm TVHnHa4MZwE.zip
+		mv TVHnHa4MZwE dataset
+	fi
+
+
+	if [ ! -d dataset/11HB6XZSh1Q ]; then
+		wget https://www.dropbox.com/s/gtg09zm5mwnvro8/11HB6XZSh1Q.zip
 		unzip -q 11HB6XZSh1Q.zip && rm 11HB6XZSh1Q.zip
 		mv 11HB6XZSh1Q dataset
 	fi
 	cd -
 
 	## Physics Models
-	cd ./realenv/core/physics
-	wget --quiet https://www.dropbox.com/s/vb3pv4igllr39pi/models.zip
-	unzip -q models.zip && rm models.zip
+	if [ ! -d ./realenv/core/physics/models ]; then
+		cd ./realenv/core/physics
+		wget --quiet https://www.dropbox.com/s/3w9vxc8f071u1h0/models.zip
+		unzip -q models.zip && rm models.zip
+		cd -
+	fi
+
+	cd ./realenv/core/render/		
+		if [ ! -f coord.npy ]; then
+			wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
+		fi
+		if [ ! -f model.pth ]; then
+			wget --quiet https://www.dropbox.com/s/e7far9okgv7oq8p/model.pth
+		fi
 	cd -
+		
+	if [ -f realenv/data/*.pkl ]; then
+		rm realenv/data/*.pkl
+	fi
 }
+
 
 ec2_install_conda() {
     if [ ! -d ~/miniconda2 ]; then
@@ -141,6 +187,7 @@ hello() {
 }
 
 subcommand=$1
+dset_name=$2
 case "$subcommand" in                                                                                
   "install")
 	install
@@ -163,7 +210,7 @@ case "$subcommand" in
   "build_local")
 	build_local
 	;;
-  *)                                                                                     
+  *)                                                                 
     default "$@"                                       
     exit 1                                                                             
     ;;                                                                                 

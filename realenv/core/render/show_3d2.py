@@ -7,7 +7,7 @@ import sys
 import torch
 import argparse
 import time
-import utils
+import realenv.core.render.utils as utils
 import transforms3d
 import json
 import zmq
@@ -16,10 +16,13 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from numpy import cos, sin
 from realenv.core.render.profiler import Profiler
-from multiprocessing.dummy import Process
+from multiprocessing import Process
 
 from realenv.data.datasets import ViewDataSet3D
+from realenv.configs import *
 from realenv.core.render.completion import CompletionNet
+from realenv.learn.completion2 import CompletionNet2
+import torch.nn as nn
 
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,6 +31,11 @@ coords  = np.load(os.path.join(file_dir, 'coord.npy'))
 context_mist = zmq.Context()
 socket_mist = context_mist.socket(zmq.REQ)
 socket_mist.connect("tcp://localhost:5555")
+
+LINUX_OFFSET = {
+    "x_delta": 10,
+    "y_delta": 100
+}
 
 
 class InImg(object):
@@ -52,7 +60,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -75,12 +83,58 @@ class PCRenderer:
         self.model = None
         self.old_topk = set([])
         self.k = 5
+        self.render_mode = render_mode
+        self.use_filler = use_filler
 
-        self.showsz = 1024
-        self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
-        self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
+        self.showsz = 256
 
-        self.scale_up = scale_up
+        #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
+        #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
+        #self.scale_up = scale_up
+
+
+        self.show   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        self.show_rgb   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
+
+        self.show_unfilled  = None
+        if MAKE_VIDEO:
+            self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+
+
+        comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
+        comp = torch.nn.DataParallel(comp).cuda()
+        comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
+        self.model = comp.module
+        self.model.eval()
+
+
+        self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
+        self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
+        self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
+
+        if human:
+            self.renderToScreenSetup()
+
+    def renderToScreenSetup(self):
+        cv2.namedWindow('RGB cam')
+        cv2.namedWindow('Depth cam')
+        if MAKE_VIDEO:
+            cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
+            cv2.namedWindow('RGB prefilled')
+            cv2.moveWindow('RGB prefilled', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+        elif HIGH_RES_MONITOR:
+            cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+
+        if LIVE_DEMO:
+            cv2.moveWindow('RGB cam', -1 , 768)
+            cv2.moveWindow('Depth cam', 512, 768)
+
+        #cv2.imshow('RGB cam', self.show_rgb)
+        #cv2.imshow('Depth cam', self.show_rgb)
+        #cv2.setMouseCallback('RGB cam',self._onmouse)
+
 
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
@@ -182,69 +236,82 @@ class PCRenderer:
         quat_wxyz  = utils.quat_xyzw_to_wxyz(utils.mat_to_quat_xyzw(p))
         return pos, quat_wxyz
 
+    def set_render_mode(self, mode):
+        self.render_mode = mode
 
-    def render(self, imgs, depths, pose, model, poses, target_pose, show):
+    def render(self, imgs, depths, pose, model, poses, target_pose, show, show_unfilled=None):
         v_cam2world = target_pose
         p = (v_cam2world).dot(np.linalg.inv(pose))
         p = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
         s = utils.mat_to_str(p)
 
         #with Profiler("Depth request round-trip"):
-        socket_mist.send(s)
+        socket_mist.send_string(s)
         message = socket_mist.recv()
 
         #with Profiler("Read from framebuffer and make pano"):
-        wo, ho = 768 * 4, 768 * 3
+        wo, ho = self.showsz * 4, self.showsz * 3
 
         # Calculate height and width of output image, and size of each square face
-        h = wo/3
+        h = wo//3
         w = 2*h
-        n = ho/3
-        opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
+        n = ho//3
 
-        def _render_depth(opengl_arr):
-            #with Profiler("Render Depth"):
-            cv2.imshow('target depth', opengl_arr/16.)
+
+        pano = False
+        if pano:
+            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
+        else:
+            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
 
         def _render_pc(opengl_arr):
-            #with Profiler("Render pointcloud"):
-            poses_after = [
-                pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
-                for i in range(len(imgs))]
-
-            with Profiler("CUDA PC rendering"):
-                print('scale', self.scale_up)
+            with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
+                poses_after = [
+                    pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
+                    for i in range(len(imgs))]
+                #opengl_arr = np.zeros((h,w), dtype = np.float32)
                 cuda_pc.render(ct.c_int(len(imgs)),
-                           ct.c_int(imgs[0].shape[0]),
-                           ct.c_int(imgs[0].shape[1]),
-                           ct.c_int(self.scale_up),
-                           imgs.ctypes.data_as(ct.c_void_p),
-                           depths.ctypes.data_as(ct.c_void_p),
-                           np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                           show.ctypes.data_as(ct.c_void_p),
-                           opengl_arr.ctypes.data_as(ct.c_void_p)
-                          )
-        threads = [
-            Process(target=_render_pc, args=(opengl_arr,)),
-            Process(target=_render_depth, args=(opengl_arr,))]
-        [t.start() for t in threads]
-        [t.join() for t in threads]
+                               ct.c_int(imgs[0].shape[0]),
+                               ct.c_int(imgs[0].shape[1]),
+                               ct.c_int(self.showsz),
+                               ct.c_int(self.showsz),
+                               imgs.ctypes.data_as(ct.c_void_p),
+                               depths.ctypes.data_as(ct.c_void_p),
+                               np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                               show.ctypes.data_as(ct.c_void_p),
+                               opengl_arr.ctypes.data_as(ct.c_void_p)
+                              )
 
-        if model:
+        #threads = [
+        #    Process(target=_render_pc, args=(opengl_arr,)),
+        #    Process(target=_render_depth, args=(opengl_arr,))]
+        #[t.start() for t in threads]
+        #[t.join() for t in threads]
+        _render_pc(opengl_arr)
+
+        if MAKE_VIDEO:
+            show_unfilled[:, :, :] = show[:, :, :]
+
+        if self.use_filler and self.model:
             tf = transforms.ToTensor()
-            before = time.time()
-            source = tf(show)
-            source_depth = tf(np.expand_dims(target_depth, 2).astype(np.float32)/65536 * 255)
-            imgv.data.copy_(source)
-            maskv.data.copy_(source_depth)
-            print('Transfer time', time.time() - before)
-            before = time.time()
-            recon = model(imgv, maskv)
-            print('NNtime:', time.time() - before)
-            before = time.time()
-            show2 = recon.data.cpu().numpy()[0].transpose(1,2,0)
-            show[:] = (show2[:] * 255).astype(np.uint8)
-            print('Transfer to CPU time:', time.time() - before)
+            #from IPython import embed; embed()
+            with Profiler("Transfer time", enable= ENABLE_PROFILING):
+                source = tf(show)
+                mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+                source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
+                source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
+                #print(mask.size(), source_depth.size())
+                mask = torch.cat([source_depth, mask], 0)
+                self.imgv.data.copy_(source)
+                self.maskv.data.copy_(mask)
+            with Profiler("NNtime", enable=ENABLE_PROFILING):
+                recon = model(self.imgv, self.maskv)
+            with Profiler("Transfer to CPU time", enable=ENABLE_PROFILING):
+                show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
+                show[:] = (show2[:] * 255).astype(np.uint8)
+
+        self.target_depth = opengl_arr ## target depth
+
 
 
     def renderOffScreenInitialPose(self):
@@ -254,71 +321,109 @@ class PCRenderer:
         quat_xyzw = utils.quat_wxyz_to_xyzw(quat_wxyz).tolist()
         return pos, quat_xyzw
 
-    def renderOffScreen(self, pose):
-        with Profiler("top k selection"):
-            ## Query physics engine to get [x, y, z, roll, pitch, yaw]
-            new_pos, new_quat = pose[0], pose[1]
-            #print("receiving", new_pos, new_quat)
-            self.x, self.y, self.z = new_pos
-            self.quat = new_quat
+    def rankPosesByDistance(self, pose):
+        """ This function is called immediately before renderOffScreen in simple_env
+        (hzyjerry) I know this is really bad style but currently we'll have to stick this way
+        """
+        ## Query physics engine to get [x, y, z, roll, pitch, yaw]
+        new_pos, new_quat = pose[0], pose[1]
+        self.x, self.y, self.z = new_pos
+        self.quat = new_quat
 
-            v_cam2world = self.target_poses[0]
-            v_cam2cam   = self._getViewerRelativePose()
-            cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
+        v_cam2world = self.target_poses[0]
+        v_cam2cam   = self._getViewerRelativePose()
+        self.render_cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
 
-            ## Entry point for change of view
-            ## Optimization
-            #depth_buffer = np.zeros(self.imgs[0].shape[:2], dtype=np.float32)
+        ## Entry point for change of view
+        ## Optimization
+        #depth_buffer = np.zeros(self.imgs[0].shape[:2], dtype=np.float32)
 
-            relative_poses = np.copy(self.target_poses)
-            for i in range(len(relative_poses)):
-                relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
+        relative_poses = np.copy(self.target_poses)
+        for i in range(len(relative_poses)):
+            relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
+        self.relative_poses = relative_poses
 
-            poses_after = [cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
-            pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
+        poses_after = [self.render_cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
+        pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
+        pose_locations = [self.target_poses[i][:3,-1].tolist() for i in range(len(self.imgs))]
 
-            topk = (np.argsort(pose_after_distance))[:self.k]
 
-            if set(topk) != self.old_topk:
-                self.imgs_topk = np.array([self.imgs[i] for i in topk])
-                self.depths_topk = np.array([self.depths[i] for i in topk]).flatten()
-                self.relative_poses_topk = [relative_poses[i] for i in topk]
-                self.old_topk = set(topk)
+        #topk = (np.argsort(pose_after_distance))[:self.k]
+        return pose_after_distance, pose_locations
 
-        with Profiler("Render pointcloud all"):
-            self.render(self.imgs_topk, self.depths_topk, cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show)
 
+    def renderOffScreen(self, pose, k_views=None):
+        if not k_views:
+            all_dist, _ = self.rankPosesByDistance(pose)
+            k_views = (np.argsort(all_dist))[:self.k]
+        if set(k_views) != self.old_topk:
+            self.imgs_topk = np.array([self.imgs[i] for i in k_views])
+            self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
+            self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
+            self.old_topk = set(k_views)
+
+        with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
+            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
+
+            self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
+            if MAKE_VIDEO:
+                self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
+        return self.show_rgb, self.target_depth[:, :, None]
 
-        #return self.show_rgb
 
-    def renderToScreenSetup(self):
-        cv2.namedWindow('show3d')
-        cv2.namedWindow('target depth')
-        cv2.moveWindow('show3d',1140,0)
-        cv2.moveWindow('target depth', 1140, 2048)
-        cv2.setMouseCallback('show3d',self._onmouse)
-
-    def renderToScreen(self, pose):
+    def renderToScreen(self, pose, k_views=None):
         t0 = time.time()
-        self.renderOffScreen(pose)
+        self.renderOffScreen(pose, k_views)
         t1 = time.time()
         t = t1-t0
         self.fps = 1/t
         cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
         cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
-        cv2.imshow('show3d',self.show_rgb)
+        def _render_depth(depth):
+            #with Profiler("Render Depth"):
+            cv2.imshow('Depth cam', depth/16.)
+            if HIGH_RES_MONITOR and not MAKE_VIDEO:
+                cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], LINUX_OFFSET['y_delta'])        
 
+        def _render_rgb(rgb):
+            cv2.imshow('RGB cam',rgb)
+            if HIGH_RES_MONITOR and not MAKE_VIDEO:
+                cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+
+        def _render_rgb_unfilled(unfilled_rgb):
+            assert(MAKE_VIDEO)
+            cv2.imshow('RGB prefilled', unfilled_rgb)
+            
+        """
+        render_threads = [
+            Process(target=_render_depth, args=(self.target_depth, )),
+            Process(target=_render_rgb, args=(self.show_rgb, ))]
+        if self.compare_filler:
+            render_threads.append(Process(target=_render_rgb_unfilled, args=(self.show_unfilled_rgb, )))
+
+        [wt.start() for wt in render_threads]
+        [wt.join() for wt in render_threads]
+        """
+        _render_depth(self.target_depth)
+        _render_rgb(self.show_rgb)
+        if MAKE_VIDEO:
+            _render_rgb_unfilled(self.show_unfilled_rgb)
+                
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
-        return self.show_rgb
-
-def sync_coords():
-    with Profiler("Transform coords"):
-        new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
-    socket_mist.send(new_coords)
-    message = socket_mist.recv()
+        return self.show_rgb, self.target_depth[:, :, None]
+    
+    @staticmethod
+    def sync_coords():
+        """
+        with Profiler("Transform coords"):
+            new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
+        socket_mist.send(new_coords)
+        message = socket_mist.recv()
+        """
+        pass
 
 
 def show_target(target_img):
