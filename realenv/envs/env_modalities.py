@@ -245,7 +245,7 @@ class CameraRobotEnv(SensorRobotEnv):
         
         ## Select the nearest points
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
-        top_k = self.find_best_k_views(sensor_meta['eye_pos'], all_dist, all_pos)
+        top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
                 
         #with Profiler("Render to screen"):
         if not self.human:

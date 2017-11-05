@@ -4,21 +4,21 @@ Entry point for RL training with different algorithms
 
 ### How to Use
 Every training code support different input modes: RGB|RGBD|SENSOR|DEPTH, FILLED|UNFILLED
-Use flag `--mode` to enable different modes, use `--use_filler` to enable/disable filler.
+Use flag `--mode` to enable different modes; use `--disable_filler` to disable filler (default on); use `--human` to turn on visualzation (not supported on aws)
 
 To run the code on aws
 ```shell
 source activate universe3                  ## Activate python3 on aws
-python train_ant_navigate_ppo.py --mode RGBD --use_filler True
+python train_ant_navigate_ppo.py --mode RGBD --disable_filler
 ```
 
 Choosing different mode significantly affects the time. Speed Profiling (resolution=256x256):
 
 |Mode       |use_filler =True   | use_filler=False  |
 |---        |---                |---                |
-|RGB/RGBD   |40                 |100                |
-|DEPTH      |-                  |320                |
-|SENSOR     |-                  |320                |
+|RGB/RGBD   |58 fps             |100 fps            |
+|DEPTH      |-                  |320 fps            |
+|SENSOR     |-                  |320 fps            |
 
 ### Environment Modality
 Because Cambira environment outputs both sensor and camera data at the same time, we are forced to break from openAI gym interface, by returning camera data as default observation, and sqeezing sensor data inside meta.
@@ -36,16 +36,16 @@ sensor_replay_buffer.add(meta['sensor'])
 
 ```
 
-Note that based on environment mode, Cambria selectly fills up obs, to achieve the best performance. Certain observations (e.g. `obs[:3]` in `DEPTH` mode) is set 0.
+Note that based on environment mode, Cambria selectly fills up obs, to achieve the best performance. Certain observations (e.g. `obs[:3]` in `DEPTH` mode) is set 0. You are responsible for handling these cases.
 
 |Env  Mode  |obs[0] |obs[1] |obs[2] |obs[3] |meta['sensor'] |
 |---        |---    |---    |---    |---    |---            |
 |RGB        |R      |G      |B      |D      |Sensor Output  |
 |RGBD       |R      |G      |B      |D      |Sensor Output  |
 |DEPTH      | -     |-      |-      |D      |Sensor Output  |
-|SENSOR     | -     |-      |-      |D      |Sensor Output  |
+|SENSOR     | -     |-      |-      |-      |Sensor Output  |
 
-In OpenAI gym, you can get environment's observation dimension by running `env.observation_space.shape`. Here we separate camera output from sensor output. Their dimensions can be queried using:
+In OpenAI gym, you can get environment's observation dimension by running `env.observation_space.shape`. Here we separate camera output from sensor output. Their dimensions can be used for building NN architecture:
 ```python
 shape = env.sensor_space.shape              ## Sensor dimension 
 x_sensor = tf.placeholder(tf.float32, [None] + list(shape))
@@ -60,12 +60,11 @@ The following training schemes are currently supported.
 
 PPO1
 
-* train\_ant\_camera\_ppo1 (cnn\_policy)
 * train\_husky\_navigate\_ppo1 (mode: RGB/RGBD/DEPTH/GREY/SENSOR)
 
 DQN
 
-* train\_husky\_flagrun\_dqn (mode: default SENSOR)
+* train\_husky\_flagrun\_dqn (mode: only SENSOR)
 * train\_husky\_navigate\_dqn (mode: RGB/RGBD/DEPTH/GREY/SENSOR)
 
 
@@ -73,6 +72,7 @@ DQN
 
 A2C
 
+* train\_ant\_camera\_ppo1 (cnn\_policy)
 * train\_husky\_camera\_a2c
 * train\_husky\_sensor\_a2c
 
@@ -97,6 +97,5 @@ THis is because reward function, state function, and done condition of the envir
 `tf_utils.get_session()` -> `utils.make_gpu_session()`: multi gpu support
 
 
-`tf_utils.deepq` -> `deepq: multi gpu support`, mode for depth vs rgbd
-The customized functions:
+`tf_utils.deepq` -> `deepq: multi gpu support`, mode for rgbd vs sensor only.
     
