@@ -22,7 +22,7 @@ def callback(lcl, glb):
 
 
 def main():
-    env = HuskyFlagRunEnv(human=args.human, is_discrete=True, enable_sensors=True)
+    env = HuskyFlagRunEnv(human=args.human, is_discrete=True)
     model = deepq.models.mlp([64])
     act = deepq.learn(
         env,

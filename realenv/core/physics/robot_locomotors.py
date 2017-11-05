@@ -26,14 +26,13 @@ class WalkerBase(BaseRobot):
         robot_name,         # robot name
         action_dim,         # action dimension
         power,
+        target_pos,
         obs_dim=None,       # observation dimension, needed when mode="sensor"
         sensor_dim=None,    # used for downsampling
-        scale = 1,
-        target_pos = [1, 0, 0]
+        scale = 1
     ):
         BaseRobot.__init__(self, filename, robot_name, scale)
 
-        
         if obs_dim == None:
             obs_dim = [256, 256, 4]
         else:
@@ -322,7 +321,7 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 
-    def __init__(self, is_discrete, target_pos):
+    def __init__(self, is_discrete, target_pos=[1, 0, 0]):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
         WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos)

@@ -66,7 +66,7 @@ PPO1
 DQN
 
 * train\_husky\_flagrun\_dqn
-* train\_husky\_camera\_dqn
+* train\_husky\_navigate\_dqn
 
 
 ### Under Development
@@ -77,10 +77,10 @@ A2C
 * train\_husky\_sensor\_a2c
 
 ### What are you actually training the agents for?
-**Husky Navigate** : train the husky to navigate 20 meters along Gates 1F hallway. Starting location: end of hallway near copy room, target location near Silvio's office. Rich reward: negative delta distance. 
+**Husky Navigate** : train the husky to navigate 20 meters along Gates 1F hallway. Sensor/Camera input. Starting location: end of hallway near copy room, target location near Silvio's office. Rich reward: negative delta distance. 
 Goal: navigate and avoid collision using only RGB input. In the future we want to add collision penalty and sparse reward.
 
-**Husky Flagrun**: train the husky to chase randomized red flags. Rich reward: negative delta distance. Goal: find randomly distributed red flags using only RGB input.
+**Husky Flagrun**: train the husky to chase randomized red flags. Sensor input only. Rich reward: negative delta distance. Goal: find randomly distributed red flags using only RGB input.
 
 (to be continued)
 

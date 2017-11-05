@@ -176,7 +176,6 @@ def learn(env,
     observation_space_shape = None
     if mode=="SENSOR":
         observation_space_shape = env.sensor_space.shape
-        print(observation_space_shape)
     else:
         observation_space_shape = env.observation_space.shape
 

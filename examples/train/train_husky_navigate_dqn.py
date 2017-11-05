@@ -7,7 +7,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 import gym
-from realenv.envs.husky_env import HuskyCameraEnv, HuskySensorEnv
+from realenv.envs.husky_env import HuskyNavigateEnv
 import deepq
 import numpy as np
 
@@ -23,16 +23,14 @@ def callback(lcl, glb):
 
 
 def main():
-    HuskyEnv = None
+    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode)
     if args.mode in ["RGB", "DEPTH", "RGBD", "GREY"]:
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode=args.mode)
         model = deepq.models.cnn_to_mlp(
             convs=[(256, 8, 4), (64, 4, 2), (64, 3, 1)],
             hiddens=[256],
             dueling=True,
         )
     elif args.mode == "SENSOR":
-        env = HuskySensorEnv(human=args.human, is_discrete=True, enable_sensors=True)
         model = deepq.models.mlp([64])
     else:
         raise AssertionError()

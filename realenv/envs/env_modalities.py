@@ -32,14 +32,17 @@ class SensorRobotEnv(BaseEnv):
     Handles action, reward
     """
 
-    def __init__(self, scene_fn=create_single_player_building_scene):
+    def __init__(self, scene_type="building", gpu_count=0):
+        if scene_type == "building":
+            scene_fn = create_single_player_building_scene
+        else:
+            scene_fn = create_single_player_stadium_scene 
         BaseEnv.__init__(self, scene_fn)
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
         #   @self.timestep
         #   @self.frame_skip
-        #   @self.enable_sensors
-
+        
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
@@ -64,9 +67,19 @@ class SensorRobotEnv(BaseEnv):
         ## Robot's eye observation, in sensor mode black pixels are returned
         self.observation_space = self.robot.observation_space
         self.sensor_space = self.robot.sensor_space
+        self.gpu_count = gpu_count
+        self.nframe = 0
+        self.setup_rendering_camera()
 
-        
+    def setup_rendering_camera(self):
+        print("Please do not directly instantiate SensorRobotEnv")
+        raise NotImplementedError()
+
+    def get_keys_to_action(self):
+        return self.robot.keys_to_action
+
     def _reset(self):
+        self.nframe = 0
         BaseEnv._reset(self)
 
         if not self.ground_ids:
@@ -93,9 +106,14 @@ class SensorRobotEnv(BaseEnv):
 
 
     def _step(self, a):
-        state = self.robot.calc_state()  # also calculates self.joints_at_limit
+        self.nframe += 1
 
-        self.rewards, done = self.calc_rewards(a, state)
+        if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
+            self.robot.apply_action(a)
+            self.scene.global_step()
+
+        state = self.robot.calc_state()  # also calculates self.joints_at_limit
+        self.rewards, done = self.calc_rewards_and_done(a, state)
         debugmode=0
         if (debugmode):
             print("rewards=")
@@ -119,7 +137,8 @@ class SensorRobotEnv(BaseEnv):
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
 
     def calc_rewards(self, a, state):
-        return -1, False
+        print("Please do not directly instantiate CameraRobotEnv")
+        raise NotImplementedError()
 
     def get_eye_pos_orientation(self):
         """Used in CameraEnv.setup"""
@@ -171,30 +190,36 @@ class SensorRobotEnv(BaseEnv):
     def getExtendedObservation(self):
         pass
 
-    
 
 class CameraRobotEnv(SensorRobotEnv):
-    def __init__(self, use_filler, mode, gpu_count=0):
-        SensorRobotEnv.__init__(self)
+    """CameraRobotEnv has full modalities. If it's initialized with mode="SENSOR",
+    PC renderer is not initialized to save time. 
+    """
+    def __init__(self, mode, gpu_count, scene_type, use_filler=True):
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
         #   @self.timestep
         #   @self.frame_skip
-        #   @self.enable_sensors
-        self.r_camera_rgb = None     ## Rendering engine
-        self.r_camera_mul = None     ## Multi channel rendering engine
-        self.use_filler   = use_filler
-        self.gpu_count    = gpu_count
         assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
         self.mode = mode
-
+        self.requires_camera_input = self.mode in ["GREY", "RGB", "RGBD", "DEPTH"]
+        self.use_filler = use_filler
+        SensorRobotEnv.__init__(self, scene_type, gpu_count)
         
+    def setup_rendering_camera(self):
+        if not self.requires_camera_input:
+            return
+        self.r_camera_rgb = None     ## Rendering engine
+        self.r_camera_mul = None     ## Multi channel rendering engine
+        self.check_port_available()
+        self.setup_camera_multi()
+        self.setup_camera_rgb()
+
     def _reset(self):
-        if not self.r_camera_rgb or not self.r_camera_mul:
-            self.check_port_available()
-            self.setup_camera_multi()
-            self.setup_camera_rgb()
         state = SensorRobotEnv._reset(self)
+        if not self.requires_camera_input:
+            return state
+
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
@@ -207,6 +232,9 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
+        if not self.requires_camera_input:
+            return sensor_state, sensor_reward, done, sensor_meta
+
         if self.robot.model_type == "MJCF":
             sensor_meta['eye_pos'] = (np.array(sensor_meta['eye_pos']) * self.robot.mjcf_scaling).tolist()
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
@@ -225,18 +253,21 @@ class CameraRobotEnv(SensorRobotEnv):
         else:
             rgb, depth = self.r_camera_rgb.renderToScreen(pose, top_k)
 
-        if self.enable_sensors:
-            sensor_meta["sensors"] = sensor_state
+        sensor_meta["sensors"] = sensor_state
         
         visuals = self.get_visuals(rgb, depth)
         return visuals, sensor_reward, done, sensor_meta
         
 
     def _close(self):
+        if not self.requires_camera_input:
+            return
         self.r_camera_mul.terminate()
 
 
     def get_visuals(self, rgb, depth):
+        ## Camera specific
+        assert(self.requires_camera_input)
         if self.mode == "GREY":
             rgb = np.mean(rgb, axis=2, keepdims=True)
             visuals = np.append(rgb, depth, axis=2)
@@ -252,6 +283,8 @@ class CameraRobotEnv(SensorRobotEnv):
         return visuals
 
     def setup_camera_rgb(self):
+        ## Camera specific
+        assert(self.requires_camera_input)
         scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
         ## Todo: (hzyjerry) more error handling
         self.scale_up = 4
@@ -293,6 +326,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
     def setup_camera_multi(self):
+        assert(self.requires_camera_input)
         def camera_multi_excepthook(exctype, value, tb):
             print("killing", self.r_camera_mul)
             self.r_camera_mul.terminate()
@@ -314,6 +348,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
     def check_port_available(self):
+        assert(self.requires_camera_input)
         # TODO (hzyjerry) not working
         """
         s = socket.socket()

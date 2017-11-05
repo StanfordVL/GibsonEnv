@@ -47,16 +47,15 @@ class BaseEnv(gym.Env):
         ## Properties already instantiated from SensorEnv/CameraEnv
         #   @self.human
         #   @self.robot
-        if (self.physicsClientId<0):
-            self.physicsClientId = p.connect(p.SHARED_MEMORY)
-            if (self.physicsClientId < 0):
-                if (self.human):
-                    self.physicsClientId = p.connect(p.GUI)
-                    if MAKE_VIDEO:
-                        #self.set_window(-1, -1, 1024, 512)
-                        self.set_window(-1, -1, 512, 512)
-                else:
-                    self.physicsClientId = p.connect(p.DIRECT)
+        
+        #self.physicsClientId = p.connect(p.SHARED_MEMORY)
+        if (self.human):
+            self.physicsClientId = p.connect(p.GUI)
+            if MAKE_VIDEO:
+                #self.set_window(-1, -1, 1024, 512)
+                self.set_window(-1, -1, 512, 512)
+        else:
+            self.physicsClientId = p.connect(p.DIRECT)
 
         self.camera = Camera()
         self._seed()
