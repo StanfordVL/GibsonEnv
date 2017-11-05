@@ -8,8 +8,9 @@ Use flag `--mode` to enable different modes; use `--disable_filler` to disable f
 
 To run the code on aws
 ```shell
-source activate universe3                  ## Activate python3 on aws
-python train_ant_navigate_ppo.py --mode RGBD --disable_filler
+source activate universe3                                            ## Activate python3 on aws
+python train_husky_navigate_ppo1.py --mode RGBD --disable_filler     ## Modality: RGBD + SENSOR
+python train_husky_navigate_ppo1.py --mode SENSOR --disable_filler   ## Modality: RGBD + SENSOR
 ```
 
 Choosing different mode significantly affects the time. Speed Profiling (resolution=256x256):
@@ -60,12 +61,12 @@ The following training schemes are currently supported.
 
 PPO1
 
-* train\_husky\_navigate\_ppo1 (mode: RGB/RGBD/DEPTH/GREY/SENSOR)
+* train\_husky\_navigate\_ppo1 (mode: <kbd>RGB</kbd>/<kbd>RGBD</kbd>/<kbd>DEPTH</kbd>/<kbd>GREY</kbd>/<kbd>SENSOR</kbd>)
 
 DQN
 
-* train\_husky\_flagrun\_dqn (mode: only SENSOR)
-* train\_husky\_navigate\_dqn (mode: RGB/RGBD/DEPTH/GREY/SENSOR)
+* train\_husky\_flagrun\_dqn (mode: only <kbd>SENSOR</kbd>)
+* train\_husky\_navigate\_dqn (mode: <kbd>RGB</kbd>/<kbd>RGBD</kbd>/<kbd>DEPTH</kbd>/<kbd>GREY</kbd>/<kbd>SENSOR</kbd>)
 
 
 ### Under Development
