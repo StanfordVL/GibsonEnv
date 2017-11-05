@@ -1,7 +1,7 @@
 from realenv.data.datasets import ViewDataSet3D, get_model_path
 from realenv.configs import *
 from realenv.core.render.show_3d2 import PCRenderer
-from realenv.envs.env_bases import BaseEnv
+from realenv.envs.env_bases import *
 import realenv
 from gym import error
 from gym.utils import seeding
@@ -28,8 +28,8 @@ DEFAULT_DEBUG_CAMERA = {
 }
 
 class SensorRobotEnv(BaseEnv):
-    def __init__(self):
-        BaseEnv.__init__(self)
+    def __init__(self, scene_fn=create_single_player_building_scene):
+        BaseEnv.__init__(self, scene_fn)
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
         #   @self.timestep
@@ -60,14 +60,9 @@ class SensorRobotEnv(BaseEnv):
         BaseEnv._reset(self)
 
         if not self.ground_ids:
-            if SCENE_TYPE == 'stadium':
-                self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
-                    self.building_scene.building_obj)
-            else:
-                self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
-                    (self.building_scene.building_obj,))
-
-            self.ground_ids = set([(self.building_scene.building_obj, 0)])
+            self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
+                    self.scene.scene_obj_list)
+            self.ground_ids = set(self.scene.scene_obj_list)
 
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):

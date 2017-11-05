@@ -1,4 +1,5 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from realenv.envs.env_bases import *
 from realenv.core.physics.robot_locomotors import Husky
 from transforms3d import quaternions
 from realenv.configs import *
@@ -124,12 +125,12 @@ class HuskyCameraEnv(HuskyEnv, CameraRobotEnv):
 class HuskySensorEnv(HuskyEnv, SensorRobotEnv):
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
         frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False,
-        is_discrete=False):
+        is_discrete=False, scene_fn=create_single_player_building_scene):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         HuskyEnv.__init__(self, is_discrete)
-        SensorRobotEnv.__init__(self)
+        SensorRobotEnv.__init__(self, scene_fn)
         self.nframe = 0
     def  _reset(self):
         obs = SensorRobotEnv._reset(self)
@@ -145,15 +146,12 @@ class HuskyFlagRunEnv(HuskyEnv, SensorRobotEnv):
         self.timestep = timestep
         self.frame_skip = frame_skip
         HuskyEnv.__init__(self, is_discrete=is_discrete, mode="SENSOR")
-        SensorRobotEnv.__init__(self)
+        SensorRobotEnv.__init__(self, scene_fn=create_single_player_stadium_scene)
         self.nframe = 0
-        assert (isinstance(self.scene, SinglePlayerStadiumScene))
         self.flag_timeout = 1
 
         if self.human:
-            self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
-                                            meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
-
+            self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
         self.lastid = None
 
     def _reset(self):
