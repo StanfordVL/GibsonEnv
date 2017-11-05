@@ -6,10 +6,10 @@ os.sys.path.insert(0,parentdir)
 
 import gym, logging
 from mpi4py import MPI
-from realenv.envs.ant_env import AntSensorEnv, AntCameraEnv
 from baselines.common import set_global_seeds
 from baselines import deepq
 from baselines.ppo1 import pposgd_simple, cnn_policy
+from realenv.envs.ant_env import AntSensorEnv, AntCameraEnv
 import tf_util as U
 import datetime
 from baselines import logger

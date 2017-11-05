@@ -5,6 +5,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0, parentdir)
 
+from baselines import deepq
 import gym
 from realenv.envs.husky_env import HuskyFlagRunEnv
 

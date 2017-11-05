@@ -74,8 +74,12 @@ DQN
 A2C
 
 * train\_ant\_camera\_ppo1 (cnn\_policy)
+* train\_ant\_sensor\_ppo
+* train\_ant\_sensor
 * train\_husky\_camera\_a2c
 * train\_husky\_sensor\_a2c
+* train\_humanoid\_sensor
+
 
 ### What are you actually training the agents for?
 **Husky Navigate** : train the husky to navigate 20 meters along Gates 1F hallway. Sensor/Camera input. Starting location: end of hallway near copy room, target location near Silvio's office. Rich reward: negative delta distance. 
