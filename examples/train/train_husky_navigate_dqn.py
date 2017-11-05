@@ -7,7 +7,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 import gym
-from realenv.envs.husky_env import HuskyCameraEnv
+from realenv.envs.husky_env import HuskyCameraEnv, HuskySensorEnv
 import deepq
 import numpy as np
 
@@ -23,17 +23,20 @@ def callback(lcl, glb):
 
 
 def main():
-    if args.mode =="RGB" or args.mode == "rgb":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGB")
-    elif args.mode =="GREY" or args.mode == "grey":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="GREY")
-    elif args.mode =="RGBD" or args.mode == "rgbd":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGBD")
-    model = deepq.models.cnn_to_mlp(
-        convs=[(256, 8, 4), (64, 4, 2), (64, 3, 1)],
-        hiddens=[256],
-        dueling=True,
-    )
+    HuskyEnv = None
+    if args.mode in ["RGB", "DEPTH", "RGBD", "GREY"]:
+        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode=args.mode)
+        model = deepq.models.cnn_to_mlp(
+            convs=[(256, 8, 4), (64, 4, 2), (64, 3, 1)],
+            hiddens=[256],
+            dueling=True,
+        )
+    elif args.mode == "SENSOR":
+        env = HuskySensorEnv(human=args.human, is_discrete=True, enable_sensors=True)
+        model = deepq.models.mlp([64])
+    else:
+        raise AssertionError()
+    
     act = deepq.learn(
         env,
         q_func=model,
