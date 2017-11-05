@@ -44,7 +44,7 @@ def main():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--human', type=bool, default=False)
+    parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--num_gpu', type=int, default=1)
     args = parser.parse_args()
     main()
