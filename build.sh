@@ -65,11 +65,15 @@ install() {
 	pip install opencv-python			## python3
 	conda install pytorch torchvision cuda80 -c soumith -y
 	
+	git clone https://github.com/openai/baselines.git
+	cd baselines
+	git install -e .
+	cd -
 
 	## Core multi channel GLFW
 	echo $password | sudo -s apt-get update
 	echo $password | sudo -s apt-get install libzmq3-dev libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev -y
-	echo $password | sudo -s apt install mesa-common-dev libglu1-mesa-dev freeglut3-dev -y
+	echo $password | sudo -s apt install mesa-common-dev libglu1-mesa-dev freeglut3-dev libopenmpi-dev -y
 	echo $password | sudo -s apt autoremove
 	echo $password | sudo -s apt install cmake -y
 	echo $password | sudo -s apt install golang libjpeg-turbo8-dev unzip -y

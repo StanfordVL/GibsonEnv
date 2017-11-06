@@ -230,10 +230,12 @@ int main( int argc, char * argv[] )
 
     cmdline::parser cmdp;
     cmdp.add<std::string>("modelpath", 'd', "data model directory", true, "");
+    cmdp.add<int>("GPU", 'g', "GPU index", false, 0);
 
     cmdp.parse_check(argc, argv);
 
     std::string model_path = cmdp.get<std::string>("modelpath");
+    int GPU_NUM = cmdp.get<int>("GPU");
 
     std::string name_obj = model_path + "/" + "modeldata/out_res.obj";
     std::string name_loc = model_path + "/" + "sweep_locations.csv";
@@ -544,9 +546,10 @@ int main( int argc, char * argv[] )
 
 	zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
-    socket.bind ("tcp://127.0.0.1:5555");
+    socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
 	cudaGetDevice( &cudaDevice );
 	//int g_cuda_device = 0;
+	cudaDevice = GPU_NUM;
 	cudaSetDevice(cudaDevice);
 	cudaGLSetGLDevice(cudaDevice);
 	cudaGraphicsResource* resource;
