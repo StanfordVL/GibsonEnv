@@ -309,3 +309,117 @@ class HuskyFetchEnv(CameraRobotEnv):
         self.flag_timeout -= 1
 
         return state, reward, done, meta
+
+
+class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
+    """Specfy flagrun reward
+    """
+    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
+                 frame_skip=HUMANOID_FRAMESKIP, is_discrete=False,
+                 gpu_count=0, scene_type="building"):
+        self.robot = Husky(is_discrete)
+        self.human = human
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        ## Mode initialized with mode=SENSOR
+        CameraRobotEnv.__init__(self, "SENSOR", gpu_count, scene_type)
+
+        self.flag_timeout = 1
+        self.tracking_camera = tracking_camera
+
+        if self.human:
+            self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
+            self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
+
+        self.lastid = None
+
+    def _reset(self):
+        obs = CameraRobotEnv._reset(self)
+        return obs
+
+    def flag_reposition(self):
+        #self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
+        #                                            high=+self.scene.stadium_halflen)
+        #self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
+        #                                            high=+self.scene.stadium_halfwidth)
+
+
+        force_x = self.np_random.uniform(-300,300)
+        force_y = self.np_random.uniform(-300, 300)
+
+        more_compact = 0.5  # set to 1.0 whole football field
+        #self.walk_target_x *= more_compact
+        #self.walk_target_y *= more_compact
+
+        startx, starty, _ = self.robot.body_xyz
+
+
+        self.flag = None
+        #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
+        self.flag_timeout = 600 / self.scene.frame_skip
+        #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
+        #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
+        if self.human:
+            if self.lastid:
+                p.removeBody(self.lastid)
+
+            self.lastid = p.createMultiBody(baseMass = 1, baseVisualShapeIndex=self.visualid, baseCollisionShapeIndex=self.colisionid, basePosition=[startx, starty, 0.5])
+            p.applyExternalForce(self.lastid, -1, [force_x,force_y,50], [0,0,0], p.LINK_FRAME)
+
+        ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
+
+        self.robot.walk_target_x = ball_xyz[0]
+        self.robot.walk_target_y = ball_xyz[1]
+
+    def calc_rewards_and_done(self, a, state):
+        if self.lastid:
+            ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
+            self.robot.walk_target_x = ball_xyz[0]
+            self.robot.walk_target_y = ball_xyz[1]
+
+
+        potential_old = self.potential
+        self.potential = self.robot.calc_potential()
+        progress = float(self.potential - potential_old)
+
+        if not a is None:
+            electricity_cost = self.electricity_cost * float(np.abs(
+                a * self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
+            electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        else:
+            electricity_cost = 0
+
+        alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        if alive == 0:
+            alive_score = 0.1
+        else:
+            alive_score = -0.1
+
+
+        done = alive > 0 or self.nframe > 500
+
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+
+        joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        debugmode = 0
+        if (debugmode):
+            print("alive=")
+            print(alive)
+            print("progress")
+            print(progress)
+
+        return [
+            alive_score,
+            progress,
+        ], done
+
+
+    def _step(self, a):
+        state, reward, done, meta = CameraRobotEnv._step(self, a)
+        if self.flag_timeout <= 0:
+            self.flag_reposition()
+        self.flag_timeout -= 1
+
+        return state, reward, done, meta
