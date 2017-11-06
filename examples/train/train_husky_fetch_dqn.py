@@ -29,7 +29,7 @@ def main():
         env,
         q_func=model,
         lr=1e-3,
-        max_timesteps=100000,
+        max_timesteps=50000,
         buffer_size=50000,
         exploration_fraction=0.1,
         exploration_final_eps=0.02,
@@ -38,8 +38,8 @@ def main():
         mode="SENSOR",           ## Note: this is needed for sensor_only
         num_gpu=args.num_gpu
     )
-    print("Saving model to husky_flagrun_model.pkl")
-    act.save("husky_flagrun_model.pkl")
+    print("Saving model to husky_fetch_model.pkl")
+    act.save("husky_fetch_model.pkl")
 
 
 if __name__ == '__main__':

@@ -213,9 +213,10 @@ class HuskyFetchEnv(CameraRobotEnv):
         self.flag_timeout = 1
         self.tracking_camera = tracking_camera
 
+        self.visualid = -1
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
-            self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
+        self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
         self.lastid = None
 
@@ -245,12 +246,11 @@ class HuskyFetchEnv(CameraRobotEnv):
         self.flag_timeout = 600 / self.scene.frame_skip
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
-        if self.human:
-            if self.lastid:
-                p.removeBody(self.lastid)
+        if self.lastid:
+            p.removeBody(self.lastid)
 
-            self.lastid = p.createMultiBody(baseMass = 1, baseVisualShapeIndex=self.visualid, baseCollisionShapeIndex=self.colisionid, basePosition=[startx, starty, 0.5])
-            p.applyExternalForce(self.lastid, -1, [force_x,force_y,50], [0,0,0], p.LINK_FRAME)
+        self.lastid = p.createMultiBody(baseMass = 1, baseVisualShapeIndex=self.visualid, baseCollisionShapeIndex=self.colisionid, basePosition=[startx, starty, 0.5])
+        p.applyExternalForce(self.lastid, -1, [force_x,force_y,50], [0,0,0], p.LINK_FRAME)
 
         ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
 

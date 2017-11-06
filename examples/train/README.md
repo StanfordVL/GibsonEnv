@@ -108,7 +108,7 @@ THis is because reward function, state function, and done condition of the envir
     
 ## Remote Training on AWS
  
-### Part 0 Running Environment on AWS
+### Part 1 Running Environment on AWS
 
 Adapted from https://stackoverflow.com/questions/19856192/run-opengl-on-aws-gpu-instances-with-centos
 
@@ -140,7 +140,7 @@ X Protocol Version 11, Revision 0
 
 Other wise, DISPLAY=:0 is occupied
 ```bash
-pkill Xorg    ## be careful because if there's Xorg process running on other GPU, this will kill them all
+sudo pkill Xorg    ## be careful because if there's Xorg process running on other GPU, this will kill them all
 sudo /usr/bin/X :0
 
 ## sudo /usr/bin/X :1  ## If you want to use DISPLAY=:1 instead of 0
@@ -174,4 +174,24 @@ Compiling shader : ./StandardShadingRTT.fragmentshader
 Note: abnormal logs when running environment (something's wrong)
 ```
 GPUAssert Error:.....
+```
+
+### Part 2 Visualizing Environment on AWS
+```bash
+## Open one terminal
+ssh -i universe.pem ubuntu@ip-address
+sudo xinit
+
+## Open a second terminal
+ssh -i universe.pem ubuntu@ip-address
+/opt/TurboVNC/bin/vncserver
+## This will tell you 'TurboVNC: ip-xxx:ID (ubuntu)' started on display ip-xxx:ID
+## Make note of the ID
+DISPLAY=:1 /opt/VirtualGL/bin/vglrun glxgears                   ## If ID is 1
+# DISPLAY=:1 /opt/VirtualGL/bin/vglrun python ......
+
+## Open a third ssh session by command:
+ssh -L 5901:localhost:5901 -i universe.pem ubuntu@ip-addresss   ## If ID is 1
+## Open local VNC Viewer: localhost:5901                        ## If ID is 1
+## password: 123456
 ```
