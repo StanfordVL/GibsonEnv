@@ -217,6 +217,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def _reset(self):
         state = SensorRobotEnv._reset(self)
+
         if not self.requires_camera_input:
             return state
 

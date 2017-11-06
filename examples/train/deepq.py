@@ -14,6 +14,7 @@ from baselines.common.schedules import LinearSchedule
 from baselines.deepq.replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
 from baselines.deepq import models as models
 from baselines.common import tf_util as U
+import zipfile
 
 class ActWrapper(object):
     def __init__(self, act, act_params):
@@ -166,10 +167,10 @@ def learn(env,
         See header of baselines/deepq/categorical.py for details on the act function.
     """
     # Create all the functions necessary to train the model
-    
+
     ## Modified (hzyjerry): for multi gpu support
     sess = utils.make_gpu_session(num_gpu)
-    sess.__enter__()    
+    sess.__enter__()
 
     # capture the shape outside the closure so that the env object is not serialized
     # by cloudpickle when serializing make_obs_ph
