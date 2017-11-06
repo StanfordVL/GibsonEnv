@@ -65,6 +65,7 @@ def main():
     parser.add_argument('--l1', type=float, default = 0, help='add l1 loss')
     parser.add_argument('--color_coeff', type=float, default = 0, help='add color match loss')
     parser.add_argument('--unfiller'  , action='store_true', help='debug mode')
+    parser.add_argument('--joint'  , action='store_true', help='debug mode')
     
     
     
@@ -123,7 +124,7 @@ def main():
         comp2 = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
         comp2 =  torch.nn.DataParallel(comp2).cuda()
         if opt.model != '':
-            comp2.load_state_dict(torch.load(opt.model))
+            comp2.load_state_dict(torch.load(opt.model.replace('G', 'G2')))
         optimizerG2 = torch.optim.Adam(comp2.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))          
         
     l2 = nn.MSELoss()
@@ -209,8 +210,19 @@ def main():
             
             if opt.unfiller:
                 optimizerG2.zero_grad()
+                
+                maskvc.data.fill_(0)
+                
                 recon2 = comp2(img_originalc, maskvc)
-                loss2 = l2(p(recon2), p(recon).detach())
+                
+                
+                if not opt.joint:
+                    loss2 = l2(p(recon2), p(recon).detach())
+                else:
+                    recon_percept = p(recon)
+                    z = Variable(torch.zeros(recon_percept.size()).cuda())
+                    loss2 = l2(p(recon2) - recon_percept, z)
+                
                 for scale in [32]:
                     img_originalc_patch = recon.detach().view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1) 
                     recon2_patch = recon2.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1)    
@@ -226,13 +238,18 @@ def main():
                     recon2_patch_cov_cat = torch.cat(recon2_patch_cov,1)
                     img_originalc_patch_cov_cat = torch.cat(img_originalc_patch_cov, 1)
                     
-                    
-                    color_loss = l2(recon2_patch_mean, img_originalc_patch_mean) + l2(recon2_patch_cov_cat, img_originalc_patch_cov_cat.detach())
+                    z = Variable(torch.zeros(img_originalc_patch_mean.size()).cuda())
+                    if opt.joint:
+                        color_loss = l2(recon2_patch_mean - img_originalc_patch_mean, z) 
+                    else:
+                        color_loss = l2(recon2_patch_mean, img_originalc_patch_mean) 
                     
                     loss2 += opt.color_coeff * color_loss
                     
                     print("color loss %f" % color_loss.data[0])
             
+            
+                loss2 = loss2 * 0.3
                 loss2.backward(retain_graph = True)
                 print("loss2 %f" % loss2.data[0])
                 optimizerG2.step()
@@ -307,6 +324,7 @@ def main():
                 
                 if opt.unfiller:
                     comp2.eval()
+                    maskvc.data.fill_(0)
                     recon2 = comp2(img_originalc, maskvc)
                     comp2.train()
                     visual = torch.cat([imgc.data[:,:3,:,:], recon.data, recon2.data, img_originalc.data], 3)
