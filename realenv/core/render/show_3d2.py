@@ -289,7 +289,9 @@ class PCRenderer:
         #    Process(target=_render_depth, args=(opengl_arr,))]
         #[t.start() for t in threads]
         #[t.join() for t in threads]
-        _render_pc(opengl_arr)
+
+        if self.render_mode in ["RGB", "RGBD", "GREY"]:
+            _render_pc(opengl_arr)
 
         if MAKE_VIDEO:
             show_unfilled[:, :, :] = show[:, :, :]
@@ -365,6 +367,7 @@ class PCRenderer:
             self.old_topk = set(k_views)
 
         with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
+            self.show.fill(0)
             self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
 
             self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
@@ -399,6 +402,7 @@ class PCRenderer:
             cv2.imshow('RGB prefilled', unfilled_rgb)
             
         """
+        ## TODO(hzyjerry): multithreading in python3 is not working
         render_threads = [
             Process(target=_render_depth, args=(self.target_depth, )),
             Process(target=_render_rgb, args=(self.show_rgb, ))]

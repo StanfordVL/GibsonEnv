@@ -10,10 +10,11 @@ from baselines.ppo1 import pposgd_simple
 from baselines import deepq
 
 from mpi4py import MPI
-from realenv.envs.husky_env import HuskyCameraEnv
+from realenv.envs.husky_env import HuskyNavigateEnv
 import resnet_policy
-import tf_util as U
+import baselines.common.tf_util as U
 import datetime
+import utils
 from baselines import logger
 from baselines import bench
 import os.path as osp
@@ -24,7 +25,7 @@ import random
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
     #sess = U.single_threaded_session()
-    sess = U.make_gpu_session(args.num_gpu)
+    sess = utils.make_gpu_session(args.num_gpu)
     sess.__enter__()
     if rank == 0:
         logger.configure()
@@ -32,13 +33,8 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    if args.mode =="RGB" or args.mode == "rgb":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGB", gpu_count=args.gpu_count)
-    elif args.mode =="GREY" or args.mode == "grey":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="GREY", gpu_count=args.gpu_count)
-    elif args.mode =="RGBD" or args.mode == "rgbd":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGBD", gpu_count=args.gpu_count)
-
+    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, use_filler=not args.disable_filler)
+    
     def policy_fn(name, ob_space, ac_space):
         #return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
         return resnet_policy.ResnetPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
@@ -74,10 +70,12 @@ def main():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--mode', type=str, default="rgb")
+    parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--human', type=bool, default=False)
+    parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
+    parser.add_argument('--disable_filler', action='store_true', default=False)
     args = parser.parse_args()
     
+    assert (args.mode != "SENSOR"), "Currently PPO does not support SENSOR mode" 
     main()

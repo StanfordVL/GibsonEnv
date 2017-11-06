@@ -130,7 +130,7 @@ class AntSensorEnv(AntEnv, SensorRobotEnv):
         self.tracking_camera['z_offset'] = offset
 
     def  _reset(self):
-        obs = CameraRobotEnv._reset(self)
+        obs = SensorRobotEnv._reset(self)
         self.nframe = 0
         return obs
 
