@@ -8,7 +8,7 @@ import gym, logging
 from mpi4py import MPI
 from realenv.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
-from baselines.ppo1 import pposgd_simple
+import pposgd_simple
 import baselines.common.tf_util as U
 import cnn_policy
 import utils
@@ -32,7 +32,7 @@ def train(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
     
-    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode="RGB", gpu_count=args.gpu_count, use_filler=not args.disable_filler)
+    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=not args.disable_filler)
 
     def policy_fn(name, ob_space, ac_space):
         return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
@@ -68,7 +68,7 @@ def main():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--mode', type=str, default="rgb")
+    parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
     parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)

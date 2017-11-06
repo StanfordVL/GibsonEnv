@@ -16,7 +16,7 @@ import socket
 import shlex
 import gym
 import cv2
-
+from realenv.core.render.profiler import Profiler
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
@@ -216,10 +216,10 @@ class CameraRobotEnv(SensorRobotEnv):
         self.setup_camera_rgb()
 
     def _reset(self):
-        state = SensorRobotEnv._reset(self)
+        sensor_state = SensorRobotEnv._reset(self)
 
         if not self.requires_camera_input:
-            return state
+            return sensor_state
 
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
@@ -228,10 +228,11 @@ class CameraRobotEnv(SensorRobotEnv):
         rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         visuals = self.get_visuals(rgb, depth)
-        return visuals
+        return visuals, sensor_state
 
 
     def _step(self, a):
+        #with Profiler("Environment step"):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
         if self.robot.model_type == "MJCF":
             sensor_meta['eye_pos'] = (np.array(sensor_meta['eye_pos']) * self.robot.mjcf_scaling).tolist()

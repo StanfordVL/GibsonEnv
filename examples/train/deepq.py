@@ -224,7 +224,7 @@ def learn(env,
 
     episode_rewards = [0.0]
     saved_mean_reward = None
-    obs = env.reset()
+    camera_obs, sensor_obs = env.reset()
     reset = True
     with tempfile.TemporaryDirectory() as td:
         model_saved = False

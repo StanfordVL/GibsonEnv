@@ -26,6 +26,10 @@ Because Cambira environment outputs both sensor and camera data at the same time
 
 By doing this, we can fix the observation dimensions from start to end, and you don't need to change network architecture when using different modalities. Please tweak the learning code accordingly to accomodate the changes. Here's an example.
 ```python
+## Setting up the environment
+camera_obs, sensor_obs = env.reset()
+
+## Stepping the environment
 env = HuskyNavigateEnv(mode="RGBD")
 obs, done, reward, meta = env.step(action)
 obs                                         ## RGBD output
@@ -34,6 +38,12 @@ meta['sensor']                              ## sensor output
 ## Learning code, e.g. DQN
 camera_replay_buffer.add(obs)
 sensor_replay_buffer.add(meta['sensor'])
+
+## Getting observation space dimensions
+shape = env.sensor_space.shape              ## Sensor dimension 
+x_sensor = tf.placeholder(tf.float32, [None] + list(shape))
+shape = env.observation_space.shape         ## Observation dimension
+x_camera = tf.placeholder(tf.float32, [None] + list(shape))
 
 ```
 
@@ -45,15 +55,6 @@ Note that based on environment mode, Cambria selectly fills up obs, to achieve t
 |RGBD       |R      |G      |B      |D      |Sensor Output  |
 |DEPTH      | -     |-      |-      |D      |Sensor Output  |
 |SENSOR     | -     |-      |-      |-      |Sensor Output  |
-
-In OpenAI gym, you can get environment's observation dimension by running `env.observation_space.shape`. Here we separate camera output from sensor output. Their dimensions can be used for building NN architecture:
-```python
-shape = env.sensor_space.shape              ## Sensor dimension 
-x_sensor = tf.placeholder(tf.float32, [None] + list(shape))
-
-shape = env.observation_space.shape         ## Observation dimension
-x_camera = tf.placeholder(tf.float32, [None] + list(shape))
-```
 
 
 ### Ready-to-use Sample Code
