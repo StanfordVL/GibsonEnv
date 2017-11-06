@@ -104,3 +104,74 @@ THis is because reward function, state function, and done condition of the envir
 
 `tf_utils.deepq` -> `deepq: multi gpu support`, mode for rgbd vs sensor only.
     
+    
+    
+## Remote Training on AWS
+ 
+### Part 0 Running Environment on AWS
+
+Adapted from https://stackoverflow.com/questions/19856192/run-opengl-on-aws-gpu-instances-with-centos
+
+### Set up (only needs to do once)
+sudo apt install xinit
+start x
+sudo apt-get install mesa-utils xserver-xorg libglu1-mesa-dev freeglut3-dev mesa-common-dev libxmu-dev libxi-dev -y
+sudo nvidia-xconfig -a --use-display-device=None --virtual=1280x1024
+
+### Start X session
+
+Execute the follow code
+```bash
+sudo /usr/bin/X :0
+```
+
+If you get something like this, that means the X server is running
+```bash
+Using X configuration file: "/etc/X11/xorg.conf".
+Backed up file '/etc/X11/xorg.conf' as '/etc/X11/xorg.conf.backup'
+New X configuration file written to '/etc/X11/xorg.conf'
+
+### Or this
+X.Org X Server 1.18.4
+Release Date: 2016-07-19
+X Protocol Version 11, Revision 0
+...
+```
+
+Other wise, DISPLAY=:0 is occupied
+```bash
+pkill Xorg    ## be careful because if there's Xorg process running on other GPU, this will kill them all
+sudo /usr/bin/X :0
+
+## sudo /usr/bin/X :1  ## If you want to use DISPLAY=:1 instead of 0
+```
+
+More sanity checks to make sure X server is started
+```bash
+DISPLAY=:0 glxinfo
+nvidia-smi
+DISPLAY=:0 glxgears
+```
+
+Now you can start a separate ssh session, log in to aws, and run learning code:
+```bash
+DISPLAY=:0 CUDA_VISIBLE_DEVICES=0 python examples/train/train_husky_navigate_ppo1.py
+```
+
+
+Note: expected logs when running environment (you're fine)
+```bash
+X11: RandR gamma ramp support seems broken
+10008
+Error callbackg Environment ] |                                         | (ETA:  --:--:--) 
+X11: RandR monitor support seems broken
+10008
+Compiling shader : ./StandardShadingRTT.vertexshader
+Compiling shader : ./StandardShadingRTT.fragmentshader
+...
+```
+
+Note: abnormal logs when running environment (something's wrong)
+```
+GPUAssert Error:.....
+```
