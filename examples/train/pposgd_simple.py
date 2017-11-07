@@ -7,6 +7,44 @@ from baselines.common.mpi_adam import MpiAdam
 from baselines.common.mpi_moments import mpi_moments
 from mpi4py import MPI
 from collections import deque
+from realenv.core.render.profiler import Profiler
+
+
+
+def save(self, path=None):
+    """Save model to a pickle located at `path`"""
+    if path is None:
+        path = os.path.join(logger.get_dir(), "model.pkl")
+
+    with tempfile.TemporaryDirectory() as td:
+        U.save_state(os.path.join(td, "model"))
+        arc_name = os.path.join(td, "packed.zip")
+        with zipfile.ZipFile(arc_name, 'w') as zipf:
+            for root, dirs, files in os.walk(td):
+                for fname in files:
+                    file_path = os.path.join(root, fname)
+                    if file_path != arc_name:
+                        zipf.write(file_path, os.path.relpath(file_path, td))
+        with open(arc_name, "rb") as f:
+            model_data = f.read()
+    with open(path, "wb") as f:
+        cloudpickle.dump((model_data), f)
+
+
+def load(path):
+    with open(path, "rb") as f:
+        model_data= cloudpickle.load(f)
+    sess = U.get_session()
+    sess.__enter__()
+    with tempfile.TemporaryDirectory() as td:
+        arc_path = os.path.join(td, "packed.zip")
+        with open(arc_path, "wb") as f:
+            f.write(model_data)
+
+        zipfile.ZipFile(arc_path, 'r', zipfile.ZIP_DEFLATED).extractall(td)
+        U.load_state(os.path.join(td, "model"))
+    #return ActWrapper(act, act_params)
+
 
 def traj_segment_generator(pi, env, horizon, stochastic):
     t = 0
@@ -29,6 +67,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
 
     while True:
         prevac = ac
+        #with Profiler("agent act"):
         ac, vpred = pi.act(stochastic, ob)
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
@@ -48,6 +87,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         acs[i] = ac
         prevacs[i] = prevac
 
+        #with Profiler("environment step"):
         ob, rew, new, _ = env.step(ac)
         rews[i] = rew
 
