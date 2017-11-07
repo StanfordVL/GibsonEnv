@@ -231,11 +231,16 @@ int main( int argc, char * argv[] )
     cmdline::parser cmdp;
     cmdp.add<std::string>("modelpath", 'd', "data model directory", true, "");
     cmdp.add<int>("GPU", 'g', "GPU index", false, 0);
+    cmdp.add<int>("Width", 'w', "Render window width", false, 256);
+    cmdp.add<int>("Height", 'h', "Render window height", false, 256);
 
     cmdp.parse_check(argc, argv);
 
     std::string model_path = cmdp.get<std::string>("modelpath");
     int GPU_NUM = cmdp.get<int>("GPU");
+
+    windowHeight = cmdp.get<int>("Height");
+    windowWidth  = cmdp.get<int>("Width");
 
     std::string name_obj = model_path + "/" + "modeldata/out_res.obj";
     std::string name_loc = model_path + "/" + "sweep_locations.csv";

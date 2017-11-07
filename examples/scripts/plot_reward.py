@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 def main():
     log_file = args.file
@@ -20,6 +21,7 @@ def main():
     curr_episode = []
     print("Total episodes ", len(episode_rewards))
     print("Total timesteps", len(content))
+    #while True:
     plt.plot(smooth(episode_rewards, args.smooth))
     plt.show()
 

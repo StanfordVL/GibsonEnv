@@ -13,7 +13,7 @@ HUMANOID_TIMESTEP  = 1.0/(4 * 22)
 HUMANOID_FRAMESKIP = 4
 
 import os
-from realenv.configs import *
+from realenv import configs
 
 
 tracking_camera = {
@@ -28,22 +28,38 @@ tracking_camera = {
 class HuskyNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
-        frame_skip=HUMANOID_FRAMESKIP, is_discrete=False, mode="RGBD", 
-        use_filler=True, gpu_count=0, scene_type="building"):
-        
-        target_orn, target_pos = INITIAL_POSE["husky"][MODEL_ID][-1]
-        downsample = mode == "DEPTH_SMALL"
-        self.robot = Husky(is_discrete, target_pos=target_pos, downsample=downsample)
+    def __init__(
+            self, 
+            human=True, 
+            timestep=HUMANOID_TIMESTEP, 
+            frame_skip=HUMANOID_FRAMESKIP, 
+            is_discrete=False, 
+            mode="RGBD", 
+            use_filler=True, 
+            gpu_count=0, 
+            resolution="NORMAL"):
         self.human = human
+        self.model_id = configs.NAVIGATE_MODEL_ID
         self.timestep = timestep
         self.frame_skip = frame_skip
-
-        CameraRobotEnv.__init__(self, mode, gpu_count, scene_type, use_filler=use_filler)
+        self.resolution = resolution
         self.tracking_camera = tracking_camera
-
+        target_orn, target_pos   = INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][-1]
+        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][0]
+        self.robot = Husky(
+            is_discrete, 
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            target_pos=target_pos,
+            resolution=resolution)
+        CameraRobotEnv.__init__(
+            self, 
+            mode, 
+            gpu_count, 
+            scene_type="building", 
+            use_filler=use_filler)
+        
     def calc_rewards_and_done(self, a, state):
-       
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
         done = self.nframe > 300
@@ -113,8 +129,9 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
         print("Frame %f reward %f" % (self.nframe, sum(rewards)))
 
-        return rewards, done        
+        return rewards, done
 
+        
     def  _reset(self):
         obs = CameraRobotEnv._reset(self)
         return obs
@@ -124,13 +141,13 @@ class HuskyFlagRunEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
                  frame_skip=HUMANOID_FRAMESKIP, is_discrete=False, 
-                 gpu_count=0, scene_type="stadium"):
-        self.robot = Husky(is_discrete)
+                 gpu_count=0):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         ## Mode initialized with mode=SENSOR
-        CameraRobotEnv.__init__(self, "SENSOR", gpu_count, scene_type)
+        self.robot = Husky(is_discrete)
+        CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="stadium")
 
         self.flag_timeout = 1
         self.tracking_camera = tracking_camera
@@ -220,13 +237,14 @@ class HuskyFetchEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
                  frame_skip=HUMANOID_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building"):
-        self.robot = Husky(is_discrete)
+                 gpu_count=0):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
+        self.model_id = configs.FETCH_MODEL_ID
         ## Mode initialized with mode=SENSOR
-        CameraRobotEnv.__init__(self, "SENSOR", gpu_count, scene_type)
+        self.robot = Husky(is_discrete)
+        CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="building")
 
         self.flag_timeout = 1
         self.tracking_camera = tracking_camera

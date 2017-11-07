@@ -37,7 +37,7 @@ def train(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
     
-    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=not args.disable_filler)
+    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=not args.disable_filler, resolution=args.resolution)
 
     def policy_fn(name, ob_space, ac_space):
         return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
@@ -79,6 +79,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
+    parser.add_argument('--resolution', type=str, default="NORMAL")
     args = parser.parse_args()
     
     assert (args.mode != "SENSOR"), "Currently PPO does not support SENSOR mode" 

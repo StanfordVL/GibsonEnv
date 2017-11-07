@@ -57,7 +57,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True, gpu_count=0):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -87,7 +87,7 @@ class PCRenderer:
         self.render_mode = render_mode
         self.use_filler = use_filler
 
-        self.showsz = 256
+        self.showsz = windowsz
 
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
