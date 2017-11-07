@@ -16,6 +16,7 @@ import socket
 import shlex
 import gym
 import cv2
+import os
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
@@ -59,7 +60,8 @@ class SensorRobotEnv(BaseEnv):
             train = False, 
             overwrite_fofn=True)
         self.ground_ids = None
-        self.tracking_camera = DEFAULT_DEBUG_CAMERA
+        if self.tracking_camera is None:
+            self.tracking_camera = DEFAULT_DEBUG_CAMERA
 
         self.action_space = self.robot.action_space
         ## Robot's eye observation, in sensor mode black pixels are returned
@@ -217,7 +219,8 @@ class CameraRobotEnv(SensorRobotEnv):
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
         
     def setup_rendering_camera(self):
-        if not self.requires_camera_input:
+        test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
+        if not self.requires_camera_input or test_env:
             return
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine

@@ -108,8 +108,6 @@ class PCRenderer:
         self.model = comp.module
         self.model.eval()
 	
-        self.model = None
-
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))

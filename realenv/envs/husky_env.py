@@ -17,11 +17,11 @@ from realenv import configs
 
 
 tracking_camera = {
-    'yaw': 90,  # demo: living room, stairs
+    'yaw': 20,  # demo: living room, stairs
     #'yaw'; 30,   # demo: kitchen
     'z_offset': 0.5,
-    'distance': 1.2,
-    'pitch': -10
+    'distance': 1,
+    'pitch': -20
     # 'pitch': -24  # demo: stairs
 }
 
@@ -44,7 +44,6 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        self.tracking_camera['yaw'] = 70                 ## Navigate specific setting
         target_orn, target_pos   = INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][-1]
         initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][0]
         self.robot = Husky(
