@@ -10,7 +10,7 @@ from realenv.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
 import pposgd_simple
 import baselines.common.tf_util as U
-import cnn_policy
+import cnn_policy, mlp_policy
 import utils
 import datetime
 from baselines import logger
@@ -18,6 +18,7 @@ from baselines import bench
 import os.path as osp
 import tensorflow as tf
 import random
+import sys
 
 ## Training code adapted from: https://github.com/openai/baselines/blob/master/baselines/ppo1/run_atari.py
 
@@ -36,11 +37,16 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
+
+    use_filler = not args.disable_filler
     
-    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=not args.disable_filler, resolution=args.resolution)
+    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
 
     def policy_fn(name, ob_space, ac_space):
-        return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+        if args.mode == "SENSOR":
+            return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
+        else:
+            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
 
     env = bench.Monitor(env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))
@@ -81,6 +87,4 @@ if __name__ == '__main__':
     parser.add_argument('--meta', type=str, default="")
     parser.add_argument('--resolution', type=str, default="NORMAL")
     args = parser.parse_args()
-    
-    assert (args.mode != "SENSOR"), "Currently PPO does not support SENSOR mode" 
     main()

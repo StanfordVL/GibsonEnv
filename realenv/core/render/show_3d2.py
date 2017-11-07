@@ -381,8 +381,8 @@ class PCRenderer:
         t1 = time.time()
         t = t1-t0
         self.fps = 1/t
-        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
-        cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
+        cv2.putText(self.show_unfilled_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
+        cv2.putText(self.show_unfilled_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
         def _render_depth(depth):
             #with Profiler("Render Depth"):
