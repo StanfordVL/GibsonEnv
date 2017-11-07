@@ -17,7 +17,6 @@ import shlex
 import gym
 import cv2
 
-
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
 DEFAULT_DEBUG_CAMERA = {
@@ -101,6 +100,7 @@ class SensorRobotEnv(BaseEnv):
     electricity_cost     = -2.0 # cost for using motors -- this parameter should be carefully tuned against reward for making progress, other values less improtant
     stall_torque_cost   = -0.1  # cost for running electric current through a motor even at zero rotational speed, small
     foot_collision_cost  = -1.0 # touches another leg, or other objects, that cost makes robot avoid smashing feet into itself
+    wall_collision_cost = -5
     foot_ground_object_names = set(["buildingFloor"])  # to distinguish ground and other objects
     joints_at_limit_cost = -0.1 # discourage stuck joints
 
@@ -200,9 +200,9 @@ class CameraRobotEnv(SensorRobotEnv):
         #   @self.human
         #   @self.timestep
         #   @self.frame_skip
-        assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
+        assert (mode in ["GREY", "RGB", "RGBD", "DEPTH_SMALL", "DEPTH", "SENSOR"]), "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
         self.mode = mode
-        self.requires_camera_input = self.mode in ["GREY", "RGB", "RGBD", "DEPTH"]
+        self.requires_camera_input = self.mode in ["GREY", "RGB", "RGBD", "DEPTH", "DEPTH_SMALL"]
         self.use_filler = use_filler
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
         
@@ -216,10 +216,11 @@ class CameraRobotEnv(SensorRobotEnv):
         self.setup_camera_rgb()
 
     def _reset(self):
-        state = SensorRobotEnv._reset(self)
+        sensor_state = SensorRobotEnv._reset(self)
 
         if not self.requires_camera_input:
-            return state
+            visuals = self.get_blank_visuals()
+            return visuals, sensor_state
 
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
@@ -228,7 +229,7 @@ class CameraRobotEnv(SensorRobotEnv):
         rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         visuals = self.get_visuals(rgb, depth)
-        return visuals
+        return visuals, sensor_state
 
 
     def _step(self, a):
@@ -255,6 +256,7 @@ class CameraRobotEnv(SensorRobotEnv):
             rgb, depth = self.r_camera_rgb.renderToScreen(pose, top_k)
         
         visuals = self.get_visuals(rgb, depth)
+
         return visuals, sensor_reward, done, sensor_meta
         
 
@@ -267,6 +269,9 @@ class CameraRobotEnv(SensorRobotEnv):
     def get_blank_visuals(self):
         return np.zeros((256, 256, 4))
 
+    def get_small_blank_visuals(self):
+        return np.zeros((64, 64, 1))
+
     def get_visuals(self, rgb, depth):
         ## Camera specific
         assert(self.requires_camera_input)
@@ -277,6 +282,10 @@ class CameraRobotEnv(SensorRobotEnv):
             visuals = np.append(rgb, depth, axis=2)
         elif self.mode == "DEPTH":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
+        elif self.mode == "DEPTH_SMALL":
+            sample_index = np.arange(0, depth.shape[0], 4)
+            visuals = depth[sample_index, :, :]
+            visuals = visuals[:, sample_index, :]
         elif self.mode == "SENSOR":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
         else:

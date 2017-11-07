@@ -27,6 +27,7 @@ def train(num_timesteps, seed):
     #sess = U.single_threaded_session()
     sess = utils.make_gpu_session(args.num_gpu)
     sess.__enter__()
+
     if rank == 0:
         logger.configure()
     else:
@@ -75,6 +76,7 @@ if __name__ == '__main__':
     parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
+
     args = parser.parse_args()
     
     assert (args.mode != "SENSOR"), "Currently PPO does not support SENSOR mode" 

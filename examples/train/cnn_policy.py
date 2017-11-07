@@ -2,6 +2,7 @@ import baselines.common.tf_util as U
 import tensorflow as tf
 import gym
 from baselines.common.distributions import make_pdtype
+from realenv.core.render.profiler import Profiler
 
 class CnnPolicy(object):
     recurrent = False
@@ -38,7 +39,7 @@ class CnnPolicy(object):
             raise NotImplementedError
 
         ## Saver
-        self.saver = tf.train.Saver()
+        #self.saver = tf.train.Saver()
 
 
         logits = U.dense(x, pdtype.param_shape()[0], "logits", U.normc_initializer(0.01))
@@ -52,13 +53,14 @@ class CnnPolicy(object):
         ac = self.pd.sample() # XXX
         self._act = U.function([stochastic, ob], [ac, self.vpred])
 
+
     def act(self, stochastic, ob):
         ac1, vpred1 =  self._act(stochastic, ob[None])
         self.total_count = self.total_count + 1
         self.curr_count = self.curr_count + 1
-        if self.curr_count > self.save_per_acts:
-            self.curr_count = self.curr_count - self.save_per_acts
-            self.saver.save(self.session, 'cnn_policy',  global_step=self.total_count)
+        #if self.curr_count > self.save_per_acts:
+        #    self.curr_count = self.curr_count - self.save_per_acts
+        #    self.saver.save(self.session, 'cnn_policy',  global_step=self.total_count)
         return ac1[0], vpred1[0]
     def get_variables(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)

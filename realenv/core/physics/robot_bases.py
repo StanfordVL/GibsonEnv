@@ -98,10 +98,10 @@ class BaseRobot:
         #print("body after", self.robot_body)
         self.robot_specific_reset()
 
-
-        s = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
+        ## reset returns robot sensor state
+        state = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
         self.eyes = self.parts["eyes"]
-        return s
+        return state
 
 
     def calc_potential(self):

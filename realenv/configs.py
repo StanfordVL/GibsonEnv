@@ -13,7 +13,7 @@ USE_MJCF = True
 ## Gates 1st: sRj553CTHiw
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
-MODEL_ID = "11HB6XZSh1Q"
+MODEL_ID = "sRj553CTHiw"
 
 
 ## Human view camera settings
@@ -21,7 +21,7 @@ DEBUG_CAMERA_FOLLOW = True
 
 ## Render window settings
 HIGH_RES_MONITOR = False
-MAKE_VIDEO = False
+MAKE_VIDEO = True
 LIVE_DEMO = False
 
 

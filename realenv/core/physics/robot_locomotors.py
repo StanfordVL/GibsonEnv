@@ -29,12 +29,16 @@ class WalkerBase(BaseRobot):
         target_pos,
         obs_dim=None,       # observation dimension, needed when mode="sensor"
         sensor_dim=None,    # used for downsampling
-        scale = 1
+        scale = 1, 
+        downsample=False
     ):
         BaseRobot.__init__(self, filename, robot_name, scale)
 
         if obs_dim == None:
-            obs_dim = [256, 256, 4]
+            if downsample:
+                obs_dim = [64, 64, 1]
+            else:
+                obs_dim = [256, 256, 4]
         else:
             assert (len(obs_dim) == 3), "Observation space must length 3 list like [246, 246, 4]. Passed in length is {}".format(len(obs_dim))
 
@@ -321,10 +325,10 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 
-    def __init__(self, is_discrete, target_pos=[1, 0, 0]):
+    def __init__(self, is_discrete, target_pos=[1, 0, 0], downsample=False):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
-        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos)
+        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, downsample=downsample)
 
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
