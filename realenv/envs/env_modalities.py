@@ -219,7 +219,8 @@ class CameraRobotEnv(SensorRobotEnv):
         sensor_state = SensorRobotEnv._reset(self)
 
         if not self.requires_camera_input:
-            return sensor_state
+            visuals = self.get_blank_visuals()
+            return visuals, sensor_state
 
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
