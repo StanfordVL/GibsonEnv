@@ -44,6 +44,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
+        self.tracking_camera['yaw'] = 70                 ## Navigate specific setting
         target_orn, target_pos   = INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][-1]
         initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][0]
         self.robot = Husky(
@@ -131,9 +132,18 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
         return rewards, done
 
+    def flag_reposition(self):
+        walk_target_x = self.robot.walk_target_x
+        walk_target_y = self.robot.walk_target_y
+
+        self.flag = None
+        if self.human:
+            self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
     def  _reset(self):
         obs = CameraRobotEnv._reset(self)
+        self.flag_reposition()
         return obs
 
 class HuskyFlagRunEnv(CameraRobotEnv):
