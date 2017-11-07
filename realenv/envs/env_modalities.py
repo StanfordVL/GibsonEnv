@@ -201,6 +201,7 @@ class CameraRobotEnv(SensorRobotEnv):
         #   @self.human
         #   @self.timestep
         #   @self.frame_skip
+        self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
         assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
             "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
         assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE"]), \
@@ -219,8 +220,7 @@ class CameraRobotEnv(SensorRobotEnv):
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
         
     def setup_rendering_camera(self):
-        test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
-        if not self.requires_camera_input or test_env:
+        if not self.requires_camera_input or self.test_env:
             return
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
@@ -231,7 +231,7 @@ class CameraRobotEnv(SensorRobotEnv):
     def _reset(self):
         sensor_state = SensorRobotEnv._reset(self)
 
-        if not self.requires_camera_input:
+        if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_state
 
@@ -254,7 +254,7 @@ class CameraRobotEnv(SensorRobotEnv):
         sensor_meta.pop("eye_quat", None)
         sensor_meta["sensor"] = sensor_state
 
-        if not self.requires_camera_input:
+        if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_reward, done, sensor_meta
         
@@ -274,7 +274,7 @@ class CameraRobotEnv(SensorRobotEnv):
         
 
     def _close(self):
-        if not self.requires_camera_input:
+        if not self.requires_camera_input or self.test_env:
             return
         self.r_camera_mul.terminate()
 

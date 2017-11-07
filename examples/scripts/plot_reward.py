@@ -11,8 +11,11 @@ def main():
     curr_episode = []
     for line in content:
         if "reward" in line:
-            rew = float(line.split()[3])
-            curr_episode.append(rew)
+            try:
+                rew = float(line.split()[3])
+                curr_episode.append(rew)
+            except ValueError:
+                continue
         if "Episode reset" in line:
             if not sum(curr_episode) < -500:
                 episode_rewards.append(sum(curr_episode))
