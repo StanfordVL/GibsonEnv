@@ -155,6 +155,7 @@ DISPLAY=:0 glxgears
 
 Now you can start a separate ssh session, log in to aws, and run learning code:
 ```bash
+source activate universe3
 DISPLAY=:0 CUDA_VISIBLE_DEVICES=0 python examples/train/train_husky_navigate_ppo1.py
 ```
 
