@@ -160,7 +160,7 @@ class WalkerBase(BaseRobot):
         dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y])
         #print("dist to goal", dist_to_goal)
         #print(self.body_xyz[0], self.walk_target_x, self.body_xyz[1], self.walk_target_y)
-        print(self.body_xyz)
+        #print(self.body_xyz)
         return dist_to_goal < 2
 
 class Hopper(WalkerBase):
