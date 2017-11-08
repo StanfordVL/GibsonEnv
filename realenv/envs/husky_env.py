@@ -100,13 +100,17 @@ class HuskyNavigateEnv(CameraRobotEnv):
         wall_collision_cost = self.wall_collision_cost * len(wall_contact)
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
-        debugmode = 0
+        close_to_goal = 0
+        if self.robot.is_close_to_goal():
+            close_to_goal = 0.5
+        debugmode = 1
         if (debugmode):
             #print("alive=")
             #print(alive)
             print("Wall contact points", len(wall_contact))
             print("Collision cost", wall_collision_cost)
             print("electricity_cost", electricity_cost)
+            print("close to goal", close_to_goal)
             #print("progress")
             #print(progress)
             #print("electricity_cost")
@@ -121,7 +125,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         rewards = [
             #alive,
             progress,
-            wall_collision_cost
+            wall_collision_cost,
+            close_to_goal,
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost

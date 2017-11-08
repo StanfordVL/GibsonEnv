@@ -152,6 +152,15 @@ class WalkerBase(BaseRobot):
             print(self.scene.timestep)
         return - self.walk_target_dist / self.scene.dt
 
+    def is_close_to_goal(self):
+        body_pose = self.robot_body.pose()
+        parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
+        self.body_xyz = (
+        parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
+        dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y])
+        print("dist to goal", dist_to_goal)
+        print(self.body_xyz[0], self.walk_target_x, self.body_xyz[1], self.walk_target_y)
+        return dist_to_goal < 2
 
 class Hopper(WalkerBase):
     foot_list = ["foot"]
