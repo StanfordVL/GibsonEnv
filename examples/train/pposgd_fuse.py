@@ -8,12 +8,10 @@ from baselines.common.mpi_moments import mpi_moments
 from mpi4py import MPI
 from collections import deque
 from realenv.core.render.profiler import Profiler
-
 import os
 import tempfile
 import cloudpickle
 import zipfile
-
 
 def save(self, path=None):
     """Save model to a pickle located at `path`"""

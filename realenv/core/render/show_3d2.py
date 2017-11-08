@@ -107,8 +107,6 @@ class PCRenderer:
         comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         self.model = comp.module
         self.model.eval()
-	
-        self.model = None
 
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
