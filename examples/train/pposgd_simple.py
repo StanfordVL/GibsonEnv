@@ -64,7 +64,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     news = np.zeros(horizon, 'int32')
     acs = np.array([ac for _ in range(horizon)])
     prevacs = acs.copy()
-
+    
     while True:
         prevac = ac
         #with Profiler("agent act"):
