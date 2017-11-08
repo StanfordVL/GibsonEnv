@@ -220,13 +220,13 @@ class HuskyFetchEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
                  frame_skip=HUMANOID_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building"):
+                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True):
         self.robot = Husky(is_discrete)
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         ## Mode initialized with mode=SENSOR
-        CameraRobotEnv.__init__(self, "SENSOR", gpu_count, scene_type)
+        CameraRobotEnv.__init__(self, mode, gpu_count, scene_type, use_filler=use_filler)
 
         self.flag_timeout = 1
         self.tracking_camera = tracking_camera
