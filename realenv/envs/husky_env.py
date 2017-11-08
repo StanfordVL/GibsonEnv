@@ -65,7 +65,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
         
-        alive = len(self.robot.parts['top_bumper_link'].contact_list()) > 0
+        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
         done = not alive or self.nframe > 1000
         #done = alive < 0
@@ -95,11 +95,11 @@ class HuskyNavigateEnv(CameraRobotEnv):
         electricity_cost  += self.stall_torque_cost * float(np.square(a).mean())
 
 
-        alive = len(self.robot.parts['top_bumper_link'].contact_list())
-        if alive == 0:
-            alive_score = 0.1
-        else:
-            alive_score = -0.1
+        #alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        #if alive == 0:
+        #    alive_score = 0.1
+        #else:
+        #    alive_score = -0.1
 
         wall_contact = [pt for pt in self.robot.parts['base_link'].contact_list() if pt[6][2] > 0.15]
         wall_collision_cost = self.wall_collision_cost * len(wall_contact)
@@ -110,8 +110,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
             close_to_goal = 0.5
         debugmode = 0
         if (debugmode):
-            #print("alive=")
-            #print(alive)
+            print("alive=")
+            print(alive)
             print("Wall contact points", len(wall_contact))
             print("Collision cost", wall_collision_cost)
             print("electricity_cost", electricity_cost)
