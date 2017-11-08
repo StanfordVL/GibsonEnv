@@ -158,8 +158,9 @@ class WalkerBase(BaseRobot):
         self.body_xyz = (
         parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
         dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y])
-        print("dist to goal", dist_to_goal)
-        print(self.body_xyz[0], self.walk_target_x, self.body_xyz[1], self.walk_target_y)
+        #print("dist to goal", dist_to_goal)
+        #print(self.body_xyz[0], self.walk_target_x, self.body_xyz[1], self.walk_target_y)
+        print(self.body_xyz)
         return dist_to_goal < 2
 
 class Hopper(WalkerBase):
