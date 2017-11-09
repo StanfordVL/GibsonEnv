@@ -10,8 +10,8 @@ import pybullet as p
 from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
 
-HUMANOID_TIMESTEP  = 1.0/(4 * 22)
-HUMANOID_FRAMESKIP = 4
+HUSKY_TIMESTEP  = 1.0/(4 * 22)
+HUSKY_FRAMESKIP = 4
 
 tracking_camera = {
     'yaw': 20,  # demo: living room, stairs
@@ -28,8 +28,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
     def __init__(
             self, 
             human=True, 
-            timestep=HUMANOID_TIMESTEP, 
-            frame_skip=HUMANOID_FRAMESKIP, 
+            timestep=HUSKY_TIMESTEP, 
+            frame_skip=HUSKY_FRAMESKIP, 
             is_discrete=False, 
             mode="RGBD", 
             use_filler=True, 
@@ -160,19 +160,24 @@ class HuskyNavigateEnv(CameraRobotEnv):
 class HuskyFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
-                 frame_skip=HUMANOID_FRAMESKIP, is_discrete=False, 
+    def __init__(self, human=True, timestep=HUSKY_TIMESTEP,
+                 frame_skip=HUSKY_FRAMESKIP, is_discrete=False, 
                  gpu_count=0):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         ## Mode initialized with mode=SENSOR
         self.model_id = configs.FETCH_MODEL_ID
-        self.robot = Husky(is_discrete=is_discrete)
+        self.tracking_camera = tracking_camera
+        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][0]
+        self.robot = Husky(
+            is_discrete=is_discrete, 
+            initial_pos=initial_pos,
+            initial_orn=initial_orn)
+        
         CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="stadium")
 
         self.flag_timeout = 1
-        self.tracking_camera = tracking_camera
 
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
@@ -257,8 +262,8 @@ class HuskyFlagRunEnv(CameraRobotEnv):
 class HuskyFetchEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
-                 frame_skip=HUMANOID_FRAMESKIP, is_discrete=False,
+    def __init__(self, human=True, timestep=HUSKY_TIMESTEP,
+                 frame_skip=HUSKY_FRAMESKIP, is_discrete=False,
                  gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "SMALL"):
 
         target_orn, target_pos = INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][-1]
@@ -389,8 +394,8 @@ class HuskyFetchEnv(CameraRobotEnv):
 class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
-                 frame_skip=HUMANOID_FRAMESKIP, is_discrete=False,
+    def __init__(self, human=True, timestep=HUSKY_TIMESTEP,
+                 frame_skip=HUSKY_FRAMESKIP, is_discrete=False,
                  gpu_count=0, scene_type="building"):
         self.robot = Husky(is_discrete)
         self.human = human
