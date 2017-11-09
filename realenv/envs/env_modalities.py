@@ -2,6 +2,7 @@ from realenv.data.datasets import ViewDataSet3D, get_model_path
 from realenv.configs import *
 from realenv.core.render.show_3d2 import PCRenderer
 from realenv.envs.env_bases import *
+from realenv.core.render.profiler import Profiler
 import realenv
 from gym import error
 from gym.utils import seeding
@@ -249,6 +250,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
     def _step(self, a):
+        #with Profiler("Rendering visuals"):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
         if self.robot.model_type == "MJCF":
             sensor_meta['eye_pos'] = (np.array(sensor_meta['eye_pos']) * self.robot.mjcf_scaling).tolist()

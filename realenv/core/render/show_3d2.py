@@ -420,6 +420,7 @@ class PCRenderer:
         [wt.start() for wt in render_threads]
         [wt.join() for wt in render_threads]
         """
+        #_render_depth(self.target_depth)
         _render_depth(self.smooth_depth)
         _render_rgb(self.show_rgb)
         if MAKE_VIDEO:
