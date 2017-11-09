@@ -16,40 +16,49 @@ def quatXYZW2quatWXYZ(wxyz):
 
 
 class WalkerBase(BaseRobot):
+    """ Built on top of BaseRobot
+    Handles action_dim, sensor_dim, scene
+      base_position, apply_action, calc_state
+      reward
+    """
     def __init__(self, 
-        filename,          # robot file name 
-        robot_name,     # robot name
-        action_dim,     # action dimension
+        filename,           # robot file name 
+        robot_name,         # robot name
+        action_dim,         # action dimension
         power,
-        mode='SENSOR',
-        obs_dim=None,     # observation dimension, needed when mode="sensor"
-        scale = 1,
-        target_pos = [1, 0, 0]
+        target_pos,
+        sensor_dim=None,
+        scale = 1, 
+        resolution="NORMAL"
     ):
-        assert (type(obs_dim) == int or len(obs_dim) == 3), "Observation space needs to be either integer (sensor) or length 3 list (image). Passed in length is {}".format(len(obs_dim))
+        BaseRobot.__init__(self, filename, robot_name, scale)
 
-        if mode == "SENSOR":
-            pass
-            #obs_dim=[obs_dim, 1]
-        elif mode == "GREY":
-            obs_dim=[256, 256, 1]
-        elif mode == "RGB":
-            obs_dim=[256, 256, 3]
-        elif mode == "DEPTH":
-            obs_dim=[256, 256, 1]
-        elif mode == "RGBD":
-            obs_dim=[256, 256, 4]
+        self.resolution = resolution
+        obs_dim = None
+        if resolution == "SMALL":
+            obs_dim = [64, 64, 4]
+        elif resolution == "XSMALL":
+            obs_dim = [32, 32, 4]
+        elif resolution == "MID":
+            obs_dim = [128, 128, 4]
         else:
-            print("Environment mode must be RGB/RGBD/DEPTH/SENSOR")
-            raise AssertionError()
+            obs_dim = [256, 256, 4]
 
-        BaseRobot.__init__(self, filename, robot_name, action_dim, obs_dim, scale)
-        self.mode = mode
+        assert type(sensor_dim) == int, "Sensor dimension must be int, got {}".format(type(sensor_dim))
+        assert type(action_dim) == int, "Action dimension must be int, got {}".format(type(action_dim))
+
+        action_high = np.ones([action_dim])
+        self.action_space = gym.spaces.Box(-action_high, action_high)
+        obs_high = np.inf * np.ones(obs_dim)
+        self.observation_space = gym.spaces.Box(-obs_high, obs_high)
+        sensor_high = np.inf * np.ones([sensor_dim])
+        self.sensor_space = gym.spaces.Box(-sensor_high, sensor_high)
+
         self.power = power
         self.camera_x = 0
         self.walk_target_x = target_pos[0]  # kilometer away
         self.walk_target_y = target_pos[1]
-        self.body_xyz=[0,0,0]
+        self.body_xyz=[0, 0, 0]
         self.eye_offset_orn = euler2quat(0, 0, 0)
         self.action_dim = action_dim
         self.scale = scale
@@ -70,8 +79,8 @@ class WalkerBase(BaseRobot):
             pass
         pos = self.robot_body.current_position()
         orn = self.robot_body.current_orientation()
-        delta_pos = 0.3
-        delta_deg = np.pi/6
+        delta_pos = 0.2
+        delta_deg = np.pi/9
 
         #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
@@ -143,14 +152,24 @@ class WalkerBase(BaseRobot):
             print(self.scene.timestep)
         return - self.walk_target_dist / self.scene.dt
 
+    def is_close_to_goal(self):
+        body_pose = self.robot_body.pose()
+        parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
+        self.body_xyz = (
+        parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
+        dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y])
+        #print("dist to goal", dist_to_goal)
+        #print(self.body_xyz[0], self.walk_target_x, self.body_xyz[1], self.walk_target_y)
+        #print(self.body_xyz)
+        return dist_to_goal < 2
 
 class Hopper(WalkerBase):
     foot_list = ["foot"]
 
-    def __init__(self, mode='RGBD'):
+    def __init__(self):
         self.model_type = "MJCF"
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "hopper.xml", "torso", action_dim=3, obs_dim=15, mode=mode, power=0.75)
+        WalkerBase.__init__(self, "hopper.xml", "torso", action_dim=3, sensor_dim=15, power=0.75)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
@@ -159,10 +178,10 @@ class Hopper(WalkerBase):
 class Walker2D(WalkerBase):
     foot_list = ["foot", "foot_left"]
 
-    def __init__(self, mode='RGBD'):
+    def __init__(self):
         self.model_type = "MJCF"
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, obs_dim=22, mode=mode, power=0.40)
+        WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, sensor_dim=22, power=0.40)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
@@ -176,10 +195,10 @@ class Walker2D(WalkerBase):
 class HalfCheetah(WalkerBase):
     foot_list = ["ffoot", "fshin", "fthigh",  "bfoot", "bshin", "bthigh"]  # track these contacts with ground
 
-    def __init__(self, mode='RGBD'):
+    def __init__(self):
         self.model_type = "MJCF"
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "half_cheetah.xml", "torso", action_dim=6, obs_dim=26, mode=mode, power=0.90)
+        WalkerBase.__init__(self, "half_cheetah.xml", "torso", action_dim=6, sensor_dim=26, power=0.90)
 
     def alive_bonus(self, z, pitch):
         # Use contact other than feet to terminate episode: due to a lot of strange walks using knees
@@ -198,12 +217,12 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-    def __init__(self, is_discrete, mode='RGBD'):
+    def __init__(self, is_discrete):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.6
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=28, mode=mode, power=2.5)
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5)
         self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
         self.is_discrete = is_discrete
         if self.is_discrete:
@@ -235,11 +254,11 @@ class Humanoid(WalkerBase):
     self_collision = True
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
-    def __init__(self, mode='RGBD'):
+    def __init__(self):
         self.model_type = "MJCF"
         self.mjcf_scaling = 1
         self.glass_id = None
-        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, obs_dim=44, mode=mode, power=0.41)
+        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41)
         # 17 joints, 4 of them important for walking (hip, knee), others may as well be turned off, 17/4 = 4.25
 
     def robot_specific_reset(self):
@@ -318,27 +337,30 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 
-    def __init__(self, is_discrete, target_pos, mode='RGBD'):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL"):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
+        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution)
+        self.initial_pos = initial_pos
+        self.initial_orn = initial_orn
         WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, mode=mode, power=2.5, scale = 0.6, target_pos=target_pos)
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
         ## specific offset for husky.urdf
         #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
-
-    
-    
             self.torque = 0.1
             self.action_list = [[self.torque, self.torque, self.torque, self.torque],
                                 [-self.torque, -self.torque, -self.torque, -self.torque],
                                 [self.torque, -self.torque, self.torque, -self.torque],
                                 [-self.torque, self.torque, -self.torque, self.torque],
                                 [0, 0, 0, 0]]
-    
-    
+
             self.setup_keys_to_action()
+
+        ## specific offset for husky.urdf
+        self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+    
         
     def apply_action(self, action):
         if self.is_discrete:
@@ -349,14 +371,12 @@ class Husky(WalkerBase):
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
-        orientation, position = configs.INITIAL_POSE["husky"][configs.MODEL_ID][0]
-        roll  = orientation[0]
-        pitch = orientation[1]
-        yaw   = orientation[2]
+        roll  = self.initial_orn[0]
+        pitch = self.initial_orn[1]
+        yaw   = self.initial_orn[2]
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
-        self.robot_body.reset_position(position)
+        self.robot_body.reset_position(self.initial_pos)
 
-        print("specific reset pos", position)
         self.reset_base_position(configs.RANDOM_INITIAL_POSE)
 
 

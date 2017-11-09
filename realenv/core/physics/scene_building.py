@@ -19,7 +19,7 @@ class BuildingScene(Scene):
         # if self.zero_at_running_strip_start_line:
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         
-        filename = os.path.join(get_model_path(MODEL_ID), "modeldata", "out_z_up.obj")
+        filename = os.path.join(get_model_path(NAVIGATE_MODEL_ID), "modeldata", "out_z_up.obj")
         if robot.model_type == "MJCF":
             MJCF_SCALING = robot.mjcf_scaling
             scaling = [1.0/MJCF_SCALING, 1.0/MJCF_SCALING, 1.0/MJCF_SCALING]
@@ -32,13 +32,13 @@ class BuildingScene(Scene):
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = -1)
         #visualId = p.loadTexture(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tex256.png"))
         #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
-        #self.building_obj = [collisionId]
+        #self.scene_obj = [collisionId]
         #planeName = os.path.join(pybullet_data.getDataPath(),"mjcf/ground_plane.xml")
         #self.ground_plane_mjcf = p.loadMJCF(planeName)
         #print("built plane", type(self.ground_plane_mjcf))
         p.changeDynamics(boundaryUid, -1, lateralFriction=0.8, spinningFriction=0.1, rollingFriction=0.1)
-        self.building_obj = boundaryUid
-        #self.building_obj = (int(p.loadURDF(filename)), )
+        self.scene_obj_list = [boundaryUid]
+        #self.scene_obj = (int(p.loadURDF(filename)), )
         
         #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
         #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
@@ -46,7 +46,7 @@ class BuildingScene(Scene):
 
         #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.55], specularColor=[0.4, 0.4, 0.4])
         #p.changeVisualShape(i,-1,rgbaColor=[229/255.0,209/255.0, 119/255.0,0.75], specularColor=[1, 1, 1])
-        #p.changeVisualShape(self.building_obj,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[1, 1, 1])
+        #p.changeVisualShape(self.scene_obj,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[1, 1, 1])
     
     def episode_restart(self):
         Scene.episode_restart(self)

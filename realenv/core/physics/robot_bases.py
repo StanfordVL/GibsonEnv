@@ -13,22 +13,16 @@ import pybullet_data
 class BaseRobot:
     """
     Base class for mujoco .xml/ROS urdf based agents.
+    Handles object loading
     """
 
-    def __init__(self, model_file, robot_name, action_dim, obs_dim, scale = 1):
+    def __init__(self, model_file, robot_name, scale = 1):
         self.parts = None
         self.jdict = None
         self.ordered_joints = None
         self.robot_body = None
 
         self.robot_ids = None
-
-        high = np.ones([action_dim])
-        self.action_space = gym.spaces.Box(-high, high)
-        self.obs_dim = obs_dim
-        high = np.inf * np.ones(self.obs_dim)
-        self.observation_space = gym.spaces.Box(-high, high)
-
         self.model_file = model_file
         self.robot_name = robot_name
         self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
@@ -104,10 +98,10 @@ class BaseRobot:
         #print("body after", self.robot_body)
         self.robot_specific_reset()
 
-
-        s = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
+        ## reset returns robot sensor state
+        state = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
         self.eyes = self.parts["eyes"]
-        return s
+        return state
 
 
     def calc_potential(self):

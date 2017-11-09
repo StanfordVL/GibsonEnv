@@ -16,8 +16,7 @@ class HumanoidEnv(gym.Env):
     def __init__(self, mode="SENSOR"):
         self.robot = Humanoid(mode)
         self.physicsClientId=-1
-        self.electricity_cost  = 4.25*SensorRobotEnv.electricity_cost
-        self.stall_torque_cost = 4.25*SensorRobotEnv.stall_torque_cost
+        ## For tuning
 
     def calc_rewards(self, a, state):
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions

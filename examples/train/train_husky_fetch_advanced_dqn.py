@@ -7,7 +7,7 @@ os.sys.path.insert(0, parentdir)
 
 from baselines import deepq
 import gym
-from realenv.envs.husky_env import HuskyFlagRunEnv
+from realenv.envs.husky_env import HuskyFetchKernelizedRewardEnv
 
 import deepq
 import matplotlib.pyplot as plt
@@ -23,7 +23,7 @@ def callback(lcl, glb):
 
 
 def main():
-    env = HuskyFlagRunEnv(human=args.human, is_discrete=True)
+    env = HuskyFetchKernelizedRewardEnv(human=args.human, is_discrete=True)
     model = deepq.models.mlp([64])
     act = deepq.learn(
         env,

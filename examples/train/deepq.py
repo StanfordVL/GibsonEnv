@@ -1,64 +1,20 @@
-## Camrbria learning code using DQN, adapted from OpenAI baselines
-#  Note this file might be a bit long, because original learning code is included, in order
-#   to support tensorflow config for single GPU learning + rendering.
+## Adapted from OpenAI baseline
 
-import os, inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(os.path.dirname(currentdir))
-os.sys.path.insert(0,parentdir)
-import gym
-from realenv.envs.husky_env import HuskyCameraEnv
 from baselines import deepq
+import os
+import gym
 import tempfile
 import tensorflow as tf
-import zipfile
 import cloudpickle
 import datetime
 import numpy as np
-import tf_util as U
+import utils
 from baselines import logger
 from baselines.common.schedules import LinearSchedule
-from baselines import deepq
 from baselines.deepq.replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
-
-
-
-def callback(lcl, glb):
-    # stop training if reward exceeds 199
-    total = sum(lcl['episode_rewards'][-101:-1]) / 100
-    totalt = lcl['t']
-    is_solved = totalt > 2000 and total >= -50
-    is_solved = False
-    return is_solved
-
-
-def main():
-    if args.mode =="RGB" or args.mode == "rgb":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGB")
-    elif args.mode =="GREY" or args.mode == "grey":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="GREY")
-    elif args.mode =="RGBD" or args.mode == "rgbd":
-        env = HuskyCameraEnv(human=args.human, is_discrete=True, enable_sensors=True, mode="RGBD")
-    model = deepq.models.cnn_to_mlp(
-        convs=[(128, 8, 4), (64, 4, 2), (64, 3, 1)],
-        hiddens=[256],
-        dueling=True,
-    )
-    act = learn(
-        env,
-        q_func=model,
-        lr=1e-3,
-        max_timesteps=10000,
-        buffer_size=50000,
-        exploration_fraction=0.1,
-        exploration_final_eps=0.02,
-        print_freq=10,
-        callback=callback
-    )
-    print("Saving model to humanoid_sensor_model.pkl")
-    act.save("humanoid_sensor_model.pkl")
-
-
+from baselines.deepq import models as models
+from baselines.common import tf_util as U
+import zipfile
 
 class ActWrapper(object):
     def __init__(self, act, act_params):
@@ -70,7 +26,7 @@ class ActWrapper(object):
         with open(path, "rb") as f:
             model_data, act_params = cloudpickle.load(f)
         act = deepq.build_act(**act_params)
-        sess = U.get_session(args.single_gpu)
+        sess = U.get_session()
         sess.__enter__()
         with tempfile.TemporaryDirectory() as td:
             arc_path = os.path.join(td, "packed.zip")
@@ -143,7 +99,8 @@ def learn(env,
           prioritized_replay_eps=1e-6,
           param_noise=False,
           callback=None,
-          single_gpu=False):
+          mode="RGBD",
+          num_gpu=1):
     """Train a deepq model.
 
     Parameters
@@ -210,14 +167,22 @@ def learn(env,
         See header of baselines/deepq/categorical.py for details on the act function.
     """
     # Create all the functions necessary to train the model
-    sess = U.make_gpu_session(args.num_gpu)
-    sess.__enter__()    
+
+    ## Modified (hzyjerry): for multi gpu support
+    sess = utils.make_gpu_session(num_gpu)
+    sess.__enter__()
 
     # capture the shape outside the closure so that the env object is not serialized
     # by cloudpickle when serializing make_obs_ph
-    observation_space_shape = env.observation_space.shape
+    observation_space_shape = None
+    if mode=="SENSOR":
+        observation_space_shape = env.sensor_space.shape
+    else:
+        observation_space_shape = env.observation_space.shape
+
     def make_obs_ph(name):
-        return U.BatchInput(observation_space_shape, name=name)
+        x = U.BatchInput(observation_space_shape, name=name)
+        return x
 
     act, train, update_target, debug = deepq.build_train(
         make_obs_ph=make_obs_ph,
@@ -259,7 +224,11 @@ def learn(env,
 
     episode_rewards = [0.0]
     saved_mean_reward = None
-    obs = env.reset()
+    camera_obs, sensor_obs = env.reset()
+    if mode in ["RGB", "DEPTH", "RGBD", "GREY"]:
+        obs = camera_obs
+    else:
+        obs = sensor_obs
     reset = True
     with tempfile.TemporaryDirectory() as td:
         model_saved = False
@@ -290,14 +259,22 @@ def learn(env,
             else:
                 env_action = action
             reset = False
-            new_obs, rew, done, _ = env.step(env_action)
+            new_obs, rew, done, meta = env.step(env_action)
+
+            if mode == "SENSOR":
+                new_obs = meta["sensor"]
+
             # Store transition in the replay buffer.
             replay_buffer.add(obs, action, rew, new_obs, float(done))
             obs = new_obs
 
             episode_rewards[-1] += rew
             if done:
-                obs = env.reset()
+                camera_obs, sensor_obs = env.reset()
+                if mode in ["RGB", "DEPTH", "RGBD", "GREY"]:
+                    obs = camera_obs
+                else:
+                    obs = sensor_obs
                 episode_rewards.append(0.0)
                 reset = True
 
@@ -342,16 +319,4 @@ def learn(env,
             U.load_state(model_file)
 
     return act
-
-
-
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--mode', type=str, default="rgb")
-    parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--human', type=bool, default=False)
-    args = parser.parse_args()
-    
-    main()
 

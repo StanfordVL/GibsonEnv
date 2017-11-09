@@ -28,9 +28,6 @@ import torch.nn as nn
 file_dir = os.path.dirname(os.path.abspath(__file__))
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
 coords  = np.load(os.path.join(file_dir, 'coord.npy'))
-context_mist = zmq.Context()
-socket_mist = context_mist.socket(zmq.REQ)
-socket_mist.connect("tcp://localhost:5555")
 
 LINUX_OFFSET = {
     "x_delta": 10,
@@ -60,7 +57,7 @@ class InImg(object):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -74,8 +71,12 @@ class PCRenderer:
         self.overlay    = False
         self.show_depth = False
         self._context_phys = zmq.Context()
-        self.socket_phys = self._context_phys.socket(zmq.REP)
-        self.socket_phys.connect("tcp://localhost:%d" % port)
+        #self.socket_phys = self._context_phys.socket(zmq.REP)
+        #self.socket_phys.connect("tcp://localhost:%d" % port)
+        self._context_mist = zmq.Context()
+        self.socket_mist = self._context_mist.socket(zmq.REQ)
+        self.socket_mist.connect("tcp://localhost:{}".format(5555 + gpu_count))
+
         self.target_poses = target_poses
         self.imgs = imgs
         self.depths = depths
@@ -86,7 +87,7 @@ class PCRenderer:
         self.render_mode = render_mode
         self.use_filler = use_filler
 
-        self.showsz = 256
+        self.showsz = windowsz
 
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
@@ -106,8 +107,7 @@ class PCRenderer:
         comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         self.model = comp.module
         self.model.eval()
-
-
+	
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
@@ -246,8 +246,8 @@ class PCRenderer:
         s = utils.mat_to_str(p)
 
         #with Profiler("Depth request round-trip"):
-        socket_mist.send_string(s)
-        message = socket_mist.recv()
+        self.socket_mist.send_string(s)
+        message = self.socket_mist.recv()
 
         #with Profiler("Read from framebuffer and make pano"):
         wo, ho = self.showsz * 4, self.showsz * 3
@@ -287,7 +287,9 @@ class PCRenderer:
         #    Process(target=_render_depth, args=(opengl_arr,))]
         #[t.start() for t in threads]
         #[t.join() for t in threads]
-        _render_pc(opengl_arr)
+
+        if self.render_mode in ["RGB", "RGBD", "GREY"]:
+            _render_pc(opengl_arr)
 
         if MAKE_VIDEO:
             show_unfilled[:, :, :] = show[:, :, :]
@@ -363,6 +365,7 @@ class PCRenderer:
             self.old_topk = set(k_views)
 
         with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
+            self.show.fill(0)
             self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
 
             self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
@@ -378,8 +381,8 @@ class PCRenderer:
         t1 = time.time()
         t = t1-t0
         self.fps = 1/t
-        cv2.putText(self.show_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
-        cv2.putText(self.show_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
+        cv2.putText(self.show_unfilled_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
+        cv2.putText(self.show_unfilled_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
         def _render_depth(depth):
             #with Profiler("Render Depth"):
@@ -397,6 +400,7 @@ class PCRenderer:
             cv2.imshow('RGB prefilled', unfilled_rgb)
             
         """
+        ## TODO(hzyjerry): multithreading in python3 is not working
         render_threads = [
             Process(target=_render_depth, args=(self.target_depth, )),
             Process(target=_render_rgb, args=(self.show_rgb, ))]

@@ -1,7 +1,3 @@
-## Scene configurations
-SCENE_TYPE = 'building'
-#SCENE_TYPE = 'stadium'
-
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = True
 
@@ -17,8 +13,8 @@ USE_MJCF = True
 ## Gates 1st: sRj553CTHiw
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
-MODEL_ID = "11HB6XZSh1Q"
-
+NAVIGATE_MODEL_ID = "sRj553CTHiw"
+FETCH_MODEL_ID = "11HB6XZSh1Q"
 
 ## Human view camera settings
 DEBUG_CAMERA_FOLLOW = True
@@ -54,7 +50,9 @@ INITIAL_POSE = {
         "sRj553CTHiw": [
             [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],
             [[0, 0, 3.14], [-7, 2.6, 0.5]], 
-            [[0, 0, 3.14/2], [-14.7, 26.85, 0.5]]
+            [[0, 0, 3.14/2], [-13.2, 39.7, 0.5]],
+            [[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
+            [[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]]
         ],
         "BbxejD15Etk": [
             [[0, 0, 3.14], [0, 0, 0.4]],
