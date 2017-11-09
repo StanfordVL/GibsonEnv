@@ -1,18 +1,64 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from realenv.envs.env_bases import *
 from realenv.core.physics.robot_locomotors import Ant
+from transforms3d import quaternions
+from realenv import configs
 import numpy as np
+import sys
+import pybullet as p
+from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
+import pybullet_data
 
 ANT_TIMESTEP  = 1.0/(4 * 22)
 ANT_FRAMESKIP = 4
 
-class AntEnv:
-    def __init__(self, is_discrete=False, mode="SENSOR"):
-        self.is_discrete = is_discrete
-        self.robot = Ant(is_discrete, mode)
-        self.physicsClientId=-1
-        self.nframe = 0
+tracking_camera = {
+    'pitch': -20,
+    # 'pitch': -24  # demo: stairs
+    #self.tracking_camera['pitch'] = -45 ## stairs
+    'yaw': 90,     ## demo: living room
+    #yaw = 30    ## demo: kitchen
+    'z_offset': 0.5,
+    'distance': 1.2 ## living room
+    #self.tracking_camera['yaw'] = 90     ## demo: stairs
+}
 
-    def calc_rewards(self, a, state):
+class AntNavigateEnv(CameraRobotEnv):
+    def __init__(
+            self, 
+            human=True, 
+            timestep=ANT_TIMESTEP, 
+            frame_skip=ANT_FRAMESKIP, 
+            is_discrete=False, 
+            mode="RGBD", 
+            use_filler=True, 
+            gpu_count=0, 
+            resolution="NORMAL"):
+        self.human = human
+        self.model_id = configs.NAVIGATE_MODEL_ID
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        self.resolution = resolution
+        self.tracking_camera = tracking_camera
+        target_orn, target_pos   = INITIAL_POSE["ant"][configs.NAVIGATE_MODEL_ID][-1]
+        initial_orn, initial_pos = configs.INITIAL_POSE["ant"][configs.NAVIGATE_MODEL_ID][0]
+        
+        self.robot = Ant(initial_pos, initial_orn, 
+            is_discrete=is_discrete, 
+            target_pos=target_pos,
+            resolution=resolution)
+        CameraRobotEnv.__init__(
+            self, 
+            mode, 
+            gpu_count, 
+            scene_type="building", 
+            use_filler=use_filler)
+
+        self.total_reward = 0
+        self.total_frame = 0
+
+        
+    def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
         self.nframe += 1
 
@@ -74,39 +120,23 @@ class AntEnv:
             #feet_collision_cost
          ], done
 
+    def flag_reposition(self):
+        walk_target_x = self.robot.walk_target_x
+        walk_target_y = self.robot.walk_target_y
 
-class AntCameraEnv(AntEnv, CameraRobotEnv):
-    def __init__(self, human=True, timestep=ANT_TIMESTEP, 
-        frame_skip=ANT_FRAMESKIP, enable_sensors=False,
-        is_discrete=False, mode="GREY", use_filler=True):
-        self.human = human
-        self.timestep = timestep
-        self.frame_skip = frame_skip
-        self.enable_sensors = enable_sensors
-        AntEnv.__init__(self, is_discrete, mode=mode)
-        CameraRobotEnv.__init__(self, use_filler)
-
-        #self.tracking_camera['pitch'] = -45 ## stairs
-        yaw = 90     ## demo: living room
-        #yaw = 30    ## demo: kitchen
-        offset = 0.5
-        distance = 1.2 ## living room
-        #self.tracking_camera['yaw'] = 90     ## demo: stairs
-
-        self.tracking_camera['yaw'] = yaw   ## living roon
-        self.tracking_camera['pitch'] = -10
+        self.flag = None
+        if self.human:
+            self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
-        self.tracking_camera['distance'] = distance
-        self.tracking_camera['z_offset'] = offset
-
-    def _step(self, action):
-        visuals, sensor_reward, done, sensor_meta = CameraRobotEnv._step(self, action)
-        return visuals, sensor_reward, done, sensor_meta
     def  _reset(self):
+        self.total_frame = 0
+        self.total_reward = 0
         obs = CameraRobotEnv._reset(self)
-        self.nframe = 0
+        self.flag_reposition()
         return obs
 
+'''
 class AntSensorEnv(AntEnv, SensorRobotEnv):
     def __init__(self, human=True, timestep=ANT_TIMESTEP, 
         frame_skip=ANT_FRAMESKIP, is_discrete=False):
@@ -135,3 +165,4 @@ class AntSensorEnv(AntEnv, SensorRobotEnv):
         return obs
 
 
+'''

@@ -217,14 +217,18 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-    def __init__(self, is_discrete):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL"):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.6
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5)
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5, target_pos=target_pos, resolution=resolution)
+        self.is_discrete = is_discrete
+        self.initial_pos = initial_pos
+        self.initial_orn = initial_orn
         self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
         self.is_discrete = is_discrete
+
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(2**8)
             #self.action_list = [[0.1 * self.torque, 0.1 * self.torque, self.torque, self.torque], [-0.2 * self.torque, -0.2 * self.torque,  -1.2 * self.torque,  -1.2 * self.torque], [r_f * self.torque,-r_f * self.torque,r_f * self.torque,-r_f * self.torque],[-r_f * self.torque,r_f * self.torque,-r_f * self.torque,r_f * self.torque],[-0.5 * self.torque, -0.5 * self.torque,  -2 * self.torque,  -2 * self.torque], [0, 0, 0, 0]]
@@ -238,12 +242,13 @@ class Ant(WalkerBase):
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
-        orientation, position = configs.INITIAL_POSE["ant"][configs.MODEL_ID][0]
-        roll  = orientation[0]
-        pitch = orientation[1]
-        yaw   = orientation[2]
+        roll  = self.initial_orn[0]
+        pitch = self.initial_orn[1]
+        yaw   = self.initial_orn[2]
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
-        self.robot_body.reset_position(position)
+        self.robot_body.reset_position(self.initial_pos)
+
+        self.reset_base_position(configs.RANDOM_INITIAL_POSE)
 
 
     def alive_bonus(self, z, pitch):

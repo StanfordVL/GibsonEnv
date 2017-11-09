@@ -2,7 +2,8 @@ from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from realenv.envs.env_bases import *
 from realenv.core.physics.robot_locomotors import Husky
 from transforms3d import quaternions
-from realenv.configs import *
+from realenv import configs
+import os
 import numpy as np
 import sys
 import pybullet as p
@@ -11,10 +12,6 @@ import pybullet_data
 
 HUMANOID_TIMESTEP  = 1.0/(4 * 22)
 HUMANOID_FRAMESKIP = 4
-
-import os
-from realenv import configs
-
 
 tracking_camera = {
     'yaw': 20,  # demo: living room, stairs
@@ -47,7 +44,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         target_orn, target_pos   = INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][-1]
         initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][0]
         self.robot = Husky(
-            is_discrete, 
+            is_discrete=is_discrete, 
             initial_pos=initial_pos,
             initial_orn=initial_orn,
             target_pos=target_pos,
@@ -170,7 +167,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         self.timestep = timestep
         self.frame_skip = frame_skip
         ## Mode initialized with mode=SENSOR
-        self.robot = Husky(is_discrete)
+        self.robot = Husky(is_discrete=is_discrete)
         CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="stadium")
 
         self.flag_timeout = 1
@@ -267,7 +264,7 @@ class HuskyFetchEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.model_id = configs.FETCH_MODEL_ID
         ## Mode initialized with mode=SENSOR
-        self.robot = Husky(is_discrete)
+        self.robot = Husky(is_discrete=is_discrete)
         CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="building")
 
         self.flag_timeout = 1
