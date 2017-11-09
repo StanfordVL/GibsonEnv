@@ -136,33 +136,360 @@ class AntNavigateEnv(CameraRobotEnv):
         self.flag_reposition()
         return obs
 
-'''
-class AntSensorEnv(AntEnv, SensorRobotEnv):
-    def __init__(self, human=True, timestep=ANT_TIMESTEP, 
-        frame_skip=ANT_FRAMESKIP, is_discrete=False):
+
+class AntFlagRunEnv(CameraRobotEnv):
+    """Specfy flagrun reward
+    """
+    def __init__(self, human=True, timestep=ANT_TIMESTEP,
+                 frame_skip=ANT_FRAMESKIP, is_discrete=False, 
+                 gpu_count=0):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
-        AntEnv.__init__(self, is_discrete)
-        SensorRobotEnv.__init__(self)
+        ## Mode initialized with mode=SENSOR
+        self.flag_timeout = 1
+        self.tracking_camera = tracking_camera
+        initial_pos, initial_orn = [0, 0, 1], [0, 0, 0, 1]
+        self.robot = Ant(initial_pos, initial_orn, 
+            is_discrete=is_discrete)
+        CameraRobotEnv.__init__(
+            self, 
+            "SENSOR", 
+            gpu_count, 
+            scene_type="stadium", 
+            use_filler=False)
 
-        #self.tracking_camera['pitch'] = -45 ## stairs
-        yaw = 90     ## demo: living room
-        #yaw = 30    ## demo: kitchen
-        offset = 0.5
-        distance = 1.2 ## living room
-        #self.tracking_camera['yaw'] = 90     ## demo: stairs
-        
-        self.tracking_camera['yaw'] = yaw   ## living roon
-        self.tracking_camera['pitch'] = -10
-        
-        self.tracking_camera['distance'] = distance
-        self.tracking_camera['z_offset'] = offset
+        if self.human:
+            self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+        self.lastid = None
 
-    def  _reset(self):
-        obs = SensorRobotEnv._reset(self)
-        self.nframe = 0
+    def _reset(self):
+        obs = CameraRobotEnv._reset(self)
         return obs
 
+    def flag_reposition(self):
+        self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
+                                                    high=+self.scene.stadium_halflen)
+        self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
+                                                    high=+self.scene.stadium_halfwidth)
 
-'''
+        more_compact = 0.5  # set to 1.0 whole football field
+        self.walk_target_x *= more_compact
+        self.walk_target_y *= more_compact
+
+        self.flag = None
+        #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
+        self.flag_timeout = 600 / self.scene.frame_skip
+        #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
+        #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
+        if self.human:
+            if self.lastid:
+                p.removeBody(self.lastid)
+
+            self.lastid = p.createMultiBody(baseVisualShapeIndex=self.visualid, baseCollisionShapeIndex=-1, basePosition=[self.walk_target_x, self.walk_target_y, 0.5])
+
+        self.robot.walk_target_x = self.walk_target_x
+        self.robot.walk_target_y = self.walk_target_y
+
+    def calc_rewards_and_done(self, a, state):
+        potential_old = self.potential
+        self.potential = self.robot.calc_potential()
+        progress = float(self.potential - potential_old)
+
+        if not a is None:
+            electricity_cost = self.electricity_cost * float(np.abs(
+                a * self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
+            electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        else:
+            electricity_cost = 0
+
+        #alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        head_touch_ground = 0
+        if head_touch_ground == 0:
+            alive_score = 0.1
+        else:
+            alive_score = -0.1
+
+
+        done = head_touch_ground > 0 or self.nframe > 500
+
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+
+        joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        debugmode = 0
+        if (debugmode):
+            print("alive=")
+            print(head_touch_ground)
+            print("progress")
+            print(progress)
+
+        return [
+            alive_score,
+            progress,
+        ], done
+
+
+    def _step(self, a):
+        state, reward, done, meta = CameraRobotEnv._step(self, a)
+        if self.flag_timeout <= 0:
+            self.flag_reposition()
+        self.flag_timeout -= 1
+
+        return state, reward, done, meta
+
+
+class AntFetchEnv(CameraRobotEnv):
+    """Specfy flagrun reward
+    """
+    def __init__(self, human=True, timestep=ANT_TIMESTEP,
+                 frame_skip=ANT_FRAMESKIP, is_discrete=False,
+                 gpu_count=0, scene_type="building", mode = 'SENSOR'):
+
+        target_orn, target_pos = INITIAL_POSE["ant"][configs.FETCH_MODEL_ID][-1]
+        initial_orn, initial_pos = configs.INITIAL_POSE["ant"][configs.FETCH_MODEL_ID][0]
+
+        self.human = human
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        self.model_id = configs.FETCH_MODEL_ID
+        ## Mode initialized with mode=SENSOR
+        self.tracking_camera = tracking_camera
+
+        self.robot = Ant(
+            is_discrete=is_discrete,
+            initial_pos=initial_pos,
+            initial_orn=initial_orn)
+
+        CameraRobotEnv.__init__(
+            self,
+            mode,
+            gpu_count,
+            scene_type="building")
+        self.flag_timeout = 1
+
+
+        self.visualid = -1
+
+        if self.human:
+            self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
+        self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
+
+        self.lastid = None
+
+    def _reset(self):
+        obs = CameraRobotEnv._reset(self)
+        return obs
+
+    def flag_reposition(self):
+        #self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
+        #                                            high=+self.scene.stadium_halflen)
+        #self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
+        #                                            high=+self.scene.stadium_halfwidth)
+
+
+        force_x = self.np_random.uniform(-300,300)
+        force_y = self.np_random.uniform(-300, 300)
+
+        more_compact = 0.5  # set to 1.0 whole football field
+        #self.walk_target_x *= more_compact
+        #self.walk_target_y *= more_compact
+
+        startx, starty, _ = self.robot.body_xyz
+
+
+        self.flag = None
+        #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
+        self.flag_timeout = 600 / self.scene.frame_skip
+        #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
+        #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
+        if self.lastid:
+            p.removeBody(self.lastid)
+
+        self.lastid = p.createMultiBody(baseMass = 1, baseVisualShapeIndex=self.visualid, baseCollisionShapeIndex=self.colisionid, basePosition=[startx, starty, 0.5])
+        p.applyExternalForce(self.lastid, -1, [force_x,force_y,50], [0,0,0], p.LINK_FRAME)
+
+        ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
+
+        self.robot.walk_target_x = ball_xyz[0]
+        self.robot.walk_target_y = ball_xyz[1]
+
+    def calc_rewards_and_done(self, a, state):
+        if self.lastid:
+            ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
+            self.robot.walk_target_x = ball_xyz[0]
+            self.robot.walk_target_y = ball_xyz[1]
+
+
+        potential_old = self.potential
+        self.potential = self.robot.calc_potential()
+        progress = float(self.potential - potential_old)
+
+        if not a is None:
+            electricity_cost = self.electricity_cost * float(np.abs(
+                a * self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
+            electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        else:
+            electricity_cost = 0
+
+        #alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        head_touch_ground = 1
+        if head_touch_ground == 0:
+            alive_score = 0.1
+        else:
+            alive_score = -0.1
+
+
+        done = head_touch_ground > 0 or self.nframe > 500
+
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+
+        joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        debugmode = 0
+        if (debugmode):
+            print("head_touch_ground=")
+            print(head_touch_ground)
+            print("progress")
+            print(progress)
+
+        return [
+            alive_score,
+            progress,
+        ], done
+
+
+    def _step(self, a):
+        state, reward, done, meta = CameraRobotEnv._step(self, a)
+        if self.flag_timeout <= 0:
+            self.flag_reposition()
+        self.flag_timeout -= 1
+
+        return state, reward, done, meta
+
+
+class AntFetchKernelizedRewardEnv(CameraRobotEnv):
+    """Specfy flagrun reward
+    """
+    def __init__(self, human=True, timestep=ANT_TIMESTEP,
+                 frame_skip=ANT_FRAMESKIP, is_discrete=False,
+                 gpu_count=0, scene_type="building"):
+        self.human = human
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        ## Mode initialized with mode=SENSOR
+        self.model_id = configs.FETCH_MODEL_ID
+
+        self.flag_timeout = 1
+        self.tracking_camera = tracking_camera
+
+        initial_pos, initial_orn = configs.INITIAL_POSE["ant"][configs.FETCH_MODEL_ID][0]
+        self.robot = Ant(initial_pos, initial_orn, 
+            is_discrete=is_discrete)
+        CameraRobotEnv.__init__(
+            self, 
+            "SENSOR", 
+            gpu_count, 
+            scene_type="building", 
+            use_filler=False)
+
+
+        if self.human:
+            self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
+        self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
+
+        self.lastid = None
+
+    def _reset(self):
+        obs = CameraRobotEnv._reset(self)
+        return obs
+
+    def flag_reposition(self):
+        #self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
+        #                                            high=+self.scene.stadium_halflen)
+        #self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
+        #                                            high=+self.scene.stadium_halfwidth)
+
+
+        force_x = self.np_random.uniform(-300,300)
+        force_y = self.np_random.uniform(-300, 300)
+
+        more_compact = 0.5  # set to 1.0 whole football field
+        #self.walk_target_x *= more_compact
+        #self.walk_target_y *= more_compact
+
+        startx, starty, _ = self.robot.body_xyz
+
+
+        self.flag = None
+        #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
+        self.flag_timeout = 600 / self.scene.frame_skip
+        #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
+        #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
+        if self.lastid:
+            p.removeBody(self.lastid)
+
+        self.lastid = p.createMultiBody(baseMass = 1, baseVisualShapeIndex=self.visualid, baseCollisionShapeIndex=self.colisionid, basePosition=[startx, starty, 0.5])
+        p.applyExternalForce(self.lastid, -1, [force_x,force_y,50], [0,0,0], p.LINK_FRAME)
+
+        ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
+
+        self.robot.walk_target_x = ball_xyz[0]
+        self.robot.walk_target_y = ball_xyz[1]
+
+    def calc_rewards_and_done(self, a, state):
+        if self.lastid:
+            ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
+            self.robot.walk_target_x = ball_xyz[0]
+            self.robot.walk_target_y = ball_xyz[1]
+
+
+        potential_old = self.potential
+        self.potential = self.robot.calc_potential()
+        progress = float(self.potential - potential_old)
+
+        if not a is None:
+            electricity_cost = self.electricity_cost * float(np.abs(
+                a * self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
+            electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        else:
+            electricity_cost = 0
+
+        #alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        head_touch_ground = 1
+        if head_touch_ground == 0:
+            alive_score = 0.1
+        else:
+            alive_score = -0.1
+
+
+        done = head_touch_ground > 0 or self.nframe > 500
+
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+
+        joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        debugmode = 0
+        if (debugmode):
+            print("head_touch_ground=")
+            print(head_touch_ground)
+            print("progress")
+            print(progress)
+
+
+        return [
+            alive_score,
+            progress,
+        ], done
+
+
+    def _step(self, a):
+        state, reward, done, meta = CameraRobotEnv._step(self, a)
+        if self.flag_timeout <= 0:
+            self.flag_reposition()
+        self.flag_timeout -= 1
+
+        return state, reward, done, meta

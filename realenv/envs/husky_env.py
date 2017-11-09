@@ -169,7 +169,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         ## Mode initialized with mode=SENSOR
         self.model_id = configs.FETCH_MODEL_ID
         self.tracking_camera = tracking_camera
-        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][0]
+        initial_pos, initial_orn = [0, 0, 0.3], [0, 0, 0, 1]
         self.robot = Husky(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
@@ -394,19 +394,34 @@ class HuskyFetchEnv(CameraRobotEnv):
 class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, human=True, timestep=HUSKY_TIMESTEP,
-                 frame_skip=HUSKY_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building"):
-        self.robot = Husky(is_discrete)
+    def __init__(self, human=True, 
+            timestep=HUSKY_TIMESTEP,
+            frame_skip=HUSKY_FRAMESKIP, 
+            is_discrete=False,
+            gpu_count=0, 
+            scene_type="building", 
+            resolution="NORMAL"):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         ## Mode initialized with mode=SENSOR
         self.model_id = configs.FETCH_MODEL_ID
-        CameraRobotEnv.__init__(self, "SENSOR", gpu_count, scene_type)
-
-        self.flag_timeout = 1
         self.tracking_camera = tracking_camera
+        
+        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][0]
+        self.robot = Husky(
+            is_discrete=is_discrete, 
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            resolution=resolution)
+        CameraRobotEnv.__init__(
+            self, 
+            "SENSOR",
+            gpu_count, 
+            scene_type="building", 
+            use_filler=False)
+        
+        self.flag_timeout = 1
 
 
         if self.human:

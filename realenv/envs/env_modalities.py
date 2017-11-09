@@ -50,7 +50,6 @@ class SensorRobotEnv(BaseEnv):
         self.k = 5
         self.robot_tracking_id = -1
 
-        self.model_path = get_model_path(self.model_id)
         self.scale_up  = 1
         self.dataset  = ViewDataSet3D(
             transform = np.array,
@@ -60,9 +59,9 @@ class SensorRobotEnv(BaseEnv):
             train = False, 
             overwrite_fofn=True)
         self.ground_ids = None
-        if self.tracking_camera is None:
-            self.tracking_camera = DEFAULT_DEBUG_CAMERA
-
+        if self.human:
+            assert(self.tracking_camera is not None)
+            
         self.action_space = self.robot.action_space
         ## Robot's eye observation, in sensor mode black pixels are returned
         self.observation_space = self.robot.observation_space
