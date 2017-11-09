@@ -1,8 +1,8 @@
 from realenv.data.datasets import ViewDataSet3D, get_model_path
 from realenv.configs import *
 from realenv.core.render.show_3d2 import PCRenderer
-from realenv.envs.env_bases import *
 from realenv.core.render.profiler import Profiler
+from realenv.envs.env_bases import BaseEnv
 import realenv
 from gym import error
 from gym.utils import seeding
@@ -37,11 +37,7 @@ class SensorRobotEnv(BaseEnv):
     """
 
     def __init__(self, scene_type="building", gpu_count=0):
-        if scene_type == "building":
-            scene_fn = create_single_player_building_scene
-        else:
-            scene_fn = create_single_player_stadium_scene 
-        BaseEnv.__init__(self, scene_fn)
+        BaseEnv.__init__(self, scene_type)
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
         #   @self.timestep

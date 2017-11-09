@@ -139,7 +139,10 @@ def learn(env, policy_func, *,
         max_timesteps=0, max_episodes=0, max_iters=0, max_seconds=0,  # time constraint
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
-        schedule='constant' # annealing for stepsize parameters (epsilon and adam)
+        schedule='constant', # annealing for stepsize parameters (epsilon and adam)
+        save_name=None,
+        save_per_acts=3,
+        reload_name=None
         ):
     # Setup losses and stuff
     # ----------------------------------------
@@ -186,6 +189,11 @@ def learn(env, policy_func, *,
 
     U.initialize()
     adam.sync()
+
+    if reload_name:
+        saver = tf.train.Saver()
+        saver.restore(tf.get_default_session(), reload_name)
+        print("Loaded model successfully.")
 
     # Prepare for rollouts
     # ----------------------------------------
@@ -270,6 +278,14 @@ def learn(env, policy_func, *,
         logger.record_tabular("TimeElapsed", time.time() - tstart)
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
+
+
+        if save_name and (iters_so_far % save_per_acts == 0):
+            base_path = os.path.dirname(os.path.abspath(__file__))
+            print(base_path)
+            out_name = os.path.join(base_path, 'models', save_name + '_' + str(iters_so_far) + ".model")
+            U.save_state(out_name)
+            print ("Saved model successfully.")
 
 def flatten_lists(listoflists):
     return [el for list_ in listoflists for el in list_]

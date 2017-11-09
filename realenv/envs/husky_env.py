@@ -167,6 +167,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         self.timestep = timestep
         self.frame_skip = frame_skip
         ## Mode initialized with mode=SENSOR
+        self.model_id = configs.FETCH_MODEL_ID
         self.robot = Husky(is_discrete=is_discrete)
         CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="stadium")
 
@@ -258,7 +259,7 @@ class HuskyFetchEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
                  frame_skip=HUMANOID_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "NORMAL"):
+                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "SMALL"):
 
         target_orn, target_pos = INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][-1]
         initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][0]
@@ -268,7 +269,6 @@ class HuskyFetchEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.model_id = configs.FETCH_MODEL_ID
         ## Mode initialized with mode=SENSOR
-
         self.tracking_camera = tracking_camera
 
         self.robot = Husky(
@@ -277,7 +277,6 @@ class HuskyFetchEnv(CameraRobotEnv):
             initial_orn=initial_orn,
             target_pos=target_pos,
             resolution=resolution)
-
 
         CameraRobotEnv.__init__(
             self,
@@ -398,6 +397,7 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         self.timestep = timestep
         self.frame_skip = frame_skip
         ## Mode initialized with mode=SENSOR
+        self.model_id = configs.FETCH_MODEL_ID
         CameraRobotEnv.__init__(self, "SENSOR", gpu_count, scene_type)
 
         self.flag_timeout = 1

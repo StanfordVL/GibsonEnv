@@ -119,35 +119,35 @@ download_data () {
 
 	## Psych building -1F, 919Mb
 	if [ $dset_name="stanford_1" ] && [ ! -d dataset/BbxejD15Etk ]; then
-		wget https://www.dropbox.com/s/fj6cnvs9zhw9i3y/BbxejD15Etk.zip
+		wget https://www.dropbox.com/s/zm112zosuxnx8by/BbxejD15Etk.zip
 		unzip -q BbxejD15Etk.zip && rm BbxejD15Etk.zip
 		mv BbxejD15Etk dataset
 	fi
 
 	## Psych building 1F, 794.2Mb
 	if [ $dset_name="stanford_2" ] && [ ! -d dataset/sitktXish3E ]; then
-		wget https://www.dropbox.com/s/wv5ws6pxbbdhzel/sitktXish3E.zip
+		wget https://www.dropbox.com/s/bt4pctsnh3recs7/sitktXish3E.zip
 		unzip -q sitktXish3E.zip && rm sitktXish3E.zip
 		mv sitktXish3E dataset
 	fi
 
 	## Gates building 1F, 616.1Mb
 	if [ $dset_name="stanford_3" ] && [ ! -d dataset/sRj553CTHiw ]; then
-		wget https://www.dropbox.com/s/iztghi2mt26uxed/sRj553CTHiw.zip
+		wget https://www.dropbox.com/s/qtk6bnky8mazzrn/sRj553CTHiw.zip
 		unzip -q sRj553CTHiw.zip && rm sRj553CTHiw.zip
 		mv sRj553CTHiw dataset
 	fi
 
 	## Gates building 2F, 294.1Mb
 	if [ $dset_name="stanford_4" ] && [ ! -d dataset/TVHnHa4MZwE ]; then
-		wget https://www.dropbox.com/s/gbz3yxikk7pdobi/TVHnHa4MZwE.zip
+		wget https://www.dropbox.com/s/f9y73pafshhjlbu/TVHnHa4MZwE.zip
 		unzip -q TVHnHa4MZwE.zip && rm TVHnHa4MZwE.zip
 		mv TVHnHa4MZwE dataset
 	fi
 
 
 	if [ ! -d dataset/11HB6XZSh1Q ]; then
-		wget https://www.dropbox.com/s/gtg09zm5mwnvro8/11HB6XZSh1Q.zip
+		wget https://www.dropbox.com/s/zplz70g7dxdcnii/11HB6XZSh1Q.zip
 		unzip -q 11HB6XZSh1Q.zip && rm 11HB6XZSh1Q.zip
 		mv 11HB6XZSh1Q dataset
 	fi
