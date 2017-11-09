@@ -233,17 +233,25 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("GPU", 'g', "GPU index", false, 0);
     cmdp.add<int>("Width", 'w', "Render window width", false, 256);
     cmdp.add<int>("Height", 'h', "Render window height", false, 256);
+    cmdp.add<int>("Smooth", 's', "Whether render depth only", false, 0);
 
     cmdp.parse_check(argc, argv);
 
     std::string model_path = cmdp.get<std::string>("modelpath");
     int GPU_NUM = cmdp.get<int>("GPU");
+    int smooth = cmdp.get<int>("Smooth");
 
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
 
-    std::string name_obj = model_path + "/" + "modeldata/out_res.obj";
-    std::string name_loc = model_path + "/" + "sweep_locations.csv";
+    std::string name_obj = "";
+    if (smooth == 0) {
+	    name_obj = model_path + "/" + "modeldata/out_res.obj";
+    } else {
+    	name_obj = model_path + "/" + "modeldata/out_smoothed.obj";
+    	GPU_NUM = -1;
+    }
+    std::string name_loc   = model_path + "/" + "sweep_locations.csv";
 
 
     glfwSetErrorCallback(error_callback);
@@ -414,6 +422,7 @@ int main( int argc, char * argv[] )
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
+	
 	bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
 
 	// Note: use unsigned int because of too many indices
@@ -553,8 +562,12 @@ int main( int argc, char * argv[] )
     zmq::socket_t socket (context, ZMQ_REP);
     socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
 	cudaGetDevice( &cudaDevice );
-	//int g_cuda_device = 0;
-	cudaDevice = GPU_NUM;
+	int g_cuda_device = 0;
+	if (GPU_NUM > 0) {
+		cudaDevice = GPU_NUM;	
+	} else {
+		cudaDevice = 0;
+	}
 	cudaSetDevice(cudaDevice);
 	cudaGLSetGLDevice(cudaDevice);
 	cudaGraphicsResource* resource;

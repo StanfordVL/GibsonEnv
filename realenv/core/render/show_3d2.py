@@ -76,6 +76,10 @@ class PCRenderer:
         self._context_mist = zmq.Context()
         self.socket_mist = self._context_mist.socket(zmq.REQ)
         self.socket_mist.connect("tcp://localhost:{}".format(5555 + gpu_count))
+        self._context_dept = zmq.Context()      ## Channel for smoothed depth
+        self.socket_dept = self._context_dept.socket(zmq.REQ)
+        self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
+
 
         self.target_poses = target_poses
         self.imgs = imgs
@@ -247,7 +251,10 @@ class PCRenderer:
 
         #with Profiler("Depth request round-trip"):
         self.socket_mist.send_string(s)
-        message = self.socket_mist.recv()
+        mist_msg = self.socket_mist.recv()
+        self.socket_dept.send_string(s)
+        dept_msg = self.socket_dept.recv()
+
 
         #with Profiler("Read from framebuffer and make pano"):
         wo, ho = self.showsz * 4, self.showsz * 3
@@ -260,9 +267,11 @@ class PCRenderer:
 
         pano = False
         if pano:
-            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
+            opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
+            smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
         else:
-            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
+            opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
+            smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
 
         def _render_pc(opengl_arr):
             with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
@@ -313,7 +322,7 @@ class PCRenderer:
                 show[:] = (show2[:] * 255).astype(np.uint8)
 
         self.target_depth = opengl_arr ## target depth
-
+        self.smooth_depth = smooth_arr
 
 
     def renderOffScreenInitialPose(self):
@@ -372,7 +381,8 @@ class PCRenderer:
             self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
             if MAKE_VIDEO:
                 self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
-        return self.show_rgb, self.target_depth[:, :, None]
+        #return self.show_rgb, self.target_depth[:, :, None]
+        return self.show_rgb, self.smooth_depth[:, :, None]
 
 
     def renderToScreen(self, pose, k_views=None):
@@ -410,25 +420,16 @@ class PCRenderer:
         [wt.start() for wt in render_threads]
         [wt.join() for wt in render_threads]
         """
-        _render_depth(self.target_depth)
+        _render_depth(self.smooth_depth)
         _render_rgb(self.show_rgb)
         if MAKE_VIDEO:
             _render_rgb_unfilled(self.show_unfilled_rgb)
                 
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
-        return self.show_rgb, self.target_depth[:, :, None]
-    
-    @staticmethod
-    def sync_coords():
-        """
-        with Profiler("Transform coords"):
-            new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
-        socket_mist.send(new_coords)
-        message = socket_mist.recv()
-        """
-        pass
-
+        #return self.show_rgb, self.target_depth[:, :, None]
+        return self.show_rgb, self.smooth_depth[:, :, None]
+        
 
 def show_target(target_img):
     cv2.namedWindow('target')
@@ -488,8 +489,6 @@ if __name__=='__main__':
     # print(source_depth)
     print(sources[0].shape, source_depths[0].shape)
 
-
-    sync_coords()
 
     show_target(target)
 

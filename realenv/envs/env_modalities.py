@@ -226,6 +226,7 @@ class CameraRobotEnv(SensorRobotEnv):
             return
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
+        self.r_camera_dep = None
         self.check_port_available()
         self.setup_camera_multi()
         self.setup_camera_rgb()
@@ -279,6 +280,8 @@ class CameraRobotEnv(SensorRobotEnv):
         if not self.requires_camera_input or self.test_env:
             return
         self.r_camera_mul.terminate()
+        if self.r_camera_dep is not None:
+            self.r_camera_dep.terminate()
 
 
     def get_blank_visuals(self):
@@ -337,12 +340,14 @@ class CameraRobotEnv(SensorRobotEnv):
             poses.append(pose)
             sources.append(target)
             source_depths.append(target_depth)
-        context_mist = zmq.Context()
-        socket_mist = context_mist.socket(zmq.REQ)
-        socket_mist.connect("tcp://localhost:5555")
-        ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
+        #context_mist = zmq.Context()
+        #socket_mist = context_mist.socket(zmq.REQ)
+        #socket_mist.connect("tcp://localhost:" + str(5555 + self.gpu_count))
+        #context_dept = zmq.Context()
+        #socket_dept = context_mist.socket(zmq.REQ)
+        #socket_dept.connect("tcp://localhost:" + str(5555 - 1))
 
-        PCRenderer.sync_coords()
+        ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
         renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
         self.r_camera_rgb = renderer
 
@@ -352,6 +357,8 @@ class CameraRobotEnv(SensorRobotEnv):
         def camera_multi_excepthook(exctype, value, tb):
             print("killing", self.r_camera_mul)
             self.r_camera_mul.terminate()
+            if self.r_camera_dep is not None:
+                self.r_camera_dep.terminate()
             while tb:
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
@@ -364,8 +371,11 @@ class CameraRobotEnv(SensorRobotEnv):
         dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
-        cmd = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
-        self.r_camera_mul = subprocess.Popen(shlex.split(cmd), shell=False)
+        render_main = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
+        render_depth = "./depth_render --modelpath {} --GPU -1 -s 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
+        self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
+        self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
+
         os.chdir(cur_path)
 
 

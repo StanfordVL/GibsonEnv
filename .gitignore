@@ -42,3 +42,5 @@ cnn_policy*
 checkpoint
 *.log
 *.log.*
+*.model.*
+examples/train/models/

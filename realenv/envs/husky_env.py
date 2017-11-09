@@ -58,8 +58,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
             gpu_count, 
             scene_type="building", 
             use_filler=use_filler)
-        #self.total_reward = 0
-        #self.total_frame = 0
+        self.total_reward = 0
+        self.total_frame = 0
         
     def calc_rewards_and_done(self, a, state):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
@@ -139,9 +139,9 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
         print("Frame %f reward %f" % (self.nframe, sum(rewards)))
 
-        #self.total_reward = self.total_reward + sum(rewards)
-        #self.total_frame = self.total_frame + 1
-        #print(self.total_frame, self.total_reward)
+        self.total_reward = self.total_reward + sum(rewards)
+        self.total_frame = self.total_frame + 1
+        print(self.total_frame, self.total_reward)
         return rewards, done
 
     def flag_reposition(self):
@@ -154,8 +154,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
     def  _reset(self):
-        #self.total_frame = 0
-        #self.total_reward = 0
+        self.total_frame = 0
+        self.total_reward = 0
         obs = CameraRobotEnv._reset(self)
         self.flag_reposition()
         return obs
