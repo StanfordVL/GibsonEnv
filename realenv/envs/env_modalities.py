@@ -215,7 +215,7 @@ class CameraRobotEnv(SensorRobotEnv):
         elif self.robot.resolution == "LARGE":
             self.windowsz = 512
         elif self.robot.resolution == "NORMAL":
-            self.windowsz = 512
+            self.windowsz = 256
         self.mode = mode
         self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
         self.use_filler = use_filler
@@ -343,7 +343,8 @@ class CameraRobotEnv(SensorRobotEnv):
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
 
         PCRenderer.sync_coords()
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up,
+                              human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
         self.r_camera_rgb = renderer
 
 
