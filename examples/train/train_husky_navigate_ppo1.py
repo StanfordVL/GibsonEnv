@@ -61,7 +61,7 @@ def train(num_timesteps, seed):
         gamma=0.99, lam=0.95,
         schedule='linear',
         save_name=args.save_name,
-        save_per_acts=1,
+        save_per_acts=50,
         reload_name=args.reload_name
     )
     env.close()

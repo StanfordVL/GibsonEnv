@@ -13,6 +13,9 @@ import subprocess, os, signal
 import numpy as np
 import sys
 import zmq
+import pygame
+from pygame import surfarray
+from pygame.surfarray import pixels3d
 import socket
 import shlex
 import gym
@@ -202,6 +205,9 @@ class CameraRobotEnv(SensorRobotEnv):
         #   @self.human
         #   @self.timestep
         #   @self.frame_skip
+        if self.human:
+            #self.screen = pygame.display.set_mode([612, 512], 0, 32)
+            self.screen_arr = np.zeros([612, 512, 3])
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
         assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
             "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
@@ -245,7 +251,13 @@ class CameraRobotEnv(SensorRobotEnv):
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
         rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
+        #self.screen.fill([0, 0, 0])
         visuals = self.get_visuals(rgb, depth)
+        #self.screen.blit(visuals, [200, 200]) 
+        #self.screen_arr.fill(0)
+        #self.screen_arr[0:rgb.shape[0], 0:rgb.shape[1], :] = rgb
+        #surfarray.blit_array(self.screen, self.screen_arr)
+        #pygame.display.flip()
         return visuals, sensor_state
 
 
@@ -273,8 +285,11 @@ class CameraRobotEnv(SensorRobotEnv):
         else:
             rgb, depth = self.r_camera_rgb.renderToScreen(pose, top_k)
         
+        #self.screen_arr[0:rgb.shape[0], 0:rgb.shape[1], :] = rgb
+        #surfarray.blit_array(self.screen, self.screen_arr)
+        #pygame.display.flip()
         visuals = self.get_visuals(rgb, depth)
-
+        #self.screen.blit(visuals, [200, 200]) 
         return visuals, sensor_reward, done, sensor_meta
         
 
