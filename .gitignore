@@ -41,3 +41,4 @@ cnn_policy*
 *ppo_policy*
 checkpoint
 *.log
+*.log.*

@@ -710,12 +710,9 @@ if __name__=='__main__':
     parser.add_argument('--model'  , type = str, default = '', help='path of model')
 
     opt = parser.parse_args()
-<<<<<<< HEAD
-    d = ViewDataSet3D(root=opt.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = False)
-=======
+
     d = ViewDataSet3D(root=opt.datapath, transform = np.array, mist_transform = np.array, seqlen = 2, off_3d = False, train = True)
->>>>>>> 7cecc4365b6a20e1a0d236c1272d48a841f2feed
-    
+
     scene_dict = dict(zip(d.scenes, range(len(d.scenes))))
     if not opt.model_id in scene_dict.keys():
         print("model not found")

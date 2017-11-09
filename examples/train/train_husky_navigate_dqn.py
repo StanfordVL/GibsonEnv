@@ -23,10 +23,10 @@ def callback(lcl, glb):
 
 
 def main():
-    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, use_filler=not args.disable_filler)
+    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, use_filler=not args.disable_filler, gpu_count=args.gpu_count, resolution=args.resolution)
     if args.mode in ["RGB", "DEPTH", "RGBD", "GREY"]:
         model = deepq.models.cnn_to_mlp(
-            convs=[(256, 8, 4), (64, 4, 2), (64, 3, 1)],
+            convs=[(64, 8, 4), (64, 4, 2), (64, 3, 1)],
             hiddens=[256],
             dueling=True,
         )
@@ -39,7 +39,7 @@ def main():
         env,
         q_func=model,
         lr=1e-3,
-        max_timesteps=10000,
+        max_timesteps=100000000,
         buffer_size=50000,
         exploration_fraction=0.1,
         exploration_final_eps=0.02,
@@ -60,6 +60,8 @@ if __name__ == '__main__':
     parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
+    parser.add_argument('--meta', type=str, default="")
+    parser.add_argument('--resolution', type=str, default="NORMAL")
     args = parser.parse_args()
     
     main()

@@ -16,6 +16,7 @@ import socket
 import shlex
 import gym
 import cv2
+import os
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
@@ -49,8 +50,7 @@ class SensorRobotEnv(BaseEnv):
         self.k = 5
         self.robot_tracking_id = -1
 
-        self.model_path = get_model_path(MODEL_ID)
-        self.model_id  = MODEL_ID
+        self.model_path = get_model_path(self.model_id)
         self.scale_up  = 1
         self.dataset  = ViewDataSet3D(
             transform = np.array,
@@ -60,7 +60,8 @@ class SensorRobotEnv(BaseEnv):
             train = False, 
             overwrite_fofn=True)
         self.ground_ids = None
-        self.tracking_camera = DEFAULT_DEBUG_CAMERA
+        if self.tracking_camera is None:
+            self.tracking_camera = DEFAULT_DEBUG_CAMERA
 
         self.action_space = self.robot.action_space
         ## Robot's eye observation, in sensor mode black pixels are returned
@@ -100,7 +101,7 @@ class SensorRobotEnv(BaseEnv):
     electricity_cost     = -2.0 # cost for using motors -- this parameter should be carefully tuned against reward for making progress, other values less improtant
     stall_torque_cost   = -0.1  # cost for running electric current through a motor even at zero rotational speed, small
     foot_collision_cost  = -1.0 # touches another leg, or other objects, that cost makes robot avoid smashing feet into itself
-    wall_collision_cost = -5
+    wall_collision_cost = -0.1
     foot_ground_object_names = set(["buildingFloor"])  # to distinguish ground and other objects
     joints_at_limit_cost = -0.1 # discourage stuck joints
 
@@ -200,14 +201,28 @@ class CameraRobotEnv(SensorRobotEnv):
         #   @self.human
         #   @self.timestep
         #   @self.frame_skip
-        assert (mode in ["GREY", "RGB", "RGBD", "DEPTH_SMALL", "DEPTH", "SENSOR"]), "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
+        self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
+        assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
+            "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
+        assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE"]), \
+            "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE"
+        if self.robot.resolution == "SMALL":
+            self.windowsz = 64
+        elif self.robot.resolution == "XSMALL":
+            self.windowsz = 32
+        elif self.robot.resolution == "MID":
+            self.windowsz = 128
+        elif self.robot.resolution == "LARGE":
+            self.windowsz = 512
+        elif self.robot.resolution == "NORMAL":
+            self.windowsz = 256
         self.mode = mode
-        self.requires_camera_input = self.mode in ["GREY", "RGB", "RGBD", "DEPTH", "DEPTH_SMALL"]
+        self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
         self.use_filler = use_filler
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
         
     def setup_rendering_camera(self):
-        if not self.requires_camera_input:
+        if not self.requires_camera_input or self.test_env:
             return
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
@@ -218,7 +233,7 @@ class CameraRobotEnv(SensorRobotEnv):
     def _reset(self):
         sensor_state = SensorRobotEnv._reset(self)
 
-        if not self.requires_camera_input:
+        if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_state
 
@@ -241,7 +256,7 @@ class CameraRobotEnv(SensorRobotEnv):
         sensor_meta.pop("eye_quat", None)
         sensor_meta["sensor"] = sensor_state
 
-        if not self.requires_camera_input:
+        if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_reward, done, sensor_meta
         
@@ -261,7 +276,7 @@ class CameraRobotEnv(SensorRobotEnv):
         
 
     def _close(self):
-        if not self.requires_camera_input:
+        if not self.requires_camera_input or self.test_env:
             return
         self.r_camera_mul.terminate()
 
@@ -282,10 +297,6 @@ class CameraRobotEnv(SensorRobotEnv):
             visuals = np.append(rgb, depth, axis=2)
         elif self.mode == "DEPTH":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
-        elif self.mode == "DEPTH_SMALL":
-            sample_index = np.arange(0, depth.shape[0], 4)
-            visuals = depth[sample_index, :, :]
-            visuals = visuals[:, sample_index, :]
         elif self.mode == "SENSOR":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
         else:
@@ -332,7 +343,8 @@ class CameraRobotEnv(SensorRobotEnv):
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
 
         PCRenderer.sync_coords()
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up,
+                              human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
         self.r_camera_rgb = renderer
 
 
@@ -353,7 +365,7 @@ class CameraRobotEnv(SensorRobotEnv):
         dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
-        cmd = "./depth_render --modelpath {} --GPU {}".format(self.model_path, self.gpu_count)
+        cmd = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
         self.r_camera_mul = subprocess.Popen(shlex.split(cmd), shell=False)
         os.chdir(cur_path)
 

@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
-def main():
-    log_file = args.file
+def plot_reward(log_file, smooth_fc):
     episode_rewards = []
     with open(log_file) as f:
         content = f.readlines()
@@ -10,8 +10,11 @@ def main():
     curr_episode = []
     for line in content:
         if "reward" in line:
-            rew = float(line.split()[3])
-            curr_episode.append(rew)
+            try:
+                rew = float(line.split()[3])
+                curr_episode.append(rew)
+            except ValueError:
+                continue
         if "Episode reset" in line:
             if not sum(curr_episode) < -500:
                 episode_rewards.append(sum(curr_episode))
@@ -20,7 +23,8 @@ def main():
     curr_episode = []
     print("Total episodes ", len(episode_rewards))
     print("Total timesteps", len(content))
-    plt.plot(smooth(episode_rewards, args.smooth))
+    #while True:
+    plt.plot(smooth(episode_rewards, smooth_fc))
     plt.show()
 
 def smooth(rewards, factor=30):
@@ -35,4 +39,4 @@ if __name__ == '__main__':
     parser.add_argument('--file', type=str, default="")
     parser.add_argument('--smooth', type=int, default=30)
     args = parser.parse_args()
-    main()
+    plot_reward(args.file, args.smooth)

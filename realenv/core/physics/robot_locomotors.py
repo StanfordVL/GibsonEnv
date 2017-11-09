@@ -27,20 +27,22 @@ class WalkerBase(BaseRobot):
         action_dim,         # action dimension
         power,
         target_pos,
-        obs_dim=None,       # observation dimension, needed when mode="sensor"
-        sensor_dim=None,    # used for downsampling
+        sensor_dim=None,
         scale = 1, 
-        downsample=False
+        resolution="NORMAL"
     ):
         BaseRobot.__init__(self, filename, robot_name, scale)
 
-        if obs_dim == None:
-            if downsample:
-                obs_dim = [64, 64, 1]
-            else:
-                obs_dim = [256, 256, 4]
+        self.resolution = resolution
+        obs_dim = None
+        if resolution == "SMALL":
+            obs_dim = [64, 64, 4]
+        elif resolution == "XSMALL":
+            obs_dim = [32, 32, 4]
+        elif resolution == "MID":
+            obs_dim = [128, 128, 4]
         else:
-            assert (len(obs_dim) == 3), "Observation space must length 3 list like [246, 246, 4]. Passed in length is {}".format(len(obs_dim))
+            obs_dim = [256, 256, 4]
 
         assert type(sensor_dim) == int, "Sensor dimension must be int, got {}".format(type(sensor_dim))
         assert type(action_dim) == int, "Action dimension must be int, got {}".format(type(action_dim))
@@ -56,7 +58,7 @@ class WalkerBase(BaseRobot):
         self.camera_x = 0
         self.walk_target_x = target_pos[0]  # kilometer away
         self.walk_target_y = target_pos[1]
-        self.body_xyz=[0,0,0]
+        self.body_xyz=[0, 0, 0]
         self.eye_offset_orn = euler2quat(0, 0, 0)
         self.action_dim = action_dim
         self.scale = scale
@@ -77,8 +79,8 @@ class WalkerBase(BaseRobot):
             pass
         pos = self.robot_body.current_position()
         orn = self.robot_body.current_orientation()
-        delta_pos = 0.3
-        delta_deg = np.pi/6
+        delta_pos = 0.2
+        delta_deg = np.pi/9
 
         #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
@@ -150,6 +152,16 @@ class WalkerBase(BaseRobot):
             print(self.scene.timestep)
         return - self.walk_target_dist / self.scene.dt
 
+    def is_close_to_goal(self):
+        body_pose = self.robot_body.pose()
+        parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
+        self.body_xyz = (
+        parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
+        dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y])
+        #print("dist to goal", dist_to_goal)
+        #print(self.body_xyz[0], self.walk_target_x, self.body_xyz[1], self.walk_target_y)
+        #print(self.body_xyz)
+        return dist_to_goal < 2
 
 class Hopper(WalkerBase):
     foot_list = ["foot"]
@@ -325,10 +337,12 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 
-    def __init__(self, is_discrete, target_pos=[1, 0, 0], downsample=False):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL"):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
-        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, downsample=downsample)
+        self.initial_pos = initial_pos
+        self.initial_orn = initial_orn
+        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution)
 
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
@@ -354,12 +368,11 @@ class Husky(WalkerBase):
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
-        orientation, position = configs.INITIAL_POSE["husky"][configs.MODEL_ID][0]
-        roll  = orientation[0]
-        pitch = orientation[1]
-        yaw   = orientation[2]
+        roll  = self.initial_orn[0]
+        pitch = self.initial_orn[1]
+        yaw   = self.initial_orn[2]
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
-        self.robot_body.reset_position(position)
+        self.robot_body.reset_position(self.initial_pos)
 
         self.reset_base_position(configs.RANDOM_INITIAL_POSE)
 

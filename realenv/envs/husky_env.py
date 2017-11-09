@@ -13,40 +13,61 @@ HUMANOID_TIMESTEP  = 1.0/(4 * 22)
 HUMANOID_FRAMESKIP = 4
 
 import os
-from realenv.configs import *
+from realenv import configs
 
 
 tracking_camera = {
-    'yaw': 90,  # demo: living room, stairs
+    'yaw': 20,  # demo: living room, stairs
     #'yaw'; 30,   # demo: kitchen
     'z_offset': 0.5,
-    'distance': 1.2,
-    'pitch': -10
+    'distance': 1,
+    'pitch': -20
     # 'pitch': -24  # demo: stairs
 }
 
 class HuskyNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
-        frame_skip=HUMANOID_FRAMESKIP, is_discrete=False, mode="RGBD", 
-        use_filler=True, gpu_count=0, scene_type="building"):
-        
-        target_orn, target_pos = INITIAL_POSE["husky"][MODEL_ID][-1]
-        downsample = mode == "DEPTH_SMALL"
-        self.robot = Husky(is_discrete, target_pos=target_pos, downsample=downsample)
+    def __init__(
+            self, 
+            human=True, 
+            timestep=HUMANOID_TIMESTEP, 
+            frame_skip=HUMANOID_FRAMESKIP, 
+            is_discrete=False, 
+            mode="RGBD", 
+            use_filler=True, 
+            gpu_count=0, 
+            resolution="NORMAL"):
         self.human = human
+        self.model_id = configs.NAVIGATE_MODEL_ID
         self.timestep = timestep
         self.frame_skip = frame_skip
-
-        CameraRobotEnv.__init__(self, mode, gpu_count, scene_type, use_filler=use_filler)
+        self.resolution = resolution
         self.tracking_camera = tracking_camera
-
+        target_orn, target_pos   = INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][-1]
+        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][0]
+        self.robot = Husky(
+            is_discrete, 
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            target_pos=target_pos,
+            resolution=resolution)
+        CameraRobotEnv.__init__(
+            self, 
+            mode, 
+            gpu_count, 
+            scene_type="building", 
+            use_filler=use_filler)
+        #self.total_reward = 0
+        #self.total_frame = 0
+        
     def calc_rewards_and_done(self, a, state):
-       
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
-        done = self.nframe > 300
+        
+        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
+
+        done = not alive or self.nframe > 1000
         #done = alive < 0
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -74,23 +95,27 @@ class HuskyNavigateEnv(CameraRobotEnv):
         electricity_cost  += self.stall_torque_cost * float(np.square(a).mean())
 
 
-        alive = len(self.robot.parts['top_bumper_link'].contact_list())
-        if alive == 0:
-            alive_score = 0.1
-        else:
-            alive_score = -0.1
+        #alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        #if alive == 0:
+        #    alive_score = 0.1
+        #else:
+        #    alive_score = -0.1
 
         wall_contact = [pt for pt in self.robot.parts['base_link'].contact_list() if pt[6][2] > 0.15]
         wall_collision_cost = self.wall_collision_cost * len(wall_contact)
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        close_to_goal = 0
+        if self.robot.is_close_to_goal():
+            close_to_goal = 0.5
         debugmode = 0
         if (debugmode):
-            #print("alive=")
-            #print(alive)
+            print("alive=")
+            print(alive)
             print("Wall contact points", len(wall_contact))
             print("Collision cost", wall_collision_cost)
             print("electricity_cost", electricity_cost)
+            print("close to goal", close_to_goal)
             #print("progress")
             #print(progress)
             #print("electricity_cost")
@@ -105,7 +130,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         rewards = [
             #alive,
             progress,
-            wall_collision_cost
+            wall_collision_cost,
+            close_to_goal,
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
@@ -113,10 +139,25 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
         print("Frame %f reward %f" % (self.nframe, sum(rewards)))
 
-        return rewards, done        
+        #self.total_reward = self.total_reward + sum(rewards)
+        #self.total_frame = self.total_frame + 1
+        #print(self.total_frame, self.total_reward)
+        return rewards, done
 
+    def flag_reposition(self):
+        walk_target_x = self.robot.walk_target_x
+        walk_target_y = self.robot.walk_target_y
+
+        self.flag = None
+        if self.human:
+            self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
+        
     def  _reset(self):
+        #self.total_frame = 0
+        #self.total_reward = 0
         obs = CameraRobotEnv._reset(self)
+        self.flag_reposition()
         return obs
 
 class HuskyFlagRunEnv(CameraRobotEnv):
@@ -124,13 +165,13 @@ class HuskyFlagRunEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
                  frame_skip=HUMANOID_FRAMESKIP, is_discrete=False, 
-                 gpu_count=0, scene_type="stadium"):
-        self.robot = Husky(is_discrete)
+                 gpu_count=0):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
         ## Mode initialized with mode=SENSOR
-        CameraRobotEnv.__init__(self, "SENSOR", gpu_count, scene_type)
+        self.robot = Husky(is_discrete)
+        CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="stadium")
 
         self.flag_timeout = 1
         self.tracking_camera = tracking_camera
@@ -220,16 +261,35 @@ class HuskyFetchEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
                  frame_skip=HUMANOID_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True):
-        self.robot = Husky(is_discrete)
+                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "NORMAL"):
+
+        target_orn, target_pos = INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][-1]
+        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][0]
+
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
+        self.model_id = configs.FETCH_MODEL_ID
         ## Mode initialized with mode=SENSOR
-        CameraRobotEnv.__init__(self, mode, gpu_count, scene_type, use_filler=use_filler)
 
-        self.flag_timeout = 1
         self.tracking_camera = tracking_camera
+
+        self.robot = Husky(
+            is_discrete,
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            target_pos=target_pos,
+            resolution=resolution)
+
+
+        CameraRobotEnv.__init__(
+            self,
+            mode,
+            gpu_count,
+            scene_type="building",
+            use_filler=use_filler)
+        self.flag_timeout = 1
+
 
         self.visualid = -1
 
