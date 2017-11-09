@@ -261,7 +261,7 @@ class HuskyFetchEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUMANOID_TIMESTEP,
                  frame_skip=HUMANOID_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "NORMAL"):
+                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "SMALL"):
 
         target_orn, target_pos = INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][-1]
         initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][0]
