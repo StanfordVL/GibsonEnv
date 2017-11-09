@@ -93,6 +93,8 @@ class PCRenderer:
 
         self.showsz = windowsz
 
+        #print(self.showsz)
+
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.scale_up = scale_up
@@ -111,7 +113,7 @@ class PCRenderer:
         comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         self.model = comp.module
         self.model.eval()
-	
+
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
@@ -391,8 +393,9 @@ class PCRenderer:
         t1 = time.time()
         t = t1-t0
         self.fps = 1/t
-        cv2.putText(self.show_unfilled_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
-        cv2.putText(self.show_unfilled_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
+        if MAKE_VIDEO:
+            cv2.putText(self.show_unfilled_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
+            cv2.putText(self.show_unfilled_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
 
         def _render_depth(depth):
             #with Profiler("Render Depth"):

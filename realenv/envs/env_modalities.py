@@ -216,7 +216,7 @@ class CameraRobotEnv(SensorRobotEnv):
         elif self.robot.resolution == "LARGE":
             self.windowsz = 512
         elif self.robot.resolution == "NORMAL":
-            self.windowsz = 512
+            self.windowsz = 256
         self.mode = mode
         self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
         self.use_filler = use_filler
