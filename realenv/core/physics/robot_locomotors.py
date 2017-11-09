@@ -228,10 +228,36 @@ class Ant(WalkerBase):
         self.initial_orn = initial_orn
         self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
         self.is_discrete = is_discrete
-
+        self.r_f = 0.1
         if self.is_discrete:
-            self.action_space = gym.spaces.Discrete(2**8)
-            #self.action_list = [[0.1 * self.torque, 0.1 * self.torque, self.torque, self.torque], [-0.2 * self.torque, -0.2 * self.torque,  -1.2 * self.torque,  -1.2 * self.torque], [r_f * self.torque,-r_f * self.torque,r_f * self.torque,-r_f * self.torque],[-r_f * self.torque,r_f * self.torque,-r_f * self.torque,r_f * self.torque],[-0.5 * self.torque, -0.5 * self.torque,  -2 * self.torque,  -2 * self.torque], [0, 0, 0, 0]]
+            self.action_space = gym.spaces.Discrete(17)
+            self.torque = 10
+            ## Hip_1, Ankle_1, Hip_2, Ankle_2, Hip_3, Ankle_3, Hip_4, Ankle_4 
+            self.action_list = [[self.r_f * self.torque, 0, 0, 0, 0, 0, 0, 0],
+                                [0, self.r_f * self.torque, 0, 0, 0, 0, 0, 0],
+                                [0, 0, self.r_f * self.torque, 0, 0, 0, 0, 0],
+                                [0, 0, 0, self.r_f * self.torque, 0, 0, 0, 0],
+                                [0, 0, 0, 0, self.r_f * self.torque, 0, 0, 0],
+                                [0, 0, 0, 0, 0, self.r_f * self.torque, 0, 0],
+                                [0, 0, 0, 0, 0, 0, self.r_f * self.torque, 0],
+                                [0, 0, 0, 0, 0, 0, 0, self.r_f * self.torque],
+                                [-self.r_f * self.torque, 0, 0, 0, 0, 0, 0, 0],
+                                [0, -self.r_f * self.torque, 0, 0, 0, 0, 0, 0],
+                                [0, 0, -self.r_f * self.torque, 0, 0, 0, 0, 0],
+                                [0, 0, 0, -self.r_f * self.torque, 0, 0, 0, 0],
+                                [0, 0, 0, 0, -self.r_f * self.torque, 0, 0, 0],
+                                [0, 0, 0, 0, 0, -self.r_f * self.torque, 0, 0],
+                                [0, 0, 0, 0, 0, 0, -self.r_f * self.torque, 0],
+                                [0, 0, 0, 0, 0, 0, 0, -self.r_f * self.torque],
+                                [0, 0, 0, 0, 0, 0, 0, 0]]
+            '''
+            [[self.r_f * self.torque, 0, 0, -self.r_f * self.torque, 0, 0, 0, 0], 
+                                [0, 0, self.r_f * self.torque, self.r_f * self.torque, 0, 0, 0, 0], 
+                                [0, 0, 0, 0, self.r_f * self.torque, self.r_f * self.torque, 0, 0], 
+                                [0, 0, 0, 0, 0, 0, self.r_f * self.torque, self.r_f * self.torque], 
+                                [0, 0, 0, 0, 0, 0, 0, 0]]
+            '''
+            self.setup_keys_to_action()
 
     def apply_action(self, action):
         if self.is_discrete:
@@ -253,6 +279,31 @@ class Ant(WalkerBase):
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
+
+    def setup_keys_to_action(self):
+        self.keys_to_action = {
+            #(ord('s'), ): 0, ## backward
+            #(ord('w'), ): 1, ## forward
+            #(ord('d'), ): 2, ## turn right
+            #(ord('a'), ): 3, ## turn left
+            (ord('1'), ): 0,
+            (ord('2'), ): 1, 
+            (ord('3'), ): 2, 
+            (ord('4'), ): 3, 
+            (ord('5'), ): 4, 
+            (ord('6'), ): 5, 
+            (ord('7'), ): 6, 
+            (ord('8'), ): 7, 
+            (ord('q'), ): 8, 
+            (ord('w'), ): 9, 
+            (ord('e'), ): 10, 
+            (ord('r'), ): 11, 
+            (ord('t'), ): 12, 
+            (ord('y'), ): 13, 
+            (ord('u'), ): 14, 
+            (ord('i'), ): 15, 
+            (): 4
+        }
 
 
 class Humanoid(WalkerBase):
