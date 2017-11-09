@@ -9,9 +9,9 @@ import gym, logging
 from mpi4py import MPI
 from realenv.envs.husky_env import HuskyFetchEnv
 from baselines.common import set_global_seeds
-import pposgd_simple
+import pposgd_fuse
 import baselines.common.tf_util as U
-import cnn_policy, mlp_policy
+import fuse_policy
 import utils
 import datetime
 from baselines import logger
@@ -49,22 +49,21 @@ def train(num_timesteps, seed):
 
     print(env.sensor_space)
 
-    def policy_fn(name, ob_space, ac_space):
-        return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size = 64, num_hid_layers = 1)
+    def policy_fn(name, ob_space, sensor_space, ac_space):
+        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space = sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
 
     #env = bench.Monitor(env, logger.get_dir() and
     #                    osp.join(logger.get_dir(), str(rank)))
     #env.seed(workerseed)
     gym.logger.setLevel(logging.WARN)
 
-    pposgd_simple.learn(env, policy_fn,
+    pposgd_fuse.learn(env, policy_fn,
                         max_timesteps=int(num_timesteps * 1.1),
                         timesteps_per_actorbatch=1024,
                         clip_param=0.2, entcoeff=0.01,
                         optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
                         gamma=0.99, lam=0.95,
                         schedule='linear',
-                        sensor=True
                         )
 
 

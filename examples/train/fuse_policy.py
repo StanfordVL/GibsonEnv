@@ -8,13 +8,13 @@ from realenv.core.render.profiler import Profiler
 class FusePolicy(object):
     recurrent = False
 
-    def __init__(self, name, ob_space, ac_space, save_per_acts, session, kind='large'):
+    def __init__(self, name, ob_space, sensor_space, ac_space, save_per_acts, session, kind='large'):
         self.total_count = 0
         self.curr_count = 0
         self.save_per_acts = save_per_acts
         self.session = session
         with tf.variable_scope(name):
-            self._init(ob_space, ac_space, kind)
+            self._init(ob_space, sensor_space, ac_space,  kind)
             self.scope = tf.get_variable_scope().name
 
     def _init(self, ob_space, sensor_space, ac_space, kind):
@@ -25,6 +25,11 @@ class FusePolicy(object):
         sequence_length = None
 
         ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[sequence_length] + list(ob_space.shape))
+        ob_sensor = U.get_placeholder(name="ob_sensor", dtype=tf.float32, shape=[sequence_length] + list(sensor_space.shape))
+
+        y = ob_sensor
+        y = tf.nn.relu(U.dense(y, 64, 'lin_ob', U.normc_initializer(1.0)))
+
 
         x = ob / 255.0
         if kind == 'small':  # from A3C paper
@@ -37,9 +42,12 @@ class FusePolicy(object):
             x = tf.nn.relu(U.conv2d(x, 64, "l2", [4, 4], [2, 2], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 64, "l3", [3, 3], [1, 1], pad="VALID"))
             x = U.flattenallbut0(x)
-            x = tf.nn.relu(U.dense(x, 512, 'lin', U.normc_initializer(1.0)))
+            x = tf.nn.relu(U.dense(x, 64, 'lin', U.normc_initializer(1.0)))
         else:
             raise NotImplementedError
+
+
+        x = tf.concat([x,y], 1)
 
         ## Saver
         # self.saver = tf.train.Saver()
@@ -54,10 +62,10 @@ class FusePolicy(object):
 
         stochastic = tf.placeholder(dtype=tf.bool, shape=())
         ac = self.pd.sample()  # XXX
-        self._act = U.function([stochastic, ob], [ac, self.vpred])
+        self._act = U.function([stochastic, ob, ob_sensor], [ac, self.vpred])
 
-    def act(self, stochastic, ob):
-        ac1, vpred1 = self._act(stochastic, ob[None])
+    def act(self, stochastic, ob, ob_sensor):
+        ac1, vpred1 = self._act(stochastic, ob[None], ob_sensor[None])
         self.total_count = self.total_count + 1
         self.curr_count = self.curr_count + 1
         # if self.curr_count > self.save_per_acts:
