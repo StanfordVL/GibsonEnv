@@ -399,7 +399,6 @@ class Husky(WalkerBase):
         WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
-        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, obs_dim=20, mode=mode, power=2.5, scale = 0.6, target_pos=target_pos)
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
