@@ -20,14 +20,6 @@ import gym, gym.spaces, gym.utils, gym.utils.seeding
 import sys
 
 
-def create_single_player_building_scene(env):
-    return SinglePlayerBuildingScene(env.robot, gravity=9.8, timestep=env.timestep, frame_skip=env.frame_skip)
-    
-
-def create_single_player_stadium_scene(env):
-    return SinglePlayerStadiumScene(env.robot, gravity=9.8, timestep=env.timestep, frame_skip=env.frame_skip)
-    
-
 class BaseEnv(gym.Env):
     """
     Base class for loading environments in a Scene.
@@ -43,7 +35,7 @@ class BaseEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self, scene_fn):
+    def __init__(self, scene_type):
         ## Properties already instantiated from SensorEnv/CameraEnv
         #   @self.human
         #   @self.robot
@@ -65,12 +57,19 @@ class BaseEnv(gym.Env):
         self._render_width = 320
         self._render_height = 240
 
-        self.scene_fn = scene_fn
-        self.setup_environment_scene()
-
-    def setup_environment_scene(self):
-        self.scene = self.scene_fn(self)
+        if scene_type == "stadium":
+            self.scene = self.create_single_player_stadium_scene()
+        elif scene_type == "building":
+            self.scene = self.create_single_player_building_scene()
+        else:
+            raise AssertionError()
         self.robot.scene = self.scene
+    
+    def create_single_player_building_scene(self):
+        return SinglePlayerBuildingScene(self.robot, model_id=self.model_id, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        
+    def create_single_player_stadium_scene(self):
+        return SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
 
 
     def configure(self, args):

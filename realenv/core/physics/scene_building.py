@@ -4,14 +4,14 @@ parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
 import pybullet_data
 
-from realenv.configs import *
+from realenv import configs
 from realenv.data.datasets import get_model_path
 from realenv.core.physics.scene_abstract import Scene
 import pybullet as p
 
 
 class BuildingScene(Scene):
-    def __init__(self, robot, gravity, timestep, frame_skip):
+    def __init__(self, robot, model_id, gravity, timestep, frame_skip):
         Scene.__init__(self, gravity, timestep, frame_skip)   
 
         # contains cpp_world.clean_everything()
@@ -20,7 +20,7 @@ class BuildingScene(Scene):
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         
         #filename = os.path.join(get_model_path(NAVIGATE_MODEL_ID), "modeldata", "out_z_up.obj")
-        filename = os.path.join(get_model_path(NAVIGATE_MODEL_ID), "modeldata", "out_z_up_smoothed.obj")
+        filename = os.path.join(get_model_path(model_id), "modeldata", "out_z_up_smoothed.obj")
         if robot.model_type == "MJCF":
             MJCF_SCALING = robot.mjcf_scaling
             scaling = [1.0/MJCF_SCALING, 1.0/MJCF_SCALING, 1.0/MJCF_SCALING]
@@ -55,8 +55,8 @@ class BuildingScene(Scene):
 
 class SinglePlayerBuildingScene(BuildingScene):
     multiplayer = False
-    def __init__(self, robot, gravity, timestep, frame_skip):
-        BuildingScene.__init__(self, robot, gravity, timestep, frame_skip)
+    def __init__(self, robot, model_id, gravity, timestep, frame_skip):
+        BuildingScene.__init__(self, robot, model_id, gravity, timestep, frame_skip)
 
 
 
