@@ -111,8 +111,9 @@ class PCRenderer:
         self.socket_dept = self._context_dept.socket(zmq.REQ)
         self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
-        self.socket_norm = self._context_norm.socket(zmq.REQ)
-        self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
+        if MAKE_VIDEO:
+            self.socket_norm = self._context_norm.socket(zmq.REQ)
+            self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
 
 
         self.target_poses = target_poses
@@ -146,8 +147,8 @@ class PCRenderer:
         comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 64)
         comp = torch.nn.DataParallel(comp).cuda()
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
-        comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
-        #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large_updated.pth")))
+        #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
+        comp.load_state_dict(torch.load(os.path.join(file_dir, "compG_epoch4_3000.pth")))
         self.model = comp.module
         self.model.eval()
 
@@ -297,8 +298,9 @@ class PCRenderer:
         mist_msg = self.socket_mist.recv()
         self.socket_dept.send_string(s)
         dept_msg = self.socket_dept.recv()
-        self.socket_norm.send_string(s)
-        norm_msg = self.socket_norm.recv()
+        if MAKE_VIDEO:
+            self.socket_norm.send_string(s)
+            norm_msg = self.socket_norm.recv()
 
 
         #with Profiler("Read from framebuffer and make pano"):
@@ -314,11 +316,13 @@ class PCRenderer:
         if pano:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
-            normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((h, w))
+            if MAKE_VIDEO:
+                normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((h, w))
         else:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
-            normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n))
+            if MAKE_VIDEO:
+                normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n))
             
         #print("mist", np.mean(opengl_arr), np.min(opengl_arr), np.max(opengl_arr))
         def _render_pc(opengl_arr):
@@ -371,7 +375,8 @@ class PCRenderer:
 
         self.target_depth = opengl_arr ## target depth
         self.smooth_depth = smooth_arr
-        self.surface_normal = normal_arr
+        if MAKE_VIDEO:
+            self.surface_normal = normal_arr
 
         #Histogram matching happens here 
         if MAKE_VIDEO and HIST_MATCHING and show_unfilled is not None and is_rgb:
@@ -479,7 +484,8 @@ class PCRenderer:
         def _render_normal(normal):
             if not SURFACE_NORMAL:
                 return
-            cv2.imshow("Surface Normal", normal * 3)
+            print("normal", np.mean(normal), np.max(normal))
+            cv2.imshow("Surface Normal", normal)
          
         """
         ## TODO(hzyjerry): multithreading in python3 is not working
