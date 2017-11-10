@@ -66,6 +66,8 @@ def main():
     parser.add_argument('--color_coeff', type=float, default = 0, help='add color match loss')
     parser.add_argument('--unfiller'  , action='store_true', help='debug mode')
     parser.add_argument('--joint'  , action='store_true', help='debug mode')
+    parser.add_argument('--use_depth'  , action='store_true', default = False, help='debug mode')
+    
     
     
     
@@ -211,7 +213,8 @@ def main():
             if opt.unfiller:
                 optimizerG2.zero_grad()
                 
-                maskvc.data.fill_(0)
+                if not opt.use_depth:
+                    maskvc.data.fill_(0)
                 
                 recon2 = comp2(img_originalc, maskvc)
                 
