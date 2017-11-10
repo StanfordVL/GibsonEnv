@@ -195,6 +195,8 @@ def learn(env, policy_func, *,
         saver.restore(tf.get_default_session(), reload_name)
         print("Loaded model successfully.")
 
+    #from IPython import embed; embed()
+
     # Prepare for rollouts
     # ----------------------------------------
     seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True, sensor = False)

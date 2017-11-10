@@ -62,16 +62,26 @@ class FusePolicy(object):
 
         stochastic = tf.placeholder(dtype=tf.bool, shape=())
         ac = self.pd.sample()  # XXX
-        self._act = U.function([stochastic, ob, ob_sensor], [ac, self.vpred])
+        self._act = U.function([stochastic, ob, ob_sensor], [ac, self.vpred, logits])
 
     def act(self, stochastic, ob, ob_sensor):
-        ac1, vpred1 = self._act(stochastic, ob[None], ob_sensor[None])
+        ac1, vpred1, _ = self._act(stochastic, ob[None], ob_sensor[None])
         self.total_count = self.total_count + 1
         self.curr_count = self.curr_count + 1
         # if self.curr_count > self.save_per_acts:
         #    self.curr_count = self.curr_count - self.save_per_acts
         #    self.saver.save(self.session, 'cnn_policy',  global_step=self.total_count)
         return ac1[0], vpred1[0]
+
+
+    def get_logits(self, stochastic, ob, ob_sensor):
+        ac1, vpred1, logits = self._act(stochastic, ob[None], ob_sensor[None])
+        self.total_count = self.total_count + 1
+        self.curr_count = self.curr_count + 1
+        # if self.curr_count > self.save_per_acts:
+        #    self.curr_count = self.curr_count - self.save_per_acts
+        #    self.saver.save(self.session, 'cnn_policy',  global_step=self.total_count)
+        return ac1[0], vpred1[0], logits[0]
 
     def get_variables(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)
