@@ -20,9 +20,20 @@ import gym, gym.spaces, gym.utils, gym.utils.seeding
 import sys
 
 
+def create_single_player_building_scene(env):
+    return SinglePlayerBuildingScene(env.robot, gravity=9.8, timestep=env.timestep, frame_skip=env.frame_skip)
+    
+
+def create_single_player_stadium_scene(env):
+    return SinglePlayerStadiumScene(env.robot, gravity=9.8, timestep=env.timestep, frame_skip=env.frame_skip)
+    
+
 class BaseEnv(gym.Env):
     """
-    Base class for loading MJCF (MuJoCo .xml) environments in a Scene.
+    Base class for loading environments in a Scene.
+    Handles scene loading, robot loading, pybullet client setting,
+        camera setting
+
     These environments create single-player scenes and behave like normal Gym environments.
     Multiplayer is not yet supported
     """
@@ -32,34 +43,35 @@ class BaseEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self):
+    def __init__(self, scene_fn):
         ## Properties already instantiated from SensorEnv/CameraEnv
         #   @self.human
         #   @self.robot
-        if (self.physicsClientId<0):
-            self.physicsClientId = p.connect(p.SHARED_MEMORY)
-            if (self.physicsClientId < 0):
-                if (self.human):
-                    self.physicsClientId = p.connect(p.GUI)
-                    if MAKE_VIDEO:
-                        #self.set_window(-1, -1, 1024, 512)
-                        self.set_window(-1, -1, 512, 512)
-                else:
-                    self.physicsClientId = p.connect(p.DIRECT)
-
-        self.scene = self.create_single_player_scene(SCENE_TYPE)
-        self.robot.scene = self.scene
+        
+        #self.physicsClientId = p.connect(p.SHARED_MEMORY)
+        if (self.human):
+            self.physicsClientId = p.connect(p.GUI)
+            if MAKE_VIDEO:
+                #self.set_window(-1, -1, 1024, 512)
+                self.set_window(-1, -1, 512, 512)
+        else:
+            self.physicsClientId = p.connect(p.DIRECT)
 
         self.camera = Camera()
         self._seed()
         self._cam_dist = 3
         self._cam_yaw = 0
         self._cam_pitch = -30
-        self._render_width =320
+        self._render_width = 320
         self._render_height = 240
 
-        self.action_space = self.robot.action_space
-        self.observation_space = self.robot.observation_space
+        self.scene_fn = scene_fn
+        self.setup_environment_scene()
+
+    def setup_environment_scene(self):
+        self.scene = self.scene_fn(self)
+        self.robot.scene = self.scene
+
 
     def configure(self, args):
         self.robot.args = args
@@ -86,10 +98,10 @@ class BaseEnv(gym.Env):
         self.done = 0
         self.reward = 0
         dump = 0
-        s = self.robot.reset()
+        state = self.robot.reset()
         self.scene.episode_restart()
         self.potential = self.robot.calc_potential()
-        return s
+        return state
 
     def _render(self, mode, close):
         if (mode=="human"):
@@ -146,17 +158,6 @@ class BaseEnv(gym.Env):
 
         cmd = "xdotool search --name \"Bullet Physics\" set_window --name \"Robot's world\""
         os.system(cmd)
-
-    def create_single_player_scene(self, scene ='building'):
-        if scene == 'building':
-            self.building_scene = SinglePlayerBuildingScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
-        elif scene == 'stadium':
-            self.building_scene = SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
-        else:
-            self.building_scene = None
-            print("Scene not created")
-        return self.building_scene
-        
 
     def HUD(self, state, a, done):
         pass

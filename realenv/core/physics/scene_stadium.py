@@ -19,7 +19,7 @@ class StadiumScene(Scene):
         for i in self.ground_plane_mjcf:
             p.changeVisualShape(i, -1, rgbaColor=[0, 0, 0, 0])
 
-        self.building_obj = self.stadium
+        self.scene_obj_list = self.stadium
 
 
     def episode_restart(self):

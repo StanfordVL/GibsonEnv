@@ -19,6 +19,7 @@ dev/transfer.c
 *.bmp
 *.bak
 *.zip
+.*.swp
 
 
 # vscode
@@ -37,4 +38,7 @@ physics/models
 
 
 cnn_policy*
+*ppo_policy*
 checkpoint
+*.log
+*.log.*

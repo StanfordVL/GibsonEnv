@@ -27,7 +27,12 @@ class RandomAgent(object):
 
 
 if __name__ == '__main__':
-    env = HuskyFlagRunEnv(human=True, timestep=1.0 / (4 * 22), frame_skip=4, enable_sensors=True, is_discrete=True)
+    import argparse
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--human', action='store_true', default=False)
+    args = parser.parse_args()
+
+    env = HuskyFlagRunEnv(human=args.human, timestep=1.0 / (4 * 22), frame_skip=4, is_discrete=True)
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete=True)
     assert (not obs is None)

@@ -34,7 +34,9 @@ setup(name='realenv',
             'tqdm >= 4',
           	'pyzmq>=16.0.2',
           	'Pillow>=4.2.1',
-          	'matplotlib>=2.1.0'
+          	'matplotlib>=2.1.0',
+            'mpi4py>=2.0.0',
+            'cloudpickle>=0.4.1'
 	],
 	tests_require=[],
 	# cmdclass={
