@@ -170,6 +170,7 @@ bool loadOBJ(
 			unsigned int vertexIndex = vertexIndices[i];
 			glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
 			out_normals[vertexIndex-1] += normal / float(vertexFaces[vertexIndex-1]);
+			//printf("%f %f %f\n", normal[0], normal[1], normal[2]);
 		}
 	}
 

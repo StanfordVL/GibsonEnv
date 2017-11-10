@@ -137,6 +137,122 @@ class AntNavigateEnv(CameraRobotEnv):
         return obs
 
 
+class AntClimbEnv(CameraRobotEnv):
+    def __init__(
+            self, 
+            human=True, 
+            timestep=ANT_TIMESTEP, 
+            frame_skip=ANT_FRAMESKIP, 
+            is_discrete=False, 
+            mode="RGBD", 
+            use_filler=True, 
+            gpu_count=0, 
+            resolution="NORMAL"):
+        self.human = human
+        self.model_id = configs.NAVIGATE_MODEL_ID
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        self.resolution = resolution
+        self.tracking_camera = tracking_camera
+        target_orn, target_pos   = INITIAL_POSE["ant"][configs.NAVIGATE_MODEL_ID][-1]
+        initial_orn, initial_pos = configs.INITIAL_POSE["ant"][configs.NAVIGATE_MODEL_ID][0]
+        
+        self.robot = Ant(initial_pos, initial_orn, 
+            is_discrete=is_discrete, 
+            target_pos=target_pos,
+            resolution=resolution)
+        CameraRobotEnv.__init__(
+            self, 
+            mode, 
+            gpu_count, 
+            scene_type="building", 
+            use_filler=use_filler)
+
+        self.total_reward = 0
+        self.total_frame = 0
+
+        
+    def calc_rewards_and_done(self, a, state):
+        ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
+        self.nframe += 1
+
+        # dummy state if a is None
+        if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
+            self.robot.apply_action(a)
+            self.scene.global_step()
+       
+        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
+            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+
+        done = self.nframe > 300
+        #done = alive < 0
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+
+        potential_old = self.potential
+        self.potential = self.robot.calc_potential()
+        progress = float(self.potential - potential_old)
+
+        feet_collision_cost = 0.0
+        for i, f in enumerate(
+                self.robot.feet):  # TODO: Maybe calculating feet contacts could be done within the robot code
+            # print(f.contact_list())
+            contact_ids = set((x[2], x[4]) for x in f.contact_list())
+            # print("CONTACT OF '%d' WITH %d" % (contact_ids, ",".join(contact_names)) )
+            if (self.ground_ids & contact_ids):
+                # see Issue 63: https://github.com/openai/roboschool/issues/63
+                # feet_collision_cost += self.foot_collision_cost
+                self.robot.feet_contact[i] = 1.0
+            else:
+                self.robot.feet_contact[i] = 0.0
+        # print(self.robot.feet_contact)
+
+        electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we 
+        electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+
+        joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        debugmode = 0
+        if (debugmode):
+            print("alive=")
+            print(alive)
+            print("progress")
+            print(progress)
+            print("electricity_cost")
+            print(electricity_cost)
+            print("joints_at_limit_cost")
+            print(joints_at_limit_cost)
+            print("feet_collision_cost")
+            print(feet_collision_cost)
+
+        print("Frame %f reward %f" % (self.nframe, progress))
+        return [
+            #alive,
+            progress,
+            #electricity_cost,
+            #joints_at_limit_cost,
+            #feet_collision_cost
+         ], done
+
+    def flag_reposition(self):
+        walk_target_x = self.robot.walk_target_x
+        walk_target_y = self.robot.walk_target_y
+
+        self.flag = None
+        if self.human:
+            self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
+        
+    def  _reset(self):
+        self.total_frame = 0
+        self.total_reward = 0
+        obs = CameraRobotEnv._reset(self)
+        self.flag_reposition()
+        return obs
+
+
+
+
 class AntFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """

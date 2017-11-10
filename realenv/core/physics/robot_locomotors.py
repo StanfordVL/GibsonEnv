@@ -41,6 +41,10 @@ class WalkerBase(BaseRobot):
             obs_dim = [32, 32, 4]
         elif resolution == "MID":
             obs_dim = [128, 128, 4]
+        elif resolution == "LARGE":
+            obs_dim = [512, 512, 4]
+        elif resolution == "XLARGE":
+            obs_dim = [1024, 1024, 4]
         else:
             obs_dim = [256, 256, 4]
 
@@ -405,8 +409,9 @@ class Husky(WalkerBase):
         ## specific offset for husky.urdf
         #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
             self.torque = 0.1
-            self.action_list = [[self.torque/10, self.torque/10, self.torque/10, self.torque/10],
-                                [-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
+            self.action_list = [[self.torque/4, self.torque/4, self.torque/4, self.torque/4],
+                                #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
+                                [-self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9],
                                 [self.torque, -self.torque, self.torque, -self.torque],
                                 [-self.torque, self.torque, -self.torque, self.torque],
                                 [0, 0, 0, 0]]

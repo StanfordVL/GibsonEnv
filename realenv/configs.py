@@ -1,7 +1,7 @@
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = True
 
-ENABLE_PROFILING = False
+ENABLE_PROFILING = True
 
 ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
 ## pybullet doesn't yet support downscaling of MJCF objects
@@ -16,15 +16,79 @@ USE_MJCF = True
 NAVIGATE_MODEL_ID = "sRj553CTHiw"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
+
+HIST_MATCHING = True
+USE_SEMANTICS = True
+SURFACE_NORMAL = True
+
 ## Human view camera settings
 DEBUG_CAMERA_FOLLOW = True
 
 ## Render window settings
 HIGH_RES_MONITOR = False
-MAKE_VIDEO = False
+MAKE_VIDEO = True
 LIVE_DEMO = False
 
-
+TASK_POSE = {
+    "11HB6XZSh1Q": {
+        "navigate": [
+            [[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
+            [[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
+        ],
+        "fetch": [
+            [[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
+            [[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
+        ], 
+        "climb": [
+            [[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
+            [[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
+        ]
+    },
+    "sRj553CTHiw": {
+        "navigate": [
+            [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial
+            #[[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
+            [[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]]
+                                                    ## target
+        ],
+        "fetch": [
+            [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial
+            [[0, 0, 3.14], [-7, 2.6, 0.5]]          ## target
+        ],
+        "climb": [
+            [[0, 0, 3.14], [-7, 2.6, 0.5]], 
+            [[0, 0, 3.14], [-7, 2.6, 0.5]], 
+        ]
+    },
+    "BbxejD15Etk": {
+        "navigate": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "fetch": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "climb": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ]
+    },
+    "13wHkWg1BWZ": {
+        "navigate": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "fetch": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "climb": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ]
+    }  # basement house
+}
 
 ## Initial locations
 INITIAL_POSE = {

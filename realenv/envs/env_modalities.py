@@ -15,7 +15,6 @@ import sys
 import zmq
 import pygame
 from pygame import surfarray
-from pygame.surfarray import pixels3d
 import socket
 import shlex
 import gym
@@ -68,12 +67,7 @@ class SensorRobotEnv(BaseEnv):
         self.sensor_space = self.robot.sensor_space
         self.gpu_count = gpu_count
         self.nframe = 0
-        self.setup_rendering_camera()
-
-    def setup_rendering_camera(self):
-        print("Please do not directly instantiate SensorRobotEnv")
-        raise NotImplementedError()
-
+        
     def get_keys_to_action(self):
         return self.robot.keys_to_action
 
@@ -206,22 +200,34 @@ class CameraRobotEnv(SensorRobotEnv):
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
         assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
             "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
-        assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE"]), \
-            "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE"
+        assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE", "XLARGE"]), \
+            "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE/XLARGE"
         if self.robot.resolution == "SMALL":
             self.windowsz = 64
+            self.scale_up = 4
         elif self.robot.resolution == "XSMALL":
             self.windowsz = 32
+            self.scale_up = 4
         elif self.robot.resolution == "MID":
             self.windowsz = 128
+            self.scale_up = 4
         elif self.robot.resolution == "LARGE":
             self.windowsz = 512
+            self.scale_up = 1
         elif self.robot.resolution == "NORMAL":
             self.windowsz = 256
+            self.scale_up = 4
+        elif self.robot.resolution == "XLARGE":
+            self.windowsz = 1024
+            self.scale_up = 1
         self.mode = mode
         self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
         self.use_filler = use_filler
+        if self.requires_camera_input:
+            self.model_path = get_model_path(self.model_id)
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
+        self.setup_rendering_camera()
+        
         
     def setup_rendering_camera(self):
         if not self.requires_camera_input or self.test_env:
@@ -294,7 +300,8 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul.terminate()
         if self.r_camera_dep is not None:
             self.r_camera_dep.terminate()
-
+        if SURFACE_NORMAL:
+            self.r_camera_norm.terminate()
 
     def get_blank_visuals(self):
         return np.zeros((256, 256, 4))
@@ -324,7 +331,6 @@ class CameraRobotEnv(SensorRobotEnv):
         assert(self.requires_camera_input)
         scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
         ## Todo: (hzyjerry) more error handling
-        self.scale_up = 4
         if not self.model_id in scene_dict.keys():
              raise error.Error("Dataset not found: model {} cannot be loaded".format(self.model_id))
         else:
@@ -332,10 +338,12 @@ class CameraRobotEnv(SensorRobotEnv):
         uuids, rts = self.dataset.get_scene_info(scene_id)
 
         targets, sources, source_depths, poses = [], [], [], []
-        
+        source_semantics = []
+
         for k,v in tqdm((uuids)):
             data = self.dataset[v]
             target, target_depth = data[1], data[3]
+            target_semantics = data[7]
             if self.scale_up !=1:
                 target =  cv2.resize(
                     target,None,
@@ -352,6 +360,7 @@ class CameraRobotEnv(SensorRobotEnv):
             poses.append(pose)
             sources.append(target)
             source_depths.append(target_depth)
+            source_semantics.append(target_semantics)
         #context_mist = zmq.Context()
         #socket_mist = context_mist.socket(zmq.REQ)
         #socket_mist.connect("tcp://localhost:" + str(5555 + self.gpu_count))
@@ -360,7 +369,7 @@ class CameraRobotEnv(SensorRobotEnv):
         #socket_dept.connect("tcp://localhost:" + str(5555 - 1))
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics, human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
         self.r_camera_rgb = renderer
 
 
@@ -371,6 +380,8 @@ class CameraRobotEnv(SensorRobotEnv):
             self.r_camera_mul.terminate()
             if self.r_camera_dep is not None:
                 self.r_camera_dep.terminate()
+            if SURFACE_NORMAL:
+                self.r_camera_norm.terminate()
             while tb:
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
@@ -385,8 +396,12 @@ class CameraRobotEnv(SensorRobotEnv):
         os.chdir(dr_path)
         render_main = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
         render_depth = "./depth_render --modelpath {} --GPU -1 -s 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
+        render_norm = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
+
+        if SURFACE_NORMAL:
+            self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
 
         os.chdir(cur_path)
 

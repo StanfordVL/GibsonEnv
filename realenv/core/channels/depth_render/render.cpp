@@ -235,23 +235,29 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Width", 'w', "Render window width", false, 256);
     cmdp.add<int>("Height", 'h', "Render window height", false, 256);
     cmdp.add<int>("Smooth", 's', "Whether render depth only", false, 0);
+    cmdp.add<int>("Normal", 'n', "Whether render surface normal", false, 0);
 
     cmdp.parse_check(argc, argv);
 
     std::string model_path = cmdp.get<std::string>("modelpath");
     int GPU_NUM = cmdp.get<int>("GPU");
     int smooth = cmdp.get<int>("Smooth");
+    int normal = cmdp.get<int>("Normal");
 
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
 
-    std::string name_obj = "";
-    if (smooth == 0) {
-	    name_obj = model_path + "/" + "modeldata/out_res.obj";
-    } else {
+    std::string name_obj = model_path + "/" + "modeldata/out_res.obj";
+    if (smooth > 0) {
     	name_obj = model_path + "/" + "modeldata/out_smoothed.obj";
     	GPU_NUM = -1;
     }
+
+    if (normal > 0) {
+    	name_obj = model_path + "/" + "modeldata/rgb.obj";
+    	GPU_NUM = -2;
+    }
+
     std::string name_loc   = model_path + "/" + "sweep_locations.csv";
 
 
@@ -406,8 +412,13 @@ int main( int argc, char * argv[] )
 	glBindVertexArray(VertexArrayID);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./StandardShadingRTT.fragmentshader" );
-
+	GLuint programID;
+	if (normal == 0) {
+		programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./MistShadingRTT.fragmentshader" );
+	} else {
+		programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./NormalShadingRTT.fragmentshader" );
+	}
+	
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
@@ -561,6 +572,7 @@ int main( int argc, char * argv[] )
 
 	zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
+    std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
     socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
 	cudaGetDevice( &cudaDevice );
 	int g_cuda_device = 0;
