@@ -53,7 +53,12 @@ class BuildingScene(Scene):
         p.changeDynamics(boundaryUid, -1, lateralFriction=1.5, spinningFriction=0.1, rollingFriction=0.1)
         self.scene_obj_list = [boundaryUid]
         #self.scene_obj = (int(p.loadURDF(filename)), )
-        
+
+
+        planeName = os.path.join(pybullet_data.getDataPath(), "mjcf/ground_plane.xml")
+        self.ground_plane_mjcf = p.loadMJCF(planeName)
+        #print(self.ground_plane_mjcf)
+        p.resetBasePositionAndOrientation(self.ground_plane_mjcf[0], posObj = [0,0,-0.5], ornObj = [0,0,0,1])
         #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
         #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
         #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])

@@ -55,7 +55,7 @@ def main():
     parser.add_argument('--batchsize'  ,type=int, default = 20, help='batchsize')
     parser.add_argument('--workers'  ,type=int, default = 9, help='number of workers')
     parser.add_argument('--nepoch'  ,type=int, default = 50, help='number of epochs')
-    parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, default=0.002')
+    parser.add_argument('--lr', type=float, default=2e-5, help='learning rate, default=0.002')
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
     parser.add_argument('--outf', type=str, default="filler_pano_pc_full", help='output folder')
     parser.add_argument('--model', type=str, default="", help='model path')
@@ -66,6 +66,8 @@ def main():
     parser.add_argument('--color_coeff', type=float, default = 0, help='add color match loss')
     parser.add_argument('--unfiller'  , action='store_true', help='debug mode')
     parser.add_argument('--joint'  , action='store_true', help='debug mode')
+    parser.add_argument('--use_depth'  , action='store_true', default = False, help='debug mode')
+    
     
     
     
@@ -99,13 +101,12 @@ def main():
     img_original = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
-    comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
+    comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 64)
     
     dis = Discriminator2(pano = False)
     current_epoch = opt.cepoch
 
     comp =  torch.nn.DataParallel(comp).cuda()
-    
     
     
     if opt.init == 'iden':
@@ -152,6 +153,15 @@ def main():
     for param in p.parameters():
         param.requires_grad = False
     
+    #normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    
+    #img = Variable(torch.zeros(opt.batchsize, 3 , 1024, 2048)).cuda()
+    imgnet_mean = torch.from_numpy(np.array([0.485, 0.456, 0.406]).astype(np.float32))
+    imgnet_std = torch.from_numpy(np.array([0.229, 0.224, 0.225]).astype(np.float32))
+    
+    imgnet_mean_img = Variable(imgnet_mean.view(1,3,1,1).repeat(opt.batchsize * 4,1,256,256)).cuda()
+    imgnet_std_img = Variable(imgnet_std.view(1,3,1,1).repeat(opt.batchsize * 4,1,256,256)).cuda()
+    
     test_loader_enum = enumerate(dataloader_test)
     for epoch in range(current_epoch, opt.nepoch):
         for i, data in enumerate(dataloader, 0):
@@ -184,23 +194,23 @@ def main():
             elif opt.loss == 'color_stable':
                 loss = l2(p(recon.view(recon.size(0) * 3, 1, 256, 256).repeat(1,3,1,1)), p(img_originalc.view(img_originalc.size(0)*3,1,256,256).repeat(1,3,1,1)).detach())
             elif opt.loss == 'color_correction':
-                loss = l2(p(recon), p(img_originalc).detach())
+                loss = l2(p((recon - imgnet_mean_img) / imgnet_std_img), p((img_originalc-imgnet_mean_img) / (imgnet_std_img)).detach())
                 for scale in [32]:
                     img_originalc_patch = img_originalc.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1) 
                     recon_patch = recon.view(opt.batchsize * 4,3,256/scale,scale,256/scale,scale).transpose(4,3).contiguous().view(opt.batchsize * 4,3,256/scale,256/scale,-1)    
                     img_originalc_patch_mean = img_originalc_patch.mean(dim=-1)
                     recon_patch_mean = recon_patch.mean(dim = -1)
-                    recon_patch_cov = []
-                    img_originalc_patch_cov = []
+                    #recon_patch_cov = []
+                    #img_originalc_patch_cov = []
                     
-                    for j in range(3):
-                        recon_patch_cov.append((recon_patch * recon_patch[:,j:j+1].repeat(1,3,1,1,1)).mean(dim=-1))
-                        img_originalc_patch_cov.append((img_originalc_patch * img_originalc_patch[:,j:j+1].repeat(1,3,1,1,1)).mean(dim=-1))
+                    #for j in range(3):
+                    #    recon_patch_cov.append((recon_patch * recon_patch[:,j:j+1].repeat(1,3,1,1,1)).mean(dim=-1))
+                    #    img_originalc_patch_cov.append((img_originalc_patch * img_originalc_patch[:,j:j+1].repeat(1,3,1,1,1)).mean(dim=-1))
                     
-                    recon_patch_cov_cat = torch.cat(recon_patch_cov,1)
-                    img_originalc_patch_cov_cat = torch.cat(img_originalc_patch_cov, 1)
+                    #recon_patch_cov_cat = torch.cat(recon_patch_cov,1)
+                    #img_originalc_patch_cov_cat = torch.cat(img_originalc_patch_cov, 1)
                     
-                    color_loss = l2(recon_patch_mean, img_originalc_patch_mean) + l2(recon_patch_cov_cat, img_originalc_patch_cov_cat.detach())
+                    color_loss = l2(recon_patch_mean, img_originalc_patch_mean) #+ l2(recon_patch_cov_cat, img_originalc_patch_cov_cat.detach())
                     
                     loss += opt.color_coeff * color_loss
                     
@@ -211,7 +221,8 @@ def main():
             if opt.unfiller:
                 optimizerG2.zero_grad()
                 
-                maskvc.data.fill_(0)
+                if not opt.use_depth:
+                    maskvc.data.fill_(0)
                 
                 recon2 = comp2(img_originalc, maskvc)
                 
@@ -341,7 +352,7 @@ def main():
                 writer.add_scalar('G_loss', errG_data, step)
                 writer.add_scalar('D_loss', errD_data, step)
 
-            if i%10000 == 0:
+            if i%500 == 0:
                 torch.save(comp.state_dict(), '%s/compG_epoch%d_%d.pth' % (opt.outf, epoch, i))
                 torch.save(dis.state_dict(), '%s/compD_epoch%d_%d.pth' % (opt.outf, epoch, i))
             

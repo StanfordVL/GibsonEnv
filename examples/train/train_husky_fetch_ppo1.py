@@ -64,7 +64,10 @@ def train(num_timesteps, seed):
                         optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
                         gamma=0.99, lam=0.95,
                         schedule='linear',
-                        sensor=True
+                        sensor=True,
+                        save_name=args.save_name,
+                        save_per_acts=100,
+                        reload_name=args.reload_name
                         )
 
 
@@ -93,6 +96,8 @@ if __name__ == '__main__':
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
+    parser.add_argument('--reload_name', type=str, default=None)
+    parser.add_argument('--save_name', type=str, default="flagrun")
     args = parser.parse_args()
 
     #assert (args.mode != "SENSOR"), "Currently PPO does not support SENSOR mode"

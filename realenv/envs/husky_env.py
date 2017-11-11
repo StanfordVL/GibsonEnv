@@ -470,7 +470,7 @@ class HuskyFetchEnv(CameraRobotEnv):
 
         self.flag = None
         #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
-        self.flag_timeout = 600 / self.scene.frame_skip
+        self.flag_timeout = 250
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
         if self.lastid:
@@ -493,7 +493,11 @@ class HuskyFetchEnv(CameraRobotEnv):
 
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
-        progress = float(self.potential - potential_old)
+        if self.flag_timeout > 225:
+            progress = 0
+        else:
+            progress = float(self.potential - potential_old)
+
 
         if not a is None:
             electricity_cost = self.electricity_cost * float(np.abs(
@@ -509,7 +513,7 @@ class HuskyFetchEnv(CameraRobotEnv):
             alive_score = -0.1
 
 
-        done = alive > 0 or self.nframe > 500
+        done = self.nframe > 500
 
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -524,7 +528,7 @@ class HuskyFetchEnv(CameraRobotEnv):
             print(progress)
 
         return [
-            alive_score,
+            #alive_score,
             progress,
         ], done
 
