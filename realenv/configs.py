@@ -13,7 +13,8 @@ USE_MJCF = True
 ## Gates 1st: sRj553CTHiw
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
-NAVIGATE_MODEL_ID = "sRj553CTHiw"
+## Gates 3rd: TVHnHa4MZwE
+NAVIGATE_MODEL_ID = "TVHnHa4MZwE"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
 
@@ -87,7 +88,22 @@ TASK_POSE = {
             [[0, 0, 0], [0, 0, 0]],
             [[0, 0, 0], [0, 0, 0]]
         ]
-    }  # basement house
+    },  # basement house
+    "TVHnHa4MZwE": {
+        "navigate": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "fetch": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "climb": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ]
+
+    }
 }
 
 ## Initial locations
@@ -104,6 +120,9 @@ INITIAL_POSE = {
         ],
         "15N3xPvXqFR": [
             [[0, 0, 3 * 3.14/2], [-0, -0, 1.4]]
+        ],
+        "TVHnHa4MZwE":[
+            [[0, 0, 0], [0, 0, 0]]
         ]
     },
     "husky": {

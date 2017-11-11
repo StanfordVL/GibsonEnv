@@ -314,12 +314,24 @@ class Humanoid(WalkerBase):
     self_collision = True
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
-    def __init__(self):
+
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL"):
         self.model_type = "MJCF"
         self.mjcf_scaling = 1
+        self.is_discrete = is_discrete
+        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = 0.6, target_pos=target_pos, resolution=resolution)
+        self.initial_pos = initial_pos
+        self.initial_orn = initial_orn
+        #self.eye_offset_orn = euler2quat(0, 0, 0, axes='sxyz')
         self.glass_id = None
-        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41)
-        # 17 joints, 4 of them important for walking (hip, knee), others may as well be turned off, 17/4 = 4.25
+        if self.is_discrete:
+            self.action_space = gym.spaces.Discrete(5)
+            ## specific offset for husky.urdf
+            #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+            self.torque = 0.1
+            self.action_list = np.concatenate((np.ones((1, 17)), np.zeros((1, 17)))).tolist()
+
+            self.setup_keys_to_action()
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
@@ -369,28 +381,36 @@ class Humanoid(WalkerBase):
             self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
         self.initial_z = 0.8
 
-        orientation, position = configs.INITIAL_POSE["humanoid"][configs.MODEL_ID][0]
-        roll  = orientation[0]
-        pitch = orientation[1]
-        yaw   = orientation[2]
+        roll  = self.initial_orn[0]
+        pitch = self.initial_orn[1]
+        yaw   = self.initial_orn[2]
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
-        self.robot_body.reset_position(position)
+        self.robot_body.reset_position(self.initial_pos)
+
         self.reset_base_position(configs.RANDOM_INITIAL_POSE)
+
 
 
     random_yaw = False
     random_lean = False
 
     def apply_action(self, a):
-        assert( np.isfinite(a).all() )
-        force_gain = 1
-        for i, m, power in zip(range(17), self.motors, self.motor_power):
-            m.set_motor_torque( float(force_gain * power*self.power*a[i]) )
+        if self.is_discrete:
+            realaction = self.action_list[a]
+        else:
+            force_gain = 1
+            for i, m, power in zip(range(17), self.motors, self.motor_power):
+                m.set_motor_torque( float(force_gain * power*self.power*a[i]) )
             #m.set_motor_torque(float(force_gain * power * self.power * np.clip(a[i], -1, +1)))
 
     def alive_bonus(self, z, pitch):
         return +2 if z > 0.78 else -1   # 2 here because 17 joints produce a lot of electricity cost just from policy noise, living must be better than dying
-
+    
+    def setup_keys_to_action(self):
+        self.keys_to_action = {
+            (ord('w'), ): 0,
+            (): 1
+        }
 
 
 class Husky(WalkerBase):
@@ -419,7 +439,7 @@ class Husky(WalkerBase):
             self.setup_keys_to_action()
 
         ## specific offset for husky.urdf
-        self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
     
         
     def apply_action(self, action):

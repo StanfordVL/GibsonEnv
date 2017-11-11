@@ -19,18 +19,31 @@ class BuildingScene(Scene):
         # if self.zero_at_running_strip_start_line:
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         
-        #filename = os.path.join(get_model_path(NAVIGATE_MODEL_ID), "modeldata", "out_z_up.obj")
-        filename = os.path.join(get_model_path(model_id), "modeldata", "out_z_up_smoothed.obj")
+        #filename = os.path.join(get_model_path(configs.NAVIGATE_MODEL_ID), "modeldata", "out_z_up.obj")
+        #filename = os.path.join(get_model_path(configs.NAVIGATE_MODEL_ID), "modeldata", "out_z_up.obj")
+        #filename = os.path.join(get_model_path(model_id), "modeldata", "out_z_up_smoothed.obj")
+        filename = os.path.join(get_model_path(model_id), "modeldata", "out_z_up.obj")
+        #filename = os.path.join(get_model_path(model_id), "3d", "rgb.obj")
+        #filename = os.path.join(get_model_path(model_id), "3d", "blender.obj")
+        #textureID = p.loadTexture(os.path.join(get_model_path(model_id), "3d", "rgb.mtl"))
+
         if robot.model_type == "MJCF":
             MJCF_SCALING = robot.mjcf_scaling
             scaling = [1.0/MJCF_SCALING, 1.0/MJCF_SCALING, 1.0/MJCF_SCALING]
         else:
             scaling  = [1, 1, 1]
         magnified = [2, 2, 2]
+
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        print(filename)
+        #print("collision id", collisionId, "textureID", textureID)
+
+        #textureID = p.createVisualShape(p.GEOM_MESH, fileName=filename)
+        textureID = -1
+
+        #p.changeVisualShape(collisionId, -1, textureUniqueId= textureID)
+
         #visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
-        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = -1)
+        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = textureID)
         #visualId = p.loadTexture(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tex256.png"))
         #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
         #self.scene_obj = [collisionId]
