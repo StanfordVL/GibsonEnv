@@ -20,6 +20,7 @@ from multiprocessing import Process
 
 from realenv.data.datasets import ViewDataSet3D
 from realenv.configs import *
+from realenv import configs
 from realenv.core.render.completion import CompletionNet
 from realenv.learn.completion2 import CompletionNet2
 import torch.nn as nn
@@ -111,7 +112,7 @@ class PCRenderer:
         self.socket_dept = self._context_dept.socket(zmq.REQ)
         self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
-        if MAKE_VIDEO:
+        if configs.MAKE_VIDEO:
             self.socket_norm = self._context_norm.socket(zmq.REQ)
             self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
 
@@ -139,16 +140,20 @@ class PCRenderer:
         self.show_semantics   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')        
 
         self.show_unfilled  = None
-        if MAKE_VIDEO:
+        if configs.MAKE_VIDEO:
             self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
 
 
-        #comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
-        comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 64)
-        comp = torch.nn.DataParallel(comp).cuda()
+        if configs.USE_SMALL_FILLER:
+            comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
+            comp = torch.nn.DataParallel(comp).cuda()
+            comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
+        else:
+            comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 64)
+            comp = torch.nn.DataParallel(comp).cuda()
+            comp.load_state_dict(torch.load(os.path.join(file_dir, "compG_epoch4_3000.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
-        comp.load_state_dict(torch.load(os.path.join(file_dir, "compG_epoch4_3000.pth")))
         self.model = comp.module
         self.model.eval()
 

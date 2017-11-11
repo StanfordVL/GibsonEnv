@@ -40,8 +40,8 @@ class AntNavigateEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = INITIAL_POSE["ant"][configs.NAVIGATE_MODEL_ID][-1]
-        initial_orn, initial_pos = configs.INITIAL_POSE["ant"][configs.NAVIGATE_MODEL_ID][0]
+        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
         
         self.robot = Ant(initial_pos, initial_orn, 
             is_discrete=is_discrete, 

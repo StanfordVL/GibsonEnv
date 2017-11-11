@@ -147,7 +147,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
         self.total_reward = self.total_reward + sum(rewards)
         self.total_frame = self.total_frame + 1
-        print(self.total_frame, self.total_reward)
+        #print(self.total_frame, self.total_reward)
         return rewards, done
 
     def flag_reposition(self):

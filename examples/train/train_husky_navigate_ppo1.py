@@ -58,7 +58,7 @@ def train(num_timesteps, seed):
         timesteps_per_actorbatch=1024,
         clip_param=0.2, entcoeff=0.01,
         optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
-        gamma=0.99, lam=0.95,
+        gamma=0.996, lam=0.95,
         schedule='linear',
         save_name=args.save_name,
         save_per_acts=50,
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
-    parser.add_argument('--resolution', type=str, default="NORMAL")
+    parser.add_argument('--resolution', type=str, default="SMALL")
     parser.add_argument('--reload_name', type=str, default=None)
     parser.add_argument('--save_name', type=str, default=None)
     args = parser.parse_args()

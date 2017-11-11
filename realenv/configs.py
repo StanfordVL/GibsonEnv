@@ -14,16 +14,19 @@ USE_MJCF = True
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
 ## Gates 3rd: TVHnHa4MZwE
-NAVIGATE_MODEL_ID = "TVHnHa4MZwE"
+NAVIGATE_MODEL_ID = "11HB6XZSh1Q"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
 
-HIST_MATCHING = True
-USE_SEMANTICS = True
-SURFACE_NORMAL = True
+HIST_MATCHING = False
+USE_SEMANTICS = False
+SURFACE_NORMAL = False
 
 ## Human view camera settings
 DEBUG_CAMERA_FOLLOW = True
+
+
+USE_SMALL_FILLER = True
 
 ## Render window settings
 HIGH_RES_MONITOR = False

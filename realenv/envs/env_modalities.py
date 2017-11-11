@@ -49,7 +49,7 @@ class SensorRobotEnv(BaseEnv):
         self.k = 5
         self.robot_tracking_id = -1
 
-        self.scale_up  = 1
+        self.scale_up  = 4
         self.dataset  = ViewDataSet3D(
             transform = np.array,
             mist_transform = np.array,
@@ -202,6 +202,12 @@ class CameraRobotEnv(SensorRobotEnv):
             "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
         assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE", "XLARGE"]), \
             "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE/XLARGE"
+        self.mode = mode
+        self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
+        self.use_filler = use_filler
+        if self.requires_camera_input:
+            self.model_path = get_model_path(self.model_id)
+        SensorRobotEnv.__init__(self, scene_type, gpu_count)
         if self.robot.resolution == "SMALL":
             self.windowsz = 64
             self.scale_up = 4
@@ -220,12 +226,7 @@ class CameraRobotEnv(SensorRobotEnv):
         elif self.robot.resolution == "XLARGE":
             self.windowsz = 1024
             self.scale_up = 1
-        self.mode = mode
-        self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
-        self.use_filler = use_filler
-        if self.requires_camera_input:
-            self.model_path = get_model_path(self.model_id)
-        SensorRobotEnv.__init__(self, scene_type, gpu_count)
+        
         self.setup_rendering_camera()
         
         
@@ -245,6 +246,9 @@ class CameraRobotEnv(SensorRobotEnv):
         if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_state
+
+        ## This is important to ensure potential doesn't change drastically when reset
+        self.potential = self.robot.calc_potential()
 
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]

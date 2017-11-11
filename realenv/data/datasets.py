@@ -241,6 +241,9 @@ class ViewDataSet3D(data.Dataset):
         semantic_target_path = semantic_paths[0]
         poses_relative = []
 
+        semantic_imgs = None
+        semantic_target = None
+
         for pose_i, item in enumerate(img_poses):
             pose_i = pose_i + 1
             relative = np.dot(inv(target_pose), item)

@@ -286,7 +286,7 @@ def learn(env, policy_func, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-        print(iters_so_far, save_per_acts)
+        #print(iters_so_far, save_per_acts)
 
         if save_name and (iters_so_far % save_per_acts == 0):
             base_path = os.path.dirname(os.path.abspath(__file__))
