@@ -1,6 +1,6 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from realenv.envs.env_bases import *
-from realenv.core.physics.robot_locomotors import Ant
+from realenv.core.physics.robot_locomotors import Ant, AntClimber
 from transforms3d import quaternions
 from realenv import configs
 import numpy as np
@@ -154,10 +154,11 @@ class AntClimbEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = INITIAL_POSE["ant"][configs.NAVIGATE_MODEL_ID][-1]
-        initial_orn, initial_pos = configs.INITIAL_POSE["ant"][configs.NAVIGATE_MODEL_ID][0]
+        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][0]
+
         
-        self.robot = Ant(initial_pos, initial_orn, 
+        self.robot = AntClimber(initial_pos, initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos,
             resolution=resolution)

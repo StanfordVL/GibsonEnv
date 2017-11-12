@@ -1,6 +1,6 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from realenv.envs.env_bases import *
-from realenv.core.physics.robot_locomotors import Husky
+from realenv.core.physics.robot_locomotors import Husky, HuskyClimber
 from transforms3d import quaternions
 from realenv import configs
 import os
@@ -188,7 +188,7 @@ class HuskyClimbEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][0]
-        self.robot = Husky(
+        self.robot = HuskyClimber(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
             initial_orn=initial_orn,
@@ -470,7 +470,7 @@ class HuskyFetchEnv(CameraRobotEnv):
 
         self.flag = None
         #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
-        self.flag_timeout = 250
+        self.flag_timeout = 600 / self.scene.frame_skip
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
         if self.lastid:
@@ -493,11 +493,7 @@ class HuskyFetchEnv(CameraRobotEnv):
 
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
-        if self.flag_timeout > 225:
-            progress = 0
-        else:
-            progress = float(self.potential - potential_old)
-
+        progress = float(self.potential - potential_old)
 
         if not a is None:
             electricity_cost = self.electricity_cost * float(np.abs(
@@ -513,7 +509,7 @@ class HuskyFetchEnv(CameraRobotEnv):
             alive_score = -0.1
 
 
-        done = self.nframe > 500
+        done = alive > 0 or self.nframe > 500
 
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -528,7 +524,7 @@ class HuskyFetchEnv(CameraRobotEnv):
             print(progress)
 
         return [
-            #alive_score,
+            alive_score,
             progress,
         ], done
 

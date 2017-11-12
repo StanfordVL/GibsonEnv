@@ -60,8 +60,9 @@ class WalkerBase(BaseRobot):
 
         self.power = power
         self.camera_x = 0
-        self.walk_target_x = target_pos[0]  # kilometer away
+        self.walk_target_x = target_pos[0]
         self.walk_target_y = target_pos[1]
+        self.walk_target_z = target_pos[2]
         self.body_xyz=[0, 0, 0]
         self.eye_offset_orn = euler2quat(0, 0, 0)
         self.action_dim = action_dim
@@ -126,12 +127,21 @@ class WalkerBase(BaseRobot):
             [self.walk_target_y - self.body_xyz[1], self.walk_target_x - self.body_xyz[0]])
         angle_to_target = self.walk_target_theta - yaw
 
+        self.walk_height_diff = np.abs(self.walk_target_z - self.body_xyz[2])
+        debugmode= 0
+        if debugmode:
+            print("Robot dsebug mode: walk_height_diff", self.walk_height_diff)
+
         rot_speed = np.array(
             [[np.cos(-yaw), -np.sin(-yaw), 0],
              [np.sin(-yaw), np.cos(-yaw), 0],
              [        0,             0, 1]]
         )
         vx, vy, vz = np.dot(rot_speed, self.robot_body.speed())  # rotate speed back to body point of view
+
+        debugmode=0
+        if debugmode:
+            print("Robot state", self.walk_target_y - self.body_xyz[1], self.walk_target_x - self.body_xyz[0])
 
         more = np.array([ z-self.initial_z,
             np.sin(angle_to_target), np.cos(angle_to_target),
@@ -173,7 +183,7 @@ class Hopper(WalkerBase):
     def __init__(self):
         self.model_type = "MJCF"
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "hopper.xml", "torso", action_dim=3, sensor_dim=15, power=0.75)
+        WalkerBase.__init__(self, "hopper.xml", "torso", action_dim=3, sensor_dim=15, power=0.75, scale=self.mjcf_scaling)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
@@ -185,7 +195,7 @@ class Walker2D(WalkerBase):
     def __init__(self):
         self.model_type = "MJCF"
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, sensor_dim=22, power=0.40)
+        WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, sensor_dim=22, power=0.40, scale=self.mjcf_scaling)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
@@ -202,7 +212,7 @@ class HalfCheetah(WalkerBase):
     def __init__(self):
         self.model_type = "MJCF"
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "half_cheetah.xml", "torso", action_dim=6, sensor_dim=26, power=0.90)
+        WalkerBase.__init__(self, "half_cheetah.xml", "torso", action_dim=6, sensor_dim=26, power=0.90, scale=self.mjcf_scaling)
 
     def alive_bonus(self, z, pitch):
         # Use contact other than feet to terminate episode: due to a lot of strange walks using knees
@@ -226,7 +236,7 @@ class Ant(WalkerBase):
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.6
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5, target_pos=target_pos, resolution=resolution)
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling)
         self.is_discrete = is_discrete
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
@@ -280,7 +290,6 @@ class Ant(WalkerBase):
 
         self.reset_base_position(configs.RANDOM_INITIAL_POSE)
 
-
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
 
@@ -308,6 +317,18 @@ class Ant(WalkerBase):
             (ord('i'), ): 15, 
             (): 4
         }
+
+class AntClimber(Ant):
+    def calc_potential(self):
+        base_potential = Ant.calc_potential(self)
+        height_potential = - 4 * self.walk_height_diff / self.scene.dt
+        debugmode=0
+        if debugmode:
+            print("Ant base potential", base_potential)
+            print("Ant new  potential", height_potential)
+            print("Ant height    diff", self.walk_height_diff)
+        return base_potential + height_potential
+
 
 
 class Humanoid(WalkerBase):
@@ -471,3 +492,11 @@ class Husky(WalkerBase):
             (ord('a'), ): 3, ## turn left
             (): 4
         }
+
+
+class HuskyClimber(Husky):
+    def calc_potential(self):
+        base_potential = Husky.calc_potential(self)
+        height_potential = - 4 * self.walk_height_diff / self.scene.dt
+        print("Husky climber", base_potential, height_potential)
+        return base_potential + height_potential

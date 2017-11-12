@@ -242,14 +242,14 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def _reset(self):
         sensor_state = SensorRobotEnv._reset(self)
+        ## This is important to ensure potential doesn't change drastically when reset
+        self.potential = self.robot.calc_potential()
 
         if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_state
 
-        ## This is important to ensure potential doesn't change drastically when reset
-        self.potential = self.robot.calc_potential()
-
+        
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)

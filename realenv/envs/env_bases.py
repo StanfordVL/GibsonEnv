@@ -99,7 +99,6 @@ class BaseEnv(gym.Env):
         dump = 0
         state = self.robot.reset()
         self.scene.episode_restart()
-        self.potential = self.robot.calc_potential()
         return state
 
     def _render(self, mode, close):
