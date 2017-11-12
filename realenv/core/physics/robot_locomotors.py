@@ -29,7 +29,8 @@ class WalkerBase(BaseRobot):
         target_pos,
         sensor_dim=None,
         scale = 1, 
-        resolution="NORMAL"
+        resolution="NORMAL",
+        mode="RGBD"
     ):
         BaseRobot.__init__(self, filename, robot_name, scale)
 
@@ -48,6 +49,10 @@ class WalkerBase(BaseRobot):
         else:
             obs_dim = [256, 256, 4]
 
+        if mode=="RGB":
+            obs_dim[2] = 3
+        elif mode=="DEPTH":
+            obs_dim[2] = 1
         assert type(sensor_dim) == int, "Sensor dimension must be int, got {}".format(type(sensor_dim))
         assert type(action_dim) == int, "Action dimension must be int, got {}".format(type(action_dim))
 
@@ -441,10 +446,10 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL"):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGB"):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
-        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution)
+        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, mode=mode)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')

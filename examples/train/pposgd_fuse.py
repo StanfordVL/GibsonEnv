@@ -62,7 +62,9 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
     # Initialize history arrays
 
     obs_sensor = np.array([ob_sensor for _ in range(horizon)])
-    print(obs_sensor)
+    debugmode = 0
+    if debugmode:
+        print(obs_sensor)
     obs = np.array([ob for _ in range(horizon)])
 
     rews = np.zeros(horizon, 'float32')

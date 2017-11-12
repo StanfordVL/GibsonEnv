@@ -331,22 +331,22 @@ class PCRenderer:
             
         #print("mist", np.mean(opengl_arr), np.min(opengl_arr), np.max(opengl_arr))
         def _render_pc(opengl_arr):
-            with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
-                poses_after = [
-                    pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
-                    for i in range(len(imgs))]
-                #opengl_arr = np.zeros((h,w), dtype = np.float32)
-                cuda_pc.render(ct.c_int(len(imgs)),
-                               ct.c_int(imgs[0].shape[0]),
-                               ct.c_int(imgs[0].shape[1]),
-                               ct.c_int(self.showsz),
-                               ct.c_int(self.showsz),
-                               imgs.ctypes.data_as(ct.c_void_p),
-                               depths.ctypes.data_as(ct.c_void_p),
-                               np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                               show.ctypes.data_as(ct.c_void_p),
-                               opengl_arr.ctypes.data_as(ct.c_void_p)
-                              )
+            #with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
+            poses_after = [
+                pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
+                for i in range(len(imgs))]
+            #opengl_arr = np.zeros((h,w), dtype = np.float32)
+            cuda_pc.render(ct.c_int(len(imgs)),
+                           ct.c_int(imgs[0].shape[0]),
+                           ct.c_int(imgs[0].shape[1]),
+                           ct.c_int(self.showsz),
+                           ct.c_int(self.showsz),
+                           imgs.ctypes.data_as(ct.c_void_p),
+                           depths.ctypes.data_as(ct.c_void_p),
+                           np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                           show.ctypes.data_as(ct.c_void_p),
+                           opengl_arr.ctypes.data_as(ct.c_void_p)
+                          )
 
         #threads = [
         #    Process(target=_render_pc, args=(opengl_arr,)),
@@ -360,23 +360,23 @@ class PCRenderer:
         if MAKE_VIDEO and show_unfilled is not None:
             show_unfilled[:, :, :] = show[:, :, :]
 
-        with Profiler("NN total time", enable= ENABLE_PROFILING):
-            if self.use_filler and self.model and is_rgb:
-                tf = transforms.ToTensor()
-                #from IPython import embed; embed()
-                source = tf(show)
-                mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
-                source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
-                source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
-                #print(mask.size(), source_depth.size())
-                mask = torch.cat([source_depth, mask], 0)
-                self.imgv.data.copy_(source)
-                self.maskv.data.copy_(mask)
-                #with Profiler("NNtime", enable=ENABLE_PROFILING):
-                recon = model(self.imgv, self.maskv)
-                #with Profiler("Transfer to CPU time", enable=ENABLE_PROFILING):
-                show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
-                show[:] = (show2[:] * 255).astype(np.uint8)
+        #with Profiler("NN total time", enable= ENABLE_PROFILING):
+        if self.use_filler and self.model and is_rgb:
+            tf = transforms.ToTensor()
+            #from IPython import embed; embed()
+            source = tf(show)
+            mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
+            source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
+            #print(mask.size(), source_depth.size())
+            mask = torch.cat([source_depth, mask], 0)
+            self.imgv.data.copy_(source)
+            self.maskv.data.copy_(mask)
+            #with Profiler("NNtime", enable=ENABLE_PROFILING):
+            recon = model(self.imgv, self.maskv)
+            #with Profiler("Transfer to CPU time", enable=ENABLE_PROFILING):
+            show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
+            show[:] = (show2[:] * 255).astype(np.uint8)
 
         self.target_depth = opengl_arr ## target depth
         self.smooth_depth = smooth_arr
@@ -440,17 +440,17 @@ class PCRenderer:
             self.semantics_topk = np.array([self.semantics[i] for i in k_views])
             self.old_topk = set(k_views)
 
-        with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
-            self.show.fill(0)
-            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
+        #with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
+        self.show.fill(0)
+        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
 
-            if USE_SEMANTICS:
-                self.render(self.semantics_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show_semantics)
+        if USE_SEMANTICS:
+            self.render(self.semantics_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show_semantics)
 
-            self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
-            self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
-            if MAKE_VIDEO:
-                self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
+        self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
+        self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
+        if MAKE_VIDEO:
+            self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
         #return self.show_rgb, self.target_depth[:, :, None]
         return self.show_rgb, self.smooth_depth[:, :, None]
 

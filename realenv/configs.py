@@ -14,7 +14,7 @@ USE_MJCF = True
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
 ## Gates 3rd: TVHnHa4MZwE
-NAVIGATE_MODEL_ID = "11HB6XZSh1Q"
+NAVIGATE_MODEL_ID = "sRj553CTHiw"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
 

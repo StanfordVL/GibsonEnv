@@ -57,7 +57,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
             initial_pos=initial_pos,
             initial_orn=initial_orn,
             target_pos=target_pos,
-            resolution=resolution)
+            resolution=resolution,
+            mode=mode)
         CameraRobotEnv.__init__(
             self, 
             mode, 

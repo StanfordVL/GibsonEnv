@@ -65,6 +65,7 @@ class SensorRobotEnv(BaseEnv):
         ## Robot's eye observation, in sensor mode black pixels are returned
         self.observation_space = self.robot.observation_space
         self.sensor_space = self.robot.sensor_space
+        print("Sensor space", self.sensor_space)
         self.gpu_count = gpu_count
         self.nframe = 0
         
@@ -125,7 +126,7 @@ class SensorRobotEnv(BaseEnv):
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
-        debugmode = 1
+        debugmode = 0
         if debugmode:
             print("Camera env eye position", eye_pos)
         x, y, z ,w = self.robot.eyes.current_orientation()
@@ -296,6 +297,7 @@ class CameraRobotEnv(SensorRobotEnv):
         #pygame.display.flip()
         visuals = self.get_visuals(rgb, depth)
         #self.screen.blit(visuals, [200, 200]) 
+        #print("visuals shape", visuals.shape)
         return visuals, sensor_reward, done, sensor_meta
         
 
@@ -320,10 +322,14 @@ class CameraRobotEnv(SensorRobotEnv):
         if self.mode == "GREY":
             rgb = np.mean(rgb, axis=2, keepdims=True)
             visuals = np.append(rgb, depth, axis=2)
-        elif self.mode == "RGBD" or self.mode == "RGB":
+        elif self.mode == "RGBD":
             visuals = np.append(rgb, depth, axis=2)
+        elif self.mode == "RGB":
+            visuals = rgb
         elif self.mode == "DEPTH":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
+            if self.robot.obs_dim[2] == 1:
+                visuals = depth
         elif self.mode == "SENSOR":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
         else:
