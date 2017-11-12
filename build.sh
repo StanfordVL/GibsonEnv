@@ -133,7 +133,7 @@ download_data () {
 
 	## Gates building 1F, 616.1Mb
 	if [ $dset_name="stanford_3" ] && [ ! -d dataset/sRj553CTHiw ]; then
-		wget https://www.dropbox.com/s/qtk6bnky8mazzrn/sRj553CTHiw.zip
+		wget https://www.dropbox.com/s/m9t9njmymwfvt6d/sRj553CTHiw.zip
 		unzip -q sRj553CTHiw.zip && rm sRj553CTHiw.zip
 		mv sRj553CTHiw dataset
 	fi
@@ -167,6 +167,7 @@ download_data () {
 		fi
 		if [ ! -f model.pth ]; then
 			wget --quiet https://www.dropbox.com/s/e7far9okgv7oq8p/model.pth
+			wget --quiet https://www.dropbox.com/s/ywrkh66porlqcax/compG_epoch4_3000.pth
 		fi
 	cd -
 		
