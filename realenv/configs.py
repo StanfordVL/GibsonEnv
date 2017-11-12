@@ -26,7 +26,7 @@ SURFACE_NORMAL = False
 DEBUG_CAMERA_FOLLOW = True
 
 
-USE_SMALL_FILLER = True
+USE_SMALL_FILLER = False
 
 ## Render window settings
 HIGH_RES_MONITOR = False
@@ -45,9 +45,10 @@ TASK_POSE = {
         ], 
         "climb": [
             #[[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
-            [[0, 0, 3.14], [-0.703, -1.24, 2.35]],          ## stairs
+            #[[0, 0, 3.14], [-0.703, -1.24, 2.35]],  ## drop on stairs
+            [[0, 0, 3.14], [-2.283, -1.64, 0.65]],  ## bottom of stairs
             #[[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
-            [[0, 0, 3.14], [-2, 3.5, 0.4]]         ## initial
+            [[0, 0, 3.14/2], [-0.003, -1.54, 1.45]]     ## stairs mid target
         ]
     },
     "sRj553CTHiw": {

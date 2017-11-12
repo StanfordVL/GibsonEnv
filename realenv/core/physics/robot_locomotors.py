@@ -131,6 +131,8 @@ class WalkerBase(BaseRobot):
         debugmode= 0
         if debugmode:
             print("Robot dsebug mode: walk_height_diff", self.walk_height_diff)
+            print("Robot dsebug mode: walk_target_z", self.walk_target_z)
+            print("Robot dsebug mode: body_xyz", self.body_xyz[2])
 
         rot_speed = np.array(
             [[np.cos(-yaw), -np.sin(-yaw), 0],
@@ -235,7 +237,7 @@ class Ant(WalkerBase):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
-        self.mjcf_scaling = 0.6
+        self.mjcf_scaling = 0.35
         WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling)
         self.is_discrete = is_discrete
         self.initial_pos = initial_pos
@@ -287,6 +289,7 @@ class Ant(WalkerBase):
         yaw   = self.initial_orn[2]
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
         self.robot_body.reset_position(self.initial_pos)
+        print("Initial position", self.initial_pos)
 
         self.reset_base_position(configs.RANDOM_INITIAL_POSE)
 
@@ -322,7 +325,7 @@ class AntClimber(Ant):
     def calc_potential(self):
         base_potential = Ant.calc_potential(self)
         height_potential = - 4 * self.walk_height_diff / self.scene.dt
-        debugmode=0
+        debugmode = 0
         if debugmode:
             print("Ant base potential", base_potential)
             print("Ant new  potential", height_potential)

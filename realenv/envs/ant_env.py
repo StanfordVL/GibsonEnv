@@ -121,8 +121,8 @@ class AntNavigateEnv(CameraRobotEnv):
          ], done
 
     def flag_reposition(self):
-        walk_target_x = self.robot.walk_target_x
-        walk_target_y = self.robot.walk_target_y
+        walk_target_x = self.robot.walk_target_x / self.robot.mjcf_scaling
+        walk_target_y = self.robot.walk_target_y / self.robot.mjcf_scaling
 
         self.flag = None
         if self.human:
@@ -236,13 +236,14 @@ class AntClimbEnv(CameraRobotEnv):
          ], done
 
     def flag_reposition(self):
-        walk_target_x = self.robot.walk_target_x
-        walk_target_y = self.robot.walk_target_y
+        walk_target_x = self.robot.walk_target_x / self.robot.mjcf_scaling
+        walk_target_y = self.robot.walk_target_y / self.robot.mjcf_scaling
+        walk_target_z = self.robot.walk_target_z / self.robot.mjcf_scaling
 
         self.flag = None
         if self.human:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
-            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, walk_target_z])
         
     def  _reset(self):
         self.total_frame = 0
@@ -291,8 +292,8 @@ class AntFlagRunEnv(CameraRobotEnv):
                                                     high=+self.scene.stadium_halfwidth)
 
         more_compact = 0.5  # set to 1.0 whole football field
-        self.walk_target_x *= more_compact
-        self.walk_target_y *= more_compact
+        self.walk_target_x *= more_compact / self.robot.mjcf_scaling
+        self.walk_target_y *= more_compact / self.robot.mjcf_scaling
 
         self.flag = None
         #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)

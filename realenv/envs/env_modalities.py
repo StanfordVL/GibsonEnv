@@ -125,6 +125,9 @@ class SensorRobotEnv(BaseEnv):
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
+        debugmode = 1
+        if debugmode:
+            print("Camera env eye position", eye_pos)
         x, y, z ,w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
 
@@ -269,8 +272,6 @@ class CameraRobotEnv(SensorRobotEnv):
     def _step(self, a):
         #with Profiler("Rendering visuals"):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
-        if self.robot.model_type == "MJCF":
-            sensor_meta['eye_pos'] = (np.array(sensor_meta['eye_pos']) * self.robot.mjcf_scaling).tolist()
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
         sensor_meta.pop("eye_pos", None)
         sensor_meta.pop("eye_quat", None)

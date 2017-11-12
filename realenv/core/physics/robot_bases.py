@@ -50,7 +50,7 @@ class BaseRobot:
                 part_name, robot_name = p.getBodyInfo(bodies[i], 0)
                 robot_name = robot_name.decode("utf8")
                 part_name = part_name.decode("utf8")
-                parts[part_name] = BodyPart(part_name, bodies, i, -1, self.scale)
+                parts[part_name] = BodyPart(part_name, bodies, i, -1, self.scale, model_type=self.model_type)
             for j in range(p.getNumJoints(bodies[i])):
                 p.setJointMotorControl2(bodies[i],j,p.POSITION_CONTROL,positionGain=0.1,velocityGain=0.1,force=0)
                 _,joint_name,joint_type,_,_,_,_,_,_,_,_,_,part_name = p.getJointInfo(bodies[i], j)
@@ -60,13 +60,13 @@ class BaseRobot:
 
                 if dump: print("ROBOT PART '%s'" % part_name)
                 if dump: print("ROBOT JOINT '%s'" % joint_name) # limits = %+0.2f..%+0.2f effort=%0.3f speed=%0.3f" % ((joint_name,) + j.limits()) )
-                parts[part_name] = BodyPart(part_name, bodies, i, j, self.scale)
+                parts[part_name] = BodyPart(part_name, bodies, i, j, self.scale, model_type=self.model_type)
 
                 if part_name == self.robot_name:
                     self.robot_body = parts[part_name]
 
                 if i == 0 and j == 0 and self.robot_body is None:  # if nothing else works, we take this as robot_body
-                    parts[self.robot_name] = BodyPart(self.robot_name, bodies, 0, -1, self.scale)
+                    parts[self.robot_name] = BodyPart(self.robot_name, bodies, 0, -1, self.scale, model_type=self.model_type)
                     self.robot_body = parts[self.robot_name]
 
                 print(joint_name)
@@ -75,7 +75,7 @@ class BaseRobot:
                     continue
 
                 if joint_name[:8] != "jointfix" and joint_type != p.JOINT_FIXED:
-                    joints[joint_name] = Joint(joint_name, bodies, i, j, self.scale)
+                    joints[joint_name] = Joint(joint_name, bodies, i, j, self.scale, model_type=self.model_type)
                     ordered_joints.append(joints[joint_name])
 
                     joints[joint_name].power_coef = 100.0
@@ -122,13 +122,16 @@ class Pose_Helper: # dummy class to comply to original interface
         return self.body_part.current_orientation()
 
 class BodyPart:
-    def __init__(self, body_name, bodies, bodyIndex, bodyPartIndex, scale):
+    def __init__(self, body_name, bodies, bodyIndex, bodyPartIndex, scale, model_type):
         self.bodies = bodies
         self.body_name = body_name
         self.bodyIndex = bodyIndex
         self.bodyPartIndex = bodyPartIndex
-        self.scale = scale
-        self.initialPosition = self.current_position()
+        if model_type=="MJCF":
+            self.scale = scale
+        else:
+            self.scale = 1
+        self.initialPosition = self.current_position() / self.scale
         self.initialOrientation = self.current_orientation()
         self.bp_pose = Pose_Helper(self)
 
@@ -140,6 +143,7 @@ class BodyPart:
             (x, y, z), (a, b, c, d) = p.getBasePositionAndOrientation(body_id)
         else:
             (x, y, z), (a, b, c, d), _, _, _, _ = p.getLinkState(body_id, link_id)
+        x, y, z = x * self.scale, y * self.scale, z * self.scale
         return np.array([x, y, z, a, b, c, d])
 
     def get_pose(self):
@@ -153,16 +157,17 @@ class BodyPart:
         return np.array([vx, vy, vz])
 
     def current_position(self):
-        return self.get_pose()[:3] * self.scale
+        return self.get_pose()[:3]
 
     def current_orientation(self):
         return self.get_pose()[3:]
 
     def reset_position(self, position):
+        print("robot scale", self.scale)
         p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], np.array(position) / self.scale, self.current_orientation())
 
     def reset_orientation(self, orientation):
-        p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], self.current_position(), orientation)
+        p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], self.current_position() / self.scale, orientation)
 
     def reset_pose(self, position, orientation):
         p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], np.array(position) / self.scale, orientation)
@@ -175,20 +180,25 @@ class BodyPart:
 
 
 class Joint:
-    def __init__(self, joint_name, bodies, bodyIndex, jointIndex, scale):
+    def __init__(self, joint_name, bodies, bodyIndex, jointIndex, scale, model_type):
         self.bodies = bodies
         self.bodyIndex = bodyIndex
         self.jointIndex = jointIndex
         self.joint_name = joint_name
         _,_,_,_,_,_,_,_,self.lowerLimit, self.upperLimit,_,_,_ = p.getJointInfo(self.bodies[self.bodyIndex], self.jointIndex)
         self.power_coeff = 0
-        self.scale = scale
+        if model_type=="mjcf":
+            self.scale = scale
+        else:
+            self.scale = 1
 
     def set_state(self, x, vx):
         p.resetJointState(self.bodies[self.bodyIndex], self.jointIndex, x, vx)
 
     def current_position(self): # just some synonyme method
-        return self.get_state()
+        state = self.get_state
+        state[:3] = state[:3] * self.scale
+        return state
 
     def current_relative_position(self):
         pos, vel = self.get_state()
