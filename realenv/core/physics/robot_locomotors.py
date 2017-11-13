@@ -164,17 +164,17 @@ class WalkerBase(BaseRobot):
 
     def calc_potential(self):
         # progress in potential field is speed*dt, typical speed is about 2-3 meter per second, this potential will change 2-3 per frame (not per second),
-        # all rewards have rew/frame units and close to 1.0
+        # all rewards have rew/frame units and close to 1.0 (hzyjerry) ==> make rewards similar scale
         debugmode=0
         if (debugmode):
             print("calc_potential: self.walk_target_dist")
             print(self.walk_target_dist)
             print("robot position, target position")
-            print(self.body_xyz, [self.walk_target_x, self.walk_target_y])
-            print("self.scene.dt")
-            print(self.scene.dt)
-            print("self.scene.frame_skip")
-            print(self.scene.frame_skip)
+            print(self.body_xyz, [self.walk_target_x, self.walk_target_y, self.walk_target_z])
+#            print("self.scene.dt")
+#            print(self.scene.dt)
+#            print("self.scene.frame_skip")
+#            print(self.scene.frame_skip)
             print("self.scene.timestep")
             print(self.scene.timestep)
         return - self.walk_target_dist / self.scene.dt
@@ -244,12 +244,12 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL"):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD"):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.35
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling)
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, mode=mode)
         self.is_discrete = is_discrete
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
@@ -335,7 +335,8 @@ class Ant(WalkerBase):
 class AntClimber(Ant):
     def calc_potential(self):
         base_potential = Ant.calc_potential(self)
-        height_potential = - 4 * self.walk_height_diff / self.scene.dt
+        height_coeff   = 1
+        height_potential = - height_coeff * self.walk_height_diff / self.scene.dt
         debugmode = 0
         if debugmode:
             print("Ant base potential", base_potential)
@@ -343,7 +344,18 @@ class AntClimber(Ant):
             print("Ant height    diff", self.walk_height_diff)
         return base_potential + height_potential
 
-
+    def alive_bonus(self, roll, pitch):
+        """Alive requires the ant's head to not touch the ground, it's roll
+        and pitch cannot be too large"""
+        #return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
+        alive = roll < 2*np.pi/3 and roll > -2*np.pi/3 and pitch > -2*np.pi/3 and pitch < 2*np.pi/3
+        debugmode = 1
+        if debugmode:
+            print("roll, pitch")
+            print(roll, pitch)
+            print("alive")
+            print(alive)
+        return +1 if alive else -1
 
 class Humanoid(WalkerBase):
     self_collision = True

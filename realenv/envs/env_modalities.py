@@ -65,7 +65,7 @@ class SensorRobotEnv(BaseEnv):
         ## Robot's eye observation, in sensor mode black pixels are returned
         self.observation_space = self.robot.observation_space
         self.sensor_space = self.robot.sensor_space
-        print("Sensor space", self.sensor_space)
+        
         self.gpu_count = gpu_count
         self.nframe = 0
         
@@ -326,9 +326,11 @@ class CameraRobotEnv(SensorRobotEnv):
             visuals = np.append(rgb, depth, axis=2)
         elif self.mode == "RGB":
             visuals = rgb
+            if self.robot.observation_space.shape[2] == 4:
+                visuals = np.append(rgb, depth, axis=2)
         elif self.mode == "DEPTH":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
-            if self.robot.obs_dim[2] == 1:
+            if self.robot.observation_space.shape[2] == 1:
                 visuals = depth
         elif self.mode == "SENSOR":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()

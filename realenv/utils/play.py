@@ -111,8 +111,8 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
     running = True
     env_done = True
 
-    print("sorted pressed keys", tuple(sorted(pressed_keys)))
-    print("keys to actions", keys_to_action)
+    #print("sorted pressed keys", tuple(sorted(pressed_keys)))
+    #print("keys to actions", keys_to_action)
 
     obs = env.reset()
 
@@ -125,14 +125,14 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
         if len(pressed_keys) == 0:
             action = keys_to_action[()]
             obs, rew, env_done, info = env.step(action)
-            print(info['sensor'])
-            print("Play mode: reward %f" % rew)
+            #print(info['sensor'])
+            #print("Play mode: reward %f" % rew)
             time.sleep(1.0/fps)
         for p_key in pressed_keys:
             action = keys_to_action[(p_key, )]
             prev_obs = obs
             obs, rew, env_done, info = env.step(action)
-            print("Play mode: reward %f" % rew)
+            #print("Play mode: reward %f" % rew)
             time.sleep(1.0/fps)
         if callback is not None:
             callback(prev_obs, obs, action, rew, env_done, info)

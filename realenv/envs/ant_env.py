@@ -12,6 +12,14 @@ import pybullet_data
 ANT_TIMESTEP  = 1.0/(4 * 22)
 ANT_FRAMESKIP = 4
 
+"""Task specific classes for Ant Environment
+Each class specifies: 
+    (1) Target position
+    (2) Reward function
+    (3) Done condition
+    (4) (Optional) Curriculum learning condition
+"""
+
 tracking_camera = {
     'pitch': -20,
     # 'pitch': -24  # demo: stairs
@@ -60,7 +68,6 @@ class AntNavigateEnv(CameraRobotEnv):
         
     def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
-        self.nframe += 1
 
         # dummy state if a is None
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
@@ -157,11 +164,11 @@ class AntClimbEnv(CameraRobotEnv):
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][0]
 
-        
         self.robot = AntClimber(initial_pos, initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos,
-            resolution=resolution)
+            resolution=resolution,
+            mode=mode)
         CameraRobotEnv.__init__(
             self, 
             mode, 
@@ -175,18 +182,16 @@ class AntClimbEnv(CameraRobotEnv):
         
     def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
-        self.nframe += 1
 
         # dummy state if a is None
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
             self.scene.global_step()
        
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+        alive = float(self.robot.alive_bonus(self.robot.body_rpy[0], self.robot.body_rpy[1]))  # state[0] is body height above ground (z - z initial), body_rpy[1] is pitch
 
-        done = self.nframe > 300
-        #done = alive < 0
+        done = self.nframe > 300 or alive < 0
+
         if not np.isfinite(state).all():
             print("~INF~", state)
             done = True

@@ -14,10 +14,10 @@ USE_MJCF = True
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
 ## Gates 3rd: TVHnHa4MZwE
-NAVIGATE_MODEL_ID = "sRj553CTHiw"
+NAVIGATE_MODEL_ID = "11HB6XZSh1Q"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
-USE_SENSOR_OUTPUT = False
+USE_SENSOR_OUTPUT = True
 
 
 HIST_MATCHING = False
@@ -46,8 +46,9 @@ TASK_POSE = {
             [[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
         ], 
         "climb": [
-            #[[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
             #[[0, 0, 3.14], [-0.703, -1.24, 2.35]],  ## drop on stairs
+            #[[0, 0, 0], [-0.203, -1.74, 1.8]],     ## Debug: slightly above stairs
+            #[[0, 3.14 / 2, 3.14], [-2.283, -1.64, 0.65]],  ## Debug: leaning too much
             [[0, 0, 3.14], [-2.283, -1.64, 0.65]],  ## bottom of stairs
             #[[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
             [[0, 0, 3.14/2], [-0.003, -1.54, 1.45]]     ## stairs mid target
