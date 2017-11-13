@@ -218,6 +218,11 @@ class AntClimbEnv(CameraRobotEnv):
         electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        
+        close_to_goal = 0
+        if self.robot.is_close_to_goal():
+            close_to_goal = 1
+
         debugmode = 0
         if (debugmode):
             print("alive=")
@@ -231,14 +236,19 @@ class AntClimbEnv(CameraRobotEnv):
             print("feet_collision_cost")
             print(feet_collision_cost)
 
-        print("Frame %f reward %f" % (self.nframe, progress))
-        return [
-            #alive,
+        reward = [
+            alive,
             progress,
+            close_to_goal,
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
-         ], done
+         ]
+        debugmode = 0
+        if (debugmode):
+            print("reward")
+            print(reward)
+        return reward, done
 
     def flag_reposition(self):
         walk_target_x = self.robot.walk_target_x / self.robot.mjcf_scaling

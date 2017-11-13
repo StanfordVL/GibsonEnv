@@ -132,6 +132,10 @@ class SensorRobotEnv(BaseEnv):
         x, y, z ,w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
 
+        debugmode = 0
+        if (debugmode):
+            print("rewards")
+            print(sum(self.rewards))
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
 
     def calc_rewards(self, a, state):

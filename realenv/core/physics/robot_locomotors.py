@@ -244,12 +244,12 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD"):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD", power=2.5):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.35
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=2.5, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, mode=mode)
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=power, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, mode=mode)
         self.is_discrete = is_discrete
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
@@ -333,9 +333,29 @@ class Ant(WalkerBase):
         }
 
 class AntClimber(Ant):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD"):
+        Ant.__init__(self, initial_pos, initial_orn, 
+            is_discrete=is_discrete, 
+            target_pos=target_pos, 
+            resolution=resolution, 
+            mode=mode, power=3)
+        
+    def robot_specific_reset(self):
+        Ant.robot_specific_reset(self)
+        self.jdict["ankle_1"].power_coef = 200.0
+        self.jdict["ankle_2"].power_coef = 200.0
+        self.jdict["ankle_3"].power_coef = 200.0
+        self.jdict["ankle_4"].power_coef = 200.0
+        
+        debugmode=0
+        if debugmode:
+            for k in self.jdict.keys():
+                print("Power coef", self.jdict[k].power_coef)
+
+
     def calc_potential(self):
         base_potential = Ant.calc_potential(self)
-        height_coeff   = 1
+        height_coeff   = 3
         height_potential = - height_coeff * self.walk_height_diff / self.scene.dt
         debugmode = 0
         if debugmode:
@@ -349,13 +369,22 @@ class AntClimber(Ant):
         and pitch cannot be too large"""
         #return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
         alive = roll < 2*np.pi/3 and roll > -2*np.pi/3 and pitch > -2*np.pi/3 and pitch < 2*np.pi/3
-        debugmode = 1
+        debugmode = 0
         if debugmode:
             print("roll, pitch")
             print(roll, pitch)
             print("alive")
             print(alive)
         return +1 if alive else -1
+
+    def is_close_to_goal(self):
+        body_pose = self.robot_body.pose()
+        parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
+        self.body_xyz = (
+        parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
+        dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y, self.body_xyz[2] - self.walk_target_z])
+        return dist_to_goal < 0.5
+
 
 class Humanoid(WalkerBase):
     self_collision = True

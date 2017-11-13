@@ -69,7 +69,7 @@ class BaseRobot:
                     parts[self.robot_name] = BodyPart(self.robot_name, bodies, 0, -1, self.scale, model_type=self.model_type)
                     self.robot_body = parts[self.robot_name]
 
-                print(joint_name)
+                #print(joint_name)
                 if joint_name[:6] == "ignore":
                     Joint(joint_name, bodies, i, j, self.scale).disable_motor()
                     continue
@@ -79,6 +79,11 @@ class BaseRobot:
                     ordered_joints.append(joints[joint_name])
 
                     joints[joint_name].power_coef = 100.0
+
+        debugmode = 0
+        if debugmode:
+            for j in ordered_joints:
+                print(j, j.power_coef)
         return parts, joints, ordered_joints, self.robot_body
 
     def reset(self):
