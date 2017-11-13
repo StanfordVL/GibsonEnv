@@ -346,7 +346,7 @@ class Husky(WalkerBase):
 
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
-            self.torque = 0.1
+            self.torque = 0.2
             self.action_list = [[self.torque/10, self.torque/10, self.torque/10, self.torque/10],
                                 [-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
                                 [self.torque, -self.torque, self.torque, -self.torque],
