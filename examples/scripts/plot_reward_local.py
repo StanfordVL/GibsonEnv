@@ -56,8 +56,10 @@ def plot(index, smooth_fc=smooth_median):
                 continue
         num_rows = np.array(num_rows)
 
-    all_rewards = num_rows[:, 0].tolist()[:1200]
-    all_times = num_rows[:, 1].tolist()
+    row_index = num_rows[:, 0] > -200   ## Avoid plotting too low points
+
+    all_rewards = num_rows[row_index, 0].tolist()
+    all_times = num_rows[row_index, 1].tolist()
     t_range = np.arange(0, len(all_rewards), 1)
     print("Total number of steps:", sum(all_times))
     plt.plot(t_range, all_rewards, '.', t_range, smooth_fc(all_rewards, args.smooth), '-')

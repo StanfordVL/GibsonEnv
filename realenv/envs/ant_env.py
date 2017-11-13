@@ -190,7 +190,7 @@ class AntClimbEnv(CameraRobotEnv):
        
         alive = float(self.robot.alive_bonus(self.robot.body_rpy[0], self.robot.body_rpy[1]))  # state[0] is body height above ground (z - z initial), body_rpy[1] is pitch
 
-        done = self.nframe > 300 or alive < 0
+        done = self.nframe > 300 #or alive < 0
 
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -237,7 +237,7 @@ class AntClimbEnv(CameraRobotEnv):
             print(feet_collision_cost)
 
         reward = [
-            alive,
+            #alive,
             progress,
             close_to_goal,
             #electricity_cost,

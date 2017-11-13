@@ -338,14 +338,14 @@ class AntClimber(Ant):
             is_discrete=is_discrete, 
             target_pos=target_pos, 
             resolution=resolution, 
-            mode=mode, power=3)
+            mode=mode, power=2)
         
     def robot_specific_reset(self):
         Ant.robot_specific_reset(self)
-        self.jdict["ankle_1"].power_coef = 200.0
-        self.jdict["ankle_2"].power_coef = 200.0
-        self.jdict["ankle_3"].power_coef = 200.0
-        self.jdict["ankle_4"].power_coef = 200.0
+        self.jdict["ankle_1"].power_coef = 600.0
+        self.jdict["ankle_2"].power_coef = 600.0
+        self.jdict["ankle_3"].power_coef = 600.0
+        self.jdict["ankle_4"].power_coef = 600.0
         
         debugmode=0
         if debugmode:
