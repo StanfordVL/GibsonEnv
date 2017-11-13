@@ -155,6 +155,9 @@ class WalkerBase(BaseRobot):
             0.3* vx , 0.3* vy , 0.3* vz ,  # 0.3 is just scaling typical speed into -1..+1, no physical sense here
             r, p], dtype=np.float32)
 
+        if debugmode:
+            print("Robot more", more)
+
         if not configs.USE_SENSOR_OUTPUT:
             j.fill(0)
         return np.clip( np.concatenate([more] + [j] + [self.feet_contact]), -5, +5)
