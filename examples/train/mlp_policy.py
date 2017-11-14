@@ -3,6 +3,7 @@ import baselines.common.tf_util as U
 import tensorflow as tf
 import gym
 from baselines.common.distributions import make_pdtype
+import os
 
 class MlpPolicy(object):
     recurrent = False
@@ -11,7 +12,11 @@ class MlpPolicy(object):
             self._init(*args, **kwargs)
             self.scope = tf.get_variable_scope().name
 
-    def _init(self, ob_space, ac_space, hid_size, num_hid_layers, gaussian_fixed_var=True):
+    def _init(self, ob_space, ac_space, hid_size, num_hid_layers, gaussian_fixed_var=True, 
+        save_name='mlp_sensor',
+        save_per_acts=3,
+        reload_name=None):
+        
         assert isinstance(ob_space, gym.spaces.Box)
 
         self.pdtype = pdtype = make_pdtype(ac_space)
@@ -47,8 +52,21 @@ class MlpPolicy(object):
         ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
         self._act = U.function([stochastic, ob], [ac, self.vpred])
 
+        self.iters_so_far = 0
+        self.save_per_acts = save_per_acts
+        self.reload_name = reload_name
+        self.save_name = save_name
+
     def act(self, stochastic, ob):
         ac1, vpred1 =  self._act(stochastic, ob[None])
+        self.iters_so_far += 1
+        if self.save_name and (self.iters_so_far % self.save_per_acts == 0):
+            base_path = os.path.dirname(os.path.abspath(__file__))
+            print(base_path)
+            out_name = os.path.join(base_path, 'models', self.save_name + '_' + str(self.iters_so_far) + ".model")
+            U.save_state(out_name)
+            print ("Saved model successfully.")
+
         return ac1[0], vpred1[0]
     def get_variables(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)

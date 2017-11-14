@@ -300,9 +300,11 @@ class CameraRobotEnv(SensorRobotEnv):
         #surfarray.blit_array(self.screen, self.screen_arr)
         #pygame.display.flip()
         visuals = self.get_visuals(rgb, depth)
-        #self.screen.blit(visuals, [200, 200]) 
-        #print("visuals shape", visuals.shape)
-        print("Environment visuals shape", visuals.shape)
+        #self.screen.blit(visuals, [200, 200])
+
+        debugmode = 0
+        if debugmode:
+            print("Environment visuals shape", visuals.shape)
         return visuals, sensor_reward, done, sensor_meta
         
 

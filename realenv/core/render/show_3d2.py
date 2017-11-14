@@ -430,30 +430,30 @@ class PCRenderer:
 
 
     def renderOffScreen(self, pose, k_views=None):
-        with Profiler("Rendering off screen"):
-            if not k_views:
-                all_dist, _ = self.rankPosesByDistance(pose)
-                k_views = (np.argsort(all_dist))[:self.k]
-            if set(k_views) != self.old_topk:
-                self.imgs_topk = np.array([self.imgs[i] for i in k_views])
-                self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
-                self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
-                self.semantics_topk = np.array([self.semantics[i] for i in k_views])
-                self.old_topk = set(k_views)
+        #with Profiler("Rendering off screen"):
+        if not k_views:
+            all_dist, _ = self.rankPosesByDistance(pose)
+            k_views = (np.argsort(all_dist))[:self.k]
+        if set(k_views) != self.old_topk:
+            self.imgs_topk = np.array([self.imgs[i] for i in k_views])
+            self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
+            self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
+            self.semantics_topk = np.array([self.semantics[i] for i in k_views])
+            self.old_topk = set(k_views)
 
-            #with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
-            self.show.fill(0)
-            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
+        #with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
+        self.show.fill(0)
+        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
 
-            if USE_SEMANTICS:
-                self.render(self.semantics_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show_semantics)
+        if USE_SEMANTICS:
+            self.render(self.semantics_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show_semantics)
 
-            self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
-            self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
-            if MAKE_VIDEO:
-                self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
-            #return self.show_rgb, self.target_depth[:, :, None]
-            return self.show_rgb, self.smooth_depth[:, :, None]
+        self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
+        self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
+        if MAKE_VIDEO:
+            self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
+        #return self.show_rgb, self.target_depth[:, :, None]
+        return self.show_rgb, self.smooth_depth[:, :, None]
 
 
     def renderToScreen(self, pose, k_views=None):

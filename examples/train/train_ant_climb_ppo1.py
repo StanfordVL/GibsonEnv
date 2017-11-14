@@ -40,11 +40,10 @@ def train(num_timesteps, seed):
     gym.logger.setLevel(logging.WARN)
 
     def mlp_policy_fn(name, sensor_space, ac_space):
-        return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
-
+        return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2, save_per_acts=10000, save_name="ppo_mlp_sensor")
 
     def fuse_policy_fn(name, ob_space, sensor_space, ac_space):
-        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess, save_name="ppo_mlp_fuse")
 
     if args.mode == "SENSOR":
         pposgd_sensor.learn(env, mlp_policy_fn,

@@ -360,7 +360,7 @@ class AntClimber(Ant):
         #base_potential = Ant.calc_potential(self)
         #height_coeff   = 3
         #height_potential = - height_coeff * self.walk_height_diff / self.scene.dt
-        debugmode = 1
+        debugmode = 0
         if debugmode:
             print("Ant xyz potential", self.walk_target_dist_xyz)
         return - self.walk_target_dist_xyz / self.scene.dt

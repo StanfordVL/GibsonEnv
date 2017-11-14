@@ -142,7 +142,7 @@ def learn(env, policy_func, *,
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        save_name=None,
+        save_name='ppo_fuse',
         save_per_acts=3,
         reload_name=None
         ):
