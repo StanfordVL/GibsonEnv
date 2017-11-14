@@ -47,7 +47,7 @@ def train(num_timesteps, seed):
 
     if args.mode == "SENSOR":
         pposgd_sensor.learn(env, mlp_policy_fn,
-            max_timesteps=int(num_timesteps * 1.1),
+            max_timesteps=int(num_timesteps * 1.1 * 5),
             timesteps_per_actorbatch=256,
             clip_param=0.2, entcoeff=0.00,
             optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
@@ -80,7 +80,7 @@ def callback(lcl, glb):
 
 
 def main():
-    train(num_timesteps=1000000, seed=5)
+    train(num_timesteps=50000000, seed=5)
 
 
 if __name__ == '__main__':

@@ -7,7 +7,7 @@ import sys
 
 
 #sudo service lightdm stop
-#sudo pkill XOrg
+#sudo pkill Xorg
 #sudo /usr/bin/X :0 &
 ## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode RGBD --resolution SMALL
 ## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode DEPTH --resolution SMALL
@@ -98,18 +98,18 @@ aws_addr.append("ec2-34-212-248-24.us-west-2.compute.amazonaws.com")
 aws_names.append("Sensor only, large lr")
 
 '''
-Universe ant climb 9
-ec2-52-38-59-13.us-west-2.compute.amazonaws.com
+Universe ant climb 11
+ec2-34-210-182-251.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-38-59-13.us-west-2.compute.amazonaws.com")
+aws_addr.append("ec2-34-210-182-251.us-west-2.compute.amazonaws.com")
 aws_names.append("Depth & Sensor, tiny init random")
 
 
 '''
-Universe ant climb 10
-ec2-34-212-248-24.us-west-2.compute.amazonaws.com
+Universe ant climb 12
+ec2-34-215-146-153.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-212-248-24.us-west-2.compute.amazonaws.com")
+aws_addr.append("ec2-34-215-146-153.us-west-2.compute.amazonaws.com")
 aws_names.append("Depth & only, tinier init random")
 
 
