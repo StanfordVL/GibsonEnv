@@ -8,7 +8,7 @@ from realenv.core.render.profiler import Profiler
 class FusePolicy(object):
     recurrent = False
 
-    def __init__(self, name, ob_space, sensor_space, ac_space, save_per_acts, session, kind='large'):
+    def __init__(self, name, ob_space, sensor_space, ac_space, session, save_per_acts=None, kind='large'):
         self.total_count = 0
         self.curr_count = 0
         self.save_per_acts = save_per_acts

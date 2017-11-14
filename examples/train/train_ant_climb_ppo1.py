@@ -40,10 +40,10 @@ def train(num_timesteps, seed):
     gym.logger.setLevel(logging.WARN)
 
     def mlp_policy_fn(name, sensor_space, ac_space):
-        return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2, save_per_acts=10000, save_name="ppo_mlp_sensor")
+        return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
 
     def fuse_policy_fn(name, ob_space, sensor_space, ac_space):
-        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess, save_name="ppo_mlp_fuse")
+        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
 
     if args.mode == "SENSOR":
         pposgd_sensor.learn(env, mlp_policy_fn,
@@ -52,7 +52,9 @@ def train(num_timesteps, seed):
             clip_param=0.2, entcoeff=0.00,
             optim_epochs=4, optim_stepsize=3e-4, optim_batchsize=64,
             gamma=0.99, lam=0.95,
-            schedule='linear'
+            schedule='linear',
+            save_per_acts=10000,
+            save_name="ant_ppo_mlp"
         )
         env.close()        
     else:
@@ -62,7 +64,9 @@ def train(num_timesteps, seed):
             clip_param=0.2, entcoeff=0.01,
             optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
             gamma=0.99, lam=0.95,
-            schedule='linear'
+            schedule='linear',
+            save_per_acts=10000,
+            save_name="ant_ppo_fuse"
         )
         env.close()
 
