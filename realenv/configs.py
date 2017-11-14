@@ -1,5 +1,5 @@
 ## Randomize agent initial position & orientation
-RANDOM_INITIAL_POSE = True
+RANDOM_INITIAL_POSE = False
 
 ENABLE_PROFILING = True
 
@@ -49,10 +49,18 @@ TASK_POSE = {
             #[[0, 0, 3.14], [-0.703, -1.24, 2.35]],  ## drop on stairs
             #[[0, 0, 0], [-0.203, -1.74, 1.8]],     ## Debug: slightly above stairs
             #[[0, 3.14 / 2, 3.14], [-2.283, -1.64, 0.65]],  ## Debug: leaning too much
-            [[0, 0, 3.14], [-2.283, -1.64, 0.15]],  ## bottom of stairs
-            [[0, 0, 3.14], [-2, 3.5, 0.15]]       ## target
+            #[[0, 0, 3.14], [-2.283, -1.64, 0.15]],  ## bottom of stairs
+            #[[3.14/4, 0, 3.14], [-1.883, -1.64, 0.75]],  ## bottom of stairs, a bit up
+            [[0, 0, 0], [-0.003, -1.64, 1.65]],     ## starting at stairs mid target
+            #[[0, 3.14/4, 3.14], [-1.403, -1.64, 0.95]], ## starting at stairs 1/4
+
+
+            #[[0, 0, 3.14], [-2.283, -0.64, 0.15]],  ## bottom of stairs, closer to living room
+            [[0, 0, 3.14], [-2.283, -1.64, 0.15]],  ## target at bottom of stairs
+            #[[0, 0, 3.14/2], [-1.403, -1.84, 1.75]],
+            #[[0, 0, 3.14], [-2, 3.5, 0.15]]       ## living room
             #[[0, 0, 3.14/2], [-0.003, -1.84, 1.45]]     ## stairs mid target
-            #[[0, 0, 3.14/2], [-1.403, -1.84, 0.75]]     ## stairs mid target
+            #[[0, 0, 3.14/2], [-1.403, -1.84, 0.75]]     ## stairs mid target half way
         ]
     },
     "sRj553CTHiw": {

@@ -149,7 +149,7 @@ class AntClimbEnv(CameraRobotEnv):
             self, 
             human=True, 
             timestep=ANT_TIMESTEP, 
-            frame_skip=ANT_FRAMESKIP, 
+            frame_skip=ANT_FRAMESKIP,           ## increase frame skip, as the motion is too flashy 
             is_discrete=False, 
             mode="RGBD", 
             use_filler=True, 
@@ -181,6 +181,7 @@ class AntClimbEnv(CameraRobotEnv):
 
         
     def calc_rewards_and_done(self, a, state):
+        #time.sleep(0.1)
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
 
         # dummy state if a is None
@@ -190,7 +191,7 @@ class AntClimbEnv(CameraRobotEnv):
        
         alive = float(self.robot.alive_bonus(self.robot.body_rpy[0], self.robot.body_rpy[1]))  # state[0] is body height above ground (z - z initial), body_rpy[1] is pitch
 
-        done = self.nframe > 300 #or alive < 0
+        done = self.nframe > 700 or alive < 0
 
         if not np.isfinite(state).all():
             print("~INF~", state)

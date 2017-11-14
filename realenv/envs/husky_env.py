@@ -159,7 +159,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         if self.human:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
-        
+
     def  _reset(self):
         self.total_frame = 0
         self.total_reward = 0
@@ -253,14 +253,8 @@ class HuskyClimbEnv(CameraRobotEnv):
             close_to_goal = 0.5
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(alive)
-            print("Wall contact points", len(wall_contact))
-            print("Collision cost", wall_collision_cost)
-            print("electricity_cost", electricity_cost)
-            print("close to goal", close_to_goal)
-            #print("progress")
-            #print(progress)
+            print("progress")
+            print(progress)
             #print("electricity_cost")
             #print(electricity_cost)
             #print("joints_at_limit_cost")
@@ -273,7 +267,7 @@ class HuskyClimbEnv(CameraRobotEnv):
         rewards = [
             #alive,
             progress,
-            wall_collision_cost,
+            #wall_collision_cost,
             close_to_goal,
             #electricity_cost,
             #joints_at_limit_cost,
@@ -291,12 +285,16 @@ class HuskyClimbEnv(CameraRobotEnv):
         walk_target_x = self.robot.walk_target_x
         walk_target_y = self.robot.walk_target_y
         walk_target_z = self.robot.walk_target_z
+        #walk_target_x = self.robot.initial_pos[0]
+        #walk_target_y = self.robot.initial_pos[1]
+        #walk_target_z = self.robot.initial_pos[2]
 
         self.flag = None
         if self.human:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, walk_target_z])
-        
+        #print("Placing the flag at", p.getBasePositionAndOrientation(self.last_flagId))
+
     def  _reset(self):
         self.total_frame = 0
         self.total_reward = 0

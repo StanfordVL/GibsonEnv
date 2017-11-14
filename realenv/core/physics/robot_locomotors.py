@@ -130,6 +130,8 @@ class WalkerBase(BaseRobot):
                                             self.walk_target_x - self.body_xyz[0])
         self.walk_target_dist = np.linalg.norm(
             [self.walk_target_y - self.body_xyz[1], self.walk_target_x - self.body_xyz[0]])
+        self.walk_target_dist_xyz = np.linalg.norm(
+            [self.walk_target_z - self.body_xyz[2], self.walk_target_y - self.body_xyz[1], self.walk_target_x - self.body_xyz[0]])
         angle_to_target = self.walk_target_theta - yaw
 
         self.walk_height_diff = np.abs(self.walk_target_z - self.body_xyz[2])
@@ -165,9 +167,9 @@ class WalkerBase(BaseRobot):
     def calc_potential(self):
         # progress in potential field is speed*dt, typical speed is about 2-3 meter per second, this potential will change 2-3 per frame (not per second),
         # all rewards have rew/frame units and close to 1.0 (hzyjerry) ==> make rewards similar scale
-        debugmode=0
+        debugmode=1
         if (debugmode):
-            print("calc_potential: self.walk_target_dist")
+            print("calc_potential: self.walk_target_dist x y")
             print(self.walk_target_dist)
             print("robot position, target position")
             print(self.body_xyz, [self.walk_target_x, self.walk_target_y, self.walk_target_z])
@@ -302,7 +304,7 @@ class Ant(WalkerBase):
         self.robot_body.reset_position(self.initial_pos)
         print("Initial position", self.initial_pos)
 
-        self.reset_base_position(configs.RANDOM_INITIAL_POSE)
+        #self.reset_base_position(configs.RANDOM_INITIAL_POSE)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
@@ -342,10 +344,11 @@ class AntClimber(Ant):
         
     def robot_specific_reset(self):
         Ant.robot_specific_reset(self)
-        self.jdict["ankle_1"].power_coef = 600.0
-        self.jdict["ankle_2"].power_coef = 600.0
-        self.jdict["ankle_3"].power_coef = 600.0
-        self.jdict["ankle_4"].power_coef = 600.0
+        amplify = 1
+        self.jdict["ankle_1"].power_coef = amplify * self.jdict["ankle_1"].power_coef
+        self.jdict["ankle_2"].power_coef = amplify * self.jdict["ankle_2"].power_coef
+        self.jdict["ankle_3"].power_coef = amplify * self.jdict["ankle_3"].power_coef
+        self.jdict["ankle_4"].power_coef = amplify * self.jdict["ankle_4"].power_coef
         
         debugmode=0
         if debugmode:
@@ -354,15 +357,14 @@ class AntClimber(Ant):
 
 
     def calc_potential(self):
-        base_potential = Ant.calc_potential(self)
-        height_coeff   = 3
-        height_potential = - height_coeff * self.walk_height_diff / self.scene.dt
-        debugmode = 0
+        #base_potential = Ant.calc_potential(self)
+        #height_coeff   = 3
+        #height_potential = - height_coeff * self.walk_height_diff / self.scene.dt
+        debugmode = 1
         if debugmode:
-            print("Ant base potential", base_potential)
-            print("Ant new  potential", height_potential)
-            print("Ant height    diff", self.walk_height_diff)
-        return base_potential + height_potential
+            print("Ant xyz potential", self.walk_target_dist_xyz)
+        return - self.walk_target_dist_xyz / self.scene.dt
+        
 
     def alive_bonus(self, roll, pitch):
         """Alive requires the ant's head to not touch the ground, it's roll
@@ -555,3 +557,13 @@ class HuskyClimber(Husky):
         height_potential = - 4 * self.walk_height_diff / self.scene.dt
         print("Husky climber", base_potential, height_potential)
         return base_potential + height_potential
+
+    def robot_specific_reset(self):
+        Ant.robot_specific_reset(self)
+        for j in self.jdict.keys():
+            self.jdict[j].power_coef = 1.5 * self.jdict[j].power_coef
+        
+        debugmode=0
+        if debugmode:
+            for k in self.jdict.keys():
+                print("Power coef", self.jdict[k].power_coef)

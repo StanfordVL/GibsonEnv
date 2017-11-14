@@ -11,8 +11,9 @@
   <worldbody>
     <body name="torso" pos="0 0 0.75">
       <geom name="torso_geom" pos="0 0 0" size="0.25" type="sphere"/>
+      <inertial pos="0 0 0" mass="0.1" diaginertia="0 0 0"/>
       <!--joint armature="0" damping="0" limited="false" margin="0.01" name="root" pos="0 0 0" type="free"/-->
-      <body name="eyes" pos="0 0 0" quat="1 0 0 0" size="0.001">
+      <body name="eyes" pos="0 0 0.75" quat="1 0 0 0" size="0.001">
         <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
       </body>
       <body name="front_left_leg" pos="0 0 0">
