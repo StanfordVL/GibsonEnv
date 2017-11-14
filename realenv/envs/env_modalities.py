@@ -330,11 +330,11 @@ class CameraRobotEnv(SensorRobotEnv):
             visuals = np.append(rgb, depth, axis=2)
         elif self.mode == "RGB":
             visuals = rgb
-            if self.robot.observation_space.shape[2] == 4:
+            if self.robot.observation_space.shape[2] == 4:  ## backward compatibility, will remove in the future
                 visuals = np.append(rgb, depth, axis=2)
         elif self.mode == "DEPTH":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
-            if self.robot.observation_space.shape[2] == 1:
+            if self.robot.observation_space.shape[2] == 1:  ## backward compatibility, will remove in the future
                 visuals = depth
         elif self.mode == "SENSOR":
             visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
@@ -411,9 +411,9 @@ class CameraRobotEnv(SensorRobotEnv):
         dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
-        render_main = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
+        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
         render_depth = "./depth_render --modelpath {} --GPU -1 -s 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
-        render_norm = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
+        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
 

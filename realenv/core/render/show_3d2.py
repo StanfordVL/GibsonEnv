@@ -316,7 +316,7 @@ class PCRenderer:
         w = 2*h
         n = ho//3
 
-
+        need_filler = self.render_mode in ["RGB", "RGBD", "GREY"]
         pano = False
         if pano:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
@@ -354,14 +354,14 @@ class PCRenderer:
         #[t.start() for t in threads]
         #[t.join() for t in threads]
 
-        if self.render_mode in ["RGB", "RGBD", "GREY"]:
+        if need_filler:
             _render_pc(opengl_arr)
 
         if MAKE_VIDEO and show_unfilled is not None:
             show_unfilled[:, :, :] = show[:, :, :]
 
         #with Profiler("NN total time", enable= ENABLE_PROFILING):
-        if self.use_filler and self.model and is_rgb:
+        if self.use_filler and self.model and is_rgb and need_filler:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
             source = tf(show)

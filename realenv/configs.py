@@ -29,6 +29,8 @@ DEBUG_CAMERA_FOLLOW = True
 
 
 USE_SMALL_FILLER = False
+USE_SMOOTH_MESH = False
+
 
 ## Render window settings
 HIGH_RES_MONITOR = False
