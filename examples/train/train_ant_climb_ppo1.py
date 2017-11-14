@@ -53,7 +53,7 @@ def train(num_timesteps, seed):
             optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear',
-            save_per_acts=10000,
+            save_per_acts=500,
             save_name="ant_ppo_mlp"
         )
         env.close()        
@@ -65,7 +65,7 @@ def train(num_timesteps, seed):
             optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear',
-            save_per_acts=10000,
+            save_per_acts=50,
             save_name="ant_ppo_fuse"
         )
         env.close()
