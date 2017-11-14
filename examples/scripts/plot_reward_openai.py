@@ -9,8 +9,8 @@ import sys
 #sudo service lightdm stop
 #sudo pkill XOrg
 #sudo /usr/bin/X :0 &
-## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode RGBD
-## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode DEPTH
+## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode RGBD --resolution SMALL
+## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode DEPTH --resolution SMALL
 ## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode SENSOR
 
 ## scp -i /home/jerry/Dropbox/CVGL/universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com:/tmp/openai-2017-11-12-13-16-28-113773/0.monitor.csv
