@@ -443,10 +443,13 @@ class PCRenderer:
 
         #with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
         self.show.fill(0)
-        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
 
+        # (hzyjerry): currently semantics not compatible with RGBD
         if USE_SEMANTICS:
             self.render(self.semantics_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show_semantics)
+        else:
+            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
+
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
         self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
