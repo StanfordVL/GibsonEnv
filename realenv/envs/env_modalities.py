@@ -408,11 +408,13 @@ class CameraRobotEnv(SensorRobotEnv):
             print(' %s: %s' %(exctype.__name__, value))
         sys.excepthook = camera_multi_excepthook
 
+        enable_render_smooth = 1 if USE_SMOOTH_MESH else 0
+
         dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
         render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
-        render_depth = "./depth_render --modelpath {} --GPU -1 -s 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
+        render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz)
         render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)

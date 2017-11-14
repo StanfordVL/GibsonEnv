@@ -84,13 +84,12 @@ class WalkerBase(BaseRobot):
         self.initial_z = None
 
 
-    def reset_base_position(self, enabled):
+    def reset_base_position(self, enabled, delta_orn = np.pi/3, delta_pos = 0.2):
+        print("Reset base enabled", enabled)
         if not enabled:
-            pass
+            return
         pos = self.robot_body.current_position()
         orn = self.robot_body.current_orientation()
-        delta_pos = 0.2
-        delta_deg = np.pi/9
 
         #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
@@ -98,7 +97,7 @@ class WalkerBase(BaseRobot):
         new_pos = [ pos[0] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
                     pos[1] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
                     pos[2] + self.np_random.uniform(low=0, high=delta_pos)]
-        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_deg, high=delta_deg)), orn)
+        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_orn, high=delta_orn)), orn)
         self.robot_body.reset_orientation(new_orn)
         self.robot_body.reset_position(new_pos)
             #if (len(p.getContactPoints(self.robot_body.bodyIndex)) == 0):
@@ -304,7 +303,7 @@ class Ant(WalkerBase):
         self.robot_body.reset_position(self.initial_pos)
         print("Initial position", self.initial_pos)
 
-        #self.reset_base_position(configs.RANDOM_INITIAL_POSE)
+        self.reset_base_position(configs.RANDOM_INITIAL_POSE, delta_pos = 0.25)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
@@ -333,6 +332,7 @@ class Ant(WalkerBase):
             (ord('i'), ): 15, 
             (): 4
         }
+
 
 class AntClimber(Ant):
     def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD"):
@@ -386,6 +386,27 @@ class AntClimber(Ant):
         parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
         dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y, self.body_xyz[2] - self.walk_target_z])
         return dist_to_goal < 0.5
+
+
+    def reset_base_position(self, enabled, delta_orn = np.pi/9, delta_pos = 0.2):
+        print("Reset base enabled", enabled)
+        if not enabled:
+            return
+        pos = self.robot_body.current_position()
+        orn = self.robot_body.current_orientation()
+
+        #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
+
+        #while True:
+        new_pos = [ pos[0] + self.np_random.uniform(low= delta_pos, high=0),
+                    pos[1] + self.np_random.uniform(low=-0.1, high=0.1),
+                    pos[2] + self.np_random.uniform(low=0, high=delta_pos)]
+        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_orn, high=delta_orn)), orn)
+        self.robot_body.reset_orientation(new_orn)
+        self.robot_body.reset_position(new_pos)
+
+
+
 
 
 class Humanoid(WalkerBase):

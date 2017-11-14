@@ -1,5 +1,6 @@
 ## Randomize agent initial position & orientation
-RANDOM_INITIAL_POSE = False
+RANDOM_INITIAL_POSE = True
+RANDOM_TARGET_POSE  = True
 
 ENABLE_PROFILING = True
 
@@ -58,7 +59,8 @@ TASK_POSE = {
 
 
             #[[0, 0, 3.14], [-2.283, -0.64, 0.15]],  ## bottom of stairs, closer to living room
-            [[0, 0, 3.14], [-2.283, -1.64, 0.15]],  ## target at bottom of stairs
+            #[[0, 0, 3.14], [-2.283, -1.64, 0.15]],  ## target at bottom of stairs
+            [[0, 0, 0], [-0.003, -1.64, 1.65]],     ## starting at stairs mid target
             #[[0, 0, 3.14/2], [-1.403, -1.84, 1.75]],
             #[[0, 0, 3.14], [-2, 3.5, 0.15]]       ## living room
             #[[0, 0, 3.14/2], [-0.003, -1.84, 1.45]]     ## stairs mid target

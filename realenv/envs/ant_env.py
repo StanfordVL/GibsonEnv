@@ -145,6 +145,8 @@ class AntNavigateEnv(CameraRobotEnv):
 
 
 class AntClimbEnv(CameraRobotEnv):
+    delta_target = [0.2, 0.2]
+
     def __init__(
             self, 
             human=True, 
@@ -164,6 +166,7 @@ class AntClimbEnv(CameraRobotEnv):
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][0]
 
+        self.target_pos_gt = target_pos
         self.robot = AntClimber(initial_pos, initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos,
@@ -178,6 +181,7 @@ class AntClimbEnv(CameraRobotEnv):
 
         self.total_reward = 0
         self.total_frame = 0
+        self.visual_flagId = None
 
         
     def calc_rewards_and_done(self, a, state):
@@ -252,20 +256,35 @@ class AntClimbEnv(CameraRobotEnv):
         return reward, done
 
     def flag_reposition(self):
-        walk_target_x = self.robot.walk_target_x / self.robot.mjcf_scaling
-        walk_target_y = self.robot.walk_target_y / self.robot.mjcf_scaling
+        if configs.RANDOM_TARGET_POSE:
+            delta_x = self.np_random.uniform(low=-self.delta_target[0],
+                                             high=+self.delta_target[0])
+            delta_y = self.np_random.uniform(low=-self.delta_target[1],
+                                             high=+self.delta_target[1])
+
+        walk_target_x = (self.target_pos_gt[0] + delta_x) / self.robot.mjcf_scaling
+        walk_target_y = (self.target_pos_gt[1] + delta_y) / self.robot.mjcf_scaling
         walk_target_z = self.robot.walk_target_z / self.robot.mjcf_scaling
 
+        self.robot.walk_target_x = walk_target_x    # Change robot target accordingly
+        self.robot.walk_target_y = walk_target_y    # Important for stair climbing
+            
         self.flag = None
-        if self.human:
+        if not self.human:
+            return
+
+        if self.visual_flagId is None:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, walk_target_z])
+        else:
+            last_flagPos, last_flagOrn = p.getBasePositionAndOrientation(self.last_flagId)
+            p.resetBasePositionAndOrientation(self.last_flagId, [walk_target_x, walk_target_y, walk_target_z], last_flagOrn)
         
     def  _reset(self):
         self.total_frame = 0
         self.total_reward = 0
-        obs = CameraRobotEnv._reset(self)
         self.flag_reposition()
+        obs = CameraRobotEnv._reset(self)       ## Important: must come after flat_reposition
         return obs
 
 
