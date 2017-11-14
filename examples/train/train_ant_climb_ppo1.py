@@ -50,7 +50,7 @@ def train(num_timesteps, seed):
             max_timesteps=int(num_timesteps * 1.1),
             timesteps_per_actorbatch=256,
             clip_param=0.2, entcoeff=0.00,
-            optim_epochs=4, optim_stepsize=3e-4, optim_batchsize=64,
+            optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear',
             save_per_acts=10000,

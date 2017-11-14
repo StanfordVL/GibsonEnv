@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 
-## s"udo /usr/bin/X :0"
-## DISPLAY=:0 python examples/train/train_husky_navigate_ppo1.py
-## DISPLAY=:0 python examples/train/train_husky_navigate_ppo1.py --disable_filler
+## sudo /usr/bin/X :0
+## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode RGBD
+## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode DEPTH
+## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode SENSOR
 
 ## scp -i /home/jerry/Dropbox/CVGL/universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com:/tmp/openai-2017-11-12-13-16-28-113773/0.monitor.csv
 cmd = "scp -i /home/jerry/Dropbox/CVGL/universe.pem ubuntu@{}:/tmp/{}/{} {}"
@@ -14,9 +15,61 @@ aws_addr = []
 log_dir  = []
 
 '''
-Universe husky navigate 1
-RGB + SENSOR + COLLISION
+Universe ant climb 1
+ssh -i universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com
 '''
+
+'''
+Universe ant climb 2
+ssh -i universe.pem ubuntu@ec2-52-24-76-187.us-west-2.compute.amazonaws.com
+'''
+
+
+'''
+Universe ant climb 3
+ec2-52-42-249-133.us-west-2.compute.amazonaws.com
+'''
+
+'''
+Universe ant climb 4
+ec2-52-38-25-41.us-west-2.compute.amazonaws.com
+'''
+
+'''
+Universe ant climb 5
+ec2-34-214-189-116.us-west-2.compute.amazonaws.com
+'''
+
+'''
+Universe ant climb 6
+ec2-34-216-35-8.us-west-2.compute.amazonaws.com
+'''
+
+'''
+Universe ant climb 7
+ec2-34-213-149-40.us-west-2.compute.amazonaws.com
+'''
+
+'''
+Universe ant climb 8
+ec2-52-89-201-217.us-west-2.compute.amazonaws.com
+'''
+
+'''
+Universe ant climb 9
+ec2-52-38-59-13.us-west-2.compute.amazonaws.com
+'''
+
+'''
+Universe ant climb 10
+ec2-34-212-248-24.us-west-2.compute.amazonaws.com
+'''
+
+
+
+
+
+
 aws_addr.append("ec2-34-215-160-202.us-west-2.compute.amazonaws.com")
 log_dir.append("openai-2017-11-12-13-43-46-948548")
 
