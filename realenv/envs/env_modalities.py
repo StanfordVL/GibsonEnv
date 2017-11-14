@@ -302,6 +302,7 @@ class CameraRobotEnv(SensorRobotEnv):
         visuals = self.get_visuals(rgb, depth)
         #self.screen.blit(visuals, [200, 200]) 
         #print("visuals shape", visuals.shape)
+        print("Environment visuals shape", visuals.shape)
         return visuals, sensor_reward, done, sensor_meta
         
 

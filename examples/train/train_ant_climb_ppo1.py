@@ -4,6 +4,8 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 
+from realenv import configs
+
 import gym, logging
 from mpi4py import MPI
 from realenv.envs.ant_env import AntClimbEnv
@@ -18,6 +20,7 @@ from baselines import logger
 from monitor import Monitor
 import os.path as osp
 import random
+import sys
 
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
@@ -47,7 +50,7 @@ def train(num_timesteps, seed):
         pposgd_sensor.learn(env, mlp_policy_fn,
             max_timesteps=int(num_timesteps * 1.1),
             timesteps_per_actorbatch=256,
-            clip_param=0.2, entcoeff=0.01,
+            clip_param=0.2, entcoeff=0.00,
             optim_epochs=4, optim_stepsize=3e-4, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear'
@@ -58,7 +61,7 @@ def train(num_timesteps, seed):
             max_timesteps=int(num_timesteps * 1.1),
             timesteps_per_actorbatch=256,
             clip_param=0.2, entcoeff=0.01,
-            optim_epochs=4, optim_stepsize=4e-4, optim_batchsize=64,
+            optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear'
         )

@@ -145,7 +145,7 @@ class AntNavigateEnv(CameraRobotEnv):
 
 
 class AntClimbEnv(CameraRobotEnv):
-    delta_target = [0.2, 0.2]
+    delta_target = [configs.RANDOM_TARGET_RANGE, configs.RANDOM_TARGET_RANGE]
 
     def __init__(
             self, 
