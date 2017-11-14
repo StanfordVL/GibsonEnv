@@ -113,6 +113,29 @@ aws_addr.append("ec2-34-215-146-153.us-west-2.compute.amazonaws.com")
 aws_names.append("Depth & only, tinier init random")
 
 
+'''
+13
+ec2-52-32-82-119.us-west-2.compute.amazonaws.com
+'''
+aws_addr.append("ec2-52-32-82-119.us-west-2.compute.amazonaws.com")
+aws_names.append("Depth & only, small lr,  small random")
+
+
+'''
+14
+ec2-52-34-146-13.us-west-2.compute.amazonaws.com
+'''
+aws_addr.append("ec2-52-34-146-13.us-west-2.compute.amazonaws.com")
+aws_names.append("RGBD & sensor, small lr,  small random")
+
+'''
+15
+ec2-35-167-167-158.us-west-2.compute.amazonaws.com
+'''
+#aws_addr.append("ec2-35-167-167-158.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & sensor, small lr,  fast")
+
+
 
 aws_dirs = []
 file_names = []
@@ -236,7 +259,7 @@ def main():
 def main2():
     REW_MEDIAN_FACTOR = 10
     MED_MEDIAN_FACTOR = 10
-    LENGTH_CAP = 700
+    LENGTH_CAP = 1000000000
 
     smoothed = []
     lengths = [] 
@@ -260,9 +283,9 @@ def main2():
 
 
 if __name__ == '__main__':
-    LOCAL = True
+    LOCAL = False
     SMOOTH = True
-    SMOOTH_FC = 100
+    SMOOTH_FC = 500
 
     if LOCAL:
         for i in range(len(aws_addr)):
