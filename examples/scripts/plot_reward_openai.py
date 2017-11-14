@@ -97,6 +97,22 @@ ec2-34-212-248-24.us-west-2.compute.amazonaws.com
 aws_addr.append("ec2-34-212-248-24.us-west-2.compute.amazonaws.com")
 aws_names.append("Sensor only, large lr")
 
+'''
+Universe ant climb 9
+ec2-52-38-59-13.us-west-2.compute.amazonaws.com
+'''
+aws_addr.append("ec2-52-38-59-13.us-west-2.compute.amazonaws.com")
+aws_names.append("Depth & Sensor, tiny init random")
+
+
+'''
+Universe ant climb 10
+ec2-34-212-248-24.us-west-2.compute.amazonaws.com
+'''
+aws_addr.append("ec2-34-212-248-24.us-west-2.compute.amazonaws.com")
+aws_names.append("Depth & only, tinier init random")
+
+
 
 aws_dirs = []
 file_names = []
@@ -246,7 +262,7 @@ def main2():
 if __name__ == '__main__':
     LOCAL = True
     SMOOTH = True
-    SMOOTH_FC = 10
+    SMOOTH_FC = 100
 
     if LOCAL:
         for i in range(len(aws_addr)):
