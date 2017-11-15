@@ -25,7 +25,7 @@ Universe ant climb 1
 ssh -i universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com
 '''
 aws_addr.append("ec2-34-215-160-202.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, small init random, small lr")
+aws_names.append("RGB & Sensor, small init random, small lr")
 
 
 '''
@@ -56,7 +56,7 @@ Universe ant climb 5
 ec2-34-214-189-116.us-west-2.compute.amazonaws.com
 '''
 aws_addr.append("ec2-34-214-189-116.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, small init random, small lr")
+aws_names.append("RGBD & Sensor, large init random, small lr")
 
 
 '''
@@ -87,7 +87,7 @@ Universe ant climb 9
 ec2-52-38-59-13.us-west-2.compute.amazonaws.com
 '''
 aws_addr.append("ec2-52-38-59-13.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, large random, small lr")
+aws_names.append("Sensor only, small lr")
 
 
 '''
@@ -95,14 +95,14 @@ Universe ant climb 10
 ec2-34-212-248-24.us-west-2.compute.amazonaws.com
 '''
 aws_addr.append("ec2-34-212-248-24.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, large random, small lr")
+aws_names.append("Sensor only, large lr")
 
 '''
 Universe ant climb 11
 ec2-34-210-182-251.us-west-2.compute.amazonaws.com
 '''
 aws_addr.append("ec2-34-210-182-251.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, tiny init random, small lr")
+aws_names.append("Depth & Sensor, tiny init random")
 
 
 '''
@@ -110,14 +110,18 @@ Universe ant climb 12
 ec2-34-215-146-153.us-west-2.compute.amazonaws.com
 '''
 aws_addr.append("ec2-34-215-146-153.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, tiny init random, large lr")
+aws_names.append("Depth & only, tinier init random")
+
 
 '''
 13
 ec2-52-32-82-119.us-west-2.compute.amazonaws.com
 '''
-#aws_addr.append("ec2-52-32-82-119.us-west-2.compute.amazonaws.com")
-#aws_names.append("Depth & Sensor, small random, large lr")
+aws_addr.append("ec2-52-32-82-119.us-west-2.compute.amazonaws.com")
+aws_names.append("Depth & only, small lr,  small random")
+
+
+
 
 
 
@@ -131,7 +135,7 @@ scp_cmd = "scp -i /home/jerry/Dropbox/CVGL/universe.pem ubuntu@{}:/tmp/{}/{} {}"
 
 def download(index):
     full_cmd = scp_cmd.format(aws_addr[index], aws_dirs[index], remote_filename, file_names[index])
-    #print(full_cmd)
+    print(full_cmd)
     os.system(full_cmd)
 
 
@@ -171,7 +175,7 @@ def plot(index, axis):
     total_time = num_rows[-1, 2]
     time_length = sum(all_times)
     if SMOOTH:
-        axis[index].plot(t_range, all_rewards, '.', t_range, smooth_mean(all_rewards, SMOOTH_FC), '-')
+        axis[index].plot(t_range, all_rewards, '.', t_range, smooth_median(all_rewards, SMOOTH_FC), '-')
         axis[index].text(.5, .9, aws_names[index] + " ts: {}".format(step_length), horizontalalignment='center',
         transform=axis[index].transAxes)
         axis[index].text(.5, .1, "Time ts: {}".format(time_length), horizontalalignment='center',
@@ -201,7 +205,7 @@ def get_smooth(index):
     all_rewards = num_rows[:, 0].tolist()
     total_time = num_rows[-1, 2]
     all_steps = num_rows[:, 1].tolist()
-    #print("Total time", total_time, "averge step", np.mean(all_steps))
+    print("Total time", total_time, "averge step", np.mean(all_steps))
     return smooth_median(all_rewards)
 
 
@@ -241,12 +245,15 @@ def main():
     plt.show()
 
 def main2():
+    REW_MEDIAN_FACTOR = 10
+    MED_MEDIAN_FACTOR = 10
     LENGTH_CAP = 1000000000
 
     smoothed = []
     lengths = [] 
     smoothed_names = []
     for i in range(len(file_names)):
+        print(file_names[i])
         smooth_i = get_smooth(i)
         #smooth_i = smooth_mean(smooth_i)
         if len(smooth_i) < LENGTH_CAP:
@@ -267,7 +274,7 @@ def main2():
 if __name__ == '__main__':
     LOCAL = True
     SMOOTH = True
-    SMOOTH_FC = 100
+    SMOOTH_FC = 500
 
     if LOCAL:
         for i in range(len(aws_addr)):

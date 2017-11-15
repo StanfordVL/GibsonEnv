@@ -50,7 +50,7 @@ class BuildingScene(Scene):
         #planeName = os.path.join(pybullet_data.getDataPath(),"mjcf/ground_plane.xml")
         #self.ground_plane_mjcf = p.loadMJCF(planeName)
         #print("built plane", type(self.ground_plane_mjcf))
-        p.changeDynamics(boundaryUid, -1, lateralFriction=1, spinningFriction=0.1, rollingFriction=0.1)
+        p.changeDynamics(boundaryUid, -1, lateralFriction=0.6, spinningFriction=0.1, rollingFriction=0.1)
         self.scene_obj_list = [boundaryUid]
         #self.scene_obj = (int(p.loadURDF(filename)), )
 

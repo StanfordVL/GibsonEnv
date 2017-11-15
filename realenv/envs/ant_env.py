@@ -195,12 +195,7 @@ class AntClimbEnv(CameraRobotEnv):
        
         alive = float(self.robot.alive_bonus(self.robot.body_rpy[0], self.robot.body_rpy[1]))  # state[0] is body height above ground (z - z initial), body_rpy[1] is pitch
 
-        done = self.nframe > 700 or alive < 0
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
+        
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -228,6 +223,13 @@ class AntClimbEnv(CameraRobotEnv):
         if self.robot.is_close_to_goal():
             close_to_goal = 1
 
+        done = self.nframe > 600 or alive < 0 or close_to_goal
+
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+
+
         debugmode = 0
         if (debugmode):
             print("alive=")
@@ -244,11 +246,12 @@ class AntClimbEnv(CameraRobotEnv):
         reward = [
             #alive,
             progress,
-            close_to_goal,
+            #close_to_goal,
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
          ]
+
         debugmode = 0
         if (debugmode):
             print("reward")
@@ -261,24 +264,27 @@ class AntClimbEnv(CameraRobotEnv):
                                              high=+self.delta_target[0])
             delta_y = self.np_random.uniform(low=-self.delta_target[1],
                                              high=+self.delta_target[1])
-
-        walk_target_x = (self.target_pos_gt[0] + delta_x) / self.robot.mjcf_scaling
-        walk_target_y = (self.target_pos_gt[1] + delta_y) / self.robot.mjcf_scaling
-        walk_target_z = self.robot.walk_target_z / self.robot.mjcf_scaling
+        else:
+            delta_x = 0
+            delta_y = 0
+        walk_target_x = (self.target_pos_gt[0] + delta_x)
+        walk_target_y = (self.target_pos_gt[1] + delta_y)
+        walk_target_z = self.robot.walk_target_z
 
         self.robot.walk_target_x = walk_target_x    # Change robot target accordingly
         self.robot.walk_target_y = walk_target_y    # Important for stair climbing
-            
+        self.robot.walk_target_z = walk_target_z
+
         self.flag = None
         if not self.human:
             return
 
         if self.visual_flagId is None:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
-            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, walk_target_z])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x / self.robot.mjcf_scaling, walk_target_y / self.robot.mjcf_scaling, walk_target_z / self.robot.mjcf_scaling])
         else:
             last_flagPos, last_flagOrn = p.getBasePositionAndOrientation(self.last_flagId)
-            p.resetBasePositionAndOrientation(self.last_flagId, [walk_target_x, walk_target_y, walk_target_z], last_flagOrn)
+            p.resetBasePositionAndOrientation(self.last_flagId, [walk_target_x  / self.robot.mjcf_scaling, walk_target_y / self.robot.mjcf_scaling, walk_target_z / self.robot.mjcf_scaling], last_flagOrn)
         
     def  _reset(self):
         self.total_frame = 0

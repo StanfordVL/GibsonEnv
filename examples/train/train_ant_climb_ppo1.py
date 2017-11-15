@@ -43,14 +43,14 @@ def train(num_timesteps, seed):
         return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
 
     def fuse_policy_fn(name, ob_space, sensor_space, ac_space):
-        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, hid_size=64, num_hid_layers=2, ac_space=ac_space, save_per_acts=10000, session=sess)
 
     if args.mode == "SENSOR":
         pposgd_sensor.learn(env, mlp_policy_fn,
             max_timesteps=int(num_timesteps * 1.1 * 5),
-            timesteps_per_actorbatch=256,
+            timesteps_per_actorbatch=6000,
             clip_param=0.2, entcoeff=0.00,
-            optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
+            optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear',
             save_per_acts=500,
@@ -60,9 +60,9 @@ def train(num_timesteps, seed):
     else:
         pposgd_fuse.learn(env, fuse_policy_fn,
             max_timesteps=int(num_timesteps * 1.1),
-            timesteps_per_actorbatch=256,
+            timesteps_per_actorbatch=2000,
             clip_param=0.2, entcoeff=0.01,
-            optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
+            optim_epochs=4, optim_stepsize=3e-4, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear',
             save_per_acts=50,
