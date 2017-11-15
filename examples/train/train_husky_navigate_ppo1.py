@@ -50,7 +50,7 @@ def train(num_timesteps, seed):
         else:
             #return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
         #else:
-            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess, kind='small')
 
 
     env = Monitor(raw_env, logger.get_dir() and
