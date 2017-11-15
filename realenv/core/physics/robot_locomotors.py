@@ -166,7 +166,7 @@ class WalkerBase(BaseRobot):
     def calc_potential(self):
         # progress in potential field is speed*dt, typical speed is about 2-3 meter per second, this potential will change 2-3 per frame (not per second),
         # all rewards have rew/frame units and close to 1.0 (hzyjerry) ==> make rewards similar scale
-        debugmode=1
+        debugmode=0
         if (debugmode):
             print("calc_potential: self.walk_target_dist x y")
             print(self.walk_target_dist)

@@ -1,35 +1,32 @@
 import numpy as np
 
 ## Randomize agent initial position & orientation
-RANDOM_INITIAL_POSE = False
-RANDOM_TARGET_POSE  = False
+RANDOM_INITIAL_POSE = True
+RANDOM_TARGET_POSE  = True
 
-CHOOSE_SMALL_RANDOM_RANGE = False
-CHOOSE_TINY_RANDOM_RANGE = False
-CHOOSE_MID_RANDOM_RANGE = False
-CHOOSE_LARGE_RANDOM_RANGE = False
+RANDOM_RANGE = "MID"
 
-CHOOSE_SMALL_LEARNING_RATE = True
+LEARNING_RATE_NAME = "SMALL"
 
-if CHOOSE_TINY_RANDOM_RANGE:
+if RANDOM_RANGE == "TINY":
     RANDOM_TARGET_RANGE = 0.025
     RANDOM_INITIAL_RANGE_X = [-0.1, 0.05]
     RANDOM_INITIAL_RANGE_Y = [-0.025, 0.025]
     RANDOM_INITIAL_RANGE_Z = [0, 0.1]
     RANDOM_INITIAL_RANGE_DEG = [-np.pi/18, np.pi/18]
-elif CHOOSE_SMALL_RANDOM_RANGE:
+elif RANDOM_RANGE == "SMALL":
     RANDOM_TARGET_RANGE = 0.05
     RANDOM_INITIAL_RANGE_X = [-0.1, 0.05]
     RANDOM_INITIAL_RANGE_Y = [-0.05, 0.05]
     RANDOM_INITIAL_RANGE_Z = [0, 0.2]
     RANDOM_INITIAL_RANGE_DEG = [-np.pi/9, np.pi/9]
-elif CHOOSE_MID_RANDOM_RANGE:
+elif RANDOM_RANGE == "MID":
     RANDOM_TARGET_RANGE = 0.2
     RANDOM_INITIAL_RANGE_X = [-0.2, 0.1]
     RANDOM_INITIAL_RANGE_Y = [-0.1, 0.1]
     RANDOM_INITIAL_RANGE_Z = [0, 0.2]
     RANDOM_INITIAL_RANGE_DEG = [-np.pi/4, np.pi/4]
-elif CHOOSE_LARGE_RANDOM_RANGE:
+elif RANDOM_RANGE == "LARGE":
     RANDOM_TARGET_RANGE = 0.5
     RANDOM_INITIAL_RANGE_X = [-0.4, 0.1]
     RANDOM_INITIAL_RANGE_Y = [-0.1, 0.1]
@@ -42,10 +39,17 @@ else:
     RANDOM_INITIAL_RANGE_Z = [0, 0.4]
     RANDOM_INITIAL_RANGE_DEG = [-2 *np.pi/3, 2* np.pi/3]
 
-if CHOOSE_SMALL_LEARNING_RATE:
-    LEARNING_RATE = 3e-6
-else:
+if LEARNING_RATE_NAME == "SMALL":
     LEARNING_RATE = 3e-5
+elif LEARNING_RATE_NAME == "MID":
+    LEARNING_RATE = 3e-4
+elif LEARNING_RATE_NAME == "LARGE":
+    LEARNING_RATE = 3E-3
+
+
+CHOOSE_SMALL_RANDOM_RANGE = False
+CHOOSE_TINY_RANDOM_RANGE = False
+
 
 
 ENABLE_PROFILING = True
@@ -61,7 +65,8 @@ USE_MJCF = True
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
 ## Gates 3rd: TVHnHa4MZwE
-NAVIGATE_MODEL_ID = "11HB6XZSh1Q"
+CLIMB_MODEL_ID = "11HB6XZSh1Q"
+NAVIGATE_MODEL_ID = "sRj553CTHiw"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
 USE_SENSOR_OUTPUT = False
@@ -114,10 +119,11 @@ TASK_POSE = {
     },
     "sRj553CTHiw": {
         "navigate": [
-            [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial
+            [[0, 0, 3.14/2], [-14.0747, 17.5126, 0.5]],
+            #[[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial: end of hall way
             #[[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
-            [[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]]
-                                                    ## target
+            #[[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]] ## target: gates entrance hall
+            [[0, 0, 0], [-8.6773, 1.4495, 0.5]]
         ],
         "fetch": [
             [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial

@@ -24,8 +24,8 @@ aws_names = []
 Universe ant climb 1
 ssh -i universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-215-160-202.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, small init random, small lr")
+#aws_addr.append("ec2-34-215-160-202.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & Sensor, small init random, small lr")
 
 
 '''

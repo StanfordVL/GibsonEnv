@@ -24,16 +24,16 @@ aws_names = []
 Universe ant climb 1
 ssh -i universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-215-160-202.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, small init random, small lr")
+#aws_addr.append("ec2-34-215-160-202.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & Sensor, small init random, small lr")
 
 
 '''
 Universe ant climb 2
 ssh -i universe.pem ubuntu@ec2-52-24-76-187.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-24-76-187.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, small init random, large lr")
+#aws_addr.append("ec2-52-24-76-187.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & Sensor, small init random, large lr")
 
 
 '''
@@ -47,47 +47,47 @@ aws_names.append("Depth & Sensor, small init random, small lr")
 Universe ant climb 4
 ec2-52-38-25-41.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-38-25-41.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, small init random, large lr")
+#aws_addr.append("ec2-52-38-25-41.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, small init random, large lr")
 
 
 '''
 Universe ant climb 5
 ec2-34-214-189-116.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-214-189-116.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, small init random, small lr")
+#aws_addr.append("ec2-34-214-189-116.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & Sensor, small init random, small lr")
 
 
 '''
 Universe ant climb 6
 ec2-34-216-35-8.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-216-35-8.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, large init random, large lr")
+#aws_addr.append("ec2-34-216-35-8.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & Sensor, large init random, large lr")
 
 '''
 Universe ant climb 7
 ec2-34-213-149-40.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-213-149-40.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, large init random, small lr")
+#aws_addr.append("ec2-34-213-149-40.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, large init random, small lr")
 
 
 '''
 Universe ant climb 8
 ec2-52-89-201-217.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-89-201-217.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, large init random, large lr")
+#aws_addr.append("ec2-52-89-201-217.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, large init random, large lr")
 
 
 '''
 Universe ant climb 9
 ec2-52-38-59-13.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-38-59-13.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, large random, small lr")
+#aws_addr.append("ec2-52-38-59-13.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, large random, small lr")
 
 
 '''
@@ -101,16 +101,16 @@ aws_names.append("Depth & Sensor, large random, small lr")
 Universe ant climb 11
 ec2-34-210-182-251.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-210-182-251.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, tiny init random, small lr")
+#aws_addr.append("ec2-34-210-182-251.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, tiny init random, small lr")
 
 
 '''
 Universe ant climb 12
 ec2-34-215-146-153.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-215-146-153.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, tiny init random, large lr")
+#aws_addr.append("ec2-34-215-146-153.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, tiny init random, large lr")
 
 '''
 13
@@ -265,7 +265,7 @@ def main2():
 
 
 if __name__ == '__main__':
-    LOCAL = True
+    LOCAL = False
     SMOOTH = True
     SMOOTH_FC = 100
 

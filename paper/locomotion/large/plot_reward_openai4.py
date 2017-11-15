@@ -24,16 +24,16 @@ aws_names = []
 Universe ant climb 1
 ssh -i universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-215-160-202.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, small init random, small lr")
+#aws_addr.append("ec2-34-215-160-202.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & Sensor, small init random, small lr")
 
 
 '''
 Universe ant climb 2
 ssh -i universe.pem ubuntu@ec2-52-24-76-187.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-24-76-187.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, small init random, large lr")
+#aws_addr.append("ec2-52-24-76-187.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & Sensor, small init random, large lr")
 
 
 '''
@@ -47,8 +47,8 @@ ec2-52-42-249-133.us-west-2.compute.amazonaws.com
 Universe ant climb 4
 ec2-52-38-25-41.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-38-25-41.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, small init random, large lr")
+#aws_addr.append("ec2-52-38-25-41.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, small init random, large lr")
 
 
 '''
@@ -86,22 +86,22 @@ ec2-52-89-201-217.us-west-2.compute.amazonaws.com
 Universe ant climb 9
 ec2-52-38-59-13.us-west-2.compute.amazonaws.com
 '''
-#aws_addr.append("ec2-52-38-59-13.us-west-2.compute.amazonaws.com")
-#aws_names.append("Depth & Sensor, large random, small lr")
+aws_addr.append("ec2-52-38-59-13.us-west-2.compute.amazonaws.com")
+aws_names.append("Depth & Sensor, large random, small lr")
 
 
 '''
 Universe ant climb 10
 ec2-34-212-248-24.us-west-2.compute.amazonaws.com
 '''
-#aws_addr.append("ec2-34-212-248-24.us-west-2.compute.amazonaws.com")
-#aws_names.append("Depth & Sensor, large random, small lr")
+aws_addr.append("ec2-34-212-248-24.us-west-2.compute.amazonaws.com")
+aws_names.append("Depth & Sensor, large random, small lr")
 
 '''
 Universe ant climb 11
-ec2-34-210-182-251.us-west-2.compute.amazonaws.com
+ec2-52-34-119-136.us-west-2.compute.amazonaws.com
 '''
-#aws_addr.append("ec2-34-210-182-251.us-west-2.compute.amazonaws.com")
+#aws_addr.append("ec2-52-34-119-136.us-west-2.compute.amazonaws.com")
 #aws_names.append("Depth & Sensor, tiny init random, small lr")
 
 

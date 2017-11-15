@@ -120,9 +120,14 @@ class SensorRobotEnv(BaseEnv):
             print(self.rewards)
             print("sum rewards")
             print(sum(self.rewards))
+
         self.HUD(state, a, done)
         self.reward += sum(self.rewards)
         self.eps_reward += sum(self.rewards)
+
+        debugmode = 0
+        if debugmode:
+            print("Eps frame {} reward {}".format(self.nframe, self.reward))
         if self.human:
             humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
             humanPos = (humanPos[0], humanPos[1], humanPos[2] + self.tracking_camera['z_offset'])
@@ -309,6 +314,10 @@ class CameraRobotEnv(SensorRobotEnv):
         visuals = self.get_visuals(rgb, depth)
         #self.screen.blit(visuals, [200, 200])
 
+
+        debugmode = 0
+        if debugmode:
+            print(sensor_meta['eye_pos'])
         debugmode = 0
         if debugmode:
             print("Environment visuals shape", visuals.shape)
