@@ -249,7 +249,8 @@ class HuskyFlagRunEnv(CameraRobotEnv):
 
     def _step(self, a):
         state, reward, done, meta = CameraRobotEnv._step(self, a)
-        if self.flag_timeout <= 0:
+        #print('dist %.1f' % self.robot.walk_target_dist)
+        if self.flag_timeout <= 0 or self.robot.walk_target_dist <= 0.5:
             self.flag_reposition()
         self.flag_timeout -= 1
 
@@ -298,6 +299,8 @@ class HuskyFetchEnv(CameraRobotEnv):
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
         self.lastid = None
+
+        self.obstacle_dist = 100
 
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
@@ -350,6 +353,7 @@ class HuskyFetchEnv(CameraRobotEnv):
         else:
             progress = float(self.potential - potential_old)
 
+        #print(a)
 
         if not a is None:
             electricity_cost = self.electricity_cost * float(np.abs(
@@ -378,18 +382,27 @@ class HuskyFetchEnv(CameraRobotEnv):
             print(alive)
             print("progress")
             print(progress)
+        obstacle_penalty = 0
+
+        #print("obs dist %.3f" %self.obstacle_dist)
+        if self.obstacle_dist < 0.7:
+            obstacle_penalty = self.obstacle_dist - 0.7
+
 
         return [
             #alive_score,
             progress,
+            obstacle_penalty
         ], done
 
 
     def _step(self, a):
         state, reward, done, meta = CameraRobotEnv._step(self, a)
-        if self.flag_timeout <= 0:
+        if self.flag_timeout <= 0 or (self.flag_timeout < 225 and self.robot.walk_target_dist < 0.8):
             self.flag_reposition()
         self.flag_timeout -= 1
+
+        self.obstacle_dist = (np.mean(state[16:48,16:48,-1]))
 
         return state, reward, done, meta
 
