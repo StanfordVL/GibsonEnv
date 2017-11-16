@@ -76,7 +76,9 @@ class SensorRobotEnv(BaseEnv):
     def _reset(self):
         debugmode = 1
         if debugmode:
-            print("Episode: steps:{} score:{}".format(self.nframe, self.eps_reward))
+            #print("Episode: steps:{} score:{}".format(self.nframe, self.eps_reward))
+            body_xyz = self.robot.body_xyz
+            print(body_xyz[0], body_xyz[1], body_xyz[2])
         self.nframe = 0
         self.eps_reward = 0
         BaseEnv._reset(self)

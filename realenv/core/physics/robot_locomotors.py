@@ -161,6 +161,9 @@ class WalkerBase(BaseRobot):
 
         if not configs.USE_SENSOR_OUTPUT:
             j.fill(0)
+
+        if not configs.USE_GPS_OUTPUT:
+            more.fill(0)
         return np.clip( np.concatenate([more] + [j] + [self.feet_contact]), -5, +5)
 
     def calc_potential(self):

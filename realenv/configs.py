@@ -2,9 +2,13 @@ import numpy as np
 
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = True
+
 RANDOM_TARGET_POSE  = True
 
-RANDOM_RANGE = "MID"
+RANDOM_TARGET_POSE_TEST  = True
+
+
+RANDOM_RANGE = "LARGE"
 
 LEARNING_RATE_NAME = "SMALL"
 
@@ -69,15 +73,15 @@ CLIMB_MODEL_ID = "11HB6XZSh1Q"
 NAVIGATE_MODEL_ID = "sRj553CTHiw"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
-USE_SENSOR_OUTPUT = False
-
+USE_SENSOR_OUTPUT = True
+USE_GPS_OUTPUT = False
 
 HIST_MATCHING = False
 USE_SEMANTICS = False
 SURFACE_NORMAL = False
 
 ## Human view camera settings
-DEBUG_CAMERA_FOLLOW = True
+DEBUG_CAMERA_FOLLOW = False
 
 
 USE_SMALL_FILLER = False
@@ -88,6 +92,9 @@ USE_SMOOTH_MESH = False
 HIGH_RES_MONITOR = False
 MAKE_VIDEO = False
 LIVE_DEMO = False
+
+
+PUT_RED_FLAGS = True
 
 TASK_POSE = {
     "11HB6XZSh1Q": {

@@ -259,7 +259,11 @@ class AntClimbEnv(CameraRobotEnv):
         return reward, done
 
     def flag_reposition(self):
-        if configs.RANDOM_TARGET_POSE:
+        if configs.RANDOM_TARGET_POSE_TEST:
+            delta_y = self.np_random.uniform(low=2 * self.delta_target[0],
+                                             high=2 * self.delta_target[0])
+            delta_x = 1.5 * self.delta_target[0]
+        elif configs.RANDOM_TARGET_POSE:
             delta_x = self.np_random.uniform(low=-self.delta_target[0],
                                              high=+self.delta_target[0])
             delta_y = self.np_random.uniform(low=-self.delta_target[1],
@@ -282,6 +286,12 @@ class AntClimbEnv(CameraRobotEnv):
         if self.visual_flagId is None:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x / self.robot.mjcf_scaling, walk_target_y / self.robot.mjcf_scaling, walk_target_z / self.robot.mjcf_scaling])
+
+            '''
+            for i in range(100):
+                visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+                self.last_flagId = p.createMultiBody(baseVisualShapeIndex=visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x / self.robot.mjcf_scaling + i, walk_target_y / self.robot.mjcf_scaling, walk_target_z / self.robot.mjcf_scaling])
+            '''
         else:
             last_flagPos, last_flagOrn = p.getBasePositionAndOrientation(self.last_flagId)
             p.resetBasePositionAndOrientation(self.last_flagId, [walk_target_x  / self.robot.mjcf_scaling, walk_target_y / self.robot.mjcf_scaling, walk_target_z / self.robot.mjcf_scaling], last_flagOrn)
