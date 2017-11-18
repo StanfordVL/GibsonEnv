@@ -314,7 +314,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul.terminate()
         if self.r_camera_dep is not None:
             self.r_camera_dep.terminate()
-        if SURFACE_NORMAL:
+        if configs.SURFACE_NORMAL:
             self.r_camera_norm.terminate()
 
     def get_blank_visuals(self):
@@ -400,7 +400,7 @@ class CameraRobotEnv(SensorRobotEnv):
             self.r_camera_mul.terminate()
             if self.r_camera_dep is not None:
                 self.r_camera_dep.terminate()
-            if SURFACE_NORMAL:
+            if configs.SURFACE_NORMAL:
                 self.r_camera_norm.terminate()
             while tb:
                 filename = tb.tb_frame.f_code.co_filename
