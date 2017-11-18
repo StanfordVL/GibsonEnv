@@ -1,5 +1,5 @@
 from realenv.data.datasets import ViewDataSet3D, get_model_path
-from realenv.configs import *
+from realenv import configs
 from realenv.core.render.show_3d2 import PCRenderer
 from realenv.core.render.profiler import Profiler
 from realenv.envs.env_bases import BaseEnv
@@ -121,7 +121,7 @@ class SensorRobotEnv(BaseEnv):
         if self.human:
             humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
             humanPos = (humanPos[0], humanPos[1], humanPos[2] + self.tracking_camera['z_offset'])
-            if MAKE_VIDEO:
+            if configs.MAKE_VIDEO or configs.DEBUG_CAMERA_FOLLOW:
                 p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],humanPos);       ## demo: kitchen, living room
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
@@ -411,7 +411,7 @@ class CameraRobotEnv(SensorRobotEnv):
             print(' %s: %s' %(exctype.__name__, value))
         sys.excepthook = camera_multi_excepthook
 
-        enable_render_smooth = 1 if USE_SMOOTH_MESH else 0
+        enable_render_smooth = 1 if configs.USE_SMOOTH_MESH else 0
 
         dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
@@ -422,7 +422,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
 
-        if SURFACE_NORMAL and MAKE_VIDEO:
+        if configs.SURFACE_NORMAL and configs.MAKE_VIDEO:
             self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
 
         os.chdir(cur_path)

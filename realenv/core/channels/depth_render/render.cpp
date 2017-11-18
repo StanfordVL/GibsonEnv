@@ -110,7 +110,7 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
   int nSize = w*h*3;
   // First let's create our buffer, 3 channels per Pixel
   //unsigned short* dataBuffer = (unsigned short*)malloc(nSize*sizeof(unsigned short));
-  //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
+  char* dataBuffer = (char*)malloc(nSize*sizeof(char));
 
   if (!dataBuffer) return false;
 

@@ -67,7 +67,8 @@ install() {
 	
 	git clone https://github.com/openai/baselines.git
 	cd baselines
-	git install -e .
+	pip install -e .
+	## need to remove one line from baseline
 	cd -
 
 	## Core multi channel GLFW

@@ -163,8 +163,8 @@ class AntClimbEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["climb"][0]
+        target_orn, target_pos   = configs.TASK_POSE[configs.CLIMB_MODEL_ID]["climb"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.CLIMB_MODEL_ID]["climb"][0]
 
         self.target_pos_gt = target_pos
         self.robot = AntClimber(initial_pos, initial_orn, 
