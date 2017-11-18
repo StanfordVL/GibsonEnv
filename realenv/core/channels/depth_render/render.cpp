@@ -662,7 +662,7 @@ int main( int argc, char * argv[] )
         int nByte = nSize*sizeof(float);
 
         // create buffer, 3 channels per Pixel
-        float* dataBuffer = (float*)malloc(nByte);
+        //float* dataBuffer = (float*)malloc(nByte);
         // First let's create our buffer, 3 channels per Pixel
         //float* dataBuffer = (float*)malloc(nByte);
         //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
