@@ -50,8 +50,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][-1]
-        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.NAVIGATE_MODEL_ID][0]
+        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
         self.robot = Husky(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
@@ -74,7 +74,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         
         alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
-        done = not alive or self.nframe > 1000
+        done = not alive or self.nframe > 400 or self.robot.body_xyz[2] < 0
         #done = alive < 0
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -144,7 +144,9 @@ class HuskyNavigateEnv(CameraRobotEnv):
             #feet_collision_cost
         ]
 
-        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
+        debugmode = 0
+        if debugmode:
+            print("Frame %f reward %f" % (self.nframe, sum(rewards)))
 
         self.total_reward = self.total_reward + sum(rewards)
         self.total_frame = self.total_frame + 1

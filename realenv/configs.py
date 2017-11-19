@@ -20,17 +20,36 @@ elif RANDOM_RANGE == "SMALL":
     RANDOM_INITIAL_RANGE_Y = [-0.05, 0.05]
     RANDOM_INITIAL_RANGE_Z = [0, 0.2]
     RANDOM_INITIAL_RANGE_DEG = [-np.pi/9, np.pi/9]
-else:
+elif RANDOM_RANGE == "MID":
     RANDOM_TARGET_RANGE = 0.2
     RANDOM_INITIAL_RANGE_X = [-0.2, 0.1]
     RANDOM_INITIAL_RANGE_Y = [-0.1, 0.1]
     RANDOM_INITIAL_RANGE_Z = [0, 0.2]
     RANDOM_INITIAL_RANGE_DEG = [-np.pi/4, np.pi/4]
-
-if LEARNING_RATE_NAME == 'LARGE':
-    LEARNING_RATE = 3e-6
+elif RANDOM_RANGE == "LARGE":
+    RANDOM_TARGET_RANGE = 0.5
+    RANDOM_INITIAL_RANGE_X = [-0.4, 0.1]
+    RANDOM_INITIAL_RANGE_Y = [-0.1, 0.1]
+    RANDOM_INITIAL_RANGE_Z = [0, 0.4]
+    RANDOM_INITIAL_RANGE_DEG = [-np.pi/2, np.pi/2]
 else:
+    RANDOM_TARGET_RANGE = 1
+    RANDOM_INITIAL_RANGE_X = [-0.6, 0.1]
+    RANDOM_INITIAL_RANGE_Y = [-0.1, 0.1]
+    RANDOM_INITIAL_RANGE_Z = [0, 0.4]
+    RANDOM_INITIAL_RANGE_DEG = [-2 *np.pi/3, 2* np.pi/3]
+
+if LEARNING_RATE_NAME == "SMALL":
     LEARNING_RATE = 3e-5
+elif LEARNING_RATE_NAME == "MID":
+    LEARNING_RATE = 3e-4
+elif LEARNING_RATE_NAME == "LARGE":
+    LEARNING_RATE = 3E-6
+
+
+CHOOSE_SMALL_RANDOM_RANGE = False
+CHOOSE_TINY_RANDOM_RANGE = False
+
 
 
 ENABLE_PROFILING = True
@@ -50,7 +69,7 @@ CLIMB_MODEL_ID = "TVHnHa4MZwE"
 NAVIGATE_MODEL_ID = "sRj553CTHiw"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
-USE_SENSOR_OUTPUT = True
+USE_SENSOR_OUTPUT = False
 
 
 HIST_MATCHING = False
@@ -58,7 +77,7 @@ USE_SEMANTICS = False
 SURFACE_NORMAL = False
 
 ## Human view camera settings
-DEBUG_CAMERA_FOLLOW = False
+DEBUG_CAMERA_FOLLOW = True
 
 
 USE_SMALL_FILLER = False
@@ -91,7 +110,9 @@ TASK_POSE = {
 
 
             #[[0, 0, 3.14], [-2.283, -0.64, 0.15]],  ## target bottom of stairs, closer to living room
-            [[0, 0, 3.14], [2 * -2.583, -1.64, 0.15]],   ## target at bottom of stairs
+            #[[0, 0, 3.14], [2 * -2.583, -1.64, 0.15]],   ## zoomed target at bottom of stairs
+            [[0, 0, 3.14], [2.583, -1.64, 0.15]],   ## target at bottom of stairs
+            
             #[[0, 0, 3.14/2], [-1.403, -1.84, 1.75]],
             #[[0, 0, 3.14], [-2, 3.5, 0.15]]         ## target living room
             #[[0, 0, 3.14/2], [-0.003, -1.84, 1.45]] ## target stairs target
@@ -100,10 +121,11 @@ TASK_POSE = {
     },
     "sRj553CTHiw": {
         "navigate": [
-            [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial
+            [[0, 0, 3.14/2], [-14.0747, 17.5126, 0.5]],
+            #[[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial: end of hall way
             #[[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
-            [[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]]
-                                                    ## target
+            #[[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]] ## target: gates entrance hall
+            [[0, 0, 0], [-8.6773, 1.4495, 0.5]]
         ],
         "fetch": [
             [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial
@@ -152,8 +174,11 @@ TASK_POSE = {
             [[0, 0, 0], [0, 0, 0]]
         ],
         "climb": [
+
+            #[[0, 0, 3.14/2], [11.5945, -1.8648, 0.8727]],
             [[0, 0, 3.14], [12.5945, -4.8648, 0.5727]],
-            #[[0, 0, 0], [0, 0, 0]],
+            
+
             [[0, 0, 0], [16.06, -5.07, -0.927]],  ## end of first half
             #[[0, 0, 0], [15.0, -1.92, -1.65]],    ## end of second half, right
             #[[0, 0, 0], [15.60, -7.98, -1.64]]    ## end of second half, left

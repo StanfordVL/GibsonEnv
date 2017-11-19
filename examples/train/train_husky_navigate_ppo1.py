@@ -43,13 +43,14 @@ def train(num_timesteps, seed):
     
     raw_env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
 
-    def policy_fn(name, ob_space, sensor_space, ac_space):
+#    def policy_fn(name, ob_space, sensor_space, ac_space):
+    def policy_fn(name, ob_space, ac_space):
         if args.mode == "SENSOR":
             return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
-        elif args.mode == "RGB":
-            return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+        else:
+            #return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
         #else:
-        #    return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess, kind='small')
 
 
     env = Monitor(raw_env, logger.get_dir() and
@@ -57,15 +58,15 @@ def train(num_timesteps, seed):
     env.seed(workerseed)
     gym.logger.setLevel(logging.WARN)
 
-    '''
+    
     pposgd_simple.learn(env, policy_fn,
         max_timesteps=int(num_timesteps * 1.1),
-        timesteps_per_actorbatch=1024,
+        timesteps_per_actorbatch=3000,
         clip_param=0.2, entcoeff=0.01,
-        optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
+        optim_epochs=4, optim_stepsize=3e-3, optim_batchsize=64,
         gamma=0.996, lam=0.95,
         schedule='linear',
-        save_name=args.save_name,
+        save_name="husky_navigate_ppo_{}".format(args.mode),
         save_per_acts=50,
         reload_name=args.reload_name
     )
@@ -83,7 +84,7 @@ def train(num_timesteps, seed):
     )
 
     env.close()
-
+    '''
 
 def callback(lcl, glb):
     # stop training if reward exceeds 199

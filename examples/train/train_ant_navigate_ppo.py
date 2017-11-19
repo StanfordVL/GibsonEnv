@@ -8,6 +8,7 @@ import gym, logging
 from mpi4py import MPI
 from realenv.envs.ant_env import AntNavigateEnv
 from baselines.common import set_global_seeds
+import pposgd_sensor
 import deepq
 import cnn_policy, mlp_policy
 import utils
@@ -31,24 +32,20 @@ def train(num_timesteps, seed):
     set_global_seeds(workerseed)
     env = AntNavigateEnv(human=args.human, is_discrete=False, mode=args.mode)
     
-    def policy_fn(name, ob_space, ac_space): #pylint: disable=W0613
-        if args.mode == "SENSOR":
-            return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
-        else:
-            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
-    env = bench.Monitor(env, logger.get_dir() and
-        osp.join(logger.get_dir(), str(rank)))
+    def mlp_policy_fn(name, sensor_space, ac_space):
+        return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
+
     env.seed(workerseed)
     gym.logger.setLevel(logging.WARN)
 
-
-    pposgd_simple.learn(env, policy_fn,
-        max_timesteps=int(num_timesteps * 1.1),
-        timesteps_per_actorbatch=256,
-        clip_param=0.2, entcoeff=0.01,
-        optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
+    pposgd_sensor.learn(env, mlp_policy_fn,
+        max_timesteps=int(num_timesteps * 1.1 * 5),
+        timesteps_per_actorbatch=6000,
+        clip_param=0.2, entcoeff=0.00,
+        optim_epochs=4, optim_stepsize=1e-4, optim_batchsize=64,
         gamma=0.99, lam=0.95,
-        schedule='linear'
+        schedule='linear',
+        save_per_acts=500
     )
     env.close()
 

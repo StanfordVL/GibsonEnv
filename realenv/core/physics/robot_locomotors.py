@@ -85,7 +85,7 @@ class WalkerBase(BaseRobot):
 
 
     def reset_base_position(self, enabled, delta_orn = np.pi/3, delta_pos = 0.2):
-        print("Reset base enabled", enabled)
+        #print("Reset base enabled", enabled)
         if not enabled:
             return
         pos = self.robot_body.current_position()
@@ -166,7 +166,7 @@ class WalkerBase(BaseRobot):
     def calc_potential(self):
         # progress in potential field is speed*dt, typical speed is about 2-3 meter per second, this potential will change 2-3 per frame (not per second),
         # all rewards have rew/frame units and close to 1.0 (hzyjerry) ==> make rewards similar scale
-        debugmode=1
+        debugmode=0
         if (debugmode):
             print("calc_potential: self.walk_target_dist x y")
             print(self.walk_target_dist)
@@ -249,7 +249,7 @@ class Ant(WalkerBase):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
-        self.mjcf_scaling = 0.35
+        self.mjcf_scaling = 0.25
         WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=power, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, mode=mode)
         self.is_discrete = is_discrete
         self.initial_pos = initial_pos
@@ -301,7 +301,7 @@ class Ant(WalkerBase):
         yaw   = self.initial_orn[2]
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
         self.robot_body.reset_position(self.initial_pos)
-        print("Initial position", self.initial_pos)
+        #print("Initial position", self.initial_pos)
 
         self.reset_base_position(configs.RANDOM_INITIAL_POSE, delta_pos = 0.25)
 
@@ -340,16 +340,20 @@ class AntClimber(Ant):
             is_discrete=is_discrete, 
             target_pos=target_pos, 
             resolution=resolution, 
-            mode=mode, power=2)
+            mode=mode, power=5)
+        self.eye_offset_orn = euler2quat(np.pi/4, 0, np.pi/2, axes='sxyz')  ## looking 45 degs down
         
     def robot_specific_reset(self):
         Ant.robot_specific_reset(self)
         amplify = 1
+        for j in self.jdict.keys():
+            self.jdict[j].power_coef *= amplify
+        '''
         self.jdict["ankle_1"].power_coef = amplify * self.jdict["ankle_1"].power_coef
         self.jdict["ankle_2"].power_coef = amplify * self.jdict["ankle_2"].power_coef
         self.jdict["ankle_3"].power_coef = amplify * self.jdict["ankle_3"].power_coef
         self.jdict["ankle_4"].power_coef = amplify * self.jdict["ankle_4"].power_coef
-        
+        '''
         debugmode=0
         if debugmode:
             for k in self.jdict.keys():
@@ -370,7 +374,7 @@ class AntClimber(Ant):
         """Alive requires the ant's head to not touch the ground, it's roll
         and pitch cannot be too large"""
         #return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
-        alive = roll < 2*np.pi/3 and roll > -2*np.pi/3 and pitch > -2*np.pi/3 and pitch < 2*np.pi/3
+        alive = roll < np.pi/2 and roll > -np.pi/2 and pitch > -np.pi/2 and pitch < np.pi/2
         debugmode = 0
         if debugmode:
             print("roll, pitch")
@@ -382,14 +386,16 @@ class AntClimber(Ant):
     def is_close_to_goal(self):
         body_pose = self.robot_body.pose()
         parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
-        self.body_xyz = (
-        parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
+        self.body_xyz = (parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
         dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y, self.body_xyz[2] - self.walk_target_z])
+        debugmode = 0
+        if debugmode:
+            print(np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y, self.body_xyz[2] - self.walk_target_z]), [self.body_xyz[0], self.body_xyz[1], self.body_xyz[2]], [self.walk_target_x, self.walk_target_y, self.walk_target_z])
         return dist_to_goal < 0.5
 
 
     def reset_base_position(self, enabled, delta_orn = np.pi/9, delta_pos = 0.2):
-        print("Reset base enabled", enabled)
+        #print("Reset base enabled", enabled)
         if not enabled:
             return
         pos = self.robot_body.current_position()

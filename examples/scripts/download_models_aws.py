@@ -40,8 +40,8 @@ ssh -i universe.pem ubuntu@ec2-52-24-76-187.us-west-2.compute.amazonaws.com
 Universe ant climb 3
 ec2-52-42-249-133.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-42-249-133.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, small init random, small lr")
+#aws_addr.append("ec2-52-42-249-133.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, small init random, small lr")
 
 '''
 Universe ant climb 4
@@ -63,15 +63,15 @@ ec2-34-214-189-116.us-west-2.compute.amazonaws.com
 Universe ant climb 6
 ec2-34-216-35-8.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-216-35-8.us-west-2.compute.amazonaws.com")
-aws_names.append("RGBD & Sensor, large init random, large lr")
+#aws_addr.append("ec2-34-216-35-8.us-west-2.compute.amazonaws.com")
+#aws_names.append("RGBD & Sensor, large init random, large lr")
 
 '''
 Universe ant climb 7
 ec2-34-213-149-40.us-west-2.compute.amazonaws.com
 '''
-#aws_addr.append("ec2-34-213-149-40.us-west-2.compute.amazonaws.com")
-#aws_names.append("Depth & Sensor, large init random, small lr")
+aws_addr.append("ec2-34-213-149-40.us-west-2.compute.amazonaws.com")
+aws_names.append("Depth & Sensor, large init random, small lr")
 
 
 '''
@@ -101,7 +101,7 @@ ec2-34-212-248-24.us-west-2.compute.amazonaws.com
 Universe ant climb 11
 ec2-34-210-182-251.us-west-2.compute.amazonaws.com
 '''
-#aws_addr.append("ec2-34-210-182-251.us-west-2.compute.amazonaws.com")
+#aws_addr.append("ec2-52-34-119-136.us-west-2.compute.amazonaws.com")
 #aws_names.append("Depth & Sensor, tiny init random")
 
 
@@ -156,7 +156,7 @@ def main():
         local_dir = local_dirs[i]
 
         aws_cmd = mdl_cmd.format(host, local_dir)
-        #os.system(aws_cmd)
+        os.system(aws_cmd)
         download_logs(i)
 
 if __name__ == '__main__':
@@ -170,6 +170,7 @@ if __name__ == '__main__':
             os.mkdir(aws_local)
         aws_locals.append(aws_local)
         local_dir = os.path.join(aws_local, remote_dir)
-        if os.path.isdir(local_dir):
-            local_dirs.append(local_dir)
+        if not os.path.isdir(local_dir):
+            os.mkdir(local_dir)
+        local_dirs.append(local_dir)
     main()

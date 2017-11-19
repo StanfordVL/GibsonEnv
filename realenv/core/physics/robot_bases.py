@@ -168,7 +168,6 @@ class BodyPart:
         return self.get_pose()[3:]
 
     def reset_position(self, position):
-        print("robot scale", self.scale)
         p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], np.array(position) / self.scale, self.current_orientation())
 
     def reset_orientation(self, orientation):

@@ -68,12 +68,17 @@ class SensorRobotEnv(BaseEnv):
         
         self.gpu_count = gpu_count
         self.nframe = 0
+        self.eps_reward = 0
         
     def get_keys_to_action(self):
         return self.robot.keys_to_action
 
     def _reset(self):
+        debugmode = 1
+        if debugmode:
+            print("Episode: steps:{} score:{}".format(self.nframe, self.eps_reward))
         self.nframe = 0
+        self.eps_reward = 0
         BaseEnv._reset(self)
 
         if not self.ground_ids:
@@ -115,9 +120,14 @@ class SensorRobotEnv(BaseEnv):
             print(self.rewards)
             print("sum rewards")
             print(sum(self.rewards))
+
         self.HUD(state, a, done)
         self.reward += sum(self.rewards)
+        self.eps_reward += sum(self.rewards)
 
+        debugmode = 0
+        if debugmode:
+            print("Eps frame {} reward {}".format(self.nframe, self.reward))
         if self.human:
             humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
             humanPos = (humanPos[0], humanPos[1], humanPos[2] + self.tracking_camera['z_offset'])
@@ -126,7 +136,7 @@ class SensorRobotEnv(BaseEnv):
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
-        debugmode = 1
+        debugmode = 0
         if debugmode:
             print("Camera env eye position", eye_pos)
         x, y, z ,w = self.robot.eyes.current_orientation()
@@ -136,6 +146,8 @@ class SensorRobotEnv(BaseEnv):
         if (debugmode):
             print("rewards")
             print(sum(self.rewards))
+
+        #print(self.reward, self.rewards, self.robot.walk_target_dist_xyz)
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
 
     def calc_rewards(self, a, state):
@@ -302,6 +314,10 @@ class CameraRobotEnv(SensorRobotEnv):
         visuals = self.get_visuals(rgb, depth)
         #self.screen.blit(visuals, [200, 200])
 
+
+        debugmode = 0
+        if debugmode:
+            print(sensor_meta['eye_pos'])
         debugmode = 0
         if debugmode:
             print("Environment visuals shape", visuals.shape)
