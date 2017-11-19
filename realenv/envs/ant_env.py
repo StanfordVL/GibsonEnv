@@ -158,7 +158,7 @@ class AntClimbEnv(CameraRobotEnv):
             gpu_count=0, 
             resolution="NORMAL"):
         self.human = human
-        self.model_id = configs.NAVIGATE_MODEL_ID
+        self.model_id = configs.CLIMB_MODEL_ID
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.resolution = resolution

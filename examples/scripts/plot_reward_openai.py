@@ -123,6 +123,12 @@ log_dir.append("openai-2017-11-12-14-03-35-785424")
 
 
 
+aws_dirs = []
+file_names = []
+
+remote_filename = "0.monitor.csv"
+name_template = "monitor_{}_{}.csv"
+
 scp_cmd = "scp -i /home/zhiyang/Dropbox/CVGL/universe.pem ubuntu@{}:/tmp/{}/{} {}"
 
 def download(index):
@@ -167,7 +173,6 @@ def plot(index, axis):
     step_length = sum(all_steps)
     total_time = num_rows[-1, 2]
     time_length = sum(all_times)
-
     smoothed_reward = smooth_median(all_rewards)
     smoothed_range = np.arange(0, len(smoothed_reward), 1)
 
@@ -177,6 +182,31 @@ def plot(index, axis):
     transform=axis[index].transAxes)
     axis[index].text(.5, .1, "Time ts: {}".format(time_length), horizontalalignment='center',
     transform=axis[index].transAxes)
+    
+
+def get_smooth(index):
+    with open(file_names[index], 'r') as csvfile:
+        csv_rows = csv.reader(csvfile, delimiter=' ', quotechar='|')
+        str_rows = []
+        num_rows = []
+        for row in csv_rows:
+            str_rows.append(row[0])
+        for row in str_rows:
+            try:
+                num_rows.append([float(num) for num in row.split(',')])
+            except:
+                continue
+        num_rows = np.array(num_rows)
+
+    all_rewards = num_rows[:, 0].tolist()
+    total_time = num_rows[-1, 2]
+    all_steps = num_rows[:, 1].tolist()
+    #print("Total time", total_time, "averge step", np.mean(all_steps))
+    return smooth_median(all_rewards)
+
+    smoothed_reward = smooth_median(all_rewards)
+    smoothed_range = np.arange(0, len(smoothed_reward), 1)
+
     
 
 def smooth_median(rewards, factor=10):

@@ -27,7 +27,7 @@ else:
     RANDOM_INITIAL_RANGE_Z = [0, 0.2]
     RANDOM_INITIAL_RANGE_DEG = [-np.pi/4, np.pi/4]
 
-if CHOOSE_SMALL_LEARNING_RATE:
+if LEARNING_RATE_NAME == 'LARGE':
     LEARNING_RATE = 3e-6
 else:
     LEARNING_RATE = 3e-5
@@ -152,11 +152,18 @@ TASK_POSE = {
             [[0, 0, 0], [0, 0, 0]]
         ],
         "climb": [
-            [[0, 0, 0], [0, 0, 0]],
-            [[0, 0, 0], [0, 0, 0]]
+            [[0, 0, 3.14], [12.5945, -4.8648, 0.5727]],
+            #[[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [16.06, -5.07, -0.927]],  ## end of first half
+            #[[0, 0, 0], [15.0, -1.92, -1.65]],    ## end of second half, right
+            #[[0, 0, 0], [15.60, -7.98, -1.64]]    ## end of second half, left
         ]
 
     }
+}
+
+OFFSET_GROUND = {
+    "TVHnHa4MZwE": -3,
 }
 
 ## Initial locations

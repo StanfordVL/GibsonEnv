@@ -58,7 +58,13 @@ class BuildingScene(Scene):
         planeName = os.path.join(pybullet_data.getDataPath(), "mjcf/ground_plane.xml")
         self.ground_plane_mjcf = p.loadMJCF(planeName)
         #print(self.ground_plane_mjcf)
-        p.resetBasePositionAndOrientation(self.ground_plane_mjcf[0], posObj = [0,0,-0.5], ornObj = [0,0,0,1])
+
+        if model_id in configs.OFFSET_GROUND.keys():
+            z_offset = configs.OFFSET_GROUND[model_id]
+        else:
+            z_offset = -0.5
+
+        p.resetBasePositionAndOrientation(self.ground_plane_mjcf[0], posObj = [0,0,z_offset], ornObj = [0,0,0,1])
         #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
         #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
         #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
