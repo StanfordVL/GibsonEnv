@@ -126,7 +126,7 @@ class SensorRobotEnv(BaseEnv):
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
-        debugmode = 0
+        debugmode = 1
         if debugmode:
             print("Camera env eye position", eye_pos)
         x, y, z ,w = self.robot.eyes.current_orientation()

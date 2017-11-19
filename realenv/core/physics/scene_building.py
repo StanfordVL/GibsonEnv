@@ -29,7 +29,7 @@ class BuildingScene(Scene):
 
         if robot.model_type == "MJCF":
             MJCF_SCALING = robot.mjcf_scaling
-            scaling = [1.0/MJCF_SCALING, 1.0/MJCF_SCALING, 1.0/MJCF_SCALING]
+            scaling = [2.0/MJCF_SCALING, 1.0/MJCF_SCALING, 1.0/MJCF_SCALING]
         else:
             scaling  = [1, 1, 1]
         magnified = [2, 2, 2]

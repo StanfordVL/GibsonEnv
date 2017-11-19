@@ -48,3 +48,5 @@ examples/train/models/
 
 log_*/
 baselines/
+aws/
+monitor_*
