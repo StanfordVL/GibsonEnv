@@ -72,7 +72,7 @@ FETCH_MODEL_ID = "11HB6XZSh1Q"
 USE_SENSOR_OUTPUT = False
 
 
-HIST_MATCHING = False
+HIST_MATCHING = True
 USE_SEMANTICS = True
 SURFACE_NORMAL = True
 
@@ -86,9 +86,9 @@ USE_SMOOTH_MESH = False
 
 ## Render window settings
 HIGH_RES_MONITOR = False
-MAKE_VIDEO = True
+MAKE_VIDEO = False
 LIVE_DEMO = False
-DISPLAY_UI = False
+DISPLAY_UI = True
 
 TASK_POSE = {
     "11HB6XZSh1Q": {

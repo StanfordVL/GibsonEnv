@@ -50,7 +50,7 @@ class SensorRobotEnv(BaseEnv):
         self.k = 5
         self.robot_tracking_id = -1
 
-        self.scale_up  = 4
+        self.scale_up  = 1
         self.dataset  = ViewDataSet3D(
             transform = np.array,
             mist_transform = np.array,
@@ -277,7 +277,7 @@ class CameraRobotEnv(SensorRobotEnv):
         pose = [eye_pos, eye_quat]
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
-        rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        rgb, depth, _ = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         #self.screen.fill([0, 0, 0])
         visuals = self.get_visuals(rgb, depth)
@@ -306,13 +306,14 @@ class CameraRobotEnv(SensorRobotEnv):
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
                 
         #with Profiler("Render to screen"):
-        rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        rgb, depth, semantics = self.r_camera_rgb.renderOffScreen(pose, top_k)
         if configs.DISPLAY_UI:
             self.r_camera_rgb.renderToUI(self.UI)
             physics_rgb = self.render_physics()
             map_rgb     = self.render_map()
             self.UI.update_physics(physics_rgb[::2, ::2, :])
             self.UI.update_map(map_rgb[::2, ::2, :])
+            self.UI.update_sem(semantics[::2, ::2, :])
         elif self.human:
             self.r_camera_rgb.renderToScreen()
 

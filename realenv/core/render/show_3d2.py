@@ -441,7 +441,7 @@ class PCRenderer:
         #with Profiler("Rendering off screen"):
         if not k_views:
             all_dist, _ = self.rankPosesByDistance(pose)
-            k_views = (np.argsort(all_dist))[:self.k]
+            k_views = (np.argsort(alla_dist))[:self.k]
         if set(k_views) != self.old_topk:
             self.imgs_topk = np.array([self.imgs[i] for i in k_views])
             self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
@@ -460,7 +460,7 @@ class PCRenderer:
         if MAKE_VIDEO:
             self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
         #return self.show_rgb, self.target_depth[:, :, None]
-        return self.show_rgb, self.smooth_depth[:, :, None]
+        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics
 
 
     def renderToUI(self, UI):
@@ -490,8 +490,8 @@ class PCRenderer:
             UI.update_rgb(rgb)
             UI.update_depth(depth * 16.)
 
-            if configs.USE_SEMANTICS:
-                UI.update_sem(semantics)
+            #if configs.USE_SEMANTICS:
+            #    UI.update_sem(semantics)
             if configs.SURFACE_NORMAL:
                 UI.update_normal(normal * 255)
             time.sleep(0.005)
