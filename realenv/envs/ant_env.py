@@ -132,7 +132,7 @@ class AntNavigateEnv(CameraRobotEnv):
         walk_target_y = self.robot.walk_target_y / self.robot.mjcf_scaling
 
         self.flag = None
-        if self.human:
+        if self.human and not configs.DISPLAY_UI:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
@@ -285,7 +285,10 @@ class AntClimbEnv(CameraRobotEnv):
             return
 
         if self.visual_flagId is None:
-            self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+            if configs.DISPLAY_UI:
+                self.visual_flagId = -1
+            else:
+                self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x / self.robot.mjcf_scaling, walk_target_y / self.robot.mjcf_scaling, walk_target_z / self.robot.mjcf_scaling])
         else:
             last_flagPos, last_flagOrn = p.getBasePositionAndOrientation(self.last_flagId)

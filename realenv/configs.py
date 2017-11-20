@@ -88,6 +88,7 @@ USE_SMOOTH_MESH = False
 HIGH_RES_MONITOR = False
 MAKE_VIDEO = False
 LIVE_DEMO = False
+DISPLAY_UI = True
 
 TASK_POSE = {
     "11HB6XZSh1Q": {

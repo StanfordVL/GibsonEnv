@@ -305,6 +305,11 @@ class CameraRobotEnv(SensorRobotEnv):
         #with Profiler("Render to screen"):
         if not self.human:
             rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        elif configs.DISPLAY_UI:
+            debugmode = 0
+            if debugmode:
+                print("rendering to ui")
+            rgb, depth = self.r_camera_rgb.renderToUI(pose, top_k)
         else:
             rgb, depth = self.r_camera_rgb.renderToScreen(pose, top_k)
         

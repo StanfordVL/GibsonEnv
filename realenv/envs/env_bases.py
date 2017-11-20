@@ -13,6 +13,7 @@ import os
 import json
 import numpy as np
 from transforms3d import euler, quaternions
+from realenv import configs
 from realenv.core.physics.physics_object import PhysicsObject
 from realenv.core.render.profiler import Profiler
 from realenv.configs import *
@@ -41,7 +42,9 @@ class BaseEnv(gym.Env):
         #   @self.robot
         
         #self.physicsClientId = p.connect(p.SHARED_MEMORY)
-        if (self.human):
+        if configs.DISPLAY_UI:
+            self.physicsClientId = p.connect(p.DIRECT)
+        elif (self.human):
             self.physicsClientId = p.connect(p.GUI)
             if MAKE_VIDEO:
                 #self.set_window(-1, -1, 1024, 512)

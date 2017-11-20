@@ -19,6 +19,7 @@ from realenv.core.render.profiler import Profiler
 from multiprocessing import Process
 
 from realenv.data.datasets import ViewDataSet3D
+from realenv.envs.env_ui import SixViewUI
 from realenv.configs import *
 from realenv import configs
 from realenv.core.render.completion import CompletionNet
@@ -162,7 +163,13 @@ class PCRenderer:
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
         if human:
-            self.renderToScreenSetup()
+            if configs.DISPLAY_UI:
+                self.renderToUISetup()
+            else:
+                self.renderToScreenSetup()
+
+    def renderToUISetup(self):
+        self.UI = SixViewUI()
 
     def renderToScreenSetup(self):
         cv2.namedWindow('RGB cam')
@@ -459,6 +466,30 @@ class PCRenderer:
         return self.show_rgb, self.smooth_depth[:, :, None]
 
 
+    def renderToUI(self, pose, k_views=None):
+        #cv2.imshow('Depth cam', depth/16.)
+        #cv2.imshow('RGB cam',rgb)
+        #cv2.imshow('RGB prefilled', unfilled_rgb)
+        #cv2.imshow('Semantics', semantics)
+        #cv2.imshow("Surface Normal", normal)
+        self.renderOffScreen(pose, k_views)
+        if configs.DISPLAY_UI:
+            debugmode = 1
+            depth = self.target_depth[0:511:2, 0:511:2, None]
+            depth = np.concatenate((depth, depth, depth), axis=2)
+            rgb = cv2.cvtColor(self.show_rgb, cv2.COLOR_BGR2RGB)
+            if debugmode:
+                print("Inside render to UI")
+                print("rgb shape", self.show_rgb.shape)
+                print("depth shape", depth.shape)
+                print("depth mean", np.mean(depth), "depth max", np.max(depth))
+            self.UI.refresh()
+            self.UI.update_rgb(rgb)
+            self.UI.update_depth(depth * 16.)
+            time.sleep(0.005)
+        return self.show_rgb, self.smooth_depth[:, :, None]
+
+
     def renderToScreen(self, pose, k_views=None):
         t0 = time.time()
         self.renderOffScreen(pose, k_views)
@@ -518,7 +549,6 @@ class PCRenderer:
         cv2.waitKey(1)
         #return self.show_rgb, self.target_depth[:, :, None]
         return self.show_rgb, self.smooth_depth[:, :, None]
-        
 
 def show_target(target_img):
     cv2.namedWindow('target')
