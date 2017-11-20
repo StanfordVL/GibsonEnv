@@ -82,7 +82,7 @@ class SixViewUI(SimpleUI):
         #depth = pygame.transform.rotate(depth, 90)
         self.add_image(np.swapaxes(depth, 0, 1), self.POS_DEPTH[0], self.POS_DEPTH[1])
 
-    def update_surf(self, surf):
+    def update_normal(self, surf):
         self.add_image(np.swapaxes(surf, 0, 1), self.POS_SURF[0], self.POS_SURF[1])        
     def update_map(self, map_img):
         self.add_image(np.swapaxes(map_img, 0, 1), self.POS_MAP[0], self.POS_MAP[1])

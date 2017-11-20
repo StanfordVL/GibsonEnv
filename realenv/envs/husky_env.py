@@ -158,7 +158,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         walk_target_y = self.robot.walk_target_y
 
         self.flag = None
-        if self.human:
+        if self.human and not configs.DISPLAY_UI:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
 
@@ -292,7 +292,7 @@ class HuskyClimbEnv(CameraRobotEnv):
         #walk_target_z = self.robot.initial_pos[2]
 
         self.flag = None
-        if self.human:
+        if self.human and not configs.DISPLAY_UI:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, walk_target_z])
         #print("Placing the flag at", p.getBasePositionAndOrientation(self.last_flagId))
@@ -351,7 +351,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         self.flag_timeout = 600 / self.scene.frame_skip
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
-        if self.human:
+        if self.human and not configs.DISPLAY_UI:
             if self.lastid:
                 p.removeBody(self.lastid)
 

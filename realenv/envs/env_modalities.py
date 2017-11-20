@@ -228,7 +228,6 @@ class CameraRobotEnv(SensorRobotEnv):
         self.use_filler = use_filler
         if self.requires_camera_input:
             self.model_path = get_model_path(self.model_id)
-        SensorRobotEnv.__init__(self, scene_type, gpu_count)
         if self.robot.resolution == "SMALL":
             self.windowsz = 64
             self.scale_up = 4
@@ -248,6 +247,7 @@ class CameraRobotEnv(SensorRobotEnv):
             self.windowsz = 1024
             self.scale_up = 1
         
+        SensorRobotEnv.__init__(self, scene_type, gpu_count)
         self.setup_rendering_camera()
         
         
@@ -309,16 +309,14 @@ class CameraRobotEnv(SensorRobotEnv):
         rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
         if configs.DISPLAY_UI:
             self.r_camera_rgb.renderToUI(self.UI)
+            physics_rgb = self.render_physics()
+            map_rgb     = self.render_map()
+            self.UI.update_physics(physics_rgb[::2, ::2, :])
+            self.UI.update_map(map_rgb[::2, ::2, :])
         elif self.human:
             self.r_camera_rgb.renderToScreen()
 
-        
-        #self.screen_arr[0:rgb.shape[0], 0:rgb.shape[1], :] = rgb
-        #surfarray.blit_array(self.screen, self.screen_arr)
-        #pygame.display.flip()
         visuals = self.get_visuals(rgb, depth)
-        #self.screen.blit(visuals, [200, 200])
-
 
         debugmode = 0
         if debugmode:
@@ -443,7 +441,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
 
-        if configs.SURFACE_NORMAL and configs.MAKE_VIDEO:
+        if configs.SURFACE_NORMAL:
             self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
 
         os.chdir(cur_path)

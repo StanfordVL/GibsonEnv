@@ -113,7 +113,7 @@ class PCRenderer:
         self.socket_dept = self._context_dept.socket(zmq.REQ)
         self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
-        if configs.MAKE_VIDEO:
+        if configs.SURFACE_NORMAL:
             self.socket_norm = self._context_norm.socket(zmq.REQ)
             self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
 
@@ -304,7 +304,7 @@ class PCRenderer:
         mist_msg = self.socket_mist.recv()
         self.socket_dept.send_string(s)
         dept_msg = self.socket_dept.recv()
-        if MAKE_VIDEO:
+        if configs.SURFACE_NORMAL:
             self.socket_norm.send_string(s)
             norm_msg = self.socket_norm.recv()
 
@@ -322,30 +322,35 @@ class PCRenderer:
         if pano:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
-            if MAKE_VIDEO:
+            if configs.SURFACE_NORMAL:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((h, w))
         else:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
-            if MAKE_VIDEO:
+            if configs.SURFACE_NORMAL:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n))
+
+        if configs.SURFACE_NORMAL:
+            debugmode = 1
+            if debugmode:
+                print("Inside show3d: surface normal max", np.max(normal_arr), "mean", np.mean(normal_arr))
             
         #print("mist", np.mean(opengl_arr), np.min(opengl_arr), np.max(opengl_arr))
-        def _render_pc(opengl_arr):
+        def _render_pc(opengl_arr, imgs_pc, show_pc):
             #with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
             poses_after = [
                 pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
-                for i in range(len(imgs))]
+                for i in range(len(imgs_pc))]
             #opengl_arr = np.zeros((h,w), dtype = np.float32)
-            cuda_pc.render(ct.c_int(len(imgs)),
-                           ct.c_int(imgs[0].shape[0]),
-                           ct.c_int(imgs[0].shape[1]),
+            cuda_pc.render(ct.c_int(len(imgs_pc)),
+                           ct.c_int(imgs_pc[0].shape[0]),
+                           ct.c_int(imgs_pc[0].shape[1]),
                            ct.c_int(self.showsz),
                            ct.c_int(self.showsz),
-                           imgs.ctypes.data_as(ct.c_void_p),
+                           imgs_pc.ctypes.data_as(ct.c_void_p),
                            depths.ctypes.data_as(ct.c_void_p),
                            np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                           show.ctypes.data_as(ct.c_void_p),
+                           show_pc.ctypes.data_as(ct.c_void_p),
                            opengl_arr.ctypes.data_as(ct.c_void_p)
                           )
 
@@ -355,10 +360,12 @@ class PCRenderer:
         #[t.start() for t in threads]
         #[t.join() for t in threads]
 
-        if need_filler:
-            _render_pc(opengl_arr)
+        #if need_filler:
+        _render_pc(opengl_arr, imgs, show)
+        if configs.USE_SEMANTICS:
+            _render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
 
-        if MAKE_VIDEO and show_unfilled is not None:
+        if show_unfilled is not None:
             show_unfilled[:, :, :] = show[:, :, :]
 
         #with Profiler("NN total time", enable= ENABLE_PROFILING):
@@ -381,7 +388,7 @@ class PCRenderer:
 
         self.target_depth = opengl_arr ## target depth
         self.smooth_depth = smooth_arr
-        if MAKE_VIDEO:
+        if configs.SURFACE_NORMAL:
             self.surface_normal = normal_arr
 
         #Histogram matching happens here 
@@ -445,11 +452,7 @@ class PCRenderer:
         #with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
         self.show.fill(0)
 
-        # (hzyjerry): currently semantics not compatible with RGBD
-        if USE_SEMANTICS:
-            self.render(self.semantics_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show_semantics)
-        else:
-            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
+        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
 
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
@@ -461,24 +464,36 @@ class PCRenderer:
 
 
     def renderToUI(self, UI):
-        #cv2.imshow('Depth cam', depth/16.)
-        #cv2.imshow('RGB cam',rgb)
-        #cv2.imshow('RGB prefilled', unfilled_rgb)
-        #cv2.imshow('Semantics', semantics)
-        #cv2.imshow("Surface Normal", normal)
         if configs.DISPLAY_UI:
             debugmode = 1
             depth = self.target_depth[0:511:2, 0:511:2, None]
             depth = np.concatenate((depth, depth, depth), axis=2)
             rgb = cv2.cvtColor(self.show_rgb, cv2.COLOR_BGR2RGB)
+            if configs.USE_SEMANTICS:
+                semantics = cv2.cvtColor(self.show_semantics, cv2.COLOR_BGR2RGB)[0:511:2, 0:511:2, :]
+            #normal = self.surface_normal[0:511:2, 0:511:2]
+            if configs.SURFACE_NORMAL:
+                normal = self.surface_normal[0:511:2, 0:511:2, None]
+                normal.flags.writeable = True
+                normal[normal > 5] = 0
+                normal = np.concatenate((normal, normal, normal), axis=2)
             if debugmode:
                 print("Inside render to UI")
                 print("rgb shape", self.show_rgb.shape)
                 print("depth shape", depth.shape)
                 print("depth mean", np.mean(depth), "depth max", np.max(depth))
+                if configs.SURFACE_NORMAL:
+                    print("normal shape", normal.shape)
+                    print("normal mean", np.mean(normal * 255), "normal max", np.max(normal))
+
             UI.refresh()
             UI.update_rgb(rgb)
             UI.update_depth(depth * 16.)
+
+            if configs.USE_SEMANTICS:
+                UI.update_sem(semantics)
+            if configs.SURFACE_NORMAL:
+                UI.update_normal(normal * 255)
             time.sleep(0.005)
 
     def renderToScreen(self):
@@ -516,7 +531,7 @@ class PCRenderer:
         def _render_normal(normal):
             if not SURFACE_NORMAL:
                 return
-            print("normal", np.mean(normal), np.max(normal))
+            #print("normal", np.mean(normal), np.max(normal))
             cv2.imshow("Surface Normal", normal)
          
         """

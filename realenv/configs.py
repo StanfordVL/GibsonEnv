@@ -73,8 +73,8 @@ USE_SENSOR_OUTPUT = False
 
 
 HIST_MATCHING = False
-USE_SEMANTICS = False
-SURFACE_NORMAL = False
+USE_SEMANTICS = True
+SURFACE_NORMAL = True
 
 ## Human view camera settings
 DEBUG_CAMERA_FOLLOW = True
@@ -86,14 +86,15 @@ USE_SMOOTH_MESH = False
 
 ## Render window settings
 HIGH_RES_MONITOR = False
-MAKE_VIDEO = False
+MAKE_VIDEO = True
 LIVE_DEMO = False
-DISPLAY_UI = True
+DISPLAY_UI = False
 
 TASK_POSE = {
     "11HB6XZSh1Q": {
         "navigate": [
-            [[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
+            [[0, 0, 3.14/2], [-2, 3.5, 0.4]],       ## for making visual
+            #[[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
             [[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
         ],
         "fetch": [
@@ -175,7 +176,6 @@ TASK_POSE = {
             [[0, 0, 0], [0, 0, 0]]
         ],
         "climb": [
-
             #[[0, 0, 3.14/2], [11.5945, -1.8648, 0.8727]],
             [[0, 0, 3.14], [12.5945, -4.8648, 0.5727]],
             

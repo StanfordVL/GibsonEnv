@@ -57,8 +57,8 @@ class BaseEnv(gym.Env):
         self._cam_dist = 3
         self._cam_yaw = 0
         self._cam_pitch = -30
-        self._render_width = 320
-        self._render_height = 240
+        self._render_width = self.windowsz
+        self._render_height = self.windowsz
 
         if scene_type == "stadium":
             self.scene = self.create_single_player_stadium_scene()
@@ -104,12 +104,7 @@ class BaseEnv(gym.Env):
         self.scene.episode_restart()
         return state
 
-    def _render(self, mode, close):
-        if (mode=="human"):
-            self.human = True
-        if mode != "rgb_array":
-            return np.array([])
-        
+    def _render(self, mode, close):        
         base_pos=[0,0,0]
         if (hasattr(self,'robot')):
             if (hasattr(self.robot,'body_xyz')):
@@ -120,6 +115,57 @@ class BaseEnv(gym.Env):
             distance=self._cam_dist,
             yaw=self._cam_yaw,
             pitch=self._cam_pitch,
+            roll=0,
+            upAxisIndex=2)
+        proj_matrix = p.computeProjectionMatrixFOV(
+            fov=60, aspect=float(self._render_width)/self._render_height,
+            nearVal=0.1, farVal=100.0)
+        (_, _, px, _, _) = p.getCameraImage(
+        width=self._render_width, height=self._render_height, viewMatrix=view_matrix,
+            projectionMatrix=proj_matrix,
+            renderer=p.ER_BULLET_HARDWARE_OPENGL
+            )
+        rgb_array = np.array(px)
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
+
+    def render_physics(self):        
+        base_pos=[0,0,0]
+        if (hasattr(self,'robot')):
+            if (hasattr(self.robot,'body_xyz')):
+                base_pos = self.robot.body_xyz
+        
+        view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=base_pos,
+            distance=self.tracking_camera["distance"],
+            yaw=self.tracking_camera["yaw"],
+            pitch=self.tracking_camera["pitch"],
+            roll=0,
+            upAxisIndex=2)
+        proj_matrix = p.computeProjectionMatrixFOV(
+            fov=60, aspect=float(self._render_width)/self._render_height,
+            nearVal=0.1, farVal=100.0)
+        (_, _, px, _, _) = p.getCameraImage(
+        width=self._render_width, height=self._render_height, viewMatrix=view_matrix,
+            projectionMatrix=proj_matrix,
+            renderer=p.ER_BULLET_HARDWARE_OPENGL
+            )
+        rgb_array = np.array(px)
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
+
+    def render_map(self):
+        base_pos=[0, 0, -3]
+        if (hasattr(self,'robot')):
+            if (hasattr(self.robot,'body_xyz')):
+                base_pos[0] = self.robot.body_xyz[0]
+                base_pos[1] = self.robot.body_xyz[1]
+        
+        view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=base_pos,
+            distance=25,
+            yaw=0,
+            pitch=-89,
             roll=0,
             upAxisIndex=2)
         proj_matrix = p.computeProjectionMatrixFOV(
