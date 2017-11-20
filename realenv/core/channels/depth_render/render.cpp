@@ -965,20 +965,41 @@ int main( int argc, char * argv[] )
                 glDisableVertexAttribArray(1);
                 glDisableVertexAttribArray(2);
 
-                zmq::message_t reply (windowWidth*windowHeight*sizeof(float));
-                float * reply_data_handle = (float*)reply.data();
-                glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, windowWidth * windowHeight *sizeof(float), reply_data_handle);
 
+                int message_sz;
+                int dim;
+                if (normal > 0) {
+                	dim = 3;
+                } else {
+                	dim = 1;
+                }
+
+                message_sz = windowWidth*windowHeight*sizeof(float)*dim;
+
+                zmq::message_t reply (message_sz);
+                float * reply_data_handle = (float*)reply.data();
+
+                if (normal > 0) {
+                	glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, message_sz, reply_data_handle);
+                } else {
+                	glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
+                }
+                
                 //std::cout << "Render time: " << t.elapsed() << std::endl;
 
 
                 float tmp;
 
-                for (int i = 0; i < windowHeight/2; i++)
+                int offset;
+            	for (int i = 0; i < windowHeight/2; i++) {
                     for (int j = 0; j < windowWidth; j++) {
-                    tmp = reply_data_handle[i * windowWidth + j];
-                    reply_data_handle[i * windowWidth + j] = reply_data_handle[(windowHeight - 1 -i) * windowWidth + j];
-                    reply_data_handle[(windowHeight - 1 -i) * windowWidth + j] = tmp;
+                 		for (int k = 0; k < dim; k++) {
+                			offset = k;
+		                    tmp = reply_data_handle[offset + (i * windowWidth + j) * dim];
+		                    reply_data_handle[offset + (i * windowWidth + j) * dim] = reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim];
+		                    reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = tmp;
+                		}
+                	}
                 }
                 socket.send (reply);
 

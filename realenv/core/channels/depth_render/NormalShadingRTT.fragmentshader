@@ -72,6 +72,14 @@ void main(){
 	
 	float m = length(EyeDirection_cameraspace); 
 	m = 255 * clamp(dot(-EyeDirection_cameraspace, n)/length(EyeDirection_cameraspace), 0, 1);
-	mist = vec3(m, m, m);
+
+	float r = 128 * clamp(dot(n, vec3(0, 0, 1)), -1, 1) + 127;
+
+	float g = 128 * clamp(dot(n, vec3(0, 1, 0)), -1, 1) + 127;
+
+	float b = 128 * clamp(dot(n, vec3(1, 0, 0)), -1, 1) + 127;
+
+	//mist = vec3(m, m, m);
+	mist = vec3(r, g, b);
 
 }

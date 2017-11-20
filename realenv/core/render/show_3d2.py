@@ -323,12 +323,14 @@ class PCRenderer:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
             if configs.SURFACE_NORMAL:
-                normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((h, w))
+                #normal_arr = np.moveaxis(np.frombuffer(norm_msg, dtype=np.float32).reshape((3, h, w)), 0, -1)
+                normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
         else:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
             if configs.SURFACE_NORMAL:
-                normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n))
+                normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
+                #normal_arr = np.moveaxis(np.frombuffer(norm_msg, dtype=np.float32).reshape((3, n, n)), 0, -1)
 
         if configs.SURFACE_NORMAL:
             debugmode = 0
@@ -466,17 +468,15 @@ class PCRenderer:
     def renderToUI(self, UI):
         if configs.DISPLAY_UI:
             debugmode = 0
-            depth = self.target_depth[0:511:2, 0:511:2, None]
+            depth = self.target_depth[0::2, 0::2, None]
             depth = np.concatenate((depth, depth, depth), axis=2)
             rgb = cv2.cvtColor(self.show_rgb, cv2.COLOR_BGR2RGB)
             if configs.USE_SEMANTICS:
-                semantics = cv2.cvtColor(self.show_semantics, cv2.COLOR_BGR2RGB)[0:511:2, 0:511:2, :]
-            #normal = self.surface_normal[0:511:2, 0:511:2]
+                semantics = cv2.cvtColor(self.show_semantics, cv2.COLOR_BGR2RGB)[0::2, 0::2, :]
             if configs.SURFACE_NORMAL:
-                normal = self.surface_normal[0:511:2, 0:511:2, None]
-                normal.flags.writeable = True
-                normal[normal > 5] = 0
-                normal = np.concatenate((normal, normal, normal), axis=2)
+                normal = self.surface_normal[0::2, 0::2, :]
+                #normal.flags.writeable = True
+                #normal = np.concatenate((normal, normal, normal), axis=2)
             if debugmode:
                 print("Inside render to UI")
                 print("rgb shape", self.show_rgb.shape)
@@ -484,7 +484,7 @@ class PCRenderer:
                 print("depth mean", np.mean(depth), "depth max", np.max(depth))
                 if configs.SURFACE_NORMAL:
                     print("normal shape", normal.shape)
-                    print("normal mean", np.mean(normal * 255), "normal max", np.max(normal))
+                    print("normal mean", np.mean(normal), "normal max", np.max(normal))
 
             UI.refresh()
             UI.update_rgb(rgb)
@@ -493,7 +493,7 @@ class PCRenderer:
             #if configs.USE_SEMANTICS:
             #    UI.update_sem(semantics)
             if configs.SURFACE_NORMAL:
-                UI.update_normal(normal * 255)
+                UI.update_normal(normal)
             time.sleep(0.005)
 
     def renderToScreen(self):
