@@ -64,7 +64,7 @@ class AntNavigateEnv(CameraRobotEnv):
 
         self.total_reward = 0
         self.total_frame = 0
-
+        
         
     def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
@@ -182,7 +182,7 @@ class AntClimbEnv(CameraRobotEnv):
         self.total_reward = 0
         self.total_frame = 0
         self.visual_flagId = None
-
+        
         
     def calc_rewards_and_done(self, a, state):
         #time.sleep(0.1)
@@ -263,7 +263,7 @@ class AntClimbEnv(CameraRobotEnv):
             print(reward)
         return reward, done
 
-    def flag_reposition(self):
+    def randomize_target(self):
         if configs.RANDOM_TARGET_POSE:
             delta_x = self.np_random.uniform(low=-self.delta_target[0],
                                              high=+self.delta_target[0])
@@ -272,8 +272,12 @@ class AntClimbEnv(CameraRobotEnv):
         else:
             delta_x = 0
             delta_y = 0
-        walk_target_x = (self.target_pos_gt[0] + delta_x)
-        walk_target_y = (self.target_pos_gt[1] + delta_y)
+        self.temp_target_x = (self.target_pos_gt[0] + delta_x)
+        self.temp_target_y = (self.target_pos_gt[1] + delta_y)
+
+    def flag_reposition(self):
+        walk_target_x = self.temp_target_x
+        walk_target_y = self.temp_target_y
         walk_target_z = self.robot.walk_target_z
 
         self.robot.walk_target_x = walk_target_x    # Change robot target accordingly
@@ -297,6 +301,7 @@ class AntClimbEnv(CameraRobotEnv):
     def  _reset(self):
         self.total_frame = 0
         self.total_reward = 0
+        self.randomize_target()
         self.flag_reposition()
         obs = CameraRobotEnv._reset(self)       ## Important: must come after flat_reposition
         return obs
@@ -329,6 +334,7 @@ class AntFlagRunEnv(CameraRobotEnv):
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
         self.lastid = None
+
 
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
@@ -444,7 +450,7 @@ class AntFetchEnv(CameraRobotEnv):
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
         self.lastid = None
-
+        
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
         return obs
@@ -568,7 +574,7 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
         self.lastid = None
-
+        
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
         return obs

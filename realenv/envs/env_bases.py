@@ -154,6 +154,7 @@ class BaseEnv(gym.Env):
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
 
+
     def render_map(self):
         base_pos=[0, 0, -3]
         if (hasattr(self,'robot')):
@@ -163,7 +164,7 @@ class BaseEnv(gym.Env):
         
         view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=base_pos,
-            distance=25,
+            distance=35,
             yaw=0,
             pitch=-89,
             roll=0,

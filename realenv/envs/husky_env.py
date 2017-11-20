@@ -331,7 +331,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
         self.lastid = None
-
+        
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
         return obs
@@ -448,7 +448,7 @@ class HuskyFetchEnv(CameraRobotEnv):
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
         self.lastid = None
-
+        
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
         return obs
@@ -578,7 +578,7 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
         self.lastid = None
-
+        
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
         return obs

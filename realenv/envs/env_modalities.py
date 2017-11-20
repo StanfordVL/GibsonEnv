@@ -9,6 +9,7 @@ from gym.utils import seeding
 from transforms3d import quaternions
 from realenv.envs.env_ui import SixViewUI, FourViewUI, TwoViewUI
 import pybullet as p
+import pybullet_data
 from tqdm import *
 import subprocess, os, signal
 import numpy as np
@@ -46,6 +47,8 @@ class SensorRobotEnv(BaseEnv):
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
+        self.temp_target_x = 0    # added randomness
+        self.temp_target_y = 0    # added randomness
 
         self.k = 5
         self.robot_tracking_id = -1
@@ -249,7 +252,15 @@ class CameraRobotEnv(SensorRobotEnv):
         
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
         self.setup_rendering_camera()
+
         
+        cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
+        self.robot_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
+        p.changeVisualShape(self.robot_mapId, -1, rgbaColor=[0, 0, 1, 0.7])
+
+        cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
+        self.target_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
+        p.changeVisualShape(self.target_mapId, -1, rgbaColor=[1, 0, 0, 0.7])
         
     def setup_rendering_camera(self):
         if not self.requires_camera_input or self.test_env:
@@ -271,6 +282,9 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def _reset(self):
         sensor_state = SensorRobotEnv._reset(self)
+        self.temp_target_x = self.robot.walk_target_x
+        self.temp_target_y = self.robot.walk_target_y
+        
         ## This is important to ensure potential doesn't change drastically when reset
         self.potential = self.robot.calc_potential()
 
@@ -285,13 +299,12 @@ class CameraRobotEnv(SensorRobotEnv):
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
         rgb, depth, semantics, normal, unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
-        #self.screen.fill([0, 0, 0])
         visuals = self.get_visuals(rgb, depth)
-        #self.screen.blit(visuals, [200, 200]) 
-        #self.screen_arr.fill(0)
-        #self.screen_arr[0:rgb.shape[0], 0:rgb.shape[1], :] = rgb
-        #surfarray.blit_array(self.screen, self.screen_arr)
-        #pygame.display.flip()
+        
+        target_x = self.temp_target_x
+        target_y = self.temp_target_y
+        p.resetBasePositionAndOrientation(self.target_mapId, [target_x  / self.robot.mjcf_scaling, target_y / self.robot.mjcf_scaling, 6], [0, 0, 0, 1])
+
         return visuals, sensor_state
 
 
@@ -319,6 +332,9 @@ class CameraRobotEnv(SensorRobotEnv):
             self.r_camera_rgb.renderToScreen()
 
         visuals = self.get_visuals(self.render_rgb, self.render_depth)
+
+        robot_pos, _ = p.getBasePositionAndOrientation(self.robot_tracking_id)
+        p.resetBasePositionAndOrientation(self.robot_mapId, [robot_pos[0]  / self.robot.mjcf_scaling, robot_pos[1] / self.robot.mjcf_scaling, 6], [0, 0, 0, 1])
 
         debugmode = 0
         if debugmode:

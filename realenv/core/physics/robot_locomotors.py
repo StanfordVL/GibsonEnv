@@ -525,6 +525,7 @@ class Husky(WalkerBase):
     def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGB"):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
+        self.mjcf_scaling = 1
         WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, mode=mode)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
