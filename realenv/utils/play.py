@@ -123,6 +123,7 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
         if do_restart:
             do_restart = False
             env.reset()
+            pressed_keys = []
             continue
         if len(pressed_keys) == 0:
             action = keys_to_action[()]
