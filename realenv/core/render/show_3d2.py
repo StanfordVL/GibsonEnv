@@ -331,7 +331,7 @@ class PCRenderer:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n))
 
         if configs.SURFACE_NORMAL:
-            debugmode = 1
+            debugmode = 0
             if debugmode:
                 print("Inside show3d: surface normal max", np.max(normal_arr), "mean", np.mean(normal_arr))
             
@@ -465,7 +465,7 @@ class PCRenderer:
 
     def renderToUI(self, UI):
         if configs.DISPLAY_UI:
-            debugmode = 1
+            debugmode = 0
             depth = self.target_depth[0:511:2, 0:511:2, None]
             depth = np.concatenate((depth, depth, depth), axis=2)
             rgb = cv2.cvtColor(self.show_rgb, cv2.COLOR_BGR2RGB)

@@ -4,6 +4,7 @@ import sys
 import time
 import matplotlib
 import time
+import pygame
 import pybullet as p
 '''
 try:
@@ -98,6 +99,7 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
         #                  "please specify one manually"
     relevant_keys = set(sum(map(list, keys_to_action.keys()),[]))
     relevant_keys.add(ord('r'))
+
     '''
     if transpose:
         video_size = env.observation_space.shape[1], env.observation_space.shape[0]
@@ -145,27 +147,19 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
             display_arr(screen, obs, transpose=transpose, video_size=video_size)
         '''
         # process pygame events
-        events = p.getKeyboardEvents()
-        print(events)
-        key_codes = events.keys()
+        key_codes = env.get_key_pressed(relevant_keys)
+        #print("Key codes", key_codes)
+        pressed_keys = []
+
         for key in key_codes:
+            if key == ord('r'):
+                do_restart = True
             if key not in relevant_keys:
                 continue
             # test events, set key states
-            if events[key] == p.KEY_IS_DOWN:
-                if key not in pressed_keys:
-                    pressed_keys.append(key) 
-                #elif event.key == 27:
-                #    running = False
-            if events[key] == p.KEY_WAS_RELEASED:
-                #if event.key in relevant_keys:
-                if key in pressed_keys:
-                    pressed_keys.remove(key)
-
-            print(ord('r') in key_codes)
-            if ord('r') in key_codes and events[ord('r')] == p.KEY_IS_DOWN:
-                do_restart = True
-                pressed_keys = []
+            print(relevant_keys)
+            pressed_keys.append(key) 
+            
             #print(pressed_keys)
             '''
             elif event.type == pygame.QUIT:
@@ -207,5 +201,4 @@ class PlayPlot(object):
             self.cur_plot[i] = self.ax[i].scatter(range(xmin, xmax), list(self.data[i]))
             self.ax[i].set_xlim(xmin, xmax)
         plt.pause(0.000001)
-
 

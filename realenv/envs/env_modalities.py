@@ -262,6 +262,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.setup_camera_rgb()
         if configs.DISPLAY_UI:
             self.UI = SixViewUI()
+            pygame.init()
 
     def _reset(self):
         sensor_state = SensorRobotEnv._reset(self)
@@ -336,6 +337,21 @@ class CameraRobotEnv(SensorRobotEnv):
             self.r_camera_dep.terminate()
         if configs.SURFACE_NORMAL:
             self.r_camera_norm.terminate()
+
+    def get_key_pressed(self, relevant=None):
+        pressed_keys = []
+        if configs.DISPLAY_UI:
+            #event = pygame.event.get()
+            events = pygame.event.get()
+            pressed_keys = [e.key for e in events if e.type == pygame.KEYDOWN]
+        else:
+            events = p.getKeyboardEvents()
+            key_codes = events.keys()
+            for key in key_codes:
+                #print("Pybullet key", key)
+                #if events[key] == p.KEY_IS_DOWN:
+                pressed_keys.append(key)
+        return pressed_keys
 
     def get_blank_visuals(self):
         return np.zeros((256, 256, 4))
@@ -467,4 +483,31 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
 
-        
+STR_TO_PYGAME_KEY = {
+    'a': pygame.K_a,
+    'b': pygame.K_b,
+    'c': pygame.K_c,
+    'd': pygame.K_d,
+    'e': pygame.K_e,
+    'f': pygame.K_f,
+    'g': pygame.K_g,
+    'h': pygame.K_h,
+    'i': pygame.K_i,
+    'j': pygame.K_j,
+    'k': pygame.K_k,
+    'l': pygame.K_l,
+    'm': pygame.K_m,
+    'n': pygame.K_n,
+    'o': pygame.K_o,
+    'p': pygame.K_p,
+    'q': pygame.K_q,
+    'r': pygame.K_r,
+    's': pygame.K_s,
+    't': pygame.K_t,
+    'u': pygame.K_u,
+    'v': pygame.K_v,
+    'w': pygame.K_w,
+    'x': pygame.K_x,
+    'y': pygame.K_y,
+    'z': pygame.K_z,
+}
