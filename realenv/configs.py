@@ -2,7 +2,7 @@ import numpy as np
 
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = False
-RANDOM_TARGET_POSE  = True
+RANDOM_TARGET_POSE  = False
 
 RANDOM_RANGE = "TINY"
 

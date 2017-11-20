@@ -60,7 +60,8 @@ def plot(index, smooth_fc=smooth_median):
 
     print("Total number of steps:", sum(all_times))
     print('Average time length', np.mean(np.array(all_times)))
-    plt.plot(smooth_range, smoothed_rewards, '-')
+    patch, = plt.plot(smooth_range, smoothed_rewards, '-', label=labels[index])
+    legends.append(patch)
     
 
 def smooth(rewards, factor=10):
@@ -70,8 +71,12 @@ def smooth(rewards, factor=10):
     return smoothed_rew
 
 def main():
+    if len(labels) == 0:
+        for i in rangef(len(labels)):
+            labels.append("")
     for i in range(len(local_logs)):
-        plot(i, smooth_median)
+        plot(i, smooth_median)        
+    plt.legend(handles=legends)
     plt.show()
 
 if __name__ == '__main__':
@@ -80,4 +85,6 @@ if __name__ == '__main__':
     parser.add_argument('--smooth', type=int, default=1)
     args = parser.parse_args()
     MEDIAN_FC = args.smooth
+    labels = ["Sensor only", "Sensor & Depth"]
+    legends = []
     main()
