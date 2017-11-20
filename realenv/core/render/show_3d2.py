@@ -162,14 +162,8 @@ class PCRenderer:
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
-        if human:
-            if configs.DISPLAY_UI:
-                self.renderToUISetup()
-            else:
-                self.renderToScreenSetup()
-
-    def renderToUISetup(self):
-        self.UI = SixViewUI()
+        if human and not configs.DISPLAY_UI:
+            self.renderToScreenSetup()
 
     def renderToScreenSetup(self):
         cv2.namedWindow('RGB cam')
@@ -466,13 +460,12 @@ class PCRenderer:
         return self.show_rgb, self.smooth_depth[:, :, None]
 
 
-    def renderToUI(self, pose, k_views=None):
+    def renderToUI(self, UI):
         #cv2.imshow('Depth cam', depth/16.)
         #cv2.imshow('RGB cam',rgb)
         #cv2.imshow('RGB prefilled', unfilled_rgb)
         #cv2.imshow('Semantics', semantics)
         #cv2.imshow("Surface Normal", normal)
-        self.renderOffScreen(pose, k_views)
         if configs.DISPLAY_UI:
             debugmode = 1
             depth = self.target_depth[0:511:2, 0:511:2, None]
@@ -483,14 +476,13 @@ class PCRenderer:
                 print("rgb shape", self.show_rgb.shape)
                 print("depth shape", depth.shape)
                 print("depth mean", np.mean(depth), "depth max", np.max(depth))
-            self.UI.refresh()
-            self.UI.update_rgb(rgb)
-            self.UI.update_depth(depth * 16.)
+            UI.refresh()
+            UI.update_rgb(rgb)
+            UI.update_depth(depth * 16.)
             time.sleep(0.005)
-        return self.show_rgb, self.smooth_depth[:, :, None]
 
-
-    def renderToScreen(self, pose, k_views=None):
+    def renderToScreen(self):
+        '''
         t0 = time.time()
         self.renderOffScreen(pose, k_views)
         t1 = time.time()
@@ -499,7 +491,7 @@ class PCRenderer:
         if MAKE_VIDEO:
             cv2.putText(self.show_unfilled_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
             cv2.putText(self.show_unfilled_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
-
+        '''
         def _render_depth(depth):
             #with Profiler("Render Depth"):
             cv2.imshow('Depth cam', depth/16.)

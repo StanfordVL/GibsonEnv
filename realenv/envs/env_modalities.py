@@ -7,6 +7,7 @@ import realenv
 from gym import error
 from gym.utils import seeding
 from transforms3d import quaternions
+from realenv.envs.env_ui import SixViewUI
 import pybullet as p
 from tqdm import *
 import subprocess, os, signal
@@ -259,6 +260,8 @@ class CameraRobotEnv(SensorRobotEnv):
         self.check_port_available()
         self.setup_camera_multi()
         self.setup_camera_rgb()
+        if configs.DISPLAY_UI:
+            self.UI = SixViewUI()
 
     def _reset(self):
         sensor_state = SensorRobotEnv._reset(self)
@@ -303,15 +306,12 @@ class CameraRobotEnv(SensorRobotEnv):
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
                 
         #with Profiler("Render to screen"):
-        if not self.human:
-            rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
-        elif configs.DISPLAY_UI:
-            debugmode = 0
-            if debugmode:
-                print("rendering to ui")
-            rgb, depth = self.r_camera_rgb.renderToUI(pose, top_k)
-        else:
-            rgb, depth = self.r_camera_rgb.renderToScreen(pose, top_k)
+        rgb, depth = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        if configs.DISPLAY_UI:
+            self.r_camera_rgb.renderToUI(self.UI)
+        elif self.human:
+            self.r_camera_rgb.renderToScreen()
+
         
         #self.screen_arr[0:rgb.shape[0], 0:rgb.shape[1], :] = rgb
         #surfarray.blit_array(self.screen, self.screen_arr)
