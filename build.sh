@@ -120,14 +120,14 @@ download_data () {
 
 	## Psych building -1F, 919Mb
 	if [ $dset_name="stanford_1" ] && [ ! -d dataset/BbxejD15Etk ]; then
-		wget https://www.dropbox.com/s/zm112zosuxnx8by/BbxejD15Etk.zip
+		wget https://www.dropbox.com/s/uyjnhmnbrrghx13/BbxejD15Etk.zip
 		unzip -q BbxejD15Etk.zip && rm BbxejD15Etk.zip
 		mv BbxejD15Etk dataset
 	fi
 
 	## Psych building 1F, 794.2Mb
 	if [ $dset_name="stanford_2" ] && [ ! -d dataset/sitktXish3E ]; then
-		wget https://www.dropbox.com/s/bt4pctsnh3recs7/sitktXish3E.zip
+		wget https://www.dropbox.com/s/bt4pctsnh3recs7/sitktXish3E.zip 
 		unzip -q sitktXish3E.zip && rm sitktXish3E.zip
 		mv sitktXish3E dataset
 	fi
