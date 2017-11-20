@@ -27,11 +27,12 @@ class SimpleUI():
 
 class SixViewUI(SimpleUI):
     '''UI with all modalities, default resolution
-    RGB:       512x512,
-    Physics:   256x256,
-    Depth:     256x256,
-    Semantics: 256x256,
-    Normal:    256x256
+    RGB:       512x512, (top left)
+    Map:       256x256, (top right)
+    Physics:   256x256, (center right)
+    Depth:     256x256, (bottom left)
+    Semantics: 256x256, (bottom right)
+    Normal:    256x256  (bottom right)
     '''
     POS_RGB   = (0, 0)
     POS_PHYSICS = (512, 256)
@@ -90,11 +91,10 @@ class SixViewUI(SimpleUI):
 
 class FourViewUI(SimpleUI):
     '''UI with four modalities, default resolution
-    RGB:       256x256,
-    Physics:   256x256,
-    Depth:     256x256,
-    Semantics: 256x256,
-    Normal:    256x256
+    Physics:   256x256, (top left)
+    Depth:     256x256, (top right)
+    RGB:       256x256, (bottom left)
+    Unfilled:  256x256  (bottom right)
     '''
     POS_RGB   = (0, 256)
     POS_PHYSICS = (0, 0)
@@ -132,6 +132,33 @@ class FourViewUI(SimpleUI):
     def update_depth(self, depth):
         #depth = pygame.transform.rotate(depth, 90)
         self.add_image(np.swapaxes(depth, 0, 1), self.POS_DEPTH[0], self.POS_DEPTH[1])
+
+class TwoViewUI(SimpleUI):
+    '''UI with four modalities, default resolution
+    Physics:   256x256,
+    RGB:       256x256,
+    '''
+    POS_RGB   = (256, 0)
+    POS_PHYSICS = (0, 0)
+    def __init__(self):
+        SimpleUI.__init__(self, 512, 256)
+        self.add_all_images()
+
+    def add_all_images(self):
+        img_rgb = np.zeros((256, 256, 3))
+        img_physics = np.zeros((256, 256, 3))
+
+        img_rgb.fill(100)
+        img_physics.fill(140)
+
+        self.add_image(img_rgb, self.POS_RGB[0], self.POS_RGB[1])
+        self.add_image(img_physics, self.POS_PHYSICS[0], self.POS_PHYSICS[1])
+        
+    def update_rgb(self, rgb):
+        self.add_image(np.swapaxes(rgb, 0, 1), self.POS_RGB[0], self.POS_RGB[1])
+
+    def update_physics(self, physics):
+        self.add_image(np.swapaxes(physics, 0, 1), self.POS_PHYSICS[0], self.POS_PHYSICS[1])
 
 
 def main6():
@@ -209,6 +236,29 @@ def main4():
         time.sleep(0.2)
         #screen_arr = 255 - screen_arr
 
+def main2():
+    ## Center left top
+    grey_1 = np.zeros((256, 256, 3))
+    grey_1.fill(100)
+
+    ## Right top
+    grey_2 = np.zeros((256, 256, 3))
+    grey_2.fill(120)
+
+    UI = TwoViewUI()
+    rgb = np.zeros((256, 256, 3))
+    rgb.fill(0)
+
+    UI.update_physics(grey_1)
+    UI.update_rgb(grey_2)
+
+    while True:
+        UI.refresh()
+        UI.update_rgb(rgb)
+        rgb += 20
+        time.sleep(0.2)
+        #screen_arr = 255 - screen_arr
+
 if __name__ == "__main__":
     #main6()
-    main4()
+    main2()

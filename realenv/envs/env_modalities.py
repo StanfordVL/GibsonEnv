@@ -7,7 +7,7 @@ import realenv
 from gym import error
 from gym.utils import seeding
 from transforms3d import quaternions
-from realenv.envs.env_ui import SixViewUI, FourViewUI
+from realenv.envs.env_ui import SixViewUI, FourViewUI, TwoViewUI
 import pybullet as p
 from tqdm import *
 import subprocess, os, signal
@@ -265,6 +265,8 @@ class CameraRobotEnv(SensorRobotEnv):
                 self.UI = SixViewUI()
             if configs.UI_MODE == configs.UI_FOUR:
                 self.UI = FourViewUI()
+            if configs.UI_MODE == configs.UI_TWO:
+                self.UI = TwoViewUI()
             pygame.init()
 
     def _reset(self):
@@ -328,7 +330,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
     def renderToUI(self):
-        '''Works for different UI: Six, four two
+        '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO
         '''
         if not configs.DISPLAY_UI:
             return
@@ -336,33 +338,32 @@ class CameraRobotEnv(SensorRobotEnv):
         self.UI.refresh()
         
         rgb = self.render_rgb
-        depth = self.render_depth
         physics_rgb = self.render_physics()
 
         if configs.UI_MODE == configs.UI_SIX:
-            depth = depth[::2, ::2, :]
-            rgb = rgb[::2, ::2, :]
             physics_rgb = physics_rgb[::2, ::2, :]
-
-        depth = np.concatenate((depth, depth, depth), axis=2)
-        self.UI.update_rgb(rgb)
-        self.UI.update_depth(depth * 16.)
-        self.UI.update_physics(physics_rgb)
         
         if configs.UI_MODE == configs.UI_SIX:
+            depth = self.render_depth
+            depth = depth[::2, ::2, :]
+            depth = np.concatenate((depth, depth, depth), axis=2)
             semantics = self.render_semantics[::2, ::2, :] #cv2.cvtColor(self.render_semantics, cv2.COLOR_BGR2RGB)[0::2, 0::2, :]
             normal = self.render_normal[::2, ::2, :]
             map_rgb     = self.render_map()
             self.UI.update_normal(normal)
             self.UI.update_sem(semantics)
             self.UI.update_map(map_rgb[::2, ::2, :])
-
+            self.UI.update_depth(depth * 16.)
+        
         if configs.UI_MODE == configs.UI_FOUR:
+            depth = self.render_depth
+            depth = np.concatenate((depth, depth, depth), axis=2)
             unfilled = self.render_unfilled
             self.UI.update_unfilled(self.render_unfilled)
-        
+            self.UI.update_depth(depth * 16.)
 
-        #time.sleep(0.005)
+        self.UI.update_rgb(rgb)
+        self.UI.update_physics(physics_rgb)        
 
 
     def _close(self):

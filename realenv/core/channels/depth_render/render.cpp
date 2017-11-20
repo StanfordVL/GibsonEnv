@@ -416,7 +416,7 @@ int main( int argc, char * argv[] )
 	if (normal == 0) {
 		programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./MistShadingRTT.fragmentshader" );
 	} else {
-		programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./NormalShadingRTT.fragmentshader" );
+		programID = LoadShaders( "./NormalShadingRTT.vertexshader", "./NormalShadingRTT.fragmentshader" );
 	}
 	
 	// Get a handle for our "MVP" uniform
