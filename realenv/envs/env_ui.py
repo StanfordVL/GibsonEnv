@@ -88,12 +88,54 @@ class SixViewUI(SimpleUI):
         self.add_image(np.swapaxes(map_img, 0, 1), self.POS_MAP[0], self.POS_MAP[1])
 
 
-def main():
+class FourViewUI(SimpleUI):
+    '''UI with four modalities, default resolution
+    RGB:       256x256,
+    Physics:   256x256,
+    Depth:     256x256,
+    Semantics: 256x256,
+    Normal:    256x256
+    '''
+    POS_RGB   = (0, 256)
+    POS_PHYSICS = (0, 0)
+    POS_DEPTH   = (256, 0)
+    POS_UNFILL = (256, 256)
+    def __init__(self):
+        SimpleUI.__init__(self, 512, 512)
+        self.add_all_images()
+
+    def add_all_images(self):
+        img_rgb = np.zeros((256, 256, 3))
+        img_physics = np.zeros((256, 256, 3))
+        img_depth = np.zeros((256, 256, 3))
+        img_unfill = np.zeros((256, 256, 3))
+
+        img_rgb.fill(100)
+        img_depth.fill(120)
+        img_physics.fill(140)
+        img_unfill.fill(180)
+
+        self.add_image(img_rgb, self.POS_RGB[0], self.POS_RGB[1])
+        self.add_image(img_depth, self.POS_DEPTH[0], self.POS_DEPTH[1])
+        self.add_image(img_physics, self.POS_PHYSICS[0], self.POS_PHYSICS[1])
+        self.add_image(img_unfill, self.POS_UNFILL[0], self.POS_UNFILL[1])
+        
+    def update_rgb(self, rgb):
+        self.add_image(np.swapaxes(rgb, 0, 1), self.POS_RGB[0], self.POS_RGB[1])
+
+    def update_unfill(self, unfill):
+        self.add_image(np.swapaxes(unfill, 0, 1), self.POS_UNFILL[0], self.POS_UNFILL[1])
+
+    def update_physics(self, physics):
+        self.add_image(np.swapaxes(physics, 0, 1), self.POS_PHYSICS[0], self.POS_PHYSICS[1])
+
+    def update_depth(self, depth):
+        #depth = pygame.transform.rotate(depth, 90)
+        self.add_image(np.swapaxes(depth, 0, 1), self.POS_DEPTH[0], self.POS_DEPTH[1])
+
+
+def main6():
     UI = SimpleUI(768, 768)
-    #flash = np.zeros((512, 512, 3))
-    #flash.fill(255)
-    green = np.zeros((512, 512, 3))
-    green[:, :, 1] = 255
     
     ## Center left top
     grey_1 = np.zeros((512, 512, 3))
@@ -131,5 +173,42 @@ def main():
         time.sleep(0.2)
         #screen_arr = 255 - screen_arr
 
+
+def main4():
+    UI = SimpleUI(256, 256)
+    
+    ## Center left top
+    grey_1 = np.zeros((256, 256, 3))
+    grey_1.fill(100)
+
+    ## Right top
+    grey_2 = np.zeros((256, 256, 3))
+    grey_2.fill(120)
+
+    ## Right mid
+    grey_3 = np.zeros((256, 256, 3))
+    grey_3.fill(140)
+
+    ## Bottom left
+    grey_4 = np.zeros((256, 256, 3))
+    grey_4.fill(160)
+
+    UI = FourViewUI()
+    rgb = np.zeros((256, 256, 3))
+    rgb.fill(0)
+
+    UI.update_physics(grey_1)
+    UI.update_depth(grey_2)
+    UI.update_rgb(grey_3)
+    UI.update_unfill(grey_4)
+
+    while True:
+        UI.refresh()
+        UI.update_rgb(rgb)
+        rgb += 20
+        time.sleep(0.2)
+        #screen_arr = 255 - screen_arr
+
 if __name__ == "__main__":
-    main()
+    #main6()
+    main4()

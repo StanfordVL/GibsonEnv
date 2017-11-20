@@ -73,22 +73,30 @@ USE_SENSOR_OUTPUT = False
 
 
 HIST_MATCHING = True
-USE_SEMANTICS = True
-SURFACE_NORMAL = True
+USE_SMALL_FILLER = False
+USE_SMOOTH_MESH = False
+
 
 ## Human view camera settings
 DEBUG_CAMERA_FOLLOW = True
 
 
-USE_SMALL_FILLER = False
-USE_SMOOTH_MESH = False
+DISPLAY_UI = True
+UI_SIX = 1
+UI_FOUR = 2
+UI_TWO = 3
+UI_MODE = UI_SIX
+
+USE_SEMANTICS = True
+SURFACE_NORMAL = True
+
 
 
 ## Render window settings
 HIGH_RES_MONITOR = False
 MAKE_VIDEO = False
 LIVE_DEMO = False
-DISPLAY_UI = True
+
 
 TASK_POSE = {
     "11HB6XZSh1Q": {

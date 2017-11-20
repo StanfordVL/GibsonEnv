@@ -113,7 +113,7 @@ class PCRenderer:
         self.socket_dept = self._context_dept.socket(zmq.REQ)
         self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
-        if configs.SURFACE_NORMAL:
+        if configs.UI_MODE == configs.UI_SIX:
             self.socket_norm = self._context_norm.socket(zmq.REQ)
             self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
 
@@ -140,9 +140,10 @@ class PCRenderer:
         self.show_rgb   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
         self.show_semantics   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')        
 
-        self.show_unfilled  = None
-        if configs.MAKE_VIDEO:
-            self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        #self.show_unfilled  = None
+        #if configs.MAKE_VIDEO or configs.HIST_MATCHING:
+        self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        self.surface_normal  = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
 
 
         if configs.USE_SMALL_FILLER:
@@ -304,7 +305,7 @@ class PCRenderer:
         mist_msg = self.socket_mist.recv()
         self.socket_dept.send_string(s)
         dept_msg = self.socket_dept.recv()
-        if configs.SURFACE_NORMAL:
+        if configs.UI_MODE == configs.UI_SIX:
             self.socket_norm.send_string(s)
             norm_msg = self.socket_norm.recv()
 
@@ -322,17 +323,17 @@ class PCRenderer:
         if pano:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
-            if configs.SURFACE_NORMAL:
+            if configs.UI_MODE == configs.UI_SIX:
                 #normal_arr = np.moveaxis(np.frombuffer(norm_msg, dtype=np.float32).reshape((3, h, w)), 0, -1)
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
         else:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
-            if configs.SURFACE_NORMAL:
+            if configs.UI_MODE == configs.UI_SIX:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
                 #normal_arr = np.moveaxis(np.frombuffer(norm_msg, dtype=np.float32).reshape((3, n, n)), 0, -1)
 
-        if configs.SURFACE_NORMAL:
+        if configs.UI_MODE == configs.UI_SIX:
             debugmode = 0
             if debugmode:
                 print("Inside show3d: surface normal max", np.max(normal_arr), "mean", np.mean(normal_arr))
@@ -364,10 +365,10 @@ class PCRenderer:
 
         #if need_filler:
         _render_pc(opengl_arr, imgs, show)
-        if configs.USE_SEMANTICS:
+        if configs.UI_MODE == configs.UI_SIX:
             _render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
 
-        if show_unfilled is not None:
+        if configs.HIST_MATCHING and is_rgb:
             show_unfilled[:, :, :] = show[:, :, :]
 
         #with Profiler("NN total time", enable= ENABLE_PROFILING):
@@ -390,11 +391,11 @@ class PCRenderer:
 
         self.target_depth = opengl_arr ## target depth
         self.smooth_depth = smooth_arr
-        if configs.SURFACE_NORMAL:
+        if configs.UI_MODE == configs.UI_SIX:
             self.surface_normal = normal_arr
 
         #Histogram matching happens here 
-        if MAKE_VIDEO and HIST_MATCHING and show_unfilled is not None and is_rgb:
+        if configs.HIST_MATCHING and is_rgb:
             template = (show_unfilled/255.0).astype(np.float32)
             source = (show/255.0).astype(np.float32)
             source_matched = hist_match3(source, template)
@@ -456,45 +457,12 @@ class PCRenderer:
 
         self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
 
-
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
-        self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
-        if MAKE_VIDEO:
-            self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
-        #return self.show_rgb, self.target_depth[:, :, None]
-        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics
+        self.show_rgb = self.show
+        self.show_unfilled_rgb = self.show_unfilled
 
+        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal
 
-    def renderToUI(self, UI):
-        if configs.DISPLAY_UI:
-            debugmode = 0
-            depth = self.target_depth[0::2, 0::2, None]
-            depth = np.concatenate((depth, depth, depth), axis=2)
-            rgb = cv2.cvtColor(self.show_rgb, cv2.COLOR_BGR2RGB)
-            if configs.USE_SEMANTICS:
-                semantics = cv2.cvtColor(self.show_semantics, cv2.COLOR_BGR2RGB)[0::2, 0::2, :]
-            if configs.SURFACE_NORMAL:
-                normal = self.surface_normal[0::2, 0::2, :]
-                #normal.flags.writeable = True
-                #normal = np.concatenate((normal, normal, normal), axis=2)
-            if debugmode:
-                print("Inside render to UI")
-                print("rgb shape", self.show_rgb.shape)
-                print("depth shape", depth.shape)
-                print("depth mean", np.mean(depth), "depth max", np.max(depth))
-                if configs.SURFACE_NORMAL:
-                    print("normal shape", normal.shape)
-                    print("normal mean", np.mean(normal), "normal max", np.max(normal))
-
-            UI.refresh()
-            UI.update_rgb(rgb)
-            UI.update_depth(depth * 16.)
-
-            #if configs.USE_SEMANTICS:
-            #    UI.update_sem(semantics)
-            if configs.SURFACE_NORMAL:
-                UI.update_normal(normal)
-            time.sleep(0.005)
 
     def renderToScreen(self):
         '''
@@ -524,27 +492,16 @@ class PCRenderer:
             cv2.imshow('RGB prefilled', unfilled_rgb)
         
         def _render_semantics(semantics):
-            if not USE_SEMANTICS:
+            if not configs.UI_MODE == configs.UI_SIX:
                 return
             cv2.imshow('Semantics', semantics)
 
         def _render_normal(normal):
-            if not SURFACE_NORMAL:
+            if not configs.UI_MODE == configs.UI_SIX:
                 return
             #print("normal", np.mean(normal), np.max(normal))
             cv2.imshow("Surface Normal", normal)
          
-        """
-        ## TODO(hzyjerry): multithreading in python3 is not working
-        render_threads = [
-            Process(target=_render_depth, args=(self.target_depth, )),
-            Process(target=_render_rgb, args=(self.show_rgb, ))]
-        if self.compare_filler:
-            render_threads.append(Process(target=_render_rgb_unfilled, args=(self.show_unfilled_rgb, )))
-
-        [wt.start() for wt in render_threads]
-        [wt.join() for wt in render_threads]
-        """
         _render_depth(self.target_depth)
         _render_depth(self.smooth_depth)
         _render_rgb(self.show_rgb)

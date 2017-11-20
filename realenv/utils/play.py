@@ -158,7 +158,7 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
             if key not in relevant_keys:
                 continue
             # test events, set key states
-            print(relevant_keys)
+            #print(relevant_keys)
             pressed_keys.append(key) 
             
             #print(pressed_keys)

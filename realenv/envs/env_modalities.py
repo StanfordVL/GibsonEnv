@@ -278,7 +278,7 @@ class CameraRobotEnv(SensorRobotEnv):
         pose = [eye_pos, eye_quat]
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
-        rgb, depth, _ = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        rgb, depth, semantics, normal = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         #self.screen.fill([0, 0, 0])
         visuals = self.get_visuals(rgb, depth)
@@ -307,18 +307,13 @@ class CameraRobotEnv(SensorRobotEnv):
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
                 
         #with Profiler("Render to screen"):
-        rgb, depth, semantics = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal = self.r_camera_rgb.renderOffScreen(pose, top_k)
         if configs.DISPLAY_UI:
-            self.r_camera_rgb.renderToUI(self.UI)
-            physics_rgb = self.render_physics()
-            map_rgb     = self.render_map()
-            self.UI.update_physics(physics_rgb[::2, ::2, :])
-            self.UI.update_map(map_rgb[::2, ::2, :])
-            self.UI.update_sem(semantics[::2, ::2, :])
+            self.renderToUI()
         elif self.human:
             self.r_camera_rgb.renderToScreen()
 
-        visuals = self.get_visuals(rgb, depth)
+        visuals = self.get_visuals(self.render_rgb, self.render_depth)
 
         debugmode = 0
         if debugmode:
@@ -327,7 +322,48 @@ class CameraRobotEnv(SensorRobotEnv):
         if debugmode:
             print("Environment visuals shape", visuals.shape)
         return visuals, sensor_reward, done, sensor_meta
+
+
+    def renderToUI(self):
+        '''Works for different UI: Six, four two
+        '''
+        if not configs.DISPLAY_UI:
+            return
+
+        self.UI.refresh()
         
+        depth = self.render_depth[::2, ::2, :]
+        depth = np.concatenate((depth, depth, depth), axis=2)
+        rgb = self.render_rgb
+        if configs.UI_MODE == configs.UI_FOUR:
+            rgb = rgb[::2, ::2, :]
+        self.UI.update_rgb(rgb)
+        self.UI.update_depth(depth * 16.)
+
+        if configs.UI_MODE == configs.UI_SIX:
+            semantics = self.render_semantics[::2, ::2, :] #cv2.cvtColor(self.render_semantics, cv2.COLOR_BGR2RGB)[0::2, 0::2, :]
+            normal = self.render_normal[::2, ::2, :]
+            self.UI.update_normal(normal)
+            self.UI.update_sem(semantics)
+
+        debugmode = 0
+        if debugmode:
+            print("Inside render to UI")
+            print("rgb shape", rgb.shape)
+            print("depth shape", depth.shape)
+            print("depth mean", np.mean(depth), "depth max", np.max(depth))
+            if configs.UI_MODE == configs.UI_SIX:
+                print("normal shape", normal.shape)
+                print("normal mean", np.mean(normal), "normal max", np.max(normal))
+            
+        physics_rgb = self.render_physics()
+        map_rgb     = self.render_map()
+        self.UI.update_physics(physics_rgb[::2, ::2, :])
+        self.UI.update_map(map_rgb[::2, ::2, :])
+
+
+        #time.sleep(0.005)
+
 
     def _close(self):
         if not self.requires_camera_input or self.test_env:
@@ -335,7 +371,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul.terminate()
         if self.r_camera_dep is not None:
             self.r_camera_dep.terminate()
-        if configs.SURFACE_NORMAL:
+        if configs.UI_MODE == configs.UI_SIX:
             self.r_camera_norm.terminate()
 
     def get_key_pressed(self, relevant=None):
@@ -436,7 +472,7 @@ class CameraRobotEnv(SensorRobotEnv):
             self.r_camera_mul.terminate()
             if self.r_camera_dep is not None:
                 self.r_camera_dep.terminate()
-            if configs.SURFACE_NORMAL:
+            if configs.UI_MODE == configs.UI_SIX:
                 self.r_camera_norm.terminate()
             while tb:
                 filename = tb.tb_frame.f_code.co_filename
@@ -458,7 +494,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
 
-        if configs.SURFACE_NORMAL:
+        if configs.UI_MODE == configs.UI_SIX:
             self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
 
         os.chdir(cur_path)
