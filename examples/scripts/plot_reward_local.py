@@ -68,9 +68,23 @@ def plot(index, smooth_fc=smooth_median):
     smooth_range = np.arange(0, len(smoothed_rewards), 1)
 
     print("Total number of steps:", sum(all_times))
-    print('Average time length', np.mean(np.array(all_times)))
-    plt.plot(full_range, all_rewards, '.', smooth_range, smoothed_rewards, '-')
-    
+    print('Average time length', np.median(np.array(all_times)))
+    #plt.plot(full_range, all_rewards, '.', smooth_range, smoothed_rewards, '-')
+    plt.plot(smooth_range, smoothed_rewards, '-')
+
+
+
+def smooth_mean(rewards):
+    rew_median = []
+    i = 0
+    while i < len(rewards) - MEDIAN_FC:
+        cur_list = rewards[i: min(i + MEDIAN_FC, len(rewards))]
+        while len(cur_list) < MEDIAN_FC:
+            cur_list.append(rewards[-1])
+        i = i + 1
+        rew_median.append(np.mean(cur_list))
+    return rew_median
+
 
 def plot2(index1, index2, smooth_fc=smooth_median):
     with open(local_logs[index1], 'r') as csvfile:
@@ -127,7 +141,7 @@ def smooth(rewards, factor=10):
     return smoothed_rew
 
 def main():
-    plot(0, smooth_median)
+    plot(0, smooth_mean)
     #plot(0, smooth_max)
     #plot2(0, 1, smooth_median)
     plt.show()

@@ -10,7 +10,7 @@ import sys
 #sudo pkill Xorg
 #sudo /usr/bin/X :0 &
 ## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode RGBD --resolution SMALL
-## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode DEPTH --resolution SMALL
+## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode DEPTH --resolution XSMALL
 ## DISPLAY=:0 python examples/train/train_ant_climb_ppo1.py --mode SENSOR
 
 ## scp -i /home/jerry/Dropbox/CVGL/universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com:/tmp/openai-2017-11-12-13-16-28-113773/0.monitor.csv
@@ -40,8 +40,8 @@ ssh -i universe.pem ubuntu@ec2-52-24-76-187.us-west-2.compute.amazonaws.com
 Universe ant climb 3
 ec2-52-42-249-133.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-52-42-249-133.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, small init random, small lr")
+#aws_addr.append("ec2-52-42-249-133.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, small init random, small lr")
 
 '''
 Universe ant climb 4

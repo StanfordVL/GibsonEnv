@@ -24,7 +24,7 @@ from realenv import configs
 from realenv.core.render.completion import CompletionNet
 from realenv.learn.completion2 import CompletionNet2
 import torch.nn as nn
-
+import scipy.misc
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
@@ -129,6 +129,7 @@ class PCRenderer:
         self.use_filler = use_filler
 
         self.showsz = windowsz
+        self.capture_count = 0
 
         #print(self.showsz)
 
@@ -389,7 +390,7 @@ class PCRenderer:
             source = (show/255.0).astype(np.float32)
             source_matched = hist_match3(source, template)
             show[:] = (source_matched[:] * 255).astype(np.uint8)
-
+            
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling
@@ -453,6 +454,23 @@ class PCRenderer:
         if MAKE_VIDEO:
             self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
         #return self.show_rgb, self.target_depth[:, :, None]
+        staticMat = p.computeViewMatrix([0, 0, 0], [1, 1, 1], [0, 0, 1])
+        static_cam = {
+            'yaw': 70,
+            'pitch': 0,
+            'distance': 2.9,
+            'target': [-0.253, -0.94, 1.05]
+        }
+
+        p.resetDebugVisualizerCamera(static_cam['distance'], static_cam['yaw'], static_cam['pitch'], static_cam['target']);
+        staticImg = p.getCameraImage(self.windowsz, self.windowsz)[2]
+
+        img_name = os.path.join(configs.CAPTURE_DIR, "static_{}.jpg").format(self.capture_count)
+        print("Image name", img_name)
+        img_list = staticImg
+        scipy.misc.imsave(img_name, img_list)
+        self.capture_count += 1
+
         return self.show_rgb, self.smooth_depth[:, :, None]
 
 

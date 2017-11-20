@@ -55,6 +55,7 @@ CHOOSE_SMALL_RANDOM_RANGE = False
 CHOOSE_TINY_RANDOM_RANGE = False
 
 
+CAPTURE_DIR = "/home/jerry/Dropbox/Cambria Paper/Experiments"
 
 ENABLE_PROFILING = True
 
@@ -112,7 +113,7 @@ TASK_POSE = {
             #[[0, 3.14 / 2, 3.14], [-2.283, -1.64, 0.65]],  ## Debug: leaning too much
             #[[0, 0, 3.14], [-2.283, -1.64, 0.15]],         ## bottom of stairs
             #[[3.14/4, 0, 3.14], [-1.883, -1.64, 0.75]],    ## bottom of stairs, a bit up
-            [[0, 0, 0], [-0.003, -1.64, 1.65]],             ## starting at stairs target
+            [[0, 0, 0], [-0.303, -1.64, 1.45]],             ## starting at stairs target
             #[[0, 3.14/4, 3.14], [-1.403, -1.64, 0.95]],    ## starting at stairs 1/4
 
 

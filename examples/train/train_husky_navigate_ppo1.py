@@ -68,6 +68,7 @@ def train(num_timesteps, seed):
         schedule='linear',
         save_name="husky_navigate_ppo_{}".format(args.mode),
         save_per_acts=50,
+        sensor=args.mode=="SENSOR",
         reload_name=args.reload_name
     )
     '''

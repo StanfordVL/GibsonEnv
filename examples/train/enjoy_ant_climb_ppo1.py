@@ -48,19 +48,20 @@ def train(num_timesteps, seed):
     if args.mode == "SENSOR":
         pposgd_sensor.learn(env, mlp_policy_fn,
             max_timesteps=int(num_timesteps * 1.1 * 5),
-            timesteps_per_actorbatch=6000,
+            timesteps_per_actorbatch=10000,
             clip_param=0.2, entcoeff=0.00,
             optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear',
-            save_per_acts=100,
-            save_name="ant_ppo_mlp"
+            save_per_acts=500,
+            save_name="ant_ppo_mlp",
+            reload_name=args.reload_name
         )
         env.close()        
     else:
         pposgd_fuse.learn(env, fuse_policy_fn,
             max_timesteps=int(num_timesteps * 1.1),
-            timesteps_per_actorbatch=2000,
+            timesteps_per_actorbatch=6000,
             clip_param=0.2, entcoeff=0.01,
             optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
             gamma=0.99, lam=0.95,

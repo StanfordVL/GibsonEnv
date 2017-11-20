@@ -24,17 +24,6 @@ def smooth_median(rewards):
         rew_median.append(np.median(cur_list))
     return rew_median
 
-def smooth_mean(rewards):
-    rew_median = []
-    i = 0
-    while i < len(rewards) - MEDIAN_FC:
-        cur_list = rewards[i: min(i + MEDIAN_FC, len(rewards))]
-        while len(cur_list) < MEDIAN_FC:
-            cur_list.append(rewards[-1])
-        i = i + 1
-        rew_median.append(np.mean(cur_list))
-    return rew_median
-
 def smooth_max(rewards):
     rew_median = []
     i = 0
@@ -67,12 +56,15 @@ def plot(index, smooth_fc=smooth_median):
     
     smoothed_rewards = smooth_fc(all_rewards)
     full_range = np.arange(0, len(all_rewards), 1)
-    smooth_range = np.arange(0, len(smoothed_rewards), 1)
+    smooth_range = np.arange(0, len(smoothed_rewards), 1) * 400
+
 
     print("Total number of steps:", sum(all_times))
     print('Average time length', np.mean(np.array(all_times)))
-    plt.plot(smooth_range[:2500], smoothed_rewards[:2500], '-')
-    
+    patch, = plt.plot(smooth_range[:CAP], smoothed_rewards[:CAP], '-', label=PLOT_NAMES[index])
+    plt.xlabel('Timesteps')
+    plt.ylabel("Reward")
+    return patch
 
 def smooth(rewards, factor=10):
     smoothed_rew = []
@@ -81,8 +73,15 @@ def smooth(rewards, factor=10):
     return smoothed_rew
 
 def main():
+    legends = []
     for i in range(len(local_logs)):
-        plot(i, smooth_mean)
+        legends.append(plot(i, smooth_median))
+    patch, = plt.plot([700000], [22.7], 'bx', label="Sensor Only (Test)")
+    legends.append(patch)
+    patch, = plt.plot([700000], [23.3], 'rx', label="Depth + Sensor (Test)")
+    legends.append(patch)
+    plt.legend(handles=legends)
+    
     plt.show()
 
 if __name__ == '__main__':
@@ -91,4 +90,6 @@ if __name__ == '__main__':
     parser.add_argument('--smooth', type=int, default=1)
     args = parser.parse_args()
     MEDIAN_FC = args.smooth
+    CAP = 1700
+    PLOT_NAMES = ["Sensor Only", "Depth + Sensor"]
     main()
