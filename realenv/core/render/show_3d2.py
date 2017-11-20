@@ -19,7 +19,6 @@ from realenv.core.render.profiler import Profiler
 from multiprocessing import Process
 
 from realenv.data.datasets import ViewDataSet3D
-from realenv.envs.env_ui import SixViewUI
 from realenv.configs import *
 from realenv import configs
 from realenv.core.render.completion import CompletionNet
@@ -461,7 +460,7 @@ class PCRenderer:
         self.show_rgb = self.show
         self.show_unfilled_rgb = self.show_unfilled
 
-        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal
+        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_unfilled_rgb
 
 
     def renderToScreen(self):

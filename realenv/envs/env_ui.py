@@ -123,7 +123,7 @@ class FourViewUI(SimpleUI):
     def update_rgb(self, rgb):
         self.add_image(np.swapaxes(rgb, 0, 1), self.POS_RGB[0], self.POS_RGB[1])
 
-    def update_unfill(self, unfill):
+    def update_unfilled(self, unfill):
         self.add_image(np.swapaxes(unfill, 0, 1), self.POS_UNFILL[0], self.POS_UNFILL[1])
 
     def update_physics(self, physics):
