@@ -1,6 +1,6 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from realenv.envs.env_bases import *
-from realenv.core.physics.robot_locomotors import Humanoid
+from realenv.core.physics.robot_locomotors import Humanoid, Ant
 from transforms3d import quaternions
 from realenv import configs
 import os
@@ -52,8 +52,8 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = configs.INITIAL_POSE["humanoid"][configs.NAVIGATE_MODEL_ID][-1]
-        initial_orn, initial_pos = configs.INITIAL_POSE["humanoid"][configs.NAVIGATE_MODEL_ID][0]
+        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
         self.robot = Humanoid(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
@@ -135,7 +135,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         walk_target_y = self.robot.walk_target_y
 
         self.flag = None
-        if self.human:
+        if self.human and not configs.DISPLAY_UI:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
@@ -145,47 +145,3 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         self.flag_reposition()
         return obs
-
-
-
-'''
-
-class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
-        frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False, 
-        mode='RGBD', use_filler=True):
-        self.human = human
-        self.timestep = timestep
-        self.frame_skip = frame_skip
-        self.enable_sensors = enable_sensors
-        HumanoidEnv.__init__(self, mode)
-        CameraRobotEnv.__init__(self, use_filler)
-        #self.tracking_camera['yaw'] = 30    ## living room
-        #self.tracking_camera['distance'] = 1.5
-        #self.tracking_camera['pitch'] = -45 ## stairs
-
-        #distance=2.5 ## demo: living room ,kitchen
-        self.tracking_camera['distance'] = 1.3   ## demo: stairs
-        self.tracking_camera['pitch'] = -35 ## stairs
-
-        #yaw = 0     ## demo: living room
-        #yaw = 30    ## demo: kitchen
-        self.tracking_camera['yaw'] = -60     ## demo: stairs
-
-
-class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
-        frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False):
-        self.human = human
-        self.timestep = timestep
-        self.frame_skip = frame_skip
-        self.enable_sensors = enable_sensors
-        HumanoidEnv.__init__(self)
-        SensorRobotEnv.__init__(self)
-        self.tracking_camera['distance'] = 1.3   ## demo: stairs
-        self.tracking_camera['pitch'] = -35 ## stairs
-
-        #yaw = 0     ## demo: living room
-        #yaw = 30    ## demo: kitchen
-        self.tracking_camera['yaw'] = -60     ## demo: stairs
-'''

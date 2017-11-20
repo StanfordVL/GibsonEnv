@@ -422,9 +422,9 @@ class Humanoid(WalkerBase):
 
     def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL"):
         self.model_type = "MJCF"
-        self.mjcf_scaling = 1
+        self.mjcf_scaling = 0.6
         self.is_discrete = is_discrete
-        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = 0.6, target_pos=target_pos, resolution=resolution)
+        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = self.mjcf_scaling, target_pos=target_pos, resolution=resolution)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
         #self.eye_offset_orn = euler2quat(0, 0, 0, axes='sxyz')

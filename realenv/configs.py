@@ -85,11 +85,7 @@ DISPLAY_UI = True
 UI_SIX = 1
 UI_FOUR = 2
 UI_TWO = 3
-UI_MODE = UI_SIX
-
-USE_SEMANTICS = True
-SURFACE_NORMAL = True
-
+UI_MODE = UI_FOUR
 
 
 ## Render window settings

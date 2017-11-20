@@ -27,7 +27,7 @@ tracking_camera = {
     'yaw': 46,     ## demo: living room
     #yaw = 30    ## demo: kitchen
     'z_offset': 0.5,
-    'distance': 3 ## living room
+    'distance': 5 ## living room
     #self.tracking_camera['yaw'] = 90     ## demo: stairs
 }
 

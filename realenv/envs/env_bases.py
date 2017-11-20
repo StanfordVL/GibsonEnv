@@ -130,13 +130,10 @@ class BaseEnv(gym.Env):
         return rgb_array
 
     def render_physics(self):        
-        base_pos=[0,0,0]
-        if (hasattr(self,'robot')):
-            if (hasattr(self.robot,'body_xyz')):
-                base_pos = self.robot.body_xyz
+        robot_pos, _ = p.getBasePositionAndOrientation(self.robot_tracking_id)
         
         view_matrix = p.computeViewMatrixFromYawPitchRoll(
-            cameraTargetPosition=base_pos,
+            cameraTargetPosition=robot_pos,
             distance=self.tracking_camera["distance"],
             yaw=self.tracking_camera["yaw"],
             pitch=self.tracking_camera["pitch"],
