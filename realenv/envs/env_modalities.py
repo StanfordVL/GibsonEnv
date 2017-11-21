@@ -324,10 +324,11 @@ class CameraRobotEnv(SensorRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
                 
-        #with Profiler("Render to screen"):
-        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        with Profiler("Render off screen"):
+            self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
         if configs.DISPLAY_UI:
-            self.renderToUI()
+            with Profiler("Rendering to UI time"):
+                self.renderToUI()
         elif self.human:
             self.r_camera_rgb.renderToScreen()
 
@@ -372,11 +373,13 @@ class CameraRobotEnv(SensorRobotEnv):
             self.UI.update_depth(depth * 16.)
         
         if configs.UI_MODE == configs.UI_FOUR:
-            depth = self.render_depth
-            depth = np.concatenate((depth, depth, depth), axis=2)
+            with Profiler("Rendering depth"):
+                depth = self.render_depth
+                depth = np.concatenate((depth, depth, depth), axis=2)
+                self.UI.update_depth(depth * 16.)
             unfilled = self.render_unfilled
             self.UI.update_unfilled(self.render_unfilled)
-            self.UI.update_depth(depth * 16.)
+            
 
         self.UI.update_rgb(rgb)
         self.UI.update_physics(physics_rgb)        
