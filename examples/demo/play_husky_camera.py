@@ -7,7 +7,7 @@ frame_skip = 1
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--resolution', type=str, default="NORMAL")
+    parser.add_argument('--resolution', type=str, default="LARGE")
     args = parser.parse_args()
 
     #env = HuskyNavigateEnv(human=True, timestep=timestep, frame_skip=frame_skip, mode="RGB", is_discrete = True, resolution=args.resolution)

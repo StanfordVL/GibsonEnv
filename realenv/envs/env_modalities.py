@@ -334,16 +334,17 @@ class CameraRobotEnv(SensorRobotEnv):
         with Profiler("Render to screen"):
             self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
-        Image.fromarray(self.render_rgb.astype(np.uint8)).save(
-            'frames/rgb%04d.png' % self.save_frame)
+        #Image.fromarray(self.render_rgb.astype(np.uint8)).save(
+        #    'frames/rgb%04d.png' % self.save_frame)
 
-        Image.fromarray(self.render_physics().astype(np.uint8)).save(
-            'frames/phy%04d.png' % self.save_frame)
+        #Image.fromarray(self.render_physics().astype(np.uint8)).save(
+        #    'frames/phy%04d.png' % self.save_frame)
 
-        self.save_frame += 1
+        #self.save_frame += 1
         if configs.DISPLAY_UI:
             self.renderToUI()
-            #self.save_frame += 1
+            Image.fromarray(self.UI.screen_arr.astype(np.uint8)).save('frames/img%04d.png' % self.save_frame)
+            self.save_frame += 1
 
         elif self.human:
             self.r_camera_rgb.renderToScreen()

@@ -355,7 +355,7 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
      
 
      if ((y > h/8) && (y < (h*7)/8))
-     if ((mindelta > -10) && (maxdelta < 10) && (this_depth < 10000)) {
+     if ((mindelta > - 0.1 * this_depth) && (maxdelta <  0.1 * this_depth) && (this_depth < 10000)) {
            if ((txmax - txmin) * (tymax - tymin) < 500)
            {
                for (itx = txmin; itx < txmax; itx ++)

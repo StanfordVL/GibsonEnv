@@ -66,7 +66,7 @@ USE_MJCF = True
 ## Street scene: 15N3xPvXqFR
 ## Gates 3rd: TVHnHa4MZwE
 CLIMB_MODEL_ID = "TVHnHa4MZwE"
-NAVIGATE_MODEL_ID = "Gn4zCib6aCV"
+NAVIGATE_MODEL_ID = "TVHnHa4MZwE"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
 USE_SENSOR_OUTPUT = False
@@ -92,7 +92,7 @@ UI_MODE = UI_TWO
 HIGH_RES_MONITOR = False
 MAKE_VIDEO = True
 LIVE_DEMO = False
-
+ENABLE_UI_RECORDING = False
 
 TASK_POSE = {
 
@@ -207,10 +207,10 @@ TASK_POSE = {
     "sRj553CTHiw": {
         "navigate": [
             #[[0, 0, 3.14/2], [-14.0747, 17.5126, 0.5]],
-            #[[0, 0, 3 * 3.14/2], [-14.3, 5, 1.2]],  ## initial: end of hall way
+            [[0, 0, 3 * 3.14/2], [-14.3, 5, 1.2]],  ## initial: end of hall way
             #[[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
             #[[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]] ## target: gates entrance hall
-            [[0, 0, 0], [-8.6773, 1.4495, 1.2]]
+            #[[0, 0, 0], [-8.6773, 1.4495, 1.2]]
         ],
         "fetch": [
             [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial
@@ -251,6 +251,7 @@ TASK_POSE = {
     },  # basement house
     "TVHnHa4MZwE": {
         "navigate": [
+            [[0, 0, 2.5 * 3.14/4] , [7.7417, 5.1469, 0.9726]],
             [[0, 0, 3.14], [12.5945, -4.8648, 1.5727]],
             [[0, 0, 0], [0, 0, 0]],
             [[0, 0, 0], [0, 0, 0]]
