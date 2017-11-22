@@ -50,11 +50,11 @@ def load(path):
     #return ActWrapper(act, act_params)
 
 
-def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
+def traj_segment_generator(pi, env, horizon, stochastic):
     t = 0
     ac = env.action_space.sample() # not used, just so we have the datatype
     new = True # marks if we're on first timestep of an episode
-    ob, ob_sensor = env.reset()
+    ob_visual, ob = env.reset()
 
     cur_ep_ret = 0 # return in current episode
     cur_ep_len = 0 # len of current episode
@@ -62,10 +62,8 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
     ep_lens = [] # lengths of ...
 
     # Initialize history arrays
-    if sensor:
-        obs = np.array([ob_sensor for _ in range(horizon)])
-    else:
-        obs = np.array([ob for _ in range(horizon)])
+    obs = np.array([ob for _ in range(horizon)])
+    
     rews = np.zeros(horizon, 'float32')
     vpreds = np.zeros(horizon, 'float32')
     news = np.zeros(horizon, 'int32')
@@ -75,10 +73,7 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
     while True:
         prevac = ac
         #with Profiler("agent act"):
-        if sensor:
-            ac, vpred = pi.act(stochastic, ob_sensor)
-        else:
-            ac, vpred = pi.act(stochastic, ob)
+        ac, vpred = pi.act(stochastic, ob)
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
         # terminal value
@@ -92,10 +87,7 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
             ep_lens = []
         i = t % horizon
 
-        if sensor:
-            obs[i] = ob_sensor
-        else:
-            obs[i] = ob
+        obs[i] = ob
 
         vpreds[i] = vpred
         news[i] = new
@@ -103,10 +95,11 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
         prevacs[i] = prevac
 
         #with Profiler("environment step"):
-        ob, rew, new, meta = env.step(ac)
-        if meta:
-            if 'sensor' in meta:
-                ob_sensor = meta['sensor']
+        ob_visual, rew, new, meta = env.step(ac)
+        assert('sensor' in meta)
+        assert(meta is not None)
+
+        ob = meta['sensor']
         rews[i] = rew
 
         cur_ep_ret += rew
@@ -116,7 +109,7 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
             ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
             cur_ep_len = 0
-            ob, ob_sensor = env.reset()
+            ob_visual, ob = env.reset()
         t += 1
 
 def add_vtarg_and_adv(seg, gamma, lam):
@@ -144,20 +137,14 @@ def learn(env, policy_func, *,
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        sensor = False,
         save_name=None,
         save_per_acts=3,
         reload_name=None
         ):
     # Setup losses and stuff
     # ----------------------------------------
-    if sensor:
-        ob_space = env.sensor_space
-    else:
-        ob_space = env.observation_space
+    ob_space = env.sensor_space
     ac_space = env.action_space
-
-
 
     pi = policy_func("pi", ob_space, ac_space) # Construct network for new policy
     oldpi = policy_func("oldpi", ob_space, ac_space) # Network for old policy
@@ -204,7 +191,7 @@ def learn(env, policy_func, *,
 
     # Prepare for rollouts
     # ----------------------------------------
-    seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True, sensor = sensor)
+    seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True)
 
     episodes_so_far = 0
     timesteps_so_far = 0

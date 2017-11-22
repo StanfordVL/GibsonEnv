@@ -62,6 +62,7 @@ int windowHeight = 256;
 size_t panoWidth = 2048;
 size_t panoHeight = 1024;
 int cudaDevice = -1;
+float camera_fov = 120.0f;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
@@ -108,8 +109,8 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
 
   int nSize = w*h*3;
   // First let's create our buffer, 3 channels per Pixel
-  unsigned short* dataBuffer = (unsigned short*)malloc(nSize*sizeof(unsigned short));
-  //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
+  //unsigned short* dataBuffer = (unsigned short*)malloc(nSize*sizeof(unsigned short));
+  char* dataBuffer = (char*)malloc(nSize*sizeof(char));
 
   if (!dataBuffer) return false;
 
@@ -233,17 +234,31 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("GPU", 'g', "GPU index", false, 0);
     cmdp.add<int>("Width", 'w', "Render window width", false, 256);
     cmdp.add<int>("Height", 'h', "Render window height", false, 256);
+    cmdp.add<int>("Smooth", 's', "Whether render depth only", false, 0);
+    cmdp.add<int>("Normal", 'n', "Whether render surface normal", false, 0);
 
     cmdp.parse_check(argc, argv);
 
     std::string model_path = cmdp.get<std::string>("modelpath");
     int GPU_NUM = cmdp.get<int>("GPU");
+    int smooth = cmdp.get<int>("Smooth");
+    int normal = cmdp.get<int>("Normal");
 
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
 
     std::string name_obj = model_path + "/" + "modeldata/out_res.obj";
-    std::string name_loc = model_path + "/" + "sweep_locations.csv";
+    if (smooth > 0) {
+    	name_obj = model_path + "/" + "modeldata/out_smoothed.obj";
+    	GPU_NUM = -1;
+    }
+
+    if (normal > 0) {
+    	name_obj = model_path + "/" + "modeldata/rgb.obj";
+    	GPU_NUM = -2;
+    }
+
+    std::string name_loc   = model_path + "/" + "sweep_locations.csv";
 
 
     glfwSetErrorCallback(error_callback);
@@ -397,8 +412,13 @@ int main( int argc, char * argv[] )
 	glBindVertexArray(VertexArrayID);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./StandardShadingRTT.fragmentshader" );
-
+	GLuint programID;
+	if (normal == 0) {
+		programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./MistShadingRTT.fragmentshader" );
+	} else {
+		programID = LoadShaders( "./NormalShadingRTT.vertexshader", "./NormalShadingRTT.fragmentshader" );
+	}
+	
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
@@ -414,6 +434,7 @@ int main( int argc, char * argv[] )
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
+	
 	bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
 
 	// Note: use unsigned int because of too many indices
@@ -551,10 +572,15 @@ int main( int argc, char * argv[] )
 
 	zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
+    std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
     socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
 	cudaGetDevice( &cudaDevice );
-	//int g_cuda_device = 0;
-	cudaDevice = GPU_NUM;
+	int g_cuda_device = 0;
+	if (GPU_NUM > 0) {
+		cudaDevice = GPU_NUM;	
+	} else {
+		cudaDevice = 0;
+	}
 	cudaSetDevice(cudaDevice);
 	cudaGLSetGLDevice(cudaDevice);
 	cudaGraphicsResource* resource;
@@ -636,7 +662,7 @@ int main( int argc, char * argv[] )
         int nByte = nSize*sizeof(float);
 
         // create buffer, 3 channels per Pixel
-        float* dataBuffer = (float*)malloc(nByte);
+        //float* dataBuffer = (float*)malloc(nByte);
         // First let's create our buffer, 3 channels per Pixel
         //float* dataBuffer = (float*)malloc(nByte);
         //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
@@ -664,7 +690,7 @@ int main( int argc, char * argv[] )
                 // Compute the MVP matrix from keyboard and mouse input
                 //computeMatricesFromInputs();
                 //computeMatricesFromFile(name_loc);
-                float fov = glm::radians(90.0f);
+                float fov = glm::radians(camera_fov);
                 glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
                 glm::mat4 ViewMatrix =  getView(viewMat, k);
                 //glm::mat4 ViewMatrix = getViewMatrix();
@@ -864,7 +890,7 @@ int main( int argc, char * argv[] )
                 // Compute the MVP matrix from keyboard and mouse input
                 //computeMatricesFromInputs();
                 //computeMatricesFromFile(name_loc);
-                float fov = glm::radians(90.0f);
+                float fov = glm::radians(camera_fov);
                 glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
                 glm::mat4 ViewMatrix =  getView(viewMat, 2);
                 glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
@@ -939,20 +965,41 @@ int main( int argc, char * argv[] )
                 glDisableVertexAttribArray(1);
                 glDisableVertexAttribArray(2);
 
-                zmq::message_t reply (windowWidth*windowHeight*sizeof(float));
-                float * reply_data_handle = (float*)reply.data();
-                glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, windowWidth * windowHeight *sizeof(float), reply_data_handle);
 
+                int message_sz;
+                int dim;
+                if (normal > 0) {
+                	dim = 3;
+                } else {
+                	dim = 1;
+                }
+
+                message_sz = windowWidth*windowHeight*sizeof(float)*dim;
+
+                zmq::message_t reply (message_sz);
+                float * reply_data_handle = (float*)reply.data();
+
+                if (normal > 0) {
+                	glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, message_sz, reply_data_handle);
+                } else {
+                	glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
+                }
+                
                 //std::cout << "Render time: " << t.elapsed() << std::endl;
 
 
                 float tmp;
 
-                for (int i = 0; i < windowHeight/2; i++)
+                int offset;
+            	for (int i = 0; i < windowHeight/2; i++) {
                     for (int j = 0; j < windowWidth; j++) {
-                    tmp = reply_data_handle[i * windowWidth + j];
-                    reply_data_handle[i * windowWidth + j] = reply_data_handle[(windowHeight - 1 -i) * windowWidth + j];
-                    reply_data_handle[(windowHeight - 1 -i) * windowWidth + j] = tmp;
+                 		for (int k = 0; k < dim; k++) {
+                			offset = k;
+		                    tmp = reply_data_handle[offset + (i * windowWidth + j) * dim];
+		                    reply_data_handle[offset + (i * windowWidth + j) * dim] = reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim];
+		                    reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = tmp;
+                		}
+                	}
                 }
                 socket.send (reply);
 
