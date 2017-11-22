@@ -70,7 +70,7 @@ class BuildingScene(Scene):
         #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
 
         #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.55], specularColor=[0.4, 0.4, 0.4])
-        p.changeVisualShape(boundaryUid,-1,rgbaColor=[195/255.0, 207/255.0, 226/255.0, 1.0], specularColor=[0.5, 0.5, 0.5])
+        #p.changeVisualShape(boundaryUid,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[0.5, 0.5, 0.5])
         #p.changeVisualShape(self.scene_obj,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[1, 1, 1])
     
     def episode_restart(self):

@@ -22,6 +22,7 @@ import shlex
 import gym
 import cv2
 import os
+from PIL import Image
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
@@ -43,7 +44,7 @@ class SensorRobotEnv(BaseEnv):
         #   @self.human
         #   @self.timestep
         #   @self.frame_skip
-        
+
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
@@ -57,23 +58,23 @@ class SensorRobotEnv(BaseEnv):
         self.dataset  = ViewDataSet3D(
             transform = np.array,
             mist_transform = np.array,
-            seqlen = 2, 
-            off_3d = False, 
-            train = False, 
+            seqlen = 2,
+            off_3d = False,
+            train = False,
             overwrite_fofn=True)
         self.ground_ids = None
         if self.human:
             assert(self.tracking_camera is not None)
-            
+
         self.action_space = self.robot.action_space
         ## Robot's eye observation, in sensor mode black pixels are returned
         self.observation_space = self.robot.observation_space
         self.sensor_space = self.robot.sensor_space
-        
+
         self.gpu_count = gpu_count
         self.nframe = 0
         self.eps_reward = 0
-        
+
     def get_keys_to_action(self):
         return self.robot.keys_to_action
 
@@ -163,7 +164,7 @@ class SensorRobotEnv(BaseEnv):
         eye_pos = self.robot.eyes.current_position()
         x, y, z ,w = self.robot.eyes.current_orientation()
         eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
-        return eye_pos, eye_quat        
+        return eye_pos, eye_quat
 
     def move_robot(self, init_x, init_y, init_z):
         "Used by multiplayer building to move sideways, to another running lane."
@@ -201,7 +202,7 @@ class SensorRobotEnv(BaseEnv):
                 if o not in top_k:
                     top_k.append(o)
                 if len(top_k) >= self.k:
-                    break 
+                    break
         return top_k
 
 
@@ -211,7 +212,7 @@ class SensorRobotEnv(BaseEnv):
 
 class CameraRobotEnv(SensorRobotEnv):
     """CameraRobotEnv has full modalities. If it's initialized with mode="SENSOR",
-    PC renderer is not initialized to save time. 
+    PC renderer is not initialized to save time.
     """
     def __init__(self, mode, gpu_count, scene_type, use_filler=True):
         ## The following properties are already instantiated inside xxx_env.py:
@@ -249,19 +250,21 @@ class CameraRobotEnv(SensorRobotEnv):
         elif self.robot.resolution == "XLARGE":
             self.windowsz = 1024
             self.scale_up = 1
-        
+
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
         self.setup_rendering_camera()
 
-        
+
+        self.save_frame  = 0
+
         cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
         self.robot_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
-        p.changeVisualShape(self.robot_mapId, -1, rgbaColor=[0, 0, 1, 0.7])
+        p.changeVisualShape(self.robot_mapId, -1, rgbaColor=[0, 0, 1, 0])
 
         cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
         self.target_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
-        p.changeVisualShape(self.target_mapId, -1, rgbaColor=[1, 0, 0, 0.7])
-        
+        p.changeVisualShape(self.target_mapId, -1, rgbaColor=[1, 0, 0, 0])
+
     def setup_rendering_camera(self):
         if not self.requires_camera_input or self.test_env:
             return
@@ -284,7 +287,7 @@ class CameraRobotEnv(SensorRobotEnv):
         sensor_state = SensorRobotEnv._reset(self)
         self.temp_target_x = self.robot.walk_target_x
         self.temp_target_y = self.robot.walk_target_y
-        
+
         ## This is important to ensure potential doesn't change drastically when reset
         self.potential = self.robot.calc_potential()
 
@@ -292,18 +295,19 @@ class CameraRobotEnv(SensorRobotEnv):
             visuals = self.get_blank_visuals()
             return visuals, sensor_state
 
-        
+
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
+
         rgb, depth, semantics, normal, unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         visuals = self.get_visuals(rgb, depth)
-        
+
         target_x = self.temp_target_x
         target_y = self.temp_target_y
-        p.resetBasePositionAndOrientation(self.target_mapId, [target_x  / self.robot.mjcf_scaling, target_y / self.robot.mjcf_scaling, 6], [0, 0, 0, 1])
+        #p.resetBasePositionAndOrientation(self.target_mapId, [target_x  / self.robot.mjcf_scaling, target_y / self.robot.mjcf_scaling, 6], [0, 0, 0, 1])
 
         return visuals, sensor_state
 
@@ -319,16 +323,28 @@ class CameraRobotEnv(SensorRobotEnv):
         if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_reward, done, sensor_meta
-        
+
         ## Select the nearest points
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
-                
-        with Profiler("Render off screen"):
+
+
+
+
+        with Profiler("Render to screen"):
             self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+
+        Image.fromarray(self.render_rgb.astype(np.uint8)).save(
+            'frames/rgb%04d.png' % self.save_frame)
+
+        Image.fromarray(self.render_physics().astype(np.uint8)).save(
+            'frames/phy%04d.png' % self.save_frame)
+
+        self.save_frame += 1
         if configs.DISPLAY_UI:
-            with Profiler("Rendering to UI time"):
-                self.renderToUI()
+            self.renderToUI()
+            #self.save_frame += 1
+
         elif self.human:
             self.r_camera_rgb.renderToScreen()
 
@@ -353,13 +369,13 @@ class CameraRobotEnv(SensorRobotEnv):
             return
 
         self.UI.refresh()
-        
+
         rgb = self.render_rgb
         physics_rgb = self.render_physics()
 
         if configs.UI_MODE == configs.UI_SIX:
             physics_rgb = physics_rgb[::2, ::2, :]
-        
+
         if configs.UI_MODE == configs.UI_SIX:
             depth = self.render_depth
             depth = depth[::2, ::2, :]
@@ -371,7 +387,7 @@ class CameraRobotEnv(SensorRobotEnv):
             self.UI.update_sem(semantics)
             self.UI.update_map(map_rgb[::2, ::2, :])
             self.UI.update_depth(depth * 16.)
-        
+
         if configs.UI_MODE == configs.UI_FOUR:
             with Profiler("Rendering depth"):
                 depth = self.render_depth
@@ -379,10 +395,10 @@ class CameraRobotEnv(SensorRobotEnv):
                 self.UI.update_depth(depth * 16.)
             unfilled = self.render_unfilled
             self.UI.update_unfilled(self.render_unfilled)
-            
+
 
         self.UI.update_rgb(rgb)
-        self.UI.update_physics(physics_rgb)        
+        self.UI.update_physics(physics_rgb)
 
 
     def _close(self):
@@ -459,13 +475,13 @@ class CameraRobotEnv(SensorRobotEnv):
             if self.scale_up !=1:
                 target =  cv2.resize(
                     target,None,
-                    fx=1.0/self.scale_up, 
-                    fy=1.0/self.scale_up, 
+                    fx=1.0/self.scale_up,
+                    fy=1.0/self.scale_up,
                     interpolation = cv2.INTER_CUBIC)
                 target_depth =  cv2.resize(
                     target_depth,None,
-                    fx=1.0/self.scale_up, 
-                    fy=1.0/self.scale_up, 
+                    fx=1.0/self.scale_up,
+                    fy=1.0/self.scale_up,
                     interpolation = cv2.INTER_CUBIC)
             pose = data[-1][0].numpy()
             targets.append(target)

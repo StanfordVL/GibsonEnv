@@ -18,7 +18,7 @@ tracking_camera = {
     'yaw': 20,  # demo: living room, stairs
     #'yaw'; 30,   # demo: kitchen
     'z_offset': 0.5,
-    'distance': 1,
+    'distance': 2,
     'pitch': -20
     # 'pitch': -24  # demo: stairs
 }
@@ -136,7 +136,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
 
         self.flag = None
         if self.human and not configs.DISPLAY_UI:
-            self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
+            self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
     def  _reset(self):

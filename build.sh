@@ -172,7 +172,7 @@ download_data () {
 		fi
 	cd -
 		
-	if [ -f realenv/data/*.pkl ]; then
+	if [ -f "realenv/data/*.pkl" ]; then
 		rm realenv/data/*.pkl
 	fi
 }

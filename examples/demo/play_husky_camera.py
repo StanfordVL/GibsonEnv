@@ -2,7 +2,7 @@ from realenv.envs.husky_env import HuskyNavigateEnv, HuskyClimbEnv
 from realenv.utils.play import play
 
 timestep = 1.0/(4 * 18)
-frame_skip = 4
+frame_skip = 1
 
 if __name__ == '__main__':
     import argparse

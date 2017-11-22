@@ -66,13 +66,13 @@ USE_MJCF = True
 ## Street scene: 15N3xPvXqFR
 ## Gates 3rd: TVHnHa4MZwE
 CLIMB_MODEL_ID = "TVHnHa4MZwE"
-NAVIGATE_MODEL_ID = "sRj553CTHiw"
+NAVIGATE_MODEL_ID = "Gn4zCib6aCV"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
 USE_SENSOR_OUTPUT = False
 
 
-HIST_MATCHING = True
+HIST_MATCHING = False
 USE_SMALL_FILLER = False
 USE_SMOOTH_MESH = False
 
@@ -81,31 +81,109 @@ USE_SMOOTH_MESH = False
 DEBUG_CAMERA_FOLLOW = True
 
 
-DISPLAY_UI = True
-ENABLE_UI_RECORDING = False
+DISPLAY_UI = False
 UI_SIX = 1
 UI_FOUR = 2
 UI_TWO = 3
-UI_MODE = UI_SIX
+UI_MODE = UI_TWO
 
 
 ## Render window settings
 HIGH_RES_MONITOR = False
-MAKE_VIDEO = False
+MAKE_VIDEO = True
 LIVE_DEMO = False
 
 
 TASK_POSE = {
+
+"Gn4zCib6aCV": {
+        "navigate": [
+            [[0, 0, 3.14/2], [7, -7, 1.2]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "fetch": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "climb": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ]
+    },  # basement house
+
+
+"8ohVSvgSpxP": {
+        "navigate": [
+            [[0, 0, -3.14/2], [1, 1, 1.2]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "fetch": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "climb": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ]
+    },  # basement house
+
+"4sJvhG2KCVH": {
+        "navigate": [
+            [[0, 0, 3.14/2], [-10, 10, 2]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "fetch": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ],
+        "climb": [
+            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0]]
+        ]
+    },  # basement house
+
+
+    "gJTEGVwrRVM": {
+        "navigate": [
+            # [[0, 0, 3.14/2], [-2, 3.5, 1.1]],       ## for making visual
+            # [[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
+            [[0, 0, 3.14/2], [-0.8, -1.9, 1.4]]  ## target
+        ],
+        "fetch": [
+            [[0, 0, 3.14], [-2, 3.5, 0.4]],  ## initial
+            [[0, 0, 0], [-0.203, -1.74, 1.8]]  ## target
+        ],
+        "climb": [
+            # [[0, 0, 3.14], [-0.703, -1.24, 2.35]],         ## drop on stairs
+            # [[0, 0, 0], [-0.203, -1.74, 1.8]],             ## Debug: slightly above stairs
+            # [[0, 3.14 / 2, 3.14], [-2.283, -1.64, 0.65]],  ## Debug: leaning too much
+            # [[0, 0, 3.14], [-2.283, -1.64, 0.15]],         ## bottom of stairs
+            # [[3.14/4, 0, 3.14], [-1.883, -1.64, 0.75]],    ## bottom of stairs, a bit up
+            [[0, 0, 0], [-0.003, -1.64, 1.65]],  ## starting at stairs target
+            # [[0, 3.14/4, 3.14], [-1.403, -1.64, 0.95]],    ## starting at stairs 1/4
+
+
+            # [[0, 0, 3.14], [-2.283, -0.64, 0.15]],  ## target bottom of stairs, closer to living room
+            # [[0, 0, 3.14], [2 * -2.583, -1.64, 0.15]],   ## zoomed target at bottom of stairs
+            [[0, 0, 3.14], [2.583, -1.64, 0.15]],  ## target at bottom of stairs
+
+            # [[0, 0, 3.14/2], [-1.403, -1.84, 1.75]],
+            # [[0, 0, 3.14], [-2, 3.5, 0.15]]         ## target living room
+            # [[0, 0, 3.14/2], [-0.003, -1.84, 1.45]] ## target stairs target
+            # [[0, 0, 3.14/2], [-1.403, -1.84, 0.75]] ## target stairs half way
+        ]
+    },
+
     "11HB6XZSh1Q": {
         "navigate": [
-            [[0, 0, 3.14/2], [-2, 3.5, 0.4]],       ## for making visual
+            #[[0, 0, 3.14/2], [-2, 3.5, 1.1]],       ## for making visual
             #[[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
-            [[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
+            [[0, 0, 3.14], [-0.8, -1.9, 2.8]]       ## target
         ],
         "fetch": [
             [[0, 0, 3.14], [-2, 3.5, 0.4]],         ## initial
             [[0, 0, 0], [-0.203, -1.74, 1.8]]       ## target
-        ], 
+        ],
         "climb": [
             #[[0, 0, 3.14], [-0.703, -1.24, 2.35]],         ## drop on stairs
             #[[0, 0, 0], [-0.203, -1.74, 1.8]],             ## Debug: slightly above stairs
@@ -119,7 +197,7 @@ TASK_POSE = {
             #[[0, 0, 3.14], [-2.283, -0.64, 0.15]],  ## target bottom of stairs, closer to living room
             #[[0, 0, 3.14], [2 * -2.583, -1.64, 0.15]],   ## zoomed target at bottom of stairs
             [[0, 0, 3.14], [2.583, -1.64, 0.15]],   ## target at bottom of stairs
-            
+
             #[[0, 0, 3.14/2], [-1.403, -1.84, 1.75]],
             #[[0, 0, 3.14], [-2, 3.5, 0.15]]         ## target living room
             #[[0, 0, 3.14/2], [-0.003, -1.84, 1.45]] ## target stairs target
@@ -128,24 +206,24 @@ TASK_POSE = {
     },
     "sRj553CTHiw": {
         "navigate": [
-            [[0, 0, 3.14/2], [-14.0747, 17.5126, 0.5]],
-            #[[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial: end of hall way
+            #[[0, 0, 3.14/2], [-14.0747, 17.5126, 0.5]],
+            #[[0, 0, 3 * 3.14/2], [-14.3, 5, 1.2]],  ## initial: end of hall way
             #[[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
             #[[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]] ## target: gates entrance hall
-            [[0, 0, 0], [-8.6773, 1.4495, 0.5]]
+            [[0, 0, 0], [-8.6773, 1.4495, 1.2]]
         ],
         "fetch": [
             [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial
             [[0, 0, 3.14], [-7, 2.6, 0.5]]          ## target
         ],
         "climb": [
-            [[0, 0, 3.14], [-7, 2.6, 0.5]], 
-            [[0, 0, 3.14], [-7, 2.6, 0.5]], 
+            [[0, 0, 3.14], [-7, 2.6, 0.5]],
+            [[0, 0, 3.14], [-7, 2.6, 0.5]],
         ]
     },
     "BbxejD15Etk": {
         "navigate": [
-            [[0, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 1, 1.2]],
             [[0, 0, 0], [0, 0, 0]]
         ],
         "fetch": [
@@ -173,6 +251,7 @@ TASK_POSE = {
     },  # basement house
     "TVHnHa4MZwE": {
         "navigate": [
+            [[0, 0, 3.14], [12.5945, -4.8648, 1.5727]],
             [[0, 0, 0], [0, 0, 0]],
             [[0, 0, 0], [0, 0, 0]]
         ],
@@ -183,7 +262,7 @@ TASK_POSE = {
         "climb": [
             #[[0, 0, 3.14/2], [11.5945, -1.8648, 0.8727]],
             [[0, 0, 3.14], [12.5945, -4.8648, 0.5727]],
-            
+
 
             [[0, 0, 0], [16.06, -5.07, -0.927]],  ## end of first half
             #[[0, 0, 0], [15.0, -1.92, -1.65]],    ## end of second half, right
@@ -195,6 +274,8 @@ TASK_POSE = {
 
 OFFSET_GROUND = {
     "TVHnHa4MZwE": -3,
+    "BbxejD15Etk" : -2,
+    "8ohVSvgSpxP" : -2
 }
 
 ## Initial locations
@@ -223,7 +304,7 @@ INITIAL_POSE = {
         ],
         "sRj553CTHiw": [
             [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],
-            [[0, 0, 3.14], [-7, 2.6, 0.5]], 
+            [[0, 0, 3.14], [-7, 2.6, 0.5]],
             [[0, 0, 3.14/2], [-13.2, 39.7, 0.5]],
             [[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
             [[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]]

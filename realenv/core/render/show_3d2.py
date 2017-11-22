@@ -443,7 +443,7 @@ class PCRenderer:
         #with Profiler("Rendering off screen"):
         if not k_views:
             all_dist, _ = self.rankPosesByDistance(pose)
-            k_views = (np.argsort(alla_dist))[:self.k]
+            k_views = (np.argsort(all_dist))[:self.k]
         if set(k_views) != self.old_topk:
             self.imgs_topk = np.array([self.imgs[i] for i in k_views])
             self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
@@ -458,6 +458,7 @@ class PCRenderer:
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
         self.show_rgb = self.show
+        #self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
         self.show_unfilled_rgb = self.show_unfilled
 
         return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_unfilled_rgb
