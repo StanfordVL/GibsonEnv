@@ -9,12 +9,13 @@ from mpi4py import MPI
 from realenv.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
 import pposgd_simple
+import pposgd_fuse, fuse_policy
 import baselines.common.tf_util as U
 import cnn_policy, mlp_policy
 import utils
 import datetime
 from baselines import logger
-from baselines import bench
+from monitor import Monitor
 import os.path as osp
 import tensorflow as tf
 import random
@@ -40,32 +41,50 @@ def train(num_timesteps, seed):
 
     use_filler = not args.disable_filler
     
-    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
+    raw_env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
 
+#    def policy_fn(name, ob_space, sensor_space, ac_space):
     def policy_fn(name, ob_space, ac_space):
         if args.mode == "SENSOR":
             return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
         else:
-            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+            #return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+        #else:
+            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess, kind='small')
 
-    env = bench.Monitor(env, logger.get_dir() and
+
+    env = Monitor(raw_env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))
     env.seed(workerseed)
     gym.logger.setLevel(logging.WARN)
 
+    
     pposgd_simple.learn(env, policy_fn,
         max_timesteps=int(num_timesteps * 1.1),
-        timesteps_per_actorbatch=1024,
+        timesteps_per_actorbatch=3000,
         clip_param=0.2, entcoeff=0.01,
-        optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
-        gamma=0.99, lam=0.95,
+        optim_epochs=4, optim_stepsize=3e-3, optim_batchsize=64,
+        gamma=0.996, lam=0.95,
         schedule='linear',
-        save_name=args.save_name,
-        save_per_acts=1,
+        save_name="husky_navigate_ppo_{}".format(args.mode),
+        save_per_acts=50,
         reload_name=args.reload_name
     )
-    env.close()
+    '''
+    pposgd_fuse.learn(env, policy_fn,
+        max_timesteps=int(num_timesteps * 1.1),
+        timesteps_per_actorbatch=1024,
+        clip_param=0.2, entcoeff=0.0001,
+        optim_epochs=10, optim_stepsize=3e-6, optim_batchsize=64,
+        gamma=0.995, lam=0.95,
+        schedule='linear',
+        save_name=args.save_name,
+        save_per_acts=10000,
+        reload_name=args.reload_name
+    )
 
+    env.close()
+    '''
 
 def callback(lcl, glb):
     # stop training if reward exceeds 199
@@ -87,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
-    parser.add_argument('--resolution', type=str, default="NORMAL")
+    parser.add_argument('--resolution', type=str, default="SMALL")
     parser.add_argument('--reload_name', type=str, default=None)
     parser.add_argument('--save_name', type=str, default=None)
     args = parser.parse_args()

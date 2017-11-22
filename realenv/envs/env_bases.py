@@ -13,20 +13,13 @@ import os
 import json
 import numpy as np
 from transforms3d import euler, quaternions
+from realenv import configs
 from realenv.core.physics.physics_object import PhysicsObject
 from realenv.core.render.profiler import Profiler
 from realenv.configs import *
 import gym, gym.spaces, gym.utils, gym.utils.seeding
 import sys
 
-
-def create_single_player_building_scene(env):
-    return SinglePlayerBuildingScene(env.robot, gravity=9.8, timestep=env.timestep, frame_skip=env.frame_skip)
-    
-
-def create_single_player_stadium_scene(env):
-    return SinglePlayerStadiumScene(env.robot, gravity=9.8, timestep=env.timestep, frame_skip=env.frame_skip)
-    
 
 class BaseEnv(gym.Env):
     """
@@ -43,13 +36,15 @@ class BaseEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self, scene_fn):
+    def __init__(self, scene_type):
         ## Properties already instantiated from SensorEnv/CameraEnv
         #   @self.human
         #   @self.robot
         
         #self.physicsClientId = p.connect(p.SHARED_MEMORY)
-        if (self.human):
+        if configs.DISPLAY_UI:
+            self.physicsClientId = p.connect(p.DIRECT)
+        elif (self.human):
             self.physicsClientId = p.connect(p.GUI)
             if MAKE_VIDEO:
                 #self.set_window(-1, -1, 1024, 512)
@@ -62,15 +57,22 @@ class BaseEnv(gym.Env):
         self._cam_dist = 3
         self._cam_yaw = 0
         self._cam_pitch = -30
-        self._render_width = 320
-        self._render_height = 240
+        self._render_width = self.windowsz
+        self._render_height = self.windowsz
 
-        self.scene_fn = scene_fn
-        self.setup_environment_scene()
-
-    def setup_environment_scene(self):
-        self.scene = self.scene_fn(self)
+        if scene_type == "stadium":
+            self.scene = self.create_single_player_stadium_scene()
+        elif scene_type == "building":
+            self.scene = self.create_single_player_building_scene()
+        else:
+            raise AssertionError()
         self.robot.scene = self.scene
+    
+    def create_single_player_building_scene(self):
+        return SinglePlayerBuildingScene(self.robot, model_id=self.model_id, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        
+    def create_single_player_stadium_scene(self):
+        return SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
 
 
     def configure(self, args):
@@ -100,15 +102,9 @@ class BaseEnv(gym.Env):
         dump = 0
         state = self.robot.reset()
         self.scene.episode_restart()
-        self.potential = self.robot.calc_potential()
         return state
 
-    def _render(self, mode, close):
-        if (mode=="human"):
-            self.human = True
-        if mode != "rgb_array":
-            return np.array([])
-        
+    def _render(self, mode, close):        
         base_pos=[0,0,0]
         if (hasattr(self,'robot')):
             if (hasattr(self.robot,'body_xyz')):
@@ -119,6 +115,55 @@ class BaseEnv(gym.Env):
             distance=self._cam_dist,
             yaw=self._cam_yaw,
             pitch=self._cam_pitch,
+            roll=0,
+            upAxisIndex=2)
+        proj_matrix = p.computeProjectionMatrixFOV(
+            fov=60, aspect=float(self._render_width)/self._render_height,
+            nearVal=0.1, farVal=100.0)
+        (_, _, px, _, _) = p.getCameraImage(
+        width=self._render_width, height=self._render_height, viewMatrix=view_matrix,
+            projectionMatrix=proj_matrix,
+            renderer=p.ER_BULLET_HARDWARE_OPENGL
+            )
+        rgb_array = np.array(px)
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
+
+    def render_physics(self):        
+        robot_pos, _ = p.getBasePositionAndOrientation(self.robot_tracking_id)
+        
+        view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=robot_pos,
+            distance=self.tracking_camera["distance"],
+            yaw=self.tracking_camera["yaw"],
+            pitch=self.tracking_camera["pitch"],
+            roll=0,
+            upAxisIndex=2)
+        proj_matrix = p.computeProjectionMatrixFOV(
+            fov=60, aspect=float(self._render_width)/self._render_height,
+            nearVal=0.1, farVal=100.0)
+        (_, _, px, _, _) = p.getCameraImage(
+        width=self._render_width, height=self._render_height, viewMatrix=view_matrix,
+            projectionMatrix=proj_matrix,
+            renderer=p.ER_BULLET_HARDWARE_OPENGL
+            )
+        rgb_array = np.array(px)
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
+
+
+    def render_map(self):
+        base_pos=[0, 0, -3]
+        if (hasattr(self,'robot')):
+            if (hasattr(self.robot,'body_xyz')):
+                base_pos[0] = self.robot.body_xyz[0]
+                base_pos[1] = self.robot.body_xyz[1]
+        
+        view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=base_pos,
+            distance=35,
+            yaw=0,
+            pitch=-89,
             roll=0,
             upAxisIndex=2)
         proj_matrix = p.computeProjectionMatrixFOV(

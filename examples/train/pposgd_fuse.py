@@ -62,7 +62,9 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
     # Initialize history arrays
 
     obs_sensor = np.array([ob_sensor for _ in range(horizon)])
-    print(obs_sensor)
+    debugmode = 0
+    if debugmode:
+        print(obs_sensor)
     obs = np.array([ob for _ in range(horizon)])
 
     rews = np.zeros(horizon, 'float32')
@@ -140,7 +142,7 @@ def learn(env, policy_func, *,
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        save_name=None,
+        save_name='ppo_fuse',
         save_per_acts=3,
         reload_name=None
         ):
@@ -240,7 +242,7 @@ def learn(env, policy_func, *,
         d = Dataset(dict(ob=ob, ob_sensor = ob_sensor, ac=ac, atarg=atarg, vtarg=tdlamret), shuffle=not pi.recurrent)
         optim_batchsize = optim_batchsize or ob.shape[0]
 
-        if hasattr(pi, "ob_rms"): pi.ob_rms.update(ob) # update running mean/std for policy
+        if hasattr(pi, "ob_rms"): pi.ob_rms.update(ob_sensor) # update running mean/std for policy (sensor output)
 
         assign_old_eq_new() # set old parameter values to new parameter values
         logger.log("Optimizing...")

@@ -11,6 +11,7 @@ import numpy as np
 import ctypes as ct
 import sys
 from tqdm import *
+from realenv import configs
 import torchvision.transforms as transforms
 import argparse
 import json
@@ -74,7 +75,7 @@ def get_model_initial_pose(robot):
 
 
 class ViewDataSet3D(data.Dataset):
-    def __init__(self, root=None, train=False, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True, overwrite_fofn=False):
+    def __init__(self, root=None, train=False, transform=None, mist_transform=None, loader=default_loader, seqlen=5, debug=False, dist_filter = None, off_3d = True, off_pc_render = True, overwrite_fofn=False, semantic_transform=np.array):
         print ('Processing the data:')
         if not root:
             self.root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dataset")
@@ -86,6 +87,7 @@ class ViewDataSet3D(data.Dataset):
         self.transform = transform
         self.target_transform = transform
         self.depth_trans = mist_transform
+        self.semantic_trans = semantic_transform
         self.off_3d = off_3d
         self.select = []
         self.fofn   = self.root + '_fofn'+str(int(train))+'.pkl'
@@ -204,6 +206,7 @@ class ViewDataSet3D(data.Dataset):
         mist_paths = ([os.path.join(self.root, scene, 'pano', 'mist', "point_" + item + "_view_equirectangular_domain_mist.png") for item in uuids])
         normal_paths = ([os.path.join(self.root, scene, 'pano', 'normal', "point_" + item + "_view_equirectangular_domain_normal.png") for item in uuids])
         pose_paths = ([os.path.join(self.root, scene, 'pano', 'points', "point_" + item + ".json") for item in uuids])
+        semantic_paths = ([os.path.join(self.root, scene, 'pano', 'semantic', "point_" + item + "_view_equirectangular_domain_semantic.png") for item in uuids])
         #print(paths)
         poses = []
         #print(pose_paths)
@@ -223,7 +226,6 @@ class ViewDataSet3D(data.Dataset):
             poses.append(p)
             f.close()
 
-        #print(poses)
         img_paths = paths[1:]
         target_path = paths[0]
         img_poses = poses[1:]
@@ -234,16 +236,18 @@ class ViewDataSet3D(data.Dataset):
 
         normal_img_paths = normal_paths[1:]
         normal_target_path = normal_paths[0]
+
+        semantic_img_paths = semantic_paths[1:]
+        semantic_target_path = semantic_paths[0]
         poses_relative = []
 
+        semantic_imgs = None
+        semantic_target = None
+
         for pose_i, item in enumerate(img_poses):
-            #print('source_pose %d' % pose_i, item)
-            #print('target_pose', target_pose)
-            #print(img_paths[pose_i])
             pose_i = pose_i + 1
             relative = np.dot(inv(target_pose), item)
             poses_relative.append(torch.from_numpy(relative))
-        #print("img paths", len(img_paths), img_paths)
         imgs = [self.loader(item) for item in img_paths]
         target = self.loader(target_path)
 
@@ -253,6 +257,10 @@ class ViewDataSet3D(data.Dataset):
 
             normal_imgs = [self.loader(item) for item in normal_img_paths]
             normal_target = self.loader(normal_target_path)
+
+            if configs.UI_MODE == configs.UI_SIX:
+                semantic_imgs = [self.loader(item) for item in semantic_img_paths]
+                semantic_target = self.loader(semantic_target_path)
 
         org_img = imgs[0].copy()
 
@@ -277,6 +285,10 @@ class ViewDataSet3D(data.Dataset):
             if not self.target_transform is None:
                 normal_target = self.target_transform(normal_target)
 
+            if not self.semantic_trans is None and configs.UI_MODE == configs.UI_SIX:
+                semantic_imgs = [self.semantic_trans(item) for item in semantic_imgs]
+                semantic_target = self.semantic_trans(semantic_target)
+
         if not self.off_pc_render:
             img = np.array(org_img)
             h,w,_ = img.shape
@@ -300,9 +312,9 @@ class ViewDataSet3D(data.Dataset):
         if self.off_3d:
             return imgs, target, poses_relative
         elif self.off_pc_render:
-            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target,  poses_relative
+            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, semantic_imgs, semantic_target, poses_relative
         else:
-            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target,  poses_relative, render, target_depth
+            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, semantic_imgs, semantic_target, poses_relative, render, target_depth
 
     def __len__(self):
         return len(self.select)
@@ -396,7 +408,6 @@ class PairDataset(data.Dataset):
             #depth = self.mist_transform(depth)
             depth = torch.from_numpy(depth.astype(np.float32))
         return source, depth, target
-
 
 
 

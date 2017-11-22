@@ -75,22 +75,28 @@ bool loadOBJ(
 			//int matches = fscanf(file, "%u/%u/%u %u/%u/%u %u/%u/%u\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
 			int matches = sscanf(stringBuffer, "%u/%u/%u %u/%u/%u %u/%u/%u\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
 			bool f_3_format = (matches == 9);
+			bool f_2_format = true;
 			if (! f_3_format) {
 				// .obj file has `f v1/uv1 v2/uv2 v3/uv3` format
 				int matches = sscanf(stringBuffer, " %u/%u %u/%u %u/%u\n", &vertexIndex[0], &uvIndex[0], &vertexIndex[1], &uvIndex[1], &vertexIndex[2], &uvIndex[2] );
-
-				if (matches != 6){
-					printf("File can't be read by our simple parser :-( Try exporting with other options\n");
-					fclose(file);
-					return false;
+				f_2_format = (matches == 6);
+				if (! f_2_format) {
+					matches = sscanf(stringBuffer, " %u %u %u\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
+					if (matches != 3){
+						printf("File can't be read by our simple parser :-( Try exporting with other options\n");
+						fclose(file);
+						return false;
+					}
 				}
 			}
 			vertexIndices.push_back(vertexIndex[0]);
 			vertexIndices.push_back(vertexIndex[1]);
 			vertexIndices.push_back(vertexIndex[2]);
-			uvIndices    .push_back(uvIndex[0]);
-			uvIndices    .push_back(uvIndex[1]);
-			uvIndices    .push_back(uvIndex[2]);
+			if (f_2_format || f_3_format) {
+				uvIndices    .push_back(uvIndex[0]);
+				uvIndices    .push_back(uvIndex[1]);
+				uvIndices    .push_back(uvIndex[2]);
+			}
 			if (f_3_format) {
 				normalIndices.push_back(normalIndex[0]);
 				normalIndices.push_back(normalIndex[1]);
@@ -109,8 +115,10 @@ bool loadOBJ(
 
 		// Get the indices of its attributes
 		unsigned int vertexIndex = vertexIndices[i];
-		unsigned int uvIndex = uvIndices[i];
+		unsigned int uvIndex = -1;
 
+		if (uvIndices.size() > 0)
+			uvIndex = uvIndices[i];
 
 		unsigned int normalIndex = -1;
 		if (normalIndices.size() > 0)
@@ -119,13 +127,16 @@ bool loadOBJ(
 		
 		// Get the attributes thanks to the index
 		glm::vec3 vertex = temp_vertices[ vertexIndex-1 ];
-		glm::vec2 uv = temp_uvs[ uvIndex-1 ];
-
+		
 		
 		// Put the attributes in buffers
 		out_vertices.push_back(vertex);
-		out_uvs     .push_back(uv);
-
+		
+		if (temp_uvs.size() > 0 && uvIndices.size() > 0) {
+			glm::vec2 uv = temp_uvs[ uvIndex-1 ];
+			out_uvs     .push_back(uv);
+		}
+		
 		if (temp_normals.size() > 0 && normalIndices.size() > 0) {
 			glm::vec3 normal = temp_normals[ normalIndex-1 ];
 			out_normals.push_back(normal);
@@ -159,8 +170,16 @@ bool loadOBJ(
 			unsigned int vertexIndex = vertexIndices[i];
 			glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
 			out_normals[vertexIndex-1] += normal / float(vertexFaces[vertexIndex-1]);
+			//printf("%f %f %f\n", normal[0], normal[1], normal[2]);
 		}
 	}
+
+	// TODO: (hzyjerry) this is a dummy place holder
+	if ( out_uvs.size() == 0 ) {
+		for ( unsigned int i=0; i<out_vertices.size(); i++ ){
+			out_uvs.push_back(glm::vec2(0.0));
+		}
+	}	
 	printf("size of temp vertices %lu, vertex indices %lu out vertices %lu\n", temp_vertices.size(), vertexIndices.size(), out_vertices.size());
 	fclose(file);
 	return true;

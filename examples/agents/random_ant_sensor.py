@@ -5,7 +5,7 @@ import sys
 import gym
 from PIL import Image
 from realenv.core.render.profiler import Profiler
-from realenv.envs.ant_env import AntSensorEnv
+from realenv.envs.ant_env import AntNavigateEnv
 import pybullet as p
 
 
@@ -23,7 +23,7 @@ class RandomAgent(object):
 
 if __name__ == '__main__':
     #env = gym.make('HumanoidSensor-v0')
-    env = AntSensorEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4)
+    env = AntNavigateEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, mode="SENSOR")
     obs = env.reset()
     agent = RandomAgent(env.action_space)
     

@@ -126,7 +126,8 @@ cuda_add_executable(depth_render
 	external/lodepng/lodepng.cpp
 
 	depth_render/StandardShadingRTT.vertexshader
-	depth_render/StandardShadingRTT.fragmentshader
+	depth_render/MistShadingRTT.fragmentshader
+	depth_render/NormalShadingRTT.fragmentshader
 	depth_render/Passthrough.vertexshader
 	depth_render/WobblyTexture.fragmentshader
 )
@@ -161,7 +162,8 @@ add_executable(demo
 	external/lodepng/lodepng.cpp
 
 	depth_render/StandardShadingRTT.vertexshader
-	depth_render/StandardShadingRTT.fragmentshader
+	depth_render/MistShadingRTT.fragmentshader
+	depth_render/NormalShadingRTT.fragmentshader
 	depth_render/Passthrough.vertexshader
 	depth_render/WobblyTexture.fragmentshader
 )

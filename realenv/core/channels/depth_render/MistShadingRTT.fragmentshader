@@ -86,9 +86,12 @@ void main(){
 	//	m = 128.0f;
 	//}
 	
-
+	//comment this out to disable mist
 	mist = vec3(m, m, m);
+
 	float cull_delta = 0.7f;  
+
+
 
 	//if (dot(EyeDirection_cameraspace, Normal_cameraspace) >= 0) {
 	//	mist = mist - cull_delta;
