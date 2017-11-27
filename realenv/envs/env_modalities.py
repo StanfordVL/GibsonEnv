@@ -343,7 +343,7 @@ class CameraRobotEnv(SensorRobotEnv):
         #self.save_frame += 1
         if configs.DISPLAY_UI:
             self.renderToUI()
-            Image.fromarray(self.UI.screen_arr.astype(np.uint8)).save('frames/img%04d.png' % self.save_frame)
+            #Image.fromarray(self.UI.screen_arr.astype(np.uint8)).save('frames/img%04d.png' % self.save_frame)
             self.save_frame += 1
 
         elif self.human:
