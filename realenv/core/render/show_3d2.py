@@ -21,8 +21,7 @@ from multiprocessing import Process
 from realenv.data.datasets import ViewDataSet3D
 from realenv.configs import *
 from realenv import configs
-from realenv.core.render.completion import CompletionNet
-from realenv.learn.completion2 import CompletionNet2
+from realenv.learn.completion import CompletionNet
 import torch.nn as nn
 
 
@@ -146,11 +145,11 @@ class PCRenderer:
 
 
         if configs.USE_SMALL_FILLER:
-            comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
             comp = torch.nn.DataParallel(comp).cuda()
             comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         else:
-            comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 64)
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
             comp = torch.nn.DataParallel(comp).cuda()
             comp.load_state_dict(torch.load(os.path.join(file_dir, "compG_epoch4_3000.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))

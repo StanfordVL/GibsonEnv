@@ -9,10 +9,10 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 import torchvision.utils as vutils
 from realenv.data.datasets import PairDataset
-from completion2 import CompletionNet2, identity_init, Perceptual, Discriminator2
-from tensorboard import SummaryWriter
+from realenv.learn.completion import CompletionNet, identity_init, Perceptual
+from tensorboardX import SummaryWriter
 from datetime import datetime
-import vision_utils
+import realenv.learn.vision_utils
 import torch.nn.functional as F
 import torchvision.models as models
 
@@ -101,9 +101,8 @@ def main():
     img_original = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
-    comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 64)
+    comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
 
-    dis = Discriminator2(pano = False)
     current_epoch = opt.cepoch
 
     comp =  torch.nn.DataParallel(comp).cuda()
@@ -113,8 +112,7 @@ def main():
         comp.apply(identity_init)
     else:
         comp.apply(weights_init)
-    dis = torch.nn.DataParallel(dis).cuda()
-    dis.apply(weights_init)
+
 
     if opt.model != '':
         comp.load_state_dict(torch.load(opt.model))
@@ -122,7 +120,7 @@ def main():
         current_epoch = opt.cepoch
 
     if opt.unfiller:
-        comp2 = CompletionNet2(norm = nn.BatchNorm2d, nf = 64)
+        comp2 = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
         comp2 =  torch.nn.DataParallel(comp2).cuda()
         if opt.model != '':
             comp2.load_state_dict(torch.load(opt.model.replace('G', 'G2')))
@@ -137,7 +135,6 @@ def main():
     #
     #else:
     optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
-    optimizerD = torch.optim.Adam(dis.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
 
     curriculum = (200000, 300000) # step to start D training and G training, slightly different from the paper
     alpha = 0.004
@@ -148,14 +145,11 @@ def main():
     vgg16 = models.vgg16(pretrained = False)
     vgg16.load_state_dict(torch.load('vgg16-397923af.pth'))
     feat = vgg16.features
-    p = torch.nn.DataParallel(Perceptual(feat, early = (opt.loss == 'early'))).cuda()
+    p = torch.nn.DataParallel(Perceptual(feat)).cuda()
 
     for param in p.parameters():
         param.requires_grad = False
 
-    #normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-
-    #img = Variable(torch.zeros(opt.batchsize, 3 , 1024, 2048)).cuda()
     imgnet_mean = torch.from_numpy(np.array([0.485, 0.456, 0.406]).astype(np.float32))
     imgnet_std = torch.from_numpy(np.array([0.229, 0.224, 0.225]).astype(np.float32))
 
@@ -223,8 +217,6 @@ def main():
             if opt.unfiller:
                 optimizerG2.zero_grad()
 
-                #if not opt.use_depth:
-                #    maskvc.data.fill_(0)
 
                 recon2 = comp2(img_originalc, maskvc)
 
@@ -279,13 +271,6 @@ def main():
                     writer.add_scalar('MSEloss2', loss2.data[0], step)
 
 
-            if step > curriculum[1]:
-                label.data.fill_(1)
-                output = dis(recon)
-                errG = alpha * F.nll_loss(output, label)
-                errG.backward()
-                errG_data = errG.data[0]
-
 
             #from IPython import embed; embed()
             if opt.loss == "train_init":
@@ -300,22 +285,6 @@ def main():
 
 
 
-            # Train D:
-            if step > curriculum[0]:
-                optimizerD.zero_grad()
-                label.data.fill_(0)
-                output = dis(recon.detach())
-                #print(output)
-                errD_fake = alpha * F.nll_loss(output, label)
-                errD_fake.backward(retain_graph = True)
-
-                output = dis(img_originalc)
-                #print(output)
-                label.data.fill_(1)
-                errD_real = alpha * F.nll_loss(output, label)
-                errD_real.backward()
-                optimizerD.step()
-                errD_data = errD_real.data[0] + errD_fake.data[0]
 
 
             print('[%d/%d][%d/%d] %d MSEloss: %f G_loss %f D_loss %f' % (epoch, opt.nepoch, i, len(dataloader), step, loss.data[0], errG_data, errD_data))
@@ -364,7 +333,6 @@ def main():
 
             if i%2000 == 0:
                 torch.save(comp.state_dict(), '%s/compG_epoch%d_%d.pth' % (opt.outf, epoch, i))
-                torch.save(dis.state_dict(), '%s/compD_epoch%d_%d.pth' % (opt.outf, epoch, i))
 
                 if opt.unfiller:
                     torch.save(comp2.state_dict(), '%s/compG2_epoch%d_%d.pth' % (opt.outf, epoch, i))

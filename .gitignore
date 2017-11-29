@@ -53,3 +53,5 @@ monitor_*
 comparison/
 0.monitor.csvpaper/
 0.monitor.csv
+
+*.idea*

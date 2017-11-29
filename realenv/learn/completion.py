@@ -12,7 +12,6 @@ import shutil
 import time
 import matplotlib.pyplot as plt
 
-
 cudnn.benchmark = True
 
 class AdaptiveNorm2d(nn.Module):
@@ -24,9 +23,9 @@ class AdaptiveNorm2d(nn.Module):
     def forward(self, x):
         return self.w0.repeat(x.size()) * self.nm(x) +  self.w1.repeat(x.size()) * x
 
-class CompletionNet2(nn.Module):
+class CompletionNet(nn.Module):
     def __init__(self, norm = AdaptiveNorm2d, nf = 64):
-        super(CompletionNet2, self).__init__()
+        super(CompletionNet, self).__init__()
 
         self.nf = nf
         alpha = 0.05
@@ -123,7 +122,6 @@ def identity_init(m):
                 m.weight.data[i+nc*2,i,cx,cy+1] = 1
                 m.weight.data[i+nc*3,i,cx+1,cy+1] = 1
 
-
     elif classname.find('ConvTranspose2d') != -1:
         o, i, k1, k2 = m.weight.data.size()
         nc = min(o,i)
@@ -134,9 +132,7 @@ def identity_init(m):
             m.weight.data[i+nc,i,cx+1,cy] = 1
             m.weight.data[i+nc*2,i,cx,cy+1] = 1
             m.weight.data[i+nc*3,i,cx+1,cy+1] = 1
-
         m.bias.data.fill_(0)
-
 
     elif classname.find('BatchNorm') != -1:
         m.weight.data.fill_(1)
@@ -145,10 +141,9 @@ def identity_init(m):
 
 
 class Perceptual(nn.Module):
-    def __init__(self, features, early = False):
+    def __init__(self, features):
         super(Perceptual, self).__init__()
         self.features = features
-        self.early = early
 
     def forward(self, x):
         bs = x.size(0)
@@ -185,59 +180,7 @@ class Perceptual(nn.Module):
         x = self.features[26](x)
         x4 = x.view(bs, -1, 1)
 
-        if self.early:
-            perfeat = torch.cat([x0, x1, x2], 1)
-        else:
-            perfeat = torch.cat([x0, x1, x2, x3, x4], 1)
+
+        perfeat = torch.cat([x0, x1, x2, x3, x4], 1)
 
         return perfeat
-
-
-class Discriminator2(nn.Module):
-
-    def __init__(self, pano = False):
-        super(Discriminator2, self).__init__()
-        alpha = 0.05
-        self.pano = pano
-        nf = 64
-        self.nf = nf
-
-        self.convs_global = nn.Sequential(
-            nn.Conv2d(3, nf, kernel_size = 5, stride = 2, padding = 1),
-            nn.ReLU(),
-            nn.Conv2d(nf, nf * 2, kernel_size = 5, stride = 2, padding = 1),
-            nn.BatchNorm2d(nf * 2, momentum=alpha),
-            nn.ReLU(),
-            nn.Conv2d(nf * 2, nf * 4, kernel_size = 5, stride = 2, padding = 1),
-            nn.BatchNorm2d(nf * 4, momentum=alpha),
-            nn.ReLU(),
-            nn.Conv2d(nf * 4, nf * 8, kernel_size = 5, stride = 2, padding = 1),
-            nn.BatchNorm2d(nf * 8, momentum=alpha),
-            nn.ReLU(),
-            nn.Conv2d(nf * 8, nf * 8, kernel_size = 5, stride = 2, padding = 1),
-            nn.BatchNorm2d(nf * 8, momentum=alpha),
-            nn.ReLU(),
-            nn.Conv2d(nf * 8, nf * 8, kernel_size = 5, stride = 2, padding = 1),
-            nn.ReLU()
-        )
-
-        if self.pano:
-            self.fc_global = nn.Linear(nf * 8 * 3 * 7, 1000)
-        else:
-            self.fc_global = nn.Linear(nf * 8 * 3 * 3, 1000)
-
-
-    def forward(self, img):
-        y = self.convs_global(img)
-
-        if self.pano:
-            y = y.view(y.size(0), self.nf * 8 * 3 * 7)
-        else:
-            y = y.view(y.size(0), self.nf * 8 * 3 * 3)
-
-        y = F.relu(self.fc_global(y))
-
-        x = F.log_softmax(y)
-
-        return x
-
