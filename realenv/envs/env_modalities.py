@@ -155,7 +155,11 @@ class SensorRobotEnv(BaseEnv):
             print(sum(self.rewards))
 
         #print(self.reward, self.rewards, self.robot.walk_target_dist_xyz)
-        return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
+        episode = None
+        if done:
+            episode = {'r': self.eps_reward,
+                       'l': self.nframe}
+        return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat, episode=episode)
 
     def calc_rewards(self, a, state):
         print("Please do not directly instantiate CameraRobotEnv")

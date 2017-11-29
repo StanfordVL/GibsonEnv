@@ -4,6 +4,7 @@ import tensorflow as tf
 import gym
 from baselines.common.distributions import make_pdtype
 from realenv.core.render.profiler import Profiler
+import sys
 
 
 class FusePolicy(object):
@@ -60,6 +61,7 @@ class FusePolicy(object):
             raise NotImplementedError
 
         print(x.shape, y.shape)
+        sys.exit()
         x = tf.concat([x,y], 1)
 
         ## Saver
