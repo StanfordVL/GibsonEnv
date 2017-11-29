@@ -53,7 +53,7 @@ class SensorRobotEnv(BaseEnv):
         self.k = 5
         self.robot_tracking_id = -1
 
-        self.scale_up  = 1
+        self.scale_up  = 4
         self.dataset  = ViewDataSet3D(
             transform = np.array,
             mist_transform = np.array,
@@ -133,6 +133,7 @@ class SensorRobotEnv(BaseEnv):
         debugmode = 0
         if debugmode:
             print("Eps frame {} reward {}".format(self.nframe, self.reward))
+            print("position", self.robot.get_position())
         if self.human:
             pos = self.robot.get_position()
             orn = self.robot.get_orientation()
