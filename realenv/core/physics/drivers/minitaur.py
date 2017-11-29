@@ -7,13 +7,12 @@ import numpy as np
 from realenv.core.physics import motor
 from realenv.core.physics.robot_locomotors import WalkerBase
 from realenv.core.physics.robot_bases import Joint, BodyPart
-import os
+import os, sys
 from gym import spaces
-from realenv.data.datasets import get_model_initial_pose
 import pybullet as p
 from transforms3d.euler import euler2quat
 
-INIT_POSITION = [0, 0, .2]
+INIT_POSITION = [0, 0, 1.2]
 INIT_ORIENTATION = [0, 0, 0, 1]
 KNEE_CONSTRAINT_POINT_RIGHT = [0, 0.005, 0.2]
 KNEE_CONSTRAINT_POINT_LEFT = [0, 0.01, 0.2]
@@ -47,8 +46,8 @@ class MinitaurBase(WalkerBase):
                  motor_velocity_limit=np.inf,
                  pd_control_enabled=False,
                  accurate_motor_model_enabled=True,   ## (hzyjerry): affect speed?
-                 motor_kp=1.0,
-                 motor_kd=0.02,
+                 motor_kp=1.20,
+                 motor_kd=0.00,
                  torque_control_enabled=False,
                  motor_overheat_protection=False,
                  on_rack=False,
@@ -88,6 +87,8 @@ class MinitaurBase(WalkerBase):
         self.is_discrete = is_discrete
         self.scale = 1
         self.robot_name = "quadruped"
+        self.initial_pos = initial_pos
+        self.initial_orn = initial_orn
         WalkerBase.__init__(self, 
                             "quadruped/minitaur.urdf", 
                             self.robot_name, 
@@ -112,6 +113,7 @@ class MinitaurBase(WalkerBase):
         self._torque_control_enabled = torque_control_enabled
         self._motor_overheat_protection = motor_overheat_protection
         self._on_rack = on_rack
+        self._joint_name_to_id = None
         if self._accurate_motor_model_enabled:
             self._kp = motor_kp
             self._kd = motor_kd
@@ -156,32 +158,34 @@ class MinitaurBase(WalkerBase):
           reload_urdf: Whether to reload the urdf file. If not, Reset() just place
             the minitaur back to its starting position.
         """
+
         if self.minitaur is None:
             self.minitaur = self.robot_ids[0]
 
-        if reload_urdf:
-            if self._self_collision_enabled:
-                pass
-                #self.minitaur = p.loadURDF("%s/quadruped/minitaur.urdf" % self._urdf_root,INIT_POSITION,flags=p.URDF_USE_SELF_COLLISION)
-            else:
-                pass
-                #self.minitaur = p.loadURDF("%s/quadruped/minitaur.urdf" % self._urdf_root, INIT_POSITION)
+        if self._joint_name_to_id is None:
             self._BuildJointNameToIdDict()
             self._BuildMotorIdList()
             self._RecordMassInfoFromURDF()
             self.ResetPose(add_constraint=True)
+            self._overheat_counter = np.zeros(self.num_motors)
+            self._motor_enabled_list = [True] * self.num_motors
             if self._on_rack:
                 p.createConstraint(self.minitaur, -1, -1, -1, p.JOINT_FIXED,[0, 0, 0], [0, 0, 0], [0, 0, 1])
-        else:
-            p.resetBasePositionAndOrientation(
-                self.minitaur, INIT_POSITION, INIT_ORIENTATION)
-            p.resetBaseVelocity(self.minitaur, [0, 0, 0],
-                                                  [0, 0, 0])
-            self.ResetPose(add_constraint=False)
 
-        self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene((self.minitaur, ))
-        self._overheat_counter = np.zeros(self.num_motors)
-        self._motor_enabled_list = [True] * self.num_motors
+        #WalkerBase.robot_specific_reset(self)
+        '''
+        roll  = self.initial_orn[0]
+        pitch = self.initial_orn[1]
+        yaw   = self.initial_orn[2]
+        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
+        self.robot_body.reset_position(self.initial_pos)
+        '''
+        
+        #p.resetBasePositionAndOrientation(self.minitaur, self.initial_pos, self.initial_orn)
+        p.resetBasePositionAndOrientation(self.minitaur, self.initial_pos, [0, 0, 0, 1])
+        p.resetBaseVelocity(self.minitaur, [0, 0, 0], [0, 0, 0])
+        self.ResetPose(add_constraint=False)
+        
 
         '''
         orientation, position = get_model_initial_pose("humanoid")
@@ -223,6 +227,7 @@ class MinitaurBase(WalkerBase):
             (): 4
         }
 
+    
     def ResetPose(self, add_constraint):
         """Reset the pose of the minitaur.
 
@@ -395,7 +400,7 @@ class MinitaurBase(WalkerBase):
         Args:
           motor_commands: The eight desired motor angles.
         """
-        print("motor commands", motor_commands)
+        #print("motor commands", motor_commands)
         if self._motor_velocity_limit < np.inf:
             current_motor_angle = self.GetMotorAngles()
             motor_commands_max = (
@@ -424,6 +429,8 @@ class MinitaurBase(WalkerBase):
                 # GetMotorAngles and GetMotorVelocities.
                 self._observed_motor_torques = observed_torque
 
+                #actual_torque.fill(0.0)
+
                 # Transform into the motor space when applying the torque.
                 self._applied_motor_torque = np.multiply(actual_torque,
                                                          self._motor_direction)
@@ -432,6 +439,7 @@ class MinitaurBase(WalkerBase):
                     self._motor_id_list, self._applied_motor_torque,
                     self._motor_enabled_list):
                     if motor_enabled:
+                        print("pd torque", motor_torque)
                         self._SetMotorTorqueById(motor_id, motor_torque)
                     else:
                         self._SetMotorTorqueById(motor_id, 0)
@@ -448,12 +456,14 @@ class MinitaurBase(WalkerBase):
 
                 for motor_id, motor_torque in zip(self._motor_id_list,
                                                   self._applied_motor_torques):
+                    print("torque", motor_torque)
                     self._SetMotorTorqueById(motor_id, motor_torque)
         else:
             motor_commands_with_direction = np.multiply(motor_commands,
                                                       self._motor_direction)
             for motor_id, motor_command_with_direction in zip(
                 self._motor_id_list, motor_commands_with_direction):
+                print("command", motor_command_with_direction)
                 self._SetDesiredMotorAngleById(motor_id, motor_command_with_direction)
 
     def GetMotorAngles(self):
@@ -595,8 +605,8 @@ class Minitaur(MinitaurBase):
                  motor_velocity_limit=np.inf,
                  pd_control_enabled=False,
                  accurate_motor_model_enabled=True,   ## (hzyjerry): affect speed?
-                 motor_kp=1.0,
-                 motor_kd=0.02,
+                 motor_kp=1.20, #1.0,
+                 motor_kd=0.00, #0.02,
                  torque_control_enabled=False,
                  motor_overheat_protection=False,
                  on_rack=False,

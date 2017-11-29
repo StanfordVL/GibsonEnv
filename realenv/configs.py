@@ -78,7 +78,7 @@ USE_SMOOTH_MESH = False
 
 
 ## Human view camera settings
-DEBUG_CAMERA_FOLLOW = False
+DEBUG_CAMERA_FOLLOW = True
 
 
 DISPLAY_UI = False
@@ -128,7 +128,8 @@ TASK_POSE = {
     },
     "sRj553CTHiw": {
         "navigate": [
-            [[0, 0, 3.14/2], [-14.0747, 17.5126, 0.5]],
+            [[0, 0, 3.14/2], [-14.0747, 17.5126, 1.5]], ## for minitaur
+            #[[0, 0, 3.14/2], [-14.0747, 17.5126, 0.5]],
             #[[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial: end of hall way
             #[[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
             #[[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]] ## target: gates entrance hall

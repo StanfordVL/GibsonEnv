@@ -114,7 +114,6 @@ class SensorRobotEnv(BaseEnv):
         self.nframe += 1
 
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
-            print("Action inside", a)
             self.robot.apply_action(a)
             self.scene.global_step()
 

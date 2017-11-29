@@ -46,9 +46,8 @@ if __name__ == '__main__':
         restart_delay = 0
         obs = env.reset()
         while True:
-            time.sleep(0.01)
+            time.sleep(0.05)
             a = agent.act(obs)
-            #print("action outside", a)
             with Profiler("Agent step function"):
                 obs, r, done, meta = env.step(a)
             score += r

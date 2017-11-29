@@ -134,8 +134,12 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         
         self._env_randomizer = env_randomizer
         self._time_step = timestep
-        
-        self.robot = Minitaur(time_step=self._time_step)
+
+        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]        
+        self.robot = Minitaur(time_step=self._time_step, 
+                              initial_pos=initial_pos,
+                              initial_orn=initial_orn)
 
         if self._env_randomizer is not None:
             self._env_randomizer.randomize_env(self)
@@ -152,8 +156,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
+
         CameraRobotEnv.__init__(
             self, 
             mode, 
@@ -221,6 +224,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         ## TODO (hzyjerry): make use of action, state
         reward = self._reward()
         done = self._termination()
+        #return reward, False
         return reward, done
 
 
