@@ -80,7 +80,9 @@ class SensorRobotEnv(BaseEnv):
     def _reset(self):
         debugmode = 1
         if debugmode:
-            print("Episode: steps:{} score:{}".format(self.nframe, self.eps_reward))
+            #print("Episode: steps:{} score:{}".format(self.nframe, self.eps_reward))
+            body_xyz = self.robot.body_xyz
+            print("[{}, {}, {}],".format(body_xyz[0], body_xyz[1], body_xyz[2]))
         self.nframe = 0
         self.eps_reward = 0
         BaseEnv._reset(self)
@@ -296,6 +298,18 @@ class CameraRobotEnv(SensorRobotEnv):
         
         ## This is important to ensure potential doesn't change drastically when reset
         self.potential = self.robot.calc_potential()
+
+        staticMat = p.computeViewMatrix([0, 0, 0], [1, 1, 1], [0, 0, 1])
+        static_cam = {
+            'yaw': -130,
+            'pitch': -30,
+            'distance': 9.9,
+            'target': [-1.253, -4.94, 1.05]
+        }
+
+        p.resetDebugVisualizerCamera(static_cam['distance'], static_cam['yaw'], static_cam['pitch'], static_cam['target']);
+        staticImg = p.getCameraImage(self.windowsz, self.windowsz)[2]
+
 
         if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()

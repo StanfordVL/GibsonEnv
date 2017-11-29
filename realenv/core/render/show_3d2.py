@@ -24,7 +24,7 @@ from realenv import configs
 from realenv.core.render.completion import CompletionNet
 from realenv.learn.completion2 import CompletionNet2
 import torch.nn as nn
-
+import scipy.misc
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
@@ -129,6 +129,7 @@ class PCRenderer:
         self.use_filler = use_filler
 
         self.showsz = windowsz
+        self.capture_count = 0
 
         #print(self.showsz)
 
@@ -399,7 +400,7 @@ class PCRenderer:
             source = (show/255.0).astype(np.float32)
             source_matched = hist_match3(source, template)
             show[:] = (source_matched[:] * 255).astype(np.uint8)
-
+            
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling

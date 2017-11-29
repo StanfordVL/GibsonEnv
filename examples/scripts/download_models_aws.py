@@ -70,8 +70,8 @@ ec2-34-216-35-8.us-west-2.compute.amazonaws.com
 Universe ant climb 7
 ec2-34-213-149-40.us-west-2.compute.amazonaws.com
 '''
-aws_addr.append("ec2-34-213-149-40.us-west-2.compute.amazonaws.com")
-aws_names.append("Depth & Sensor, large init random, small lr")
+#aws_addr.append("ec2-34-213-149-40.us-west-2.compute.amazonaws.com")
+#aws_names.append("Depth & Sensor, large init random, small lr")
 
 
 '''
@@ -101,7 +101,6 @@ ec2-34-212-248-24.us-west-2.compute.amazonaws.com
 Universe ant climb 11
 ec2-34-210-182-251.us-west-2.compute.amazonaws.com
 '''
-#aws_addr.append("ec2-52-34-119-136.us-west-2.compute.amazonaws.com")
 #aws_names.append("Depth & Sensor, tiny init random")
 
 
@@ -126,7 +125,11 @@ aws_dirs = []
 local_dirs = []
 aws_locals = []
 
+<<<<<<< HEAD
 mdl_cmd = "scp -i /home/zhiyang/Dropbox/CVGL/universe.pem -r ubuntu@{}:/home/ubuntu/realenv/examples/train/models/latest {}"
+=======
+mdl_cmd = "scp -i /home/jerry/Dropbox/CVGL/universe.pem -r ubuntu@{}:/home/ubuntu/realenv/examples/train/models/latest {}"
+>>>>>>> 90d9f5fed89123ce8bfac67fb39d51426b6dd7e1
 
 def get_latest_openai_dir(host):
     ## ssh -i /home/jerry/Dropbox/CVGL/universe.pem ubuntu@ec2-34-215-160-202.us-west-2.compute.amazonaws.com ls -l /tmp/
@@ -153,7 +156,8 @@ def download_logs(index):
 def main():
     for i in range(len(aws_addr)):
         host = aws_addr[i]
-        local_dir = local_dirs[i]
+        #local_dir = local_dirs[i]
+        local_dir = "."
 
         aws_cmd = mdl_cmd.format(host, local_dir)
         os.system(aws_cmd)
@@ -165,12 +169,22 @@ if __name__ == '__main__':
         remote_dir = get_latest_openai_dir(host)
         aws_dirs.append(remote_dir)
 
+<<<<<<< HEAD
         aws_local = os.path.join("/home/zhiyang/Desktop/realenv/aws", host[:host.find(".")])
+=======
+        aws_local = os.path.join("/home/jerry/Desktop/realenv/models", host[:host.find(".")])
+        '''
+>>>>>>> 90d9f5fed89123ce8bfac67fb39d51426b6dd7e1
         if not os.path.isdir(aws_local):
             os.mkdir(aws_local)
         aws_locals.append(aws_local)
         local_dir = os.path.join(aws_local, remote_dir)
         if not os.path.isdir(local_dir):
+<<<<<<< HEAD
             os.mkdir(local_dir)
         local_dirs.append(local_dir)
+=======
+            local_dirs.append(local_dir)
+        '''
+>>>>>>> 90d9f5fed89123ce8bfac67fb39d51426b6dd7e1
     main()

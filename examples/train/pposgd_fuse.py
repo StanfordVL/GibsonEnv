@@ -12,6 +12,7 @@ import os
 import tempfile
 import cloudpickle
 import zipfile
+import sys
 
 def save(self, path=None):
     """Save model to a pickle located at `path`"""

@@ -53,7 +53,7 @@ def train(num_timesteps, seed):
             optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear',
-            save_per_acts=500,
+            save_per_acts=100,
             save_name="ant_ppo_mlp"
         )
         env.close()        
@@ -66,7 +66,8 @@ def train(num_timesteps, seed):
             gamma=0.99, lam=0.95,
             schedule='linear',
             save_per_acts=50,
-            save_name="ant_ppo_fuse"
+            save_name="ant_ppo_fuse",
+            reload_name=args.reload_name
         )
         env.close()
 

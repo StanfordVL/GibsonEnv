@@ -54,7 +54,8 @@ def train(num_timesteps, seed):
             gamma=0.99, lam=0.95,
             schedule='linear',
             save_per_acts=500,
-            save_name="ant_ppo_mlp"
+            save_name="ant_ppo_mlp",
+            reload_name=args.reload_name
         )
         env.close()        
     else:
@@ -66,7 +67,8 @@ def train(num_timesteps, seed):
             gamma=0.99, lam=0.95,
             schedule='linear',
             save_per_acts=50,
-            save_name="ant_ppo_fuse"
+            save_name="ant_ppo_fuse",
+            reload_name=args.reload_name
         )
         env.close()
 
