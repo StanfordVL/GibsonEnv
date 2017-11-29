@@ -77,6 +77,7 @@ class BaseEnv(gym.Env):
 
     def configure(self, args):
         self.robot.args = args
+    
     def _seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
         self.robot.np_random = self.np_random # use the same np_randomizer for robot as for env
@@ -95,11 +96,11 @@ class BaseEnv(gym.Env):
         #physicsid = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=[0, 0, 2])
         #keep code here for reference
 
-
         self.frame = 0
         self.done = 0
         self.reward = 0
         dump = 0
+        ## TODO(hzyjerry): toggle for hard_reset: reload robot
         state = self.robot.reset()
         self.scene.episode_restart()
         return state
@@ -206,7 +207,6 @@ class BaseEnv(gym.Env):
 
     def HUD(self, state, a, done):
         pass
-
 
 
 class Camera:

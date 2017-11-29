@@ -90,6 +90,7 @@ class SensorRobotEnv(BaseEnv):
                     self.scene.scene_obj_list)
             self.ground_ids = set(self.scene.scene_obj_list)
 
+        ## Todo: (hzyjerry) this part is not working, robot_tracking_id = -1
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
@@ -113,6 +114,7 @@ class SensorRobotEnv(BaseEnv):
         self.nframe += 1
 
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
+            print("Action inside", a)
             self.robot.apply_action(a)
             self.scene.global_step()
 
@@ -133,10 +135,11 @@ class SensorRobotEnv(BaseEnv):
         if debugmode:
             print("Eps frame {} reward {}".format(self.nframe, self.reward))
         if self.human:
-            humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
-            humanPos = (humanPos[0], humanPos[1], humanPos[2] + self.tracking_camera['z_offset'])
+            pos = self.robot.get_position()
+            orn = self.robot.get_orientation()
+            pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
             if configs.MAKE_VIDEO or configs.DEBUG_CAMERA_FOLLOW:
-                p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],humanPos);       ## demo: kitchen, living room
+                p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos);       ## demo: kitchen, living room
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
@@ -281,6 +284,8 @@ class CameraRobotEnv(SensorRobotEnv):
             pygame.init()
 
     def _reset(self):
+        ## TODO(hzyjerry): return noisy_observation
+        #  self._noisy_observation()
         sensor_state = SensorRobotEnv._reset(self)
         self.temp_target_x = self.robot.walk_target_x
         self.temp_target_y = self.robot.walk_target_y
@@ -334,7 +339,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
         visuals = self.get_visuals(self.render_rgb, self.render_depth)
 
-        robot_pos, _ = p.getBasePositionAndOrientation(self.robot_tracking_id)
+        robot_pos = self.robot.get_position()
         p.resetBasePositionAndOrientation(self.robot_mapId, [robot_pos[0]  / self.robot.mjcf_scaling, robot_pos[1] / self.robot.mjcf_scaling, 6], [0, 0, 0, 1])
 
         debugmode = 0

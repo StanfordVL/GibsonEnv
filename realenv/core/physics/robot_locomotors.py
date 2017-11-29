@@ -8,6 +8,9 @@ import transforms3d.quaternions as quat
 import realenv.configs as configs
 import sys
 
+OBSERVATION_EPS = 0.01
+
+
 def quatWXYZ2quatXYZW(wxyz):
     return np.concatenate((wxyz[1:], wxyz[:1]))
 
@@ -58,7 +61,7 @@ class WalkerBase(BaseRobot):
 
         action_high = np.ones([action_dim])
         self.action_space = gym.spaces.Box(-action_high, action_high)
-        obs_high = np.inf * np.ones(obs_dim)
+        obs_high = np.inf * np.ones(obs_dim) + OBSERVATION_EPS
         self.observation_space = gym.spaces.Box(-obs_high, obs_high)
         sensor_high = np.inf * np.ones([sensor_dim])
         self.sensor_space = gym.spaces.Box(-sensor_high, sensor_high)
@@ -83,6 +86,11 @@ class WalkerBase(BaseRobot):
         self.scene.actor_introduce(self)
         self.initial_z = None
 
+    def get_position(self):
+        return self.robot_body.current_position()
+
+    def get_orientation(self):
+        return self.robot_body.current_orientation()
 
     def reset_base_position(self, enabled, delta_orn = np.pi/3, delta_pos = 0.2):
         #print("Reset base enabled", enabled)

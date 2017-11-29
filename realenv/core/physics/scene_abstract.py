@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.dirname(__file__))
 import pybullet as p
-
+import time
 import gym
 
 
@@ -12,7 +12,6 @@ class Scene:
         #self.np_random, seed = gym.utils.seeding.np_random(None)
         self.timestep = timestep
         self.frame_skip = frame_skip
-
 
         self.dt = self.timestep * self.frame_skip
         self.cpp_world = World(gravity, timestep, frame_skip)
@@ -61,6 +60,8 @@ class World:
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.clean_everything()
+        self._is_render = False
+        self._last_frame_time = 0.0
 
     def clean_everything(self):
         #p.resetSimulation()
@@ -69,6 +70,14 @@ class World:
         p.setPhysicsEngineParameter(fixedTimeStep=self.timestep*self.frame_skip, numSolverIterations=5, numSubSteps=self.frame_skip)
 
     def step(self, frame_skip):
+        if self._is_render:
+            # Sleep, otherwise the computation takes less time than real time,
+            # which will make the visualization like a fast-forward video.
+            time_spent = time.time() - self._last_frame_time
+            self._last_frame_time = time.time()
+            time_to_sleep = self.timestep * self.frame_skip - time_spent
+            if time_to_sleep > 0:
+                time.sleep(time_to_sleep)
         p.stepSimulation()
 
 
