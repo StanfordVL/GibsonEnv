@@ -36,10 +36,10 @@ opengl_arr = opengl_arr[::-1][:]
 outline_arr = opengl_arr.copy()
 
 for row in range(opengl_arr.shape[0]):
-	for col in range(opengl_arr.shape[1]):
-		if np.abs(opengl_arr[row][col] - blender_arr[row][col]) > 3:
-			print(opengl_arr[row][col], blender_arr[row][col])
-			outline_arr[row][col] = 65535
+    for col in range(opengl_arr.shape[1]):
+        if np.abs(opengl_arr[row][col] - blender_arr[row][col]) > 3:
+            print(opengl_arr[row][col], blender_arr[row][col])
+            outline_arr[row][col] = 65535
 
 
 im = Image.new('L', (512, 512))

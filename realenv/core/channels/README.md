@@ -39,7 +39,7 @@ Note: GCC Version, if you get the CMake complaint saying `CUDA on Ubuntu: unsupp
 ```shell
 sudo apt install gcc-4.9 g++-4.9
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 50 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9	
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 50 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
 update-alternatives --list gcc
 update-alternatives --set gcc /usr/bin/gcc-4.9
 ```

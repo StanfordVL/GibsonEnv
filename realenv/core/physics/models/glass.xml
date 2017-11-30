@@ -12,33 +12,33 @@
     <visual>
         <map fogend="5" fogstart="3"/>
     </visual>
-	<worldbody>
-		<body name="shield" pos="0 0 1.6">
-			<geom name="glass" pos="0.25 0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
-			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
-			</geom>
-			<geom name="glass" pos="-0.25 0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
-			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
-			</geom>
-			<geom name="glass" pos="0.25 -0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
-			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
-			</geom>
-			<geom name="glass" pos="-0.25 -0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
-			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
-			</geom>
-			<geom name="glass" pos="0.25 0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
-			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
-			</geom>
-			<geom name="glass" pos="-0.25 0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
-			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
-			</geom>
-			<geom name="glass" pos="0.25 -0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
-			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
-			</geom>
-			<geom name="glass" pos="-0.25 -0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
-			    <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
-			</geom>
-			
-		</body>
-	</worldbody>
+    <worldbody>
+        <body name="shield" pos="0 0 1.6">
+            <geom name="glass" pos="0.25 0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+                <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+            </geom>
+            <geom name="glass" pos="-0.25 0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+                <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+            </geom>
+            <geom name="glass" pos="0.25 -0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+                <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+            </geom>
+            <geom name="glass" pos="-0.25 -0.25 0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+                <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+            </geom>
+            <geom name="glass" pos="0.25 0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+                <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+            </geom>
+            <geom name="glass" pos="-0.25 0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+                <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+            </geom>
+            <geom name="glass" pos="0.25 -0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+                <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+            </geom>
+            <geom name="glass" pos="-0.25 -0.25 -0.25" size="0.005" rgba="0.5 0.5 0.5 0.5" type="sphere">
+                <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
+            </geom>
+
+        </body>
+    </worldbody>
 </mujoco>

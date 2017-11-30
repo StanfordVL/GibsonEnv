@@ -171,6 +171,8 @@ __global__ void transform(float *points3d_after, float *points3d, float * transf
   }
 }
 
+//#define FOV_SCALE 1.73205080757
+#define FOV_SCALE 1
 
 __global__ void transform2d(float *points3d_after)
 {
@@ -189,9 +191,11 @@ __global__ void transform2d(float *points3d_after)
       points3d_after[(ih * w + iw) * 3 + 0] = sqrt(x * x + y * y + z * z);
     //points3d_after[(ih * w + iw) * 3 + 1] = atan2(y, x);
     //points3d_after[(ih * w + iw) * 3 + 2] = atan2(sqrt(x * x + y * y), z);
-      if ((x > 0) && (y < x) && (y > -x) && (z < x) && (z > -x)) {
-          points3d_after[(ih * w + iw) * 3 + 1] = y / (x + 1e-5);
-          points3d_after[(ih * w + iw) * 3 + 2] = -z / (x + 1e-5);
+
+      float x2 = FOV_SCALE * x;
+      if ((x2 > 0) && (y < x2) && (y > -x2) && (z < x2) && (z > -x2)) {
+          points3d_after[(ih * w + iw) * 3 + 1] = y / (x2 + 1e-5);
+          points3d_after[(ih * w + iw) * 3 + 2] = -z / (x2 + 1e-5);
       }
       else {
           points3d_after[(ih * w + iw) * 3 + 1] = 0;
@@ -348,10 +352,11 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
      int itx, ity;
      
      //render[(ty * ow + tx)] = img[ih * w + iw];
+     //selection[(ty * ow + tx)] = 1.0;
      
-     
+
      if ((y > h/8) && (y < (h*7)/8))
-     if ((mindelta > -10) && (maxdelta < 10) && (this_depth < 10000)) {
+     if ((mindelta > - 0.1 * this_depth) && (maxdelta <  0.1 * this_depth) && (this_depth < 10000)) {
            if ((txmax - txmin) * (tymax - tymin) < 500)
            {
                for (itx = txmin; itx < txmax; itx ++)
@@ -385,6 +390,7 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
                        
             }
      }
+
   }
   
   

@@ -20,8 +20,8 @@ from multiprocessing import Process
 
 from realenv.data.datasets import ViewDataSet3D
 from realenv.configs import *
-from realenv.core.render.completion import CompletionNet
-from realenv.learn.completion2 import CompletionNet2
+from realenv import configs
+from realenv.learn.completion import CompletionNet
 import torch.nn as nn
 
 
@@ -35,29 +35,61 @@ LINUX_OFFSET = {
 }
 
 
-class InImg(object):
-    def __init__(self):
-        self.grid = 768
+def hist_match(source, template):
+    """
+    Adjust the pixel values of a grayscale image such that its histogram
+    matches that of a target image
 
-    def getpixel(self, key):
-        corrx, corry = key[0], key[1]
+    Arguments:
+    -----------
+        source: np.ndarray
+            Image to transform; the histogram is computed over the flattened
+            array
+        template: np.ndarray
+            Template image; can have different dimensions to source
+    Returns:
+    -----------
+        matched: np.ndarray
+            The transformed output image
+    """
 
-        indx = int(corrx / self.grid)
-        indy = int(corry / self.grid)
+    oldshape = source.shape
+    source = source.ravel()
+    template = template.ravel() 
+    template = template[template > 0]
 
-        remx = int(corrx % self.grid)
-        remy = int(corry % self.grid)
+    # get the set of unique pixel values and their corresponding indices and
+    # counts
+    s_values, bin_idx, s_counts = np.unique(source, return_inverse=True,
+                                            return_counts=True)
+    t_values, t_counts = np.unique(template, return_counts=True)
 
-        if (indy == 0):
-            return (0, remx, remy)
-        elif (indy == 2):
-            return (5, remx, remy)
-        else:
-            return (indx + 1, remx, remy)
+    # take the cumsum of the counts and normalize by the number of pixels to
+    # get the empirical cumulative distribution functions for the source and
+    # template images (maps pixel value --> quantile)
+    s_quantiles = np.cumsum(s_counts).astype(np.float64)
+    s_quantiles /= s_quantiles[-1]
+    t_quantiles = np.cumsum(t_counts).astype(np.float64)
+    t_quantiles /= t_quantiles[-1]
+
+    # interpolate linearly to find the pixel values in the template image
+    # that correspond most closely to the quantiles in the source image
+    interp_t_values = np.interp(s_quantiles, t_quantiles, t_values)
+
+    return interp_t_values[bin_idx].reshape(oldshape)
+
+
+def hist_match3(source, template):
+    s0 = hist_match(source[:,:,0], template[:,:,0])
+    s1 = hist_match(source[:,:,1], template[:,:,1])
+    s2 = hist_match(source[:,:,2], template[:,:,2])
+    return np.stack([s0,s1,s2], axis = 2)
+
+
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=None, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -76,11 +108,20 @@ class PCRenderer:
         self._context_mist = zmq.Context()
         self.socket_mist = self._context_mist.socket(zmq.REQ)
         self.socket_mist.connect("tcp://localhost:{}".format(5555 + gpu_count))
+        self._context_dept = zmq.Context()      ## Channel for smoothed depth
+        self.socket_dept = self._context_dept.socket(zmq.REQ)
+        self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
+        self._context_norm = zmq.Context()      ## Channel for smoothed depth
+        if configs.UI_MODE == configs.UI_SIX:
+            self.socket_norm = self._context_norm.socket(zmq.REQ)
+            self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
+
 
         self.target_poses = target_poses
         self.imgs = imgs
         self.depths = depths
         self.target = target
+        self.semantics = semantics
         self.model = None
         self.old_topk = set([])
         self.k = 5
@@ -93,20 +134,27 @@ class PCRenderer:
 
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
-        #self.scale_up = scale_up
-
 
         self.show   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
         self.show_rgb   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
+        self.show_semantics   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')        
 
-        self.show_unfilled  = None
-        if MAKE_VIDEO:
-            self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        #self.show_unfilled  = None
+        #if configs.MAKE_VIDEO or configs.HIST_MATCHING:
+        self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        self.surface_normal  = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
 
 
-        comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
-        comp = torch.nn.DataParallel(comp).cuda()
-        comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
+        if configs.USE_SMALL_FILLER:
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
+            comp = torch.nn.DataParallel(comp).cuda()
+            comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
+        else:
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
+            comp = torch.nn.DataParallel(comp).cuda()
+            comp.load_state_dict(torch.load(os.path.join(file_dir, "compG_epoch4_3000.pth")))
+        #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
+        #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module
         self.model.eval()
 
@@ -114,7 +162,7 @@ class PCRenderer:
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
-        if human:
+        if human and not configs.DISPLAY_UI:
             self.renderToScreenSetup()
 
     def renderToScreenSetup(self):
@@ -124,7 +172,11 @@ class PCRenderer:
             cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
             cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
             cv2.namedWindow('RGB prefilled')
+            cv2.namedWindow('Semantics')
+            cv2.namedWindow('Surface Normal')
+            cv2.moveWindow('Surface Normal', self.showsz + self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
             cv2.moveWindow('RGB prefilled', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+            cv2.moveWindow('Semantics', self.showsz + self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
         elif HIGH_RES_MONITOR:
             cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
             cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
@@ -241,7 +293,7 @@ class PCRenderer:
     def set_render_mode(self, mode):
         self.render_mode = mode
 
-    def render(self, imgs, depths, pose, model, poses, target_pose, show, show_unfilled=None):
+    def render(self, imgs, depths, pose, model, poses, target_pose, show, show_unfilled=None, is_rgb=False):
         v_cam2world = target_pose
         p = (v_cam2world).dot(np.linalg.inv(pose))
         p = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
@@ -249,7 +301,13 @@ class PCRenderer:
 
         #with Profiler("Depth request round-trip"):
         self.socket_mist.send_string(s)
-        message = self.socket_mist.recv()
+        mist_msg = self.socket_mist.recv()
+        self.socket_dept.send_string(s)
+        dept_msg = self.socket_dept.recv()
+        if configs.UI_MODE == configs.UI_SIX:
+            self.socket_norm.send_string(s)
+            norm_msg = self.socket_norm.recv()
+
 
         #with Profiler("Read from framebuffer and make pano"):
         wo, ho = self.showsz * 4, self.showsz * 3
@@ -259,30 +317,44 @@ class PCRenderer:
         w = 2*h
         n = ho//3
 
-
+        need_filler = self.render_mode in ["RGB", "RGBD", "GREY"]
         pano = False
         if pano:
-            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((h, w))
+            opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
+            smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
+            if configs.UI_MODE == configs.UI_SIX:
+                #normal_arr = np.moveaxis(np.frombuffer(norm_msg, dtype=np.float32).reshape((3, h, w)), 0, -1)
+                normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
         else:
-            opengl_arr = np.frombuffer(message, dtype=np.float32).reshape((n, n))
+            opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
+            smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
+            if configs.UI_MODE == configs.UI_SIX:
+                normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
+                #normal_arr = np.moveaxis(np.frombuffer(norm_msg, dtype=np.float32).reshape((3, n, n)), 0, -1)
 
-        def _render_pc(opengl_arr):
-            with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
-                poses_after = [
-                    pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
-                    for i in range(len(imgs))]
-                #opengl_arr = np.zeros((h,w), dtype = np.float32)
-                cuda_pc.render(ct.c_int(len(imgs)),
-                               ct.c_int(imgs[0].shape[0]),
-                               ct.c_int(imgs[0].shape[1]),
-                               ct.c_int(self.showsz),
-                               ct.c_int(self.showsz),
-                               imgs.ctypes.data_as(ct.c_void_p),
-                               depths.ctypes.data_as(ct.c_void_p),
-                               np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
-                               show.ctypes.data_as(ct.c_void_p),
-                               opengl_arr.ctypes.data_as(ct.c_void_p)
-                              )
+        if configs.UI_MODE == configs.UI_SIX:
+            debugmode = 0
+            if debugmode:
+                print("Inside show3d: surface normal max", np.max(normal_arr), "mean", np.mean(normal_arr))
+            
+        #print("mist", np.mean(opengl_arr), np.min(opengl_arr), np.max(opengl_arr))
+        def _render_pc(opengl_arr, imgs_pc, show_pc):
+            #with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
+            poses_after = [
+                pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
+                for i in range(len(imgs_pc))]
+            #opengl_arr = np.zeros((h,w), dtype = np.float32)
+            cuda_pc.render(ct.c_int(len(imgs_pc)),
+                           ct.c_int(imgs_pc[0].shape[0]),
+                           ct.c_int(imgs_pc[0].shape[1]),
+                           ct.c_int(self.showsz),
+                           ct.c_int(self.showsz),
+                           imgs_pc.ctypes.data_as(ct.c_void_p),
+                           depths.ctypes.data_as(ct.c_void_p),
+                           np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
+                           show_pc.ctypes.data_as(ct.c_void_p),
+                           opengl_arr.ctypes.data_as(ct.c_void_p)
+                          )
 
         #threads = [
         #    Process(target=_render_pc, args=(opengl_arr,)),
@@ -290,32 +362,43 @@ class PCRenderer:
         #[t.start() for t in threads]
         #[t.join() for t in threads]
 
-        if self.render_mode in ["RGB", "RGBD", "GREY"]:
-            _render_pc(opengl_arr)
+        #if need_filler:
+        _render_pc(opengl_arr, imgs, show)
+        if configs.UI_MODE == configs.UI_SIX:
+            _render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
 
-        if MAKE_VIDEO:
+        if configs.HIST_MATCHING and is_rgb:
             show_unfilled[:, :, :] = show[:, :, :]
 
-        if self.use_filler and self.model:
+        #with Profiler("NN total time", enable= ENABLE_PROFILING):
+        if self.use_filler and self.model and is_rgb and need_filler:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
-            with Profiler("Transfer time", enable= ENABLE_PROFILING):
-                source = tf(show)
-                mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
-                source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
-                source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
-                #print(mask.size(), source_depth.size())
-                mask = torch.cat([source_depth, mask], 0)
-                self.imgv.data.copy_(source)
-                self.maskv.data.copy_(mask)
-            with Profiler("NNtime", enable=ENABLE_PROFILING):
-                recon = model(self.imgv, self.maskv)
-            with Profiler("Transfer to CPU time", enable=ENABLE_PROFILING):
-                show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
-                show[:] = (show2[:] * 255).astype(np.uint8)
+            source = tf(show)
+            mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
+            source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
+            #print(mask.size(), source_depth.size())
+            mask = torch.cat([source_depth, mask], 0)
+            self.imgv.data.copy_(source)
+            self.maskv.data.copy_(mask)
+            #with Profiler("NNtime", enable=ENABLE_PROFILING):
+            recon = model(self.imgv, self.maskv)
+            #with Profiler("Transfer to CPU time", enable=ENABLE_PROFILING):
+            show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
+            show[:] = (show2[:] * 255).astype(np.uint8)
 
         self.target_depth = opengl_arr ## target depth
+        self.smooth_depth = smooth_arr
+        if configs.UI_MODE == configs.UI_SIX:
+            self.surface_normal = normal_arr
 
+        #Histogram matching happens here 
+        if configs.HIST_MATCHING and is_rgb:
+            template = (show_unfilled/255.0).astype(np.float32)
+            source = (show/255.0).astype(np.float32)
+            source_matched = hist_match3(source, template)
+            show[:] = (source_matched[:] * 255).astype(np.uint8)
 
 
     def renderOffScreenInitialPose(self):
@@ -357,6 +440,7 @@ class PCRenderer:
 
 
     def renderOffScreen(self, pose, k_views=None):
+        #with Profiler("Rendering off screen"):
         if not k_views:
             all_dist, _ = self.rankPosesByDistance(pose)
             k_views = (np.argsort(all_dist))[:self.k]
@@ -364,20 +448,24 @@ class PCRenderer:
             self.imgs_topk = np.array([self.imgs[i] for i in k_views])
             self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
             self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
+            self.semantics_topk = np.array([self.semantics[i] for i in k_views])
             self.old_topk = set(k_views)
 
-        with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
-            self.show.fill(0)
-            self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled)
+        #with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
+        self.show.fill(0)
 
-            self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
-            self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
-            if MAKE_VIDEO:
-                self.show_unfilled_rgb = cv2.cvtColor(self.show_unfilled, cv2.COLOR_BGR2RGB)
-        return self.show_rgb, self.target_depth[:, :, None]
+        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
+
+        self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
+        self.show_rgb = self.show
+        #self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
+        self.show_unfilled_rgb = self.show_unfilled
+
+        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_unfilled_rgb
 
 
-    def renderToScreen(self, pose, k_views=None):
+    def renderToScreen(self):
+        '''
         t0 = time.time()
         self.renderOffScreen(pose, k_views)
         t1 = time.time()
@@ -386,10 +474,11 @@ class PCRenderer:
         if MAKE_VIDEO:
             cv2.putText(self.show_unfilled_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
             cv2.putText(self.show_unfilled_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
-
+        '''
         def _render_depth(depth):
             #with Profiler("Render Depth"):
             cv2.imshow('Depth cam', depth/16.)
+            
             if HIGH_RES_MONITOR and not MAKE_VIDEO:
                 cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], LINUX_OFFSET['y_delta'])        
 
@@ -401,37 +490,29 @@ class PCRenderer:
         def _render_rgb_unfilled(unfilled_rgb):
             assert(MAKE_VIDEO)
             cv2.imshow('RGB prefilled', unfilled_rgb)
-            
-        """
-        ## TODO(hzyjerry): multithreading in python3 is not working
-        render_threads = [
-            Process(target=_render_depth, args=(self.target_depth, )),
-            Process(target=_render_rgb, args=(self.show_rgb, ))]
-        if self.compare_filler:
-            render_threads.append(Process(target=_render_rgb_unfilled, args=(self.show_unfilled_rgb, )))
+        
+        def _render_semantics(semantics):
+            if not configs.UI_MODE == configs.UI_SIX:
+                return
+            cv2.imshow('Semantics', semantics)
 
-        [wt.start() for wt in render_threads]
-        [wt.join() for wt in render_threads]
-        """
+        def _render_normal(normal):
+            if not configs.UI_MODE == configs.UI_SIX:
+                return
+            #print("normal", np.mean(normal), np.max(normal))
+            cv2.imshow("Surface Normal", normal)
+         
         _render_depth(self.target_depth)
+        _render_depth(self.smooth_depth)
         _render_rgb(self.show_rgb)
         if MAKE_VIDEO:
             _render_rgb_unfilled(self.show_unfilled_rgb)
-                
+            _render_semantics(self.show_semantics)
+            _render_normal(self.surface_normal)
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
-        return self.show_rgb, self.target_depth[:, :, None]
-    
-    @staticmethod
-    def sync_coords():
-        """
-        with Profiler("Transform coords"):
-            new_coords = np.getbuffer(coords.flatten().astype(np.uint32))
-        socket_mist.send(new_coords)
-        message = socket_mist.recv()
-        """
-        pass
-
+        #return self.show_rgb, self.target_depth[:, :, None]
+        return self.show_rgb, self.smooth_depth[:, :, None]
 
 def show_target(target_img):
     cv2.namedWindow('target')
@@ -491,8 +572,6 @@ if __name__=='__main__':
     # print(source_depth)
     print(sources[0].shape, source_depths[0].shape)
 
-
-    sync_coords()
 
     show_target(target)
 

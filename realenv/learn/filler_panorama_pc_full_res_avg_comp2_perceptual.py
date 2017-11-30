@@ -9,10 +9,10 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 import torchvision.utils as vutils
 from realenv.data.datasets import PairDataset
-from completion2 import CompletionNet2, identity_init, Perceptual, Discriminator2
-from tensorboard import SummaryWriter
+from realenv.learn.completion import CompletionNet, identity_init, Perceptual
+from tensorboardX import SummaryWriter
 from datetime import datetime
-import vision_utils
+import realenv.learn.vision_utils
 import torch.nn.functional as F
 import torchvision.models as models
 
@@ -28,6 +28,7 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
 
+
 def crop(source, source_depth, target):
     bs = source.size(0)
     source_cropped = Variable(torch.zeros(4*bs, 3, 256, 256)).cuda()
@@ -37,9 +38,9 @@ def crop(source, source_depth, target):
     for i in range(bs):
         for j in range(4):
             idx = i * 4 + j
-            blurry_margin = 1024 / 8 
-            centerx = np.random.randint(blurry_margin + 128, 1024  - blurry_margin - 128)
-            centery = np.random.randint(128, 1024 * 2 - 128)
+            blurry_margin = 1024 // 8
+            centerx = np.random.randint(low=blurry_margin + 128, high=1024 - blurry_margin - 128)
+            centery = np.random.randint(low=128, high=1024 * 2 - 128)
             source_cropped[idx] = source[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
             source_depth_cropped[idx] = source_depth[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
             target_cropped[idx] = target[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
@@ -66,9 +67,7 @@ def main():
     parser.add_argument('--color_coeff', type=float, default = 0, help='add color match loss')
     parser.add_argument('--cascade'  , action='store_true', help='debug mode')
     parser.add_argument('--unfiller'  , action='store_true', help='debug mode')
-    
-    
-    
+
     mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
     opt = parser.parse_args()
     print(opt)
@@ -99,21 +98,16 @@ def main():
     img_original = Variable(torch.zeros(opt.batchsize,3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
-    comp = CompletionNet2(norm = nn.BatchNorm2d)
+    comp = CompletionNet(norm = nn.BatchNorm2d)
     
-    dis = Discriminator2(pano = False)
     current_epoch = opt.cepoch
 
-    comp =  torch.nn.DataParallel(comp).cuda()
-    
-    
-    
+    comp = torch.nn.DataParallel(comp).cuda()
+
     if opt.init == 'iden':
         comp.apply(identity_init)
     else:
         comp.apply(weights_init)
-    dis = torch.nn.DataParallel(dis).cuda()
-    dis.apply(weights_init)
 
     if opt.model != '':
         comp.load_state_dict(torch.load(opt.model))
@@ -121,7 +115,7 @@ def main():
         current_epoch = opt.cepoch
 
     if opt.cascade:
-        comp2 = CompletionNet2(norm = nn.BatchNorm2d)
+        comp2 = CompletionNet(norm = nn.BatchNorm2d)
         comp2 =  torch.nn.DataParallel(comp2).cuda()
         if opt.model != '':
             comp2.load_state_dict(torch.load(opt.model))
@@ -136,7 +130,6 @@ def main():
     #    
     #else:
     optimizerG = torch.optim.Adam(comp.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
-    optimizerD = torch.optim.Adam(dis.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
 
     curriculum = (200000, 300000) # step to start D training and G training, slightly different from the paper
     alpha = 0.004
@@ -147,7 +140,7 @@ def main():
     vgg16 = models.vgg16(pretrained = False)
     vgg16.load_state_dict(torch.load('vgg16-397923af.pth'))
     feat = vgg16.features
-    p = torch.nn.DataParallel(Perceptual(feat, early = (opt.loss == 'early'))).cuda()
+    p = torch.nn.DataParallel(Perceptual(feat)).cuda()
     
     for param in p.parameters():
         param.requires_grad = False
@@ -241,16 +234,7 @@ def main():
                 
                 if i%10 == 0:
                     writer.add_scalar('MSEloss2', loss2.data[0], step)
-            
-            
-            if step > curriculum[1]:
-                label.data.fill_(1)
-                output = dis(recon)
-                errG = alpha * F.nll_loss(output, label)
-                errG.backward()
-                errG_data = errG.data[0]
-         
-            
+
             #from IPython import embed; embed()
             if opt.loss == "train_init":
                 for param in comp.parameters():
@@ -261,27 +245,7 @@ def main():
                             param.grad[:nk, :,:,:] = 0
                         
             optimizerG.step()
-             
-                
-                
-            # Train D:
-            if step > curriculum[0]:
-                optimizerD.zero_grad()
-                label.data.fill_(0)
-                output = dis(recon.detach())
-                #print(output)
-                errD_fake = alpha * F.nll_loss(output, label)
-                errD_fake.backward(retain_graph = True)
 
-                output = dis(img_originalc)
-                #print(output)
-                label.data.fill_(1)
-                errD_real = alpha * F.nll_loss(output, label)
-                errD_real.backward()
-                optimizerD.step()
-                errD_data = errD_real.data[0] + errD_fake.data[0]
-            
-            
             print('[%d/%d][%d/%d] %d MSEloss: %f G_loss %f D_loss %f' % (epoch, opt.nepoch, i, len(dataloader), step, loss.data[0], errG_data, errD_data))
             
             if i%200 == 0:
@@ -294,7 +258,7 @@ def main():
                 source_depth = test_data[1]
                 target = test_data[2]
                 
-                mask = (torch.sum(source[:,:3,:,:],1)>0).float().unsqueeze(1)
+                mask = (torch.sum(source[:, :3, :, :], 1) > 0).float().unsqueeze(1)
                 
                 source[:,:3,:,:] += (1-mask.repeat(1,3,1,1)) * mean.view(1,3,1,1).repeat(opt.batchsize,1,1024,2048)
                 source_depth = source_depth[:,:,:,0].unsqueeze(1)
@@ -314,8 +278,7 @@ def main():
                     visual = torch.cat([imgc.data[:,:3,:,:], recon.data, recon2.data, img_originalc.data], 3)
                 else:
                     visual = torch.cat([imgc.data[:,:3,:,:], recon.data, img_originalc.data], 3)
-                
-                
+
                 visual = vutils.make_grid(visual, normalize=True)
                 writer.add_image('image', visual, step)
                 vutils.save_image(visual, '%s/compare%d_%d.png' % (opt.outf, epoch, i), nrow=1)
@@ -327,7 +290,6 @@ def main():
 
             if i%10000 == 0:
                 torch.save(comp.state_dict(), '%s/compG_epoch%d_%d.pth' % (opt.outf, epoch, i))
-                torch.save(dis.state_dict(), '%s/compD_epoch%d_%d.pth' % (opt.outf, epoch, i))
-            
+
 if __name__ == '__main__':
     main()

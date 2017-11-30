@@ -1,28 +1,77 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
-from realenv.core.physics.robot_locomotors import Humanoid
-import gym
+from realenv.envs.env_bases import *
+from realenv.core.physics.robot_locomotors import Humanoid, Ant
+from transforms3d import quaternions
+from realenv import configs
+import os
 import numpy as np
+import sys
+import pybullet as p
+from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
+import pybullet_data
 
 HUMANOID_TIMESTEP  = 1.0/(4 * 22)
 HUMANOID_FRAMESKIP = 4
 
-class HumanoidEnv(gym.Env):
-    metadata = {
-        'render.modes' : ['human', 'rgb_array'],
-        'video.frames_per_second' : 30
-    }
-    timestep   = 1/(20 * 4)
-    frame_skip = 20
-    def __init__(self, mode="SENSOR"):
-        self.robot = Humanoid(mode)
-        self.physicsClientId=-1
-        ## For tuning
 
-    def calc_rewards(self, a, state):
-        if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
-            self.robot.apply_action(a)
-            self.scene.global_step()
+tracking_camera = {
+    'yaw': 20,  # demo: living room, stairs
+    #'yaw'; 30,   # demo: kitchen
+    'z_offset': 0.5,
+    'distance': 2,
+    'pitch': -20
+    # 'pitch': -24  # demo: stairs
+}
 
+tracking_camera_top = {
+    'yaw': 20,  # demo: living room, stairs
+    #'yaw'; 30,   # demo: kitchen
+    'z_offset': 0.5,
+    'distance': 1,
+    'pitch': -20
+    # 'pitch': -24  # demo: stairs
+}
+
+
+class HumanoidNavigateEnv(CameraRobotEnv):
+    """Specfy navigation reward
+    """
+    def __init__(
+            self, 
+            human=True, 
+            timestep=HUMANOID_TIMESTEP, 
+            frame_skip=HUMANOID_FRAMESKIP, 
+            is_discrete=False, 
+            mode="RGBD", 
+            use_filler=True, 
+            gpu_count=0, 
+            resolution="NORMAL"):
+        self.human = human
+        self.model_id = configs.NAVIGATE_MODEL_ID
+        self.timestep = timestep
+        self.frame_skip = frame_skip
+        self.resolution = resolution
+        self.tracking_camera = tracking_camera
+        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
+        self.robot = Humanoid(
+            is_discrete=is_discrete, 
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            target_pos=target_pos,
+            resolution=resolution)
+        CameraRobotEnv.__init__(
+            self, 
+            mode, 
+            gpu_count, 
+            scene_type="building", 
+            use_filler=use_filler)
+        self.total_reward = 0
+        self.total_frame = 0
+
+
+        
+    def calc_rewards_and_done(self, a, state):
         alive = float(self.robot.alive_bonus(state[0]+self.robot.initial_z, self.robot.body_rpy[1]))   # state[0] is body height above ground, body_rpy[1] is pitch
         done = alive < 0
         if not np.isfinite(state).all():
@@ -65,50 +114,34 @@ class HumanoidEnv(gym.Env):
             print("feet_collision_cost")
             print(feet_collision_cost)
 
-        return [
+        rewards =[
             alive,
             progress,
             electricity_cost,
             joints_at_limit_cost,
             feet_collision_cost
-            ], done
+            ]
+            
+        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
+
+        self.total_reward = self.total_reward + sum(rewards)
+        self.total_frame = self.total_frame + 1
+        print(self.total_frame, self.total_reward)
+        return rewards, done
 
 
-class HumanoidCameraEnv(HumanoidEnv, CameraRobotEnv):
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
-        frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False, 
-        mode='RGBD', use_filler=True):
-        self.human = human
-        self.timestep = timestep
-        self.frame_skip = frame_skip
-        self.enable_sensors = enable_sensors
-        HumanoidEnv.__init__(self, mode)
-        CameraRobotEnv.__init__(self, use_filler)
-        #self.tracking_camera['yaw'] = 30    ## living room
-        #self.tracking_camera['distance'] = 1.5
-        #self.tracking_camera['pitch'] = -45 ## stairs
+    def flag_reposition(self):
+        walk_target_x = self.robot.walk_target_x
+        walk_target_y = self.robot.walk_target_y
 
-        #distance=2.5 ## demo: living room ,kitchen
-        self.tracking_camera['distance'] = 1.3   ## demo: stairs
-        self.tracking_camera['pitch'] = -35 ## stairs
-
-        #yaw = 0     ## demo: living room
-        #yaw = 30    ## demo: kitchen
-        self.tracking_camera['yaw'] = -60     ## demo: stairs
-
-
-class HumanoidSensorEnv(HumanoidEnv, SensorRobotEnv):
-    def __init__(self, human=True, timestep=HUMANOID_TIMESTEP, 
-        frame_skip=HUMANOID_FRAMESKIP, enable_sensors=False):
-        self.human = human
-        self.timestep = timestep
-        self.frame_skip = frame_skip
-        self.enable_sensors = enable_sensors
-        HumanoidEnv.__init__(self)
-        SensorRobotEnv.__init__(self)
-        self.tracking_camera['distance'] = 1.3   ## demo: stairs
-        self.tracking_camera['pitch'] = -35 ## stairs
-
-        #yaw = 0     ## demo: living room
-        #yaw = 30    ## demo: kitchen
-        self.tracking_camera['yaw'] = -60     ## demo: stairs
+        self.flag = None
+        if self.human and not configs.DISPLAY_UI:
+            self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
+        
+    def  _reset(self):
+        self.total_frame = 0
+        self.total_reward = 0
+        obs = CameraRobotEnv._reset(self)
+        self.flag_reposition()
+        return obs
