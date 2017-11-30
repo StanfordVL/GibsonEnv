@@ -104,10 +104,7 @@ build_local() {
 
 
     cd ./realenv/core/render/
-    pip install cython
-    bash build.sh
     bash build_cuda.sh
-    python setup.py build_ext --inplace
     cd -
 }
 
