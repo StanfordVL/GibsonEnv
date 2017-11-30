@@ -3,7 +3,7 @@ import ctypes as ct
 import cv2
 import sys
 import argparse
-from datasets import ViewDataSet3D
+from realenv.data.datasets import ViewDataSet3D
 import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable
@@ -46,8 +46,8 @@ def render(imgs, depths, pose, poses, tdepth):
 
 
     dll.render(ct.c_int(len(imgs)),
-               ct.c_int(imgs[i].shape[0]),
-               ct.c_int(imgs[i].shape[1]),
+               ct.c_int(imgs[0].shape[0]),
+               ct.c_int(imgs[0].shape[1]),
                ct.c_int(1),
                ct.c_int(1),
                imgs.ctypes.data_as(ct.c_void_p),
