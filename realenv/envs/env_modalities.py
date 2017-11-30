@@ -1,6 +1,6 @@
 from realenv.data.datasets import ViewDataSet3D, get_model_path
 from realenv import configs
-from realenv.core.render.show_3d2 import PCRenderer
+from realenv.core.render.pcrender import PCRenderer
 from realenv.core.render.profiler import Profiler
 from realenv.envs.env_bases import BaseEnv
 import realenv

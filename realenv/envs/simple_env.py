@@ -7,7 +7,7 @@ from realenv.core.render.profiler import Profiler
 from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
 from realenv.data.datasets import get_model_path
 from realenv.core.physics.simple_debug_env import PhysRenderer
-from realenv.core.render.show_3d2 import PCRenderer, sync_coords
+from realenv.core.render.pcrender import PCRenderer, sync_coords
 from realenv.data.datasets import ViewDataSet3D
 from multiprocessing import Process
 from realenv.core.channels.depth_render import run_depth_render
