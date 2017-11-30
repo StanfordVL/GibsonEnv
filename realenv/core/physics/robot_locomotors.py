@@ -532,12 +532,10 @@ class Husky(WalkerBase):
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
-        ## specific offset for husky.urdf
-        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
-            self.torque = 0.1
-            self.action_list = [[self.torque/4, self.torque/4, self.torque/4, self.torque/4],
-                                #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
-                                [-self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9],
+            self.torque = 0.12
+            self.action_list = [[self.torque/5, self.torque/5, self.torque/5, self.torque/5],
+                                [-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
+
                                 [self.torque, -self.torque, self.torque, -self.torque],
                                 [-self.torque, self.torque, -self.torque, self.torque],
                                 [0, 0, 0, 0]]
