@@ -2,6 +2,7 @@
 import os
 from realenv.data.datasets import get_model_path
 
+
 def run_depth_render():
     model_path = get_model_path()[0]
     dr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'depth_render')
