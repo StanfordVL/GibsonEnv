@@ -28,6 +28,7 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
 
+
 def crop(source, source_depth, target):
     bs = source.size(0)
     source_cropped = Variable(torch.zeros(4*bs, 3, 256, 256)).cuda()
@@ -37,9 +38,9 @@ def crop(source, source_depth, target):
     for i in range(bs):
         for j in range(4):
             idx = i * 4 + j
-            blurry_margin = 1024 / 8 
-            centerx = np.random.randint(blurry_margin + 128, 1024  - blurry_margin - 128)
-            centery = np.random.randint(128, 1024 * 2 - 128)
+            blurry_margin = 1024 // 8
+            centerx = np.random.randint(low=blurry_margin + 128, high=1024 - blurry_margin - 128)
+            centery = np.random.randint(low=128, high=1024 * 2 - 128)
             source_cropped[idx] = source[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
             source_depth_cropped[idx] = source_depth[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
             target_cropped[idx] = target[i, :, centerx-128:centerx + 128, centery - 128:centery + 128]
@@ -66,9 +67,7 @@ def main():
     parser.add_argument('--color_coeff', type=float, default = 0, help='add color match loss')
     parser.add_argument('--cascade'  , action='store_true', help='debug mode')
     parser.add_argument('--unfiller'  , action='store_true', help='debug mode')
-    
-    
-    
+
     mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
     opt = parser.parse_args()
     print(opt)
@@ -103,10 +102,8 @@ def main():
     
     current_epoch = opt.cepoch
 
-    comp =  torch.nn.DataParallel(comp).cuda()
-    
-    
-    
+    comp = torch.nn.DataParallel(comp).cuda()
+
     if opt.init == 'iden':
         comp.apply(identity_init)
     else:
@@ -237,9 +234,7 @@ def main():
                 
                 if i%10 == 0:
                     writer.add_scalar('MSEloss2', loss2.data[0], step)
-            
 
-            
             #from IPython import embed; embed()
             if opt.loss == "train_init":
                 for param in comp.parameters():
@@ -250,11 +245,7 @@ def main():
                             param.grad[:nk, :,:,:] = 0
                         
             optimizerG.step()
-             
-                
-                
 
-            
             print('[%d/%d][%d/%d] %d MSEloss: %f G_loss %f D_loss %f' % (epoch, opt.nepoch, i, len(dataloader), step, loss.data[0], errG_data, errD_data))
             
             if i%200 == 0:
@@ -267,7 +258,7 @@ def main():
                 source_depth = test_data[1]
                 target = test_data[2]
                 
-                mask = (torch.sum(source[:,:3,:,:],1)>0).float().unsqueeze(1)
+                mask = (torch.sum(source[:, :3, :, :], 1) > 0).float().unsqueeze(1)
                 
                 source[:,:3,:,:] += (1-mask.repeat(1,3,1,1)) * mean.view(1,3,1,1).repeat(opt.batchsize,1,1024,2048)
                 source_depth = source_depth[:,:,:,0].unsqueeze(1)

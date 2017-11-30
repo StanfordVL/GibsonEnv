@@ -34,6 +34,7 @@ LINUX_OFFSET = {
     "y_delta": 100
 }
 
+
 def hist_match(source, template):
     """
     Adjust the pixel values of a grayscale image such that its histogram
