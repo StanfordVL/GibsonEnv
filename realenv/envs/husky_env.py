@@ -102,6 +102,11 @@ class HuskyNavigateEnv(CameraRobotEnv):
         electricity_cost  += self.stall_torque_cost * float(np.square(a).mean())
 
 
+        steering_cost = self.robot.steering_cost(a)
+        debugmode = 0
+        if debugmode:
+            print("steering cost", steering_cost)
+
         #alive = len(self.robot.parts['top_bumper_link'].contact_list())
         #if alive == 0:
         #    alive_score = 0.1
@@ -140,6 +145,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
             progress,
             #wall_collision_cost,
             close_to_goal,
+            steering_cost
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost

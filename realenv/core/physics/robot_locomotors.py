@@ -563,6 +563,14 @@ class Husky(WalkerBase):
             realaction = action
         WalkerBase.apply_action(self, realaction)
 
+    def steering_cost(self, action):
+        if not self.is_discrete:
+            return 0
+        if action == 2 or action == 3:
+            return -1
+        else:
+            return 0
+
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
         roll  = self.initial_orn[0]
