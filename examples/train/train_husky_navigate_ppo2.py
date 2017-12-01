@@ -58,7 +58,7 @@ def train(num_timesteps, seed):
         lr=lambda f : f * 2.5e-4,
         cliprange=lambda f : f * 0.2,
         total_timesteps=int(num_timesteps * 1.1),
-        save_interval=1,
+        save_interval=10,
         reload_name=args.reload_name)
     
     '''
