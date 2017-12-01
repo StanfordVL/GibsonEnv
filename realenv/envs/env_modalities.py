@@ -133,7 +133,7 @@ class SensorRobotEnv(BaseEnv):
         self.reward += sum(self.rewards)
         self.eps_reward += sum(self.rewards)
 
-        debugmode = 1
+        debugmode = 0
         if debugmode:
             print("Eps frame {} reward {}".format(self.nframe, self.reward))
             print("position", self.robot.get_position())
