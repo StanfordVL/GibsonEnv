@@ -146,7 +146,7 @@ class SensorRobotEnv(BaseEnv):
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
-        debugmode = 0
+        debugmode = 1
         if debugmode:
             print("Camera env eye position", eye_pos)
         x, y, z ,w = self.robot.eyes.current_orientation()
@@ -363,7 +363,7 @@ class CameraRobotEnv(SensorRobotEnv):
             obstacle_penalty = 0
             OBSTACLE_LIMIT = 2.5
             if obstacle_dist < OBSTACLE_LIMIT:
-               obstacle_penalty = 2 * (obstacle_dist - OBSTACLE_LIMIT)
+               obstacle_penalty = (obstacle_dist - OBSTACLE_LIMIT)
             sensor_reward += obstacle_penalty
 
             debugmode = 0
@@ -385,7 +385,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
         debugmode = 0
         if debugmode:
-            print(sensor_meta['eye_pos'])
+            print("Eye position", sensor_meta['eye_pos'])
         debugmode = 0
         if debugmode:
             print("Environment visuals shape", visuals.shape)

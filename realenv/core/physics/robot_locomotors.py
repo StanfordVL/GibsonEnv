@@ -567,7 +567,7 @@ class Husky(WalkerBase):
         if not self.is_discrete:
             return 0
         if action == 2 or action == 3:
-            return -0.3
+            return -0.1
         else:
             return 0
 
@@ -611,3 +611,30 @@ class HuskyClimber(Husky):
         if debugmode:
             for k in self.jdict.keys():
                 print("Power coef", self.jdict[k].power_coef)
+
+class HuskyHighCamera(Husky):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGB"):
+        self.model_type = "URDF"
+        self.is_discrete = is_discrete
+        self.mjcf_scaling = 1
+        WalkerBase.__init__(self, "husky_high.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, mode=mode)
+        self.initial_pos = initial_pos
+        self.initial_orn = initial_orn
+        self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
+        if self.is_discrete:
+            self.action_space = gym.spaces.Discrete(5)
+        ## specific offset for husky.urdf
+        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+            self.torque = 0.1
+            self.action_list = [[self.torque/4, self.torque/4, self.torque/4, self.torque/4],
+                                #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
+                                [-self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9],
+                                [self.torque, -self.torque, self.torque, -self.torque],
+                                [-self.torque, self.torque, -self.torque, self.torque],
+                                [0, 0, 0, 0]]
+
+            self.setup_keys_to_action()
+
+        ## specific offset for husky.urdf
+        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+    

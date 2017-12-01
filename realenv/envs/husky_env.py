@@ -1,6 +1,6 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from realenv.envs.env_bases import *
-from realenv.core.physics.robot_locomotors import Husky, HuskyClimber
+from realenv.core.physics.robot_locomotors import Husky, HuskyClimber, HuskyHighCamera
 from transforms3d import quaternions
 from realenv import configs
 import os
@@ -52,7 +52,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
-        self.robot = Husky(
+        #self.robot = Husky(
+        self.robot = HuskyHighCamera(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
             initial_orn=initial_orn,
