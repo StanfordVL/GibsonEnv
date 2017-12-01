@@ -130,6 +130,7 @@ class Runner(object):
                     maybeepinfo = infos['episode']
                     #print("maybeepinfo", maybeepinfo)
                     if maybeepinfo: epinfos.append(maybeepinfo)
+                    #print("extended maybeepinfo", maybeepinfo)
             ## (hzyjerry): is part is manually added
             mb_rewards.append([rewards])
         #batch of steps to batch of rollouts
@@ -154,6 +155,7 @@ class Runner(object):
             delta = mb_rewards[t] + self.gamma * nextvalues * nextnonterminal - mb_values[t]
             mb_advs[t] = lastgaelam = delta + self.gamma * self.lam * nextnonterminal * lastgaelam
         mb_returns = mb_advs + mb_values
+        #print("before mapping", epinfos)
         return (*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)), 
             mb_states, epinfos)
 
@@ -217,6 +219,7 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
         lrnow = lr(frac)
         cliprangenow = cliprange(frac)
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632
+        #print("ep infos", epinfos)
         epinfobuf.extend(epinfos)
         mblossvals = []
         if states is None: # nonrecurrent version
@@ -254,6 +257,7 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
             logger.logkv("total_timesteps", update*nbatch)
             logger.logkv("fps", fps)
             logger.logkv("explained_variance", float(ev))
+            #print("Reward so far", [epinfo['r'] for epinfo in epinfobuf])
             logger.logkv('eprewmean', safemean([epinfo['r'] for epinfo in epinfobuf]))
             logger.logkv('eplenmean', safemean([epinfo['l'] for epinfo in epinfobuf]))
             logger.logkv('time_elapsed', tnow - tfirststart)
@@ -270,3 +274,55 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
 
 def safemean(xs):
     return np.nan if len(xs) == 0 else np.mean(xs)
+
+
+
+
+def enjoy(*, policy, env, nsteps, total_timesteps, ent_coef, lr, 
+            vf_coef=0.5,  max_grad_norm=0.5, gamma=0.99, lam=0.95, 
+            log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
+            save_interval=0, reload_name=None):
+
+    if isinstance(lr, float): lr = constfn(lr)
+    else: assert callable(lr)
+    if isinstance(cliprange, float): cliprange = constfn(cliprange)
+    else: assert callable(cliprange)
+    total_timesteps = int(total_timesteps)
+
+    #nenv = env.num_envs
+    nenvs = 1
+    ob_space = env.observation_space
+    ac_space = env.action_space
+    nbatch = nenvs * nsteps
+    nbatch_train = nbatch // nminibatches
+
+    make_model = lambda : Model(policy=policy, ob_space=ob_space, ac_space=ac_space, nbatch_act=nenvs, nbatch_train=nbatch_train, 
+                    nsteps=nsteps, ent_coef=ent_coef, vf_coef=vf_coef,
+                    max_grad_norm=max_grad_norm)
+    
+    if save_interval and logger.get_dir():
+        import cloudpickle
+        with open(osp.join(logger.get_dir(), 'make_model.pkl'), 'wb') as fh:
+            fh.write(cloudpickle.dumps(make_model))
+    
+    model = make_model()
+    if reload_name:
+        model.load(reload_name)
+    
+    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam)
+
+    epinfobuf = deque(maxlen=100)
+    tfirststart = time.time()
+
+    nupdates = 3000
+    for update in range(1, nupdates+1):
+        assert nbatch % nminibatches == 0
+        nbatch_train = nbatch // nminibatches
+        tstart = time.time()
+        frac = 1.0 - (update - 1.0) / nupdates
+        lrnow = lr(frac)
+        cliprangenow = cliprange(frac)
+        obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632
+        #print("ep infos", epinfos)
+
+    env.close()
