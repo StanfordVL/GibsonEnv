@@ -108,29 +108,30 @@ class Runner(object):
         mb_states = self.states
         epinfos = []
         for _ in range(self.nsteps):
-            with Profiler("PPO2 step"):
-                actions, values, self.states, neglogpacs = self.model.step(self.obs, self.states, self.dones)
-                print("actions", actions)
-                mb_obs.append(self.obs.copy())
-                mb_actions.append([actions])
-                mb_values.append(values)
-                mb_neglogpacs.append(neglogpacs)
-                mb_dones.append([self.dones])   
+            #with Profiler("PPO2 step"):
+            actions, values, self.states, neglogpacs = self.model.step(self.obs, self.states, self.dones)
+            #print("actions", actions)
+            mb_obs.append(self.obs.copy())
+            mb_actions.append([actions])
+            mb_values.append(values)
+            mb_neglogpacs.append(neglogpacs)
+            mb_dones.append([self.dones])   
 
-                if self.dones:
-                    self.obs[:], self.obs_sensor[:] = self.env.reset()
-                    rewards = 0
-                    self.dones = False
-                else:
-                    self.obs[:], rewards, self.dones, infos = self.env.step(actions)
-                    if 'sensor' in infos:
-                        ob_sensor = infos['sensor']
-                    if infos['episode'] is not None:
-                        maybeepinfo = infos['episode']
-                        print("maybeepinfo", maybeepinfo)
-                        if maybeepinfo: epinfos.append(maybeepinfo)
-                ## (hzyjerry): is part is manually added
-                mb_rewards.append([rewards])
+            if self.dones:
+                self.obs[:], self.obs_sensor[:] = self.env.reset()
+                rewards = 0
+                self.dones = False
+            else:
+                self.obs[:], rewards, self.dones, infos = self.env.step(actions)
+                #print("PPO2", rewards, self.dones)
+                if 'sensor' in infos:
+                    ob_sensor = infos['sensor']
+                if infos['episode'] is not None:
+                    maybeepinfo = infos['episode']
+                    #print("maybeepinfo", maybeepinfo)
+                    if maybeepinfo: epinfos.append(maybeepinfo)
+            ## (hzyjerry): is part is manually added
+            mb_rewards.append([rewards])
         #batch of steps to batch of rollouts
         mb_obs = np.asarray(mb_obs, dtype=self.obs.dtype)
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32)
@@ -162,8 +163,8 @@ def sf01(arr):
     swap and then flatten axes 0 and 1
     """
     s = arr.shape
-    print(arr)
-    print("arr shape", s)
+    #print(arr)
+    #print("arr shape", s)
     return arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:])
 
 def constfn(val):
@@ -263,7 +264,7 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
             checkdir = osp.join(logger.get_dir(), 'checkpoints')
             os.makedirs(checkdir, exist_ok=True)
             savepath = osp.join(checkdir, '%.5i'%update)
-            print('Saving to', savepath)
+            #print('Saving to', savepath)
             model.save(savepath)
     env.close()
 

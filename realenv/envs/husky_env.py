@@ -74,7 +74,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         
         alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
-        done = not alive or self.nframe > 400 or self.robot.body_xyz[2] < 0
+        done = not alive or self.nframe > 300 or self.robot.body_xyz[2] < 0
         #done = alive < 0
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -115,6 +115,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         close_to_goal = 0
         if self.robot.is_close_to_goal():
             close_to_goal = 0.5
+
         debugmode = 0
         if (debugmode):
             print("alive=")
@@ -137,7 +138,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         rewards = [
             #alive,
             progress,
-            wall_collision_cost,
+            #wall_collision_cost,
             close_to_goal,
             #electricity_cost,
             #joints_at_limit_cost,

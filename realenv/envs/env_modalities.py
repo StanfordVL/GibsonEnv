@@ -73,6 +73,7 @@ class SensorRobotEnv(BaseEnv):
         self.gpu_count = gpu_count
         self.nframe = 0
         self.eps_reward = 0
+        self.reward = 0
         
     def get_keys_to_action(self):
         return self.robot.keys_to_action
@@ -80,7 +81,7 @@ class SensorRobotEnv(BaseEnv):
     def _reset(self):
         debugmode = 1
         if debugmode:
-            #print("Episode: steps:{} score:{}".format(self.nframe, self.eps_reward))
+            print("Episode: steps:{} score:{}".format(self.nframe, self.reward))
             body_xyz = self.robot.body_xyz
             print("[{}, {}, {}],".format(body_xyz[0], body_xyz[1], body_xyz[2]))
         self.nframe = 0
@@ -153,13 +154,12 @@ class SensorRobotEnv(BaseEnv):
 
         debugmode = 0
         if (debugmode):
-            print("rewards")
-            print(sum(self.rewards))
+            print("episode rewards", sum(self.rewards), "steps", self.nframe)
 
         #print(self.reward, self.rewards, self.robot.walk_target_dist_xyz)
         episode = None
         if done:
-            episode = {'r': self.eps_reward,
+            episode = {'r': self.reward,
                        'l': self.nframe}
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat, episode=episode)
 
@@ -347,8 +347,27 @@ class CameraRobotEnv(SensorRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
                 
-        with Profiler("Render off screen"):
-            self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        #with Profiler("Render off screen"):
+        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+
+
+        calc_obstacle_penalty = 1
+        if calc_obstacle_penalty:
+            screen_sz = self.robot.obs_dim[0]
+            screen_delta = int(screen_sz / 8)
+            screen_half  = int(screen_sz / 2)
+            obstacle_dist = (np.mean(self.render_depth[screen_half - screen_delta : screen_half + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
+            obstacle_penalty = 0
+            if obstacle_dist < 1.0:
+               obstacle_penalty = obstacle_dist - 1.0
+            sensor_reward += obstacle_penalty
+
+            debugmode = 0
+            if debugmode:
+                print("Obstacle screen", screen_sz, screen_delta)
+                print("Obstacle distance", obstacle_dist)
+                print("Obstacle penalty", obstacle_penalty)
+
         if configs.DISPLAY_UI:
             with Profiler("Rendering to UI time"):
                 self.renderToUI()

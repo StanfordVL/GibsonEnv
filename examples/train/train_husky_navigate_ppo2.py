@@ -52,7 +52,7 @@ def train(num_timesteps, seed):
     gym.logger.setLevel(logging.WARN)
 
 
-    ppo2.learn(policy=CnnPolicy, env=env, nsteps=500, nminibatches=4,
+    ppo2.learn(policy=CnnPolicy, env=env, nsteps=2000, nminibatches=4,
         lam=0.95, gamma=0.996, noptepochs=4, log_interval=1,
         ent_coef=.01,
         lr=lambda f : f * 2.5e-4,

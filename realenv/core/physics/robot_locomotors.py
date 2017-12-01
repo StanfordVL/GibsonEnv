@@ -38,30 +38,30 @@ class WalkerBase(BaseRobot):
         BaseRobot.__init__(self, filename, robot_name, scale)
 
         self.resolution = resolution
-        obs_dim = None
+        self.obs_dim = None
         if resolution == "SMALL":
-            obs_dim = [64, 64, 4]
+            self.obs_dim = [64, 64, 4]
         elif resolution == "XSMALL":
-            obs_dim = [32, 32, 4]
+            self.obs_dim = [32, 32, 4]
         elif resolution == "MID":
-            obs_dim = [128, 128, 4]
+            self.obs_dim = [128, 128, 4]
         elif resolution == "LARGE":
-            obs_dim = [512, 512, 4]
+            self.obs_dim = [512, 512, 4]
         elif resolution == "XLARGE":
-            obs_dim = [1024, 1024, 4]
+            self.obs_dim = [1024, 1024, 4]
         else:
-            obs_dim = [256, 256, 4]
+            self.obs_dim = [256, 256, 4]
 
         if mode=="RGB":
-            obs_dim[2] = 3
+            self.obs_dim[2] = 3
         elif mode=="DEPTH":
-            obs_dim[2] = 1
+            self.obs_dim[2] = 1
         assert type(sensor_dim) == int, "Sensor dimension must be int, got {}".format(type(sensor_dim))
         assert type(action_dim) == int, "Action dimension must be int, got {}".format(type(action_dim))
 
         action_high = np.ones([action_dim])
         self.action_space = gym.spaces.Box(-action_high, action_high)
-        obs_high = np.inf * np.ones(obs_dim) + OBSERVATION_EPS
+        obs_high = np.inf * np.ones(self.obs_dim) + OBSERVATION_EPS
         self.observation_space = gym.spaces.Box(-obs_high, obs_high)
         sensor_high = np.inf * np.ones([sensor_dim])
         self.sensor_space = gym.spaces.Box(-sensor_high, sensor_high)
@@ -179,16 +179,13 @@ class WalkerBase(BaseRobot):
         # all rewards have rew/frame units and close to 1.0 (hzyjerry) ==> make rewards similar scale
         debugmode=0
         if (debugmode):
-            print("calc_potential: self.walk_target_dist x y")
-            print(self.walk_target_dist)
-            print("robot position, target position")
-            print(self.body_xyz, [self.walk_target_x, self.walk_target_y, self.walk_target_z])
+            print("calc_potential: self.walk_target_dist x y", self.walk_target_dist)
+            print("robot position", self.body_xyz, "target position", [self.walk_target_x, self.walk_target_y, self.walk_target_z])
 #            print("self.scene.dt")
 #            print(self.scene.dt)
 #            print("self.scene.frame_skip")
 #            print(self.scene.frame_skip)
-            print("self.scene.timestep")
-            print(self.scene.timestep)
+            #print("self.scene.timestep", self.scene.timestep)
         return - self.walk_target_dist / self.scene.dt
 
     def is_close_to_goal(self):
