@@ -363,7 +363,7 @@ class CameraRobotEnv(SensorRobotEnv):
             obstacle_penalty = 0
             OBSTACLE_LIMIT = 2.5
             if obstacle_dist < OBSTACLE_LIMIT:
-               obstacle_penalty = obstacle_dist - OBSTACLE_LIMIT
+               obstacle_penalty = 2 * (obstacle_dist - OBSTACLE_LIMIT)
             sensor_reward += obstacle_penalty
 
             debugmode = 0
