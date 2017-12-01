@@ -567,7 +567,7 @@ class Husky(WalkerBase):
         if not self.is_discrete:
             return 0
         if action == 2 or action == 3:
-            return -1
+            return -0.3
         else:
             return 0
 
