@@ -133,7 +133,7 @@ class SensorRobotEnv(BaseEnv):
         self.reward += sum(self.rewards)
         self.eps_reward += sum(self.rewards)
 
-        debugmode = 0
+        debugmode = 1
         if debugmode:
             print("Eps frame {} reward {}".format(self.nframe, self.reward))
             print("position", self.robot.get_position())
@@ -161,6 +161,9 @@ class SensorRobotEnv(BaseEnv):
         if done:
             episode = {'r': self.reward,
                        'l': self.nframe}
+            debugmode = 0
+            if debugmode:
+                print("return episode:", episode)
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat, episode=episode)
 
     def calc_rewards(self, a, state):
