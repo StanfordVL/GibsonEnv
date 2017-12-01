@@ -75,7 +75,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         
         alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
-        done = not alive or self.nframe > 300 or self.robot.body_xyz[2] < 0
+        done = not alive or self.nframe > 150 or self.robot.body_xyz[2] < 0
         #done = alive < 0
         if not np.isfinite(state).all():
             print("~INF~", state)
