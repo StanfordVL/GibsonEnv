@@ -94,7 +94,8 @@ class Runner(object):
         nenv = 1
         self.obs = np.zeros((nenv,) + env.observation_space.shape, dtype=model.train_model.X.dtype.name)
         self.obs_sensor = np.zeros((nenv,) + env.sensor_space.shape, dtype=model.train_model.X.dtype.name)
-
+        print(self.obs.shape)
+        print(self.obs_sensor.shape)
         self.obs[:], self.obs_sensor[:] = env.reset()
         self.gamma = gamma
         self.lam = lam
@@ -189,6 +190,9 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
     nenvs = 1
     ob_space = env.observation_space
     ac_space = env.action_space
+
+
+
     nbatch = nenvs * nsteps
     nbatch_train = nbatch // nminibatches
 
@@ -293,6 +297,11 @@ def enjoy(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
     nenvs = 1
     ob_space = env.observation_space
     ac_space = env.action_space
+
+    print(env.observation_space)
+    print(env.action_space)
+
+
     nbatch = nenvs * nsteps
     nbatch_train = nbatch // nminibatches
 
