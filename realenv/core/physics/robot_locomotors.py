@@ -75,6 +75,7 @@ class WalkerBase(BaseRobot):
         self.eye_offset_orn = euler2quat(0, 0, 0)
         self.action_dim = action_dim
         self.scale = scale
+        self.angle_to_target = 0
 
     def robot_specific_reset(self):
         for j in self.ordered_joints:
@@ -140,6 +141,7 @@ class WalkerBase(BaseRobot):
         self.walk_target_dist_xyz = np.linalg.norm(
             [self.walk_target_z - self.body_xyz[2], self.walk_target_y - self.body_xyz[1], self.walk_target_x - self.body_xyz[0]])
         angle_to_target = self.walk_target_theta - yaw
+        self.angle_to_target = angle_to_target
 
         self.walk_height_diff = np.abs(self.walk_target_z - self.body_xyz[2])
         debugmode= 0
@@ -543,7 +545,7 @@ class Husky(WalkerBase):
         ## specific offset for husky.urdf
         #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
             self.torque = 0.1
-            self.action_list = [[self.torque/4, self.torque/4, self.torque/4, self.torque/4],
+            self.action_list = [[self.torque/2, self.torque/2, self.torque/2, self.torque/2],
                                 #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
                                 [-self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9],
                                 [self.torque, -self.torque, self.torque, -self.torque],
@@ -562,6 +564,28 @@ class Husky(WalkerBase):
         else:
             realaction = action
         WalkerBase.apply_action(self, realaction)
+
+    def steering_cost(self, action):
+        if not self.is_discrete:
+            return 0
+        if action == 2 or action == 3:
+            return -0.1
+        else:
+            return 0
+
+    def angle_cost(self):
+        angle_const = 0.2
+        diff_to_half = np.abs(self.angle_to_target - 1.57)
+        is_forward = self.angle_to_target > 1.57
+        diff_angle = np.abs(1.57 - diff_to_half) if is_forward else 3.14 - np.abs(1.57 - diff_to_half)
+        debugmode = 0
+        if debugmode:
+            print("is forward", is_forward)
+            print("diff to half", diff_to_half)
+            print("angle to target", self.angle_to_target)
+            print("diff angle", diff_angle)
+        return -angle_const* diff_angle
+
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
@@ -603,3 +627,30 @@ class HuskyClimber(Husky):
         if debugmode:
             for k in self.jdict.keys():
                 print("Power coef", self.jdict[k].power_coef)
+
+class HuskyHighCamera(Husky):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGB"):
+        self.model_type = "URDF"
+        self.is_discrete = is_discrete
+        self.mjcf_scaling = 1
+        WalkerBase.__init__(self, "husky_high.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, mode=mode)
+        self.initial_pos = initial_pos
+        self.initial_orn = initial_orn
+        self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
+        if self.is_discrete:
+            self.action_space = gym.spaces.Discrete(5)
+        ## specific offset for husky.urdf
+        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+            self.torque = 0.1
+            self.action_list = [[self.torque/4, self.torque/4, self.torque/4, self.torque/4],
+                                #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
+                                [-self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9],
+                                [self.torque, -self.torque, self.torque, -self.torque],
+                                [-self.torque, self.torque, -self.torque, self.torque],
+                                [0, 0, 0, 0]]
+
+            self.setup_keys_to_action()
+
+        ## specific offset for husky.urdf
+        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+    

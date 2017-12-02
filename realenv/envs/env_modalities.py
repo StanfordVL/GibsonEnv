@@ -161,6 +161,9 @@ class SensorRobotEnv(BaseEnv):
         if done:
             episode = {'r': self.reward,
                        'l': self.nframe}
+            debugmode = 0
+            if debugmode:
+                print("return episode:", episode)
         return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat, episode=episode)
 
     def calc_rewards(self, a, state):
@@ -356,15 +359,18 @@ class CameraRobotEnv(SensorRobotEnv):
             screen_sz = self.robot.obs_dim[0]
             screen_delta = int(screen_sz / 8)
             screen_half  = int(screen_sz / 2)
-            obstacle_dist = (np.mean(self.render_depth[screen_half - screen_delta : screen_half + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
+            height_offset = int(screen_sz / 4)
+
+            obstacle_dist = (np.mean(self.render_depth[screen_half  + height_offset - screen_delta : screen_half + height_offset + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
             obstacle_penalty = 0
-            if obstacle_dist < 1.0:
-               obstacle_penalty = obstacle_dist - 1.0
+            OBSTACLE_LIMIT = 1.5
+            if obstacle_dist < OBSTACLE_LIMIT:
+               obstacle_penalty = (obstacle_dist - OBSTACLE_LIMIT)
             sensor_reward += obstacle_penalty
 
             debugmode = 0
             if debugmode:
-                print("Obstacle screen", screen_sz, screen_delta)
+                #print("Obstacle screen", screen_sz, screen_delta)
                 print("Obstacle distance", obstacle_dist)
                 print("Obstacle penalty", obstacle_penalty)
 
@@ -381,7 +387,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
         debugmode = 0
         if debugmode:
-            print(sensor_meta['eye_pos'])
+            print("Eye position", sensor_meta['eye_pos'])
         debugmode = 0
         if debugmode:
             print("Environment visuals shape", visuals.shape)

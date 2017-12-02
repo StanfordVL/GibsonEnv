@@ -52,13 +52,13 @@ def train(num_timesteps, seed):
     gym.logger.setLevel(logging.WARN)
 
 
-    ppo2.learn(policy=CnnPolicy, env=env, nsteps=600, nminibatches=4,
-        lam=0.95, gamma=0.996, noptepochs=4, log_interval=1,
+    ppo2.learn(policy=CnnPolicy, env=env, nsteps=1000, nminibatches=4,
+        lam=0.95, gamma=0.99, noptepochs=4, log_interval=1,
         ent_coef=.01,
         lr=lambda f : f * 2.5e-4,
         cliprange=lambda f : f * 0.2,
         total_timesteps=int(num_timesteps * 1.1),
-        save_interval=10,
+        save_interval=5,
         reload_name=args.reload_name)
     
     '''

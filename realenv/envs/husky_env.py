@@ -1,6 +1,6 @@
 from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from realenv.envs.env_bases import *
-from realenv.core.physics.robot_locomotors import Husky, HuskyClimber
+from realenv.core.physics.robot_locomotors import Husky, HuskyClimber, HuskyHighCamera
 from transforms3d import quaternions
 from realenv import configs
 import os
@@ -52,7 +52,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
-        self.robot = Husky(
+        #self.robot = Husky(
+        self.robot = HuskyHighCamera(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
             initial_orn=initial_orn,
@@ -74,7 +75,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         
         alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
-        done = not alive or self.nframe > 300 or self.robot.body_xyz[2] < 0
+        done = not alive or self.nframe > 150 or self.robot.body_xyz[2] < 0
         #done = alive < 0
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -102,6 +103,11 @@ class HuskyNavigateEnv(CameraRobotEnv):
         electricity_cost  += self.stall_torque_cost * float(np.square(a).mean())
 
 
+        steering_cost = self.robot.steering_cost(a)
+        debugmode = 0
+        if debugmode:
+            print("steering cost", steering_cost)
+
         #alive = len(self.robot.parts['top_bumper_link'].contact_list())
         #if alive == 0:
         #    alive_score = 0.1
@@ -115,6 +121,12 @@ class HuskyNavigateEnv(CameraRobotEnv):
         close_to_goal = 0
         if self.robot.is_close_to_goal():
             close_to_goal = 0.5
+
+        #angle_cost = 0
+        angle_cost = self.robot.angle_cost()
+        debugmode = 0
+        if debugmode:
+            print("angle cost", angle_cost)
 
         debugmode = 0
         if (debugmode):
@@ -140,6 +152,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
             progress,
             #wall_collision_cost,
             close_to_goal,
+            steering_cost,
+            angle_cost
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
