@@ -122,6 +122,12 @@ class HuskyNavigateEnv(CameraRobotEnv):
         if self.robot.is_close_to_goal():
             close_to_goal = 0.5
 
+        #angle_cost = 0
+        angle_cost = self.robot.angle_cost()
+        debugmode = 1
+        if debugmode:
+            print("angle cost", angle_cost)
+
         debugmode = 0
         if (debugmode):
             print("alive=")
@@ -146,7 +152,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
             progress,
             #wall_collision_cost,
             close_to_goal,
-            steering_cost
+            steering_cost,
+            angle_cost
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost

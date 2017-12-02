@@ -359,16 +359,18 @@ class CameraRobotEnv(SensorRobotEnv):
             screen_sz = self.robot.obs_dim[0]
             screen_delta = int(screen_sz / 8)
             screen_half  = int(screen_sz / 2)
-            obstacle_dist = (np.mean(self.render_depth[screen_half - screen_delta : screen_half + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
+            height_offset = int(screen_sz / 4)
+
+            obstacle_dist = (np.mean(self.render_depth[screen_half  + height_offset - screen_delta : screen_half + height_offset + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
             obstacle_penalty = 0
-            OBSTACLE_LIMIT = 2.5
+            OBSTACLE_LIMIT = 1.5
             if obstacle_dist < OBSTACLE_LIMIT:
                obstacle_penalty = (obstacle_dist - OBSTACLE_LIMIT)
             sensor_reward += obstacle_penalty
 
             debugmode = 0
             if debugmode:
-                print("Obstacle screen", screen_sz, screen_delta)
+                #print("Obstacle screen", screen_sz, screen_delta)
                 print("Obstacle distance", obstacle_dist)
                 print("Obstacle penalty", obstacle_penalty)
 
