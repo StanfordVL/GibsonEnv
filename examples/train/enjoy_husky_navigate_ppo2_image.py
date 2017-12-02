@@ -23,10 +23,11 @@ import tensorflow as tf
 import random
 import sys
 import numpy as np
+from PIL import Image
 
 ## Training code adapted from: https://github.com/openai/baselines/blob/master/baselines/ppo1/run_atari.py
 
-def enjoy(num_timesteps, seed):
+def enjoy(num_timesteps, seed, args=None):
     rank = MPI.COMM_WORLD.Get_rank()
     #sess = U.single_threaded_session()
     sess = utils.make_gpu_session(args.num_gpu)
@@ -52,15 +53,37 @@ def enjoy(num_timesteps, seed):
 
     gym.logger.setLevel(logging.WARN)
 
-    ppo2_imgs.enjoy(policy=CnnPolicy, imgs=np.zeros((100,256,256,3)), nsteps=600, nminibatches=4,
-        lam=0.95, gamma=0.996, noptepochs=4, log_interval=1,
-        ent_coef=.01,
-        lr=lambda f : f * 2.5e-4,
-        cliprange=lambda f : f * 0.2,
-        total_timesteps=int(num_timesteps * 1.1),
-        save_interval=10,
-        reload_name=args.reload_name)
-    
+    imgs = np.zeros((4000,256,256,3))
+
+    types = ['prefill', 'recon', 'unfill', 'target']
+
+    if args:
+        if args.img_path:
+            for i in range(4):
+                print(args.img_path.replace('prefill', types[i]))
+                img = np.array(Image.open(args.img_path.replace('prefill', types[i])).resize((256,256)))
+                imgs[i*1000:i*1000 + 1000] = np.repeat(np.expand_dims(img, 0), repeats=1000, axis = 0)
+
+    actions = ppo2_imgs.enjoy(policy=CnnPolicy, imgs=imgs, nsteps=600, nminibatches=4,
+                              lam=0.95, gamma=0.996, noptepochs=4, log_interval=1,
+                              ent_coef=.01,
+                              lr=lambda f: f * 2.5e-4,
+                              cliprange=lambda f: f * 0.2,
+                              total_timesteps=int(num_timesteps * 1.1),
+                              save_interval=10,
+                              reload_name=args.reload_name)
+
+    print(actions)
+
+    matrix = np.zeros((4,4))
+    for i in range(4):
+        for j in range(4):
+            print(np.histogram(actions[i*1000:i*1000+1000], bins=5, range=(0,5))[0])
+            print(np.histogram(actions[j * 1000:j * 1000 + 1000], bins=5, range=(0, 5))[0])
+
+            matrix[i,j] = np.linalg.norm(np.histogram(actions[i*1000:i*1000+1000], bins=5, range=(0,5), normed=True)[0] - np.histogram(actions[j*1000:j*1000+1000], bins=5, range=(0,5), normed=True)[0])
+
+    print(repr(matrix))
     '''
     pposgd_fuse.learn(env, policy_fn,
         max_timesteps=int(num_timesteps * 1.1),
@@ -85,8 +108,8 @@ def callback(lcl, glb):
     return is_solved
 
 
-def main():
-    enjoy(num_timesteps=10000000, seed=5)
+def main(args):
+    enjoy(num_timesteps=10000000, seed=5, args=args)
 
 if __name__ == '__main__':
     import argparse
@@ -100,5 +123,8 @@ if __name__ == '__main__':
     parser.add_argument('--resolution', type=str, default="SMALL")
     parser.add_argument('--reload_name', type=str, default=None)
     parser.add_argument('--save_name', type=str, default=None)
+    parser.add_argument('--img_path', type=str, default=None)
+
     args = parser.parse_args()
-    main()
+
+    main(args)
