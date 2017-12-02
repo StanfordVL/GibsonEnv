@@ -483,6 +483,7 @@ class PCRenderer:
                 cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], LINUX_OFFSET['y_delta'])        
 
         def _render_rgb(rgb):
+            rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
             cv2.imshow('RGB cam',rgb)
             if HIGH_RES_MONITOR and not MAKE_VIDEO:
                 cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
