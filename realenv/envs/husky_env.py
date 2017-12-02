@@ -124,7 +124,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
         #angle_cost = 0
         angle_cost = self.robot.angle_cost()
-        debugmode = 1
+        debugmode = 0
         if debugmode:
             print("angle cost", angle_cost)
 
