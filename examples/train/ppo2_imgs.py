@@ -112,6 +112,7 @@ class Runner(object):
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [],[],[],[],[],[]
         mb_states = self.states
         epinfos = []
+        all_actions = []
         for i in range(len(self.imgs)):
             #with Profiler("PPO2 step"):
             self.obs[:] = self.imgs[i]
@@ -123,9 +124,10 @@ class Runner(object):
             mb_neglogpacs.append(neglogpacs)
             mb_dones.append([self.dones])
 
+            all_actions.append(actions)
             print(i, self.obs.shape, actions)
 
-        return
+        return all_actions
 # obs, returns, masks, actions, values, neglogpacs, states = runner.run()
 def sf01(arr):
     """
@@ -192,4 +194,5 @@ def enjoy(*, policy, imgs, nsteps, total_timesteps, ent_coef, lr,
     tfirststart = time.time()
 
 
-    runner.run() #pylint: disable=E0632
+    actions = runner.run() #pylint: disable=E0632
+    return actions
