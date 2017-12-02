@@ -57,3 +57,10 @@ comparison/
 
 # Plotting
 examples/scripts/plot*
+
+
+#pycharm
+.idea*
+
+#models
+nav_models
