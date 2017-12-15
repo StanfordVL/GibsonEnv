@@ -4,19 +4,22 @@ Support for real time multichannel input (depth, surface normal, etc), implement
 All external libraries have been included. You only need CMake (gcc version <=5) on your computer in order to build
 ![](https://github.com/fxia22/realenv/blob/depth_render/misc/depth_render.png)
 
-### Install
-```shell
-sudo apt-get install libzmq3-dev
-sudo apt-get install libglew-dev
-sudo apt-get install libglm-dev
-```
+
 ### Steps
 
-Install dependencies
+#### Install dependencies
 ```shell
-sudo apt install mesa-common-dev
-sudo apt install libglu1-mesa-dev freeglut3-dev
+sudo apt-get install libzmq3-dev libassimp-dev
+sudo apt-get install libglew-dev
+sudo apt-get install libglm-dev
+sudo apt-get install xorg-dev 
+sudo apt-get install mesa-common-dev
+sudo apt-get install libglu1-mesa-dev freeglut3-dev
+
 ```
+
+
+
 
 Download models: you *do not* have to download dataset separately for this module. Feel free to skip this step, or refer to https://github.com/fxia22/realenv/tree/physics/realenv/envs. If you want to download models for demonstration purpose, do the following
 ```shell
