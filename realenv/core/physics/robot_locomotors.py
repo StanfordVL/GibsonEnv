@@ -553,6 +553,10 @@ class Husky(WalkerBase):
                                 [0, 0, 0, 0]]
 
             self.setup_keys_to_action()
+        else:
+            action_high = 0.02 * np.ones([4])
+            self.action_space = gym.spaces.Box(-action_high, action_high)
+
 
         ## specific offset for husky.urdf
         #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
@@ -650,6 +654,9 @@ class HuskyHighCamera(Husky):
                                 [0, 0, 0, 0]]
 
             self.setup_keys_to_action()
+        else:
+            action_high = 0.02 * np.ones([4])
+            self.action_space = gym.spaces.Box(-action_high, action_high)
 
         ## specific offset for husky.urdf
         #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')

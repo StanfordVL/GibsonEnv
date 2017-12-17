@@ -43,7 +43,7 @@ def train(num_timesteps, seed):
 
     use_filler = not args.disable_filler
     
-    raw_env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
+    raw_env = HuskyNavigateEnv(human=args.human, is_discrete=False, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
 
     env = Monitor(raw_env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))

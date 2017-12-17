@@ -2,6 +2,8 @@ import numpy as np
 import tensorflow as tf
 from baselines.a2c.utils import conv, fc, conv_to_fc, batch_to_seq, seq_to_batch, lstm, lnlstm
 from baselines.common.distributions import make_pdtype
+import gym.spaces
+
 
 ## Fuse policy using PPO2 from OpenAI Baseline
 
@@ -68,9 +70,20 @@ class FusePolicy(object):
 class CnnPolicy(object):
 
     def __init__(self, sess, ob_space, ac_space, nbatch, nsteps, reuse=False, is_discrete=True): #pylint: disable=W0613
+        if isinstance(ac_space, gym.spaces.Discrete):
+            self.is_discrete = True
+        else:
+            self.is_discrete = False
+
+
+        print("nbatch%d" % (nbatch))
+
         nh, nw, nc = ob_space.shape
         ob_shape = (nbatch, nh, nw, nc)
-        nact = ac_space.n
+        if self.is_discrete:
+            nact = ac_space.n
+        else:
+            nact =  ac_space.shape[0]
         X = tf.placeholder(tf.uint8, ob_shape) #obs
         with tf.variable_scope("model", reuse=reuse):
             h = conv(tf.cast(X, tf.float32)/255., 'c1', nf=32, rf=8, stride=4, init_scale=np.sqrt(2))
@@ -81,22 +94,32 @@ class CnnPolicy(object):
             pi = fc(h4, 'pi', nact, act=lambda x:x, init_scale=0.01)
             vf = fc(h4, 'v', 1, act=lambda x:x)[:,0]
 
-        self.pdtype = make_pdtype(ac_space)
-        self.pd = self.pdtype.pdfromflat(pi)
+            if not self.is_discrete:
+                logstd = tf.get_variable(name="logstd", shape=[1, nact],
+                                     initializer=tf.zeros_initializer())
 
-        a0 = self.pd.sample()
+        self.pdtype = make_pdtype(ac_space)
+        if self.is_discrete:
+            self.pd = self.pdtype.pdfromflat(pi)
+            a0 = self.pd.sample()
+        else:
+            pdparam = tf.concat([pi, pi * 0.0 + logstd], axis=1)
+            self.pd = self.pdtype.pdfromflat(pdparam)
+            a0 = self.pd.sample()
+
         neglogp0 = self.pd.neglogp(a0)
         self.initial_state = None
-        self.is_discrete = is_discrete
 
         def step(ob, *_args, **_kwargs):
             a, v, neglogp = sess.run([a0, vf, neglogp0], {X:ob})
-            if self.is_discrete:
-                a = a[0]
+            assert(a.shape[0] == 1) # make sure a = a[0] don't throw away actions
+            a = a[0]
             return a, v, self.initial_state, neglogp
 
         def value(ob, *_args, **_kwargs):
             return sess.run(vf, {X:ob})
+
+
 
         self.X = X
         self.pi = pi
