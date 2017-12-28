@@ -144,6 +144,9 @@ class WalkerBase(BaseRobot):
         self.angle_to_target = angle_to_target
 
         self.walk_height_diff = np.abs(self.walk_target_z - self.body_xyz[2])
+
+        self.dist_to_start = np.linalg.norm(np.array(self.body_xyz) - np.array(self.initial_pos))
+
         debugmode= 0
         if debugmode:
             print("Robot dsebug mode: walk_height_diff", self.walk_height_diff)
@@ -189,6 +192,12 @@ class WalkerBase(BaseRobot):
 #            print(self.scene.frame_skip)
             #print("self.scene.timestep", self.scene.timestep)
         return - self.walk_target_dist / self.scene.dt
+
+
+
+    def calc_goalless_potential(self):
+        return self.dist_to_start / self.scene.dt
+
 
     def is_close_to_goal(self):
         body_pose = self.robot_body.pose()
