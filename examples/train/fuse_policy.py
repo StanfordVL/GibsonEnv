@@ -61,7 +61,6 @@ class FusePolicy(object):
             raise NotImplementedError
 
         print(x.shape, y.shape)
-        sys.exit()
         x = tf.concat([x,y], 1)
 
         ## Saver

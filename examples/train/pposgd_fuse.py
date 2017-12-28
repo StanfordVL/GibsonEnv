@@ -154,7 +154,6 @@ def learn(env, policy_func, *,
     ac_space = env.action_space
 
 
-
     pi = policy_func("pi", ob_space, sensor_space,  ac_space) # Construct network for new policy
     oldpi = policy_func("oldpi", ob_space, sensor_space, ac_space) # Network for old policy
     atarg = tf.placeholder(dtype=tf.float32, shape=[None]) # Target advantage function (if applicable)
@@ -192,6 +191,7 @@ def learn(env, policy_func, *,
 
     U.initialize()
     adam.sync()
+
 
     if reload_name:
         saver = tf.train.Saver()
