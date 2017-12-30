@@ -60,6 +60,10 @@ class BaseEnv(gym.Env):
         self._render_width = self.windowsz
         self._render_height = self.windowsz
 
+        if configs.UI_MODE == configs.UI_ONE:
+            self._render_width = 512
+            self._render_height = 512
+
         if scene_type == "stadium":
             self.scene = self.create_single_player_stadium_scene()
         elif scene_type == "building":

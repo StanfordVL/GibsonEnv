@@ -73,6 +73,7 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
     news = np.zeros(horizon, 'int32')
     acs = np.array([ac for _ in range(horizon)])
     prevacs = acs.copy()
+    testing_result = []
 
     while True:
         prevac = ac
@@ -115,7 +116,9 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
             ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
             cur_ep_len = 0
+            testing_result.append(env.test())
             ob, ob_sensor = env.reset()
+            print(len(testing_result), np.sum(testing_result) / float(len(testing_result)))
         t += 1
 
 def add_vtarg_and_adv(seg, gamma, lam):
@@ -133,6 +136,77 @@ def add_vtarg_and_adv(seg, gamma, lam):
         delta = rew[t] + gamma * vpred[t+1] * nonterminal - vpred[t]
         gaelam[t] = lastgaelam = delta + gamma * lam * nonterminal * lastgaelam
     seg["tdlamret"] = seg["adv"] + seg["vpred"]
+
+
+def test(env, policy_func, *,
+        timesteps_per_actorbatch, # timesteps per actor per update
+        clip_param, entcoeff, # clipping parameter epsilon, entropy coeff
+        optim_epochs, optim_stepsize, optim_batchsize,# optimization hypers
+        gamma, lam, # advantage estimation
+        max_timesteps=0, max_episodes=0, max_iters=0, max_seconds=0,  # time constraint
+        callback=None, # you can do anything in the callback, since it takes locals(), globals()
+        adam_epsilon=1e-5,
+        schedule='constant', # annealing for stepsize parameters (epsilon and adam)
+        save_name='ppo_fuse',
+        save_per_acts=3,
+        reload_name=None
+        ):
+    # Setup losses and stuff
+    # ----------------------------------------
+    sensor_space = env.sensor_space
+    ob_space = env.observation_space
+    ac_space = env.action_space
+
+    
+    pi = policy_func("pi", ob_space, sensor_space,  ac_space) # Construct network for new policy
+    oldpi = policy_func("oldpi", ob_space, sensor_space, ac_space) # Network for old policy
+    atarg = tf.placeholder(dtype=tf.float32, shape=[None]) # Target advantage function (if applicable)
+    ret = tf.placeholder(dtype=tf.float32, shape=[None]) # Empirical return
+
+    lrmult = tf.placeholder(name='lrmult', dtype=tf.float32, shape=[]) # learning rate multiplier, updated with schedule
+    clip_param = clip_param * lrmult # Annealed cliping parameter epislon
+
+    ob = U.get_placeholder_cached(name="ob")
+    ob_sensor = U.get_placeholder_cached(name="ob_sensor")
+    ac = pi.pdtype.sample_placeholder([None])
+
+    kloldnew = oldpi.pd.kl(pi.pd)
+    ent = pi.pd.entropy()
+    meankl = U.mean(kloldnew)
+    meanent = U.mean(ent)
+    pol_entpen = (-entcoeff) * meanent
+
+    ratio = tf.exp(pi.pd.logp(ac) - oldpi.pd.logp(ac)) # pnew / pold
+    surr1 = ratio * atarg # surrogate from conservative policy iteration
+    surr2 = U.clip(ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg #
+    pol_surr = - U.mean(tf.minimum(surr1, surr2)) # PPO's pessimistic surrogate (L^CLIP)
+    vf_loss = U.mean(tf.square(pi.vpred - ret))
+    total_loss = pol_surr + pol_entpen + vf_loss
+    losses = [pol_surr, pol_entpen, vf_loss, meankl, meanent]
+    loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
+
+    var_list = pi.get_trainable_variables()
+    lossandgrad = U.function([ob, ob_sensor, ac, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
+    adam = MpiAdam(var_list, epsilon=adam_epsilon)
+
+    assign_old_eq_new = U.function([],[], updates=[tf.assign(oldv, newv)
+        for (oldv, newv) in zipsame(oldpi.get_variables(), pi.get_variables())])
+    compute_losses = U.function([ob, ob_sensor, ac, atarg, ret, lrmult], losses)
+
+    U.initialize()
+    adam.sync()
+
+    if reload_name:
+        saver = tf.train.Saver()
+        saver.restore(tf.get_default_session(), reload_name)
+        print("Loaded model successfully.")
+
+    #from IPython import embed; embed()
+
+    # Prepare for rollouts
+    # ----------------------------------------
+    seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True, sensor = False)
+
 
 def learn(env, policy_func, *,
         timesteps_per_actorbatch, # timesteps per actor per update
@@ -153,7 +227,7 @@ def learn(env, policy_func, *,
     ob_space = env.observation_space
     ac_space = env.action_space
 
-
+    
     pi = policy_func("pi", ob_space, sensor_space,  ac_space) # Construct network for new policy
     oldpi = policy_func("oldpi", ob_space, sensor_space, ac_space) # Network for old policy
     atarg = tf.placeholder(dtype=tf.float32, shape=[None]) # Target advantage function (if applicable)
