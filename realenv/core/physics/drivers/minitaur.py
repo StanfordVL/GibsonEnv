@@ -44,7 +44,7 @@ class MinitaurBase(WalkerBase):
                  time_step=0.01,
                  self_collision_enabled=True,
                  motor_velocity_limit=np.inf,
-                 pd_control_enabled=False,
+                 pd_control_enabled=True,
                  accurate_motor_model_enabled=True,   ## (hzyjerry): affect speed?
                  motor_kp=1.20,
                  motor_kd=0.00,
@@ -89,16 +89,6 @@ class MinitaurBase(WalkerBase):
         self.robot_name = "quadruped"
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
-        WalkerBase.__init__(self, 
-                            "quadruped/minitaur.urdf", 
-                            self.robot_name, 
-                            action_dim=8, 
-                            sensor_dim=OBSERVATION_DIM, 
-                            power=2.5, 
-                            scale = self.scale, 
-                            target_pos=target_pos, 
-                            resolution=resolution, 
-                            mode=mode)
         self.minitaur = None
         self.num_motors = 8
         self.num_legs = int(self.num_motors / 2)
@@ -114,6 +104,19 @@ class MinitaurBase(WalkerBase):
         self._motor_overheat_protection = motor_overheat_protection
         self._on_rack = on_rack
         self._joint_name_to_id = None
+        ## TODO
+        #self.reset_components()
+        WalkerBase.__init__(self, 
+                            "quadruped/minitaur.urdf", 
+                            self.robot_name, 
+                            action_dim=8, 
+                            sensor_dim=OBSERVATION_DIM, 
+                            power=2.5, 
+                            scale = self.scale, 
+                            target_pos=target_pos, 
+                            resolution=resolution, 
+                            mode=mode)
+        self.robot_specific_reset()
         if self._accurate_motor_model_enabled:
             self._kp = motor_kp
             self._kd = motor_kd
@@ -126,8 +129,7 @@ class MinitaurBase(WalkerBase):
             self._kd = 1
 
         self.time_step = time_step
-        self.parts, self.jdict, self.ordered_joints, self.robot_body = None, None, None, None
-        
+
         self.setup_keys_to_action()
         #self.robot_specific_reset()
     
@@ -158,6 +160,12 @@ class MinitaurBase(WalkerBase):
           reload_urdf: Whether to reload the urdf file. If not, Reset() just place
             the minitaur back to its starting position.
         """
+        #sys.exit()
+
+        print("robot specific reset 1")
+        print("self parts", self.parts)
+        print("self minitaur", self.minitaur)
+        print("self joint name", self._joint_name_to_id)
 
         if self.minitaur is None:
             self.minitaur = self.robot_ids[0]
@@ -185,7 +193,19 @@ class MinitaurBase(WalkerBase):
         p.resetBasePositionAndOrientation(self.minitaur, self.initial_pos, [0, 0, 0, 1])
         p.resetBaseVelocity(self.minitaur, [0, 0, 0], [0, 0, 0])
         self.ResetPose(add_constraint=False)
-        
+        print("robot specific reset 2")
+        print("self parts", self.parts)
+
+    def reset_components(self):
+        self._BuildJointNameToIdDict()
+        self._BuildMotorIdList()
+        self._RecordMassInfoFromURDF()
+        self.ResetPose(add_constraint=True)
+        self._overheat_counter = np.zeros(self.num_motors)
+        self._motor_enabled_list = [True] * self.num_motors
+        if self._on_rack:
+            p.createConstraint(self.minitaur, -1, -1, -1, p.JOINT_FIXED,[0, 0, 0], [0, 0, 0], [0, 0, 1])
+
 
         '''
         orientation, position = get_model_initial_pose("humanoid")
@@ -400,7 +420,9 @@ class MinitaurBase(WalkerBase):
         Args:
           motor_commands: The eight desired motor angles.
         """
-        #print("motor commands", motor_commands)
+        debugmode = 0
+        if debugmode:
+            print("motor commands", motor_commands)
         if self._motor_velocity_limit < np.inf:
             current_motor_angle = self.GetMotorAngles()
             motor_commands_max = (
@@ -409,12 +431,21 @@ class MinitaurBase(WalkerBase):
                 current_motor_angle - self.time_step * self._motor_velocity_limit)
             motor_commands = np.clip(motor_commands, motor_commands_min, motor_commands_max)
 
+        debugmode = 0
+        if debugmode:
+            print("motor commands", motor_commands)
         if self._accurate_motor_model_enabled or self._pd_control_enabled:
             q = self.GetMotorAngles()
             qdot = self.GetMotorVelocities()
             if self._accurate_motor_model_enabled:
                 actual_torque, observed_torque = self._motor_model.convert_to_torque(
                     motor_commands, q, qdot)
+
+                debugmode = 1
+                if debugmode:
+                    print("Motor actual torque", actual_torque)
+                #actual_torque.fill(0)
+                
                 if self._motor_overheat_protection:
                     for i in range(self.num_motors):
                         if abs(actual_torque[i]) > OVERHEAT_SHUTDOWN_TORQUE:
@@ -435,6 +466,10 @@ class MinitaurBase(WalkerBase):
                 self._applied_motor_torque = np.multiply(actual_torque,
                                                          self._motor_direction)
 
+                debugmode = 1
+                if debugmode:
+                    print("Model applied motor torque", self._applied_motor_torque)
+                
                 for motor_id, motor_torque, motor_enabled in zip(
                     self._motor_id_list, self._applied_motor_torque,
                     self._motor_enabled_list):

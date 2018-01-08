@@ -59,14 +59,25 @@ class BaseEnv(gym.Env):
         self._cam_pitch = -30
         self._render_width = self.windowsz
         self._render_height = self.windowsz
+        self.scene_type = scene_type
 
         if configs.UI_MODE == configs.UI_ONE:
             self._render_width = 512
             self._render_height = 512
 
-        if scene_type == "stadium":
+        self.scene = None
+        try:
+            if self.robot is not None:
+                self.create_scene()
+        except:
+            return
+
+    def create_scene(self):
+        if self.scene is not None:
+            return
+        if self.scene_type == "stadium":
             self.scene = self.create_single_player_stadium_scene()
-        elif scene_type == "building":
+        elif self.scene_type == "building":
             self.scene = self.create_single_player_building_scene()
         else:
             raise AssertionError()
@@ -84,7 +95,9 @@ class BaseEnv(gym.Env):
     
     def _seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
-        self.robot.np_random = self.np_random # use the same np_randomizer for robot as for env
+        # TODO: add in robot seed()
+        # TODO: decouble pybullet.init() and gym.init()
+        #self.robot.np_random = self.np_random # use the same np_randomizer for robot as for env
         return [seed]
 
     def _reset(self):
@@ -106,7 +119,10 @@ class BaseEnv(gym.Env):
         dump = 0
         ## TODO(hzyjerry): toggle for hard_reset: reload robot
         state = self.robot.reset()
-        self.scene.episode_restart()
+        try:
+            self.scene.episode_restart()
+        except:
+            pass
         return state
 
     def _render(self, mode, close):        

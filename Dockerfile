@@ -1,104 +1,170 @@
-## Scratch ubuntu:16.04 image with NVIDIA GPU
-FROM nvidia/cuda
+FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
+
+
+#RUN echo -e "\n**********************\nNVIDIA Driver Version\n**********************\n" && \
+#	cat /proc/driver/nvidia/version && \
+#	echo -e "\n**********************\nCUDA Version\n**********************\n" && \
+#	nvcc -V && \
 
 ## Skip keyboard settings
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update \
-    && apt-get install -y libav-tools \
-    libpq-dev \
-    libjpeg-dev \
-    cmake \
-    wget \
-    unzip \
-    git \
-    xpra \
-    vnc4server \
-    golang-go \
-    libboost-all-dev \
-    make \
-    && apt-get clean
-    ## This line raises error when building docker image
-    # && rm -rf /var/lib/apt/lists/* \
+# Install some dependencies
+RUN apt-get update && apt-get install -y \
+		bc \
+		build-essential \
+		cmake \
+		curl \
+		g++ \
+		gfortran \
+		git \
+		libffi-dev \
+		libfreetype6-dev \
+		libhdf5-dev \
+		libjpeg-dev \
+		liblcms2-dev \
+		libopenblas-dev \
+		liblapack-dev \
+		libpng12-dev \
+		libssl-dev \
+		libtiff5-dev \
+		libwebp-dev \
+		libzmq3-dev \
+		nano \
+		pkg-config \
+		python-dev \
+		software-properties-common \
+		unzip \
+		vim \
+		wget \
+		zlib1g-dev \
+		qt5-default \
+		libvtk6-dev \
+		zlib1g-dev \
+		libjpeg-dev \
+		libwebp-dev \
+		libpng-dev \
+		libtiff5-dev \
+		libjasper-dev \
+		libopenexr-dev \
+		libgdal-dev \
+		libdc1394-22-dev \
+		libavcodec-dev \
+		libavformat-dev \
+		libswscale-dev \
+		libtheora-dev \
+		libvorbis-dev \
+		libopenjpeg5 \
+		libxvidcore-dev \
+		libx264-dev \
+		yasm \
+		libopencore-amrnb-dev \
+		libopencore-amrwb-dev \
+		libv4l-dev \
+		libxine2-dev \
+		libtbb-dev \
+		libeigen3-dev \
+		python-dev \
+		python-tk \
+		python-numpy \
+		python3-dev \
+		python3-tk \
+		python3-numpy \
+		ant \
+		default-jdk \
+		doxygen \
+		&& \
+	apt-get clean && \
+	apt-get autoremove && \
+	rm -rf /var/lib/apt/lists/* && \
+	update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libblas.so.3
+	# Link BLAS library to use OpenBLAS using the alternatives mechanism (https://www.scipy.org/scipylib/building/linux.html#debian-ubuntu)
 
-## Install conda, opencv
-
-RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.14-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh
-
-ENV PATH /opt/conda/bin:$PATH
-
-RUN conda install -c menpo opencv -y
-#RUN conda install -y \
-#    scikit-image \
-#    flask \
-#    pillow
-
-RUN conda install pytorch torchvision cuda80 -c soumith
-
-## Install Universe
-WORKDIR /usr/local/realenv
-RUN git clone https://github.com/openai/universe.git
-WORKDIR /usr/local/realenv/universe
-RUN pip install -e .
-
-## Install Realenv
-WORKDIR /usr/local/realenv
-RUN wget https://www.dropbox.com/s/xmhgkmhgp9dfw52/realenv.tar.gz && tar -xvzf realenv.tar.gz && rm realenv.tar.gz
-WORKDIR /usr/local/realenv/realenv
-RUN pip install -e .
-RUN pip install progressbar
-
-## Set up data & model for view synthesizer
-#nvidia-docker run -it --rm -v realenv-data:/usr/local/realenv/data realenv bash
-
-## Start VNC server
-
-#RUN apt-get install -y x11vnc xvfb
-
-#RUN mkdir ~/.vnc
-# Setup a password
-#RUN x11vnc -storepasswd 1234 ~/.vnc/passwd
-
-COPY . /usr/local/realenv/
-
-## Entry point
-WORKDIR /usr/local/realenv/
-
-RUN ["chmod", "+x", "/usr/local/realenv/init.sh"]
 
 
-#ENTRYPOINT [ "/usr/local/realenv/init.sh" ]
-#ENTRYPOINT [ "/bin/bash", "-c" ]
-#CMD ["x11vnc", "-forever", "-usepw", "-create"]
+# Install gibson-specific dependencies
+RUN apt-get update && apt-get install -y \
+		libglew-dev \
+		libglm-dev \
+		libassimp-dev \
+		xorg-dev \
+		libglu1-mesa-dev \
+		libboost-dev \
+		mesa-common-dev \
+		freeglut3-dev \
+		libopenmpi-dev \
+		cmake \
+		golang \
+		libjpeg-turbo8-dev \
+		wmctrl \ 
+		xdotool \
+		&& \
+	apt-get clean && \
+	apt-get autoremove && \
+	rm -rf /var/cache/apk/*
 
+# Install pip
+RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
+	python get-pip.py && \
+	rm get-pip.py
 
+# (Gibson) Install conda
+#RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.21-Linux-x86_64.sh -O ~/miniconda.sh && /bin/bash ~/miniconda.sh -b && rm ~/miniconda.sh && \
+#    export PATH=/home/ubuntu/miniconda2/bin:$PATH && \
+#    echo "PATH=/home/ubuntu/miniconda2/bin:$PATH" >> ~/.bashrc &&
 
-LABEL io.k8s.description="Headless VNC Container with Xfce window manager, firefox and chromium" \
-      io.k8s.display-name="Headless VNC Container based on Ubuntu" \
-      io.openshift.expose-services="6901:http,5901:xvnc" \
-      io.openshift.tags="vnc, ubuntu, xfce" \
-      io.openshift.non-scalable=true
+# Add SNI support to Python
+RUN pip --no-cache-dir install \
+		pyopenssl \
+		ndg-httpsclient \
+		pyasn1
 
-## Connection ports for controlling the UI:
-# VNC port:5901
-# noVNC webport, connect via http://IP:6901/?password=vncpassword
-ENV DISPLAY :1
-ENV VNC_PORT 5901
-ENV NO_VNC_PORT 6901
-EXPOSE $VNC_PORT $NO_VNC_PORT
+# Install useful Python packages using apt-get to avoid version incompatibilities with Tensorflow binary
+# especially numpy, scipy, skimage and sklearn (see https://github.com/tensorflow/tensorflow/issues/2034)
+RUN apt-get update && apt-get install -y \
+		python-numpy \
+		python-scipy \
+		python-nose \
+		python-h5py \
+		python-skimage \
+		python-matplotlib \
+		python-pandas \
+		python-sklearn \
+		python-sympy \
+		&& \
+	apt-get clean && \
+	apt-get autoremove && \
+	rm -rf /var/lib/apt/lists/*
 
-ENV HOME /usr/local/realenv/
-ENV STARTUPDIR /dockerstartup
-WORKDIR $HOME
+# Install other useful Python packages using pip
+RUN pip --no-cache-dir install --upgrade ipython && \
+	pip --no-cache-dir install \
+		Cython \
+		ipykernel \
+		jupyter \
+		path.py \
+		Pillow \
+		pygments \
+		six \
+		sphinx \
+		wheel \
+		zmq \
+		&& \
+	python -m ipykernel.kernelspec
 
-### Envrionment config
-ENV DEBIAN_FRONTEND noninteractive
-ENV NO_VNC_HOME $HOME/noVNC
-ENV VNC_COL_DEPTH 24
-ENV VNC_RESOLUTION 1280x1024
-ENV VNC_PW vncpassword
+# Install other Gibson-specific Python packages using pip
+RUN pip --no-cache-dir install --upgrade opencv-python cython
 
-RUN printf "qwertyui\nqwertyui\n\n" | vncpasswd
+# (Gibson) install openai baselines
+#RUN git clone https://github.com/openai/baselines.git && \
+#	pip install -e baselines
+
+# (Gibson) OpenGL support
+
+# Install TensorFlow
+#RUN pip --no-cache-dir install \
+#	https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
+
+WORKDIR "/root"
+#CMD ["/bin/bash"]
+CMD ["sleep", "infinity"]

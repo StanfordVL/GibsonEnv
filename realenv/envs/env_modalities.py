@@ -66,11 +66,14 @@ class SensorRobotEnv(BaseEnv):
         if self.human:
             assert(self.tracking_camera is not None)
             
-        self.action_space = self.robot.action_space
-        ## Robot's eye observation, in sensor mode black pixels are returned
-        self.observation_space = self.robot.observation_space
-        self.sensor_space = self.robot.sensor_space
-        
+        try:
+            self.action_space = self.robot.action_space
+            ## Robot's eye observation, in sensor mode black pixels are returned
+            self.observation_space = self.robot.observation_space
+            self.sensor_space = self.robot.sensor_space
+        except:
+            pass
+
         self.gpu_count = gpu_count
         self.nframe = 0
         self.eps_reward = 0
@@ -242,29 +245,29 @@ class CameraRobotEnv(SensorRobotEnv):
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
         assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
             "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
-        assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE", "XLARGE"]), \
-            "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE/XLARGE"
         self.mode = mode
         self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
         self.use_filler = use_filler
         if self.requires_camera_input:
             self.model_path = get_model_path(self.model_id)
-        if self.robot.resolution == "SMALL":
+        assert (self.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE", "XLARGE"]), \
+            "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE/XLARGE"
+        if self.resolution == "SMALL":
             self.windowsz = 64
             self.scale_up = 4
-        elif self.robot.resolution == "XSMALL":
+        elif self.resolution == "XSMALL":
             self.windowsz = 32
             self.scale_up = 4
-        elif self.robot.resolution == "MID":
+        elif self.resolution == "MID":
             self.windowsz = 128
             self.scale_up = 4
-        elif self.robot.resolution == "LARGE":
+        elif self.resolution == "LARGE":
             self.windowsz = 512
             self.scale_up = 1
-        elif self.robot.resolution == "NORMAL":
+        elif self.resolution == "NORMAL":
             self.windowsz = 256
             self.scale_up = 4
-        elif self.robot.resolution == "XLARGE":
+        elif self.resolution == "XLARGE":
             self.windowsz = 1024
             self.scale_up = 1
         

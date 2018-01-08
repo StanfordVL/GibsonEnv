@@ -4,6 +4,7 @@ import pybullet as p
 import gym, gym.spaces, gym.utils
 import numpy as np
 import os, inspect
+import sys
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
@@ -27,6 +28,9 @@ class BaseRobot:
         self.robot_name = robot_name
         self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
         self.scale = scale
+        self.load_model()
+        print("load model")
+        print("self parts", self.parts)
 
     def addToScene(self, bodies):
         if self.parts is not None:
@@ -86,6 +90,14 @@ class BaseRobot:
                 print(j, j.power_coef)
         return parts, joints, ordered_joints, self.robot_body
 
+    def load_model(self):
+        if self.model_type == "MJCF":
+            self.robot_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
+        if self.model_type == "URDF":
+            self.robot_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
+        self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(self.robot_ids)
+        
+
     def reset(self):
         #if self.parts:
         #    [p.removeBody(self.parts[p_name].bodyIndex) for p_name in self.parts]
@@ -93,11 +105,7 @@ class BaseRobot:
         ## Use self-collision
 
         if self.robot_ids is None:
-            if self.model_type == "MJCF":
-                self.robot_ids = p.loadMJCF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
-            if self.model_type == "URDF":
-                self.robot_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
-            self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(self.robot_ids)
+            self.load_model()
             #print(self.ordered_joints)
         #print("body before", self.robot_body)
     
