@@ -6,13 +6,18 @@ RANDOM_TARGET_POSE  = False
 
 RANDOM_RANGE = "TINY"
 
+RANDOM_TARGET_POSE_TEST  = False
+
+
+RANDOM_RANGE = "LARGE"
+
 LEARNING_RATE_NAME = "LARGE"
 
 if RANDOM_RANGE == "TINY":
     RANDOM_TARGET_RANGE = 0.025
     RANDOM_INITIAL_RANGE_X = [-0.1, 0.05]
     RANDOM_INITIAL_RANGE_Y = [-0.025, 0.025]
-    RANDOM_INITIAL_RANGE_Z = [0, 0.1]
+    RANDOM_INITIAL_RANGE_Z = [0, 0]
     RANDOM_INITIAL_RANGE_DEG = [-np.pi/18, np.pi/18]
 elif RANDOM_RANGE == "SMALL":
     RANDOM_TARGET_RANGE = 0.05
@@ -51,6 +56,7 @@ CHOOSE_SMALL_RANDOM_RANGE = False
 CHOOSE_TINY_RANDOM_RANGE = False
 
 
+CAPTURE_DIR = "/home/jerry/Dropbox/Cambria Paper/Experiments"
 
 ENABLE_PROFILING = True
 
@@ -69,23 +75,28 @@ CLIMB_MODEL_ID = "TVHnHa4MZwE"
 NAVIGATE_MODEL_ID = "TVHnHa4MZwE"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
-USE_SENSOR_OUTPUT = False
+USE_SENSOR_OUTPUT = True
+USE_GPS_OUTPUT = False
 
 
 HIST_MATCHING = False
 USE_SMALL_FILLER = False
 USE_SMOOTH_MESH = False
 
+DISABLE_FILLER = False
 
 ## Human view camera settings
 DEBUG_CAMERA_FOLLOW = True
 
 
 DISPLAY_UI = False
+
+ENABLE_UI_RECORDING = False
 UI_SIX = 1
 UI_FOUR = 2
 UI_TWO = 3
-UI_MODE = UI_TWO
+UI_NONE = 0
+UI_MODE = UI_NONE
 
 
 ## Render window settings
@@ -93,6 +104,8 @@ HIGH_RES_MONITOR = False
 MAKE_VIDEO = True
 LIVE_DEMO = False
 ENABLE_UI_RECORDING = False
+
+PUT_RED_FLAGS = True
 
 TASK_POSE = {
 
@@ -190,7 +203,7 @@ TASK_POSE = {
             #[[0, 3.14 / 2, 3.14], [-2.283, -1.64, 0.65]],  ## Debug: leaning too much
             #[[0, 0, 3.14], [-2.283, -1.64, 0.15]],         ## bottom of stairs
             #[[3.14/4, 0, 3.14], [-1.883, -1.64, 0.75]],    ## bottom of stairs, a bit up
-            [[0, 0, 0], [-0.003, -1.64, 1.65]],             ## starting at stairs target
+            [[0, 0, 0], [-0.303, -1.64, 1.45]],             ## starting at stairs target
             #[[0, 3.14/4, 3.14], [-1.403, -1.64, 0.95]],    ## starting at stairs 1/4
 
 
@@ -211,6 +224,14 @@ TASK_POSE = {
             #[[0, 0, 3.14/2], [-14.7, 26.85, 0.5]],
             #[[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]] ## target: gates entrance hall
             #[[0, 0, 0], [-8.6773, 1.4495, 1.2]]
+            #[[0, 0, 3.14/2], [-14.0747, 17.5126, 1.5]], ## for minitaur
+            #[[0, 0, 3.14/2], [-14.0747, 17.5126, 0.5]],
+            [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial: end of hall way
+            #[[0, 0, 3.14/2], [-14.7, 26.85, 0.5]], ## near silvio's room
+            [[0, 0, 3.14/2], [-14.3, 45.07, 0.5]],  ## down silvio's room
+            #[[0, 0, 3.14/2], [-4.5607, 40.4859, 0.0991]] ## target: gates entrance hall
+            #[[0, 0, 0], [-8.6773, 1.4495, 0.5]]
+
         ],
         "fetch": [
             [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial

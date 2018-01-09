@@ -9,21 +9,25 @@ from mpi4py import MPI
 from realenv.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
 import pposgd_simple
-import pposgd_fuse, fuse_policy
 import baselines.common.tf_util as U
-import cnn_policy, mlp_policy
+from fuse_policy2 import CnnPolicy, MlpPolicy
+from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 import utils
 import datetime
 from baselines import logger
+#from baselines.ppo2 import ppo2
+import ppo2_imgs
 from monitor import Monitor
 import os.path as osp
 import tensorflow as tf
 import random
 import sys
+import numpy as np
+from PIL import Image
 
 ## Training code adapted from: https://github.com/openai/baselines/blob/master/baselines/ppo1/run_atari.py
 
-def train(num_timesteps, seed):
+def enjoy(num_timesteps, seed, args=None):
     rank = MPI.COMM_WORLD.Get_rank()
     #sess = U.single_threaded_session()
     sess = utils.make_gpu_session(args.num_gpu)
@@ -41,36 +45,45 @@ def train(num_timesteps, seed):
 
     use_filler = not args.disable_filler
     
-    raw_env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
+    #raw_env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
 
-#    def policy_fn(name, ob_space, sensor_space, ac_space):
-    def policy_fn(name, ob_space, ac_space):
-        if args.mode == "SENSOR":
-            return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
-        else:
-            #return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
-        #else:
-            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess, kind='small')
+    #env = Monitor(raw_env, logger.get_dir() and
+    #    osp.join(logger.get_dir(), str(rank)))
+    #env.seed(workerseed)
 
-
-    env = Monitor(raw_env, logger.get_dir() and
-        osp.join(logger.get_dir(), str(rank)))
-    env.seed(workerseed)
     gym.logger.setLevel(logging.WARN)
 
-    
-    pposgd_simple.learn(env, policy_fn,
-        max_timesteps=int(num_timesteps * 1.1),
-        timesteps_per_actorbatch=3000,
-        clip_param=0.2, entcoeff=0.01,
-        optim_epochs=4, optim_stepsize=3e-3, optim_batchsize=64,
-        gamma=0.996, lam=0.95,
-        schedule='linear',
-        save_name="husky_navigate_ppo_{}".format(args.mode),
-        save_per_acts=50,
-        sensor=args.mode=="SENSOR",
-        reload_name=args.reload_name
-    )
+    imgs = np.zeros((4000,256,256,3))
+
+    types = ['prefill', 'recon', 'unfill', 'target']
+
+    if args:
+        if args.img_path:
+            for i in range(4):
+                print(args.img_path.replace('prefill', types[i]))
+                img = np.array(Image.open(args.img_path.replace('prefill', types[i])).resize((256,256)))
+                imgs[i*1000:i*1000 + 1000] = np.repeat(np.expand_dims(img, 0), repeats=1000, axis = 0)
+
+    actions = ppo2_imgs.enjoy(policy=CnnPolicy, imgs=imgs, nsteps=600, nminibatches=4,
+                              lam=0.95, gamma=0.996, noptepochs=4, log_interval=1,
+                              ent_coef=.01,
+                              lr=lambda f: f * 2.5e-4,
+                              cliprange=lambda f: f * 0.2,
+                              total_timesteps=int(num_timesteps * 1.1),
+                              save_interval=10,
+                              reload_name=args.reload_name)
+
+    print(actions)
+
+    matrix = np.zeros((4,4))
+    for i in range(4):
+        for j in range(4):
+            print(np.histogram(actions[i*1000:i*1000+1000], bins=5, range=(0,5))[0])
+            print(np.histogram(actions[j * 1000:j * 1000 + 1000], bins=5, range=(0, 5))[0])
+
+            matrix[i,j] = np.linalg.norm(np.histogram(actions[i*1000:i*1000+1000], bins=5, range=(0,5), normed=True)[0] - np.histogram(actions[j*1000:j*1000+1000], bins=5, range=(0,5), normed=True)[0])
+
+    print(repr(matrix))
     '''
     pposgd_fuse.learn(env, policy_fn,
         max_timesteps=int(num_timesteps * 1.1),
@@ -95,8 +108,8 @@ def callback(lcl, glb):
     return is_solved
 
 
-def main():
-    train(num_timesteps=10000000, seed=5)
+def main(args):
+    enjoy(num_timesteps=10000000, seed=5, args=args)
 
 if __name__ == '__main__':
     import argparse
@@ -110,5 +123,8 @@ if __name__ == '__main__':
     parser.add_argument('--resolution', type=str, default="SMALL")
     parser.add_argument('--reload_name', type=str, default=None)
     parser.add_argument('--save_name', type=str, default=None)
+    parser.add_argument('--img_path', type=str, default=None)
+
     args = parser.parse_args()
-    main()
+
+    main(args)

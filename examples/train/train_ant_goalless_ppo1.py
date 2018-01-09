@@ -8,7 +8,7 @@ from realenv import configs
 
 import gym, logging
 from mpi4py import MPI
-from realenv.envs.ant_env import AntClimbEnv
+from realenv.envs.ant_env import AntClimbEnv, AntGoallessRunEnv
 from baselines.common import set_global_seeds
 import deepq
 import cnn_policy, mlp_policy
@@ -32,7 +32,7 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = AntClimbEnv(human=args.human, is_discrete=False, mode=args.mode)
+    env = AntGoallessRunEnv(human=args.human, is_discrete=False, mode=args.mode)
     
     env = Monitor(env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))

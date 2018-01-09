@@ -23,7 +23,7 @@ from realenv.configs import *
 from realenv import configs
 from realenv.learn.completion import CompletionNet
 import torch.nn as nn
-
+import scipy.misc
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
@@ -129,6 +129,7 @@ class PCRenderer:
         self.use_filler = use_filler
 
         self.showsz = windowsz
+        self.capture_count = 0
 
         #print(self.showsz)
 
@@ -157,6 +158,9 @@ class PCRenderer:
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module
         self.model.eval()
+
+        if configs.DISABLE_FILLER:
+            self.model = None
 
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
@@ -399,7 +403,7 @@ class PCRenderer:
             source = (show/255.0).astype(np.float32)
             source_matched = hist_match3(source, template)
             show[:] = (source_matched[:] * 255).astype(np.uint8)
-
+            
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling
@@ -483,6 +487,7 @@ class PCRenderer:
                 cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], LINUX_OFFSET['y_delta'])        
 
         def _render_rgb(rgb):
+            rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
             cv2.imshow('RGB cam',rgb)
             if HIGH_RES_MONITOR and not MAKE_VIDEO:
                 cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])

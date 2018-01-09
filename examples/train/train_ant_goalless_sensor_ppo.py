@@ -4,27 +4,25 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 
-from realenv import configs
-
 import gym, logging
 from mpi4py import MPI
-from realenv.envs.ant_env import AntClimbEnv
+from realenv.envs.ant_env import AntNavigateEnv, AntGoallessRunEnv
 from baselines.common import set_global_seeds
+import pposgd_sensor
 import deepq
 import cnn_policy, mlp_policy
-import pposgd_sensor, pposgd_fuse, fuse_policy
 import utils
 import baselines.common.tf_util as U
 import datetime
 from baselines import logger
-from monitor import Monitor
+from baselines import bench
+import pposgd_simple
 import os.path as osp
 import random
-import sys
 
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
-    sess = utils.make_gpu_session(args.num_gpu)
+    sess = U.single_threaded_session()
     sess.__enter__()
     if rank == 0:
         logger.configure()
@@ -32,44 +30,24 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = AntClimbEnv(human=args.human, is_discrete=False, mode=args.mode)
+    env = AntGoallessRunEnv(human=args.human, is_discrete=False, mode=args.mode)
     
-    env = Monitor(env, logger.get_dir() and
-        osp.join(logger.get_dir(), str(rank)))
-    env.seed(workerseed)
-    gym.logger.setLevel(logging.WARN)
-
     def mlp_policy_fn(name, sensor_space, ac_space):
         return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
 
-    def fuse_policy_fn(name, ob_space, sensor_space, ac_space):
-        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, hid_size=64, num_hid_layers=2, ac_space=ac_space, save_per_acts=10000, session=sess)
+    env.seed(workerseed)
+    gym.logger.setLevel(logging.WARN)
 
-    if args.mode == "SENSOR":
-        pposgd_sensor.learn(env, mlp_policy_fn,
-            max_timesteps=int(num_timesteps * 1.1 * 5),
-            timesteps_per_actorbatch=6000,
-            clip_param=0.2, entcoeff=0.00,
-            optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
-            gamma=0.99, lam=0.95,
-            schedule='linear',
-            save_per_acts=100,
-            save_name="ant_ppo_mlp"
-        )
-        env.close()        
-    else:
-        pposgd_fuse.learn(env, fuse_policy_fn,
-            max_timesteps=int(num_timesteps * 1.1),
-            timesteps_per_actorbatch=2000,
-            clip_param=0.2, entcoeff=0.01,
-            optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
-            gamma=0.99, lam=0.95,
-            schedule='linear',
-            save_per_acts=50,
-            save_name="ant_ppo_fuse",
-            reload_name=args.reload_name
-        )
-        env.close()
+    pposgd_sensor.learn(env, mlp_policy_fn,
+        max_timesteps=int(num_timesteps * 1.1 * 5),
+        timesteps_per_actorbatch=6000,
+        clip_param=0.2, entcoeff=0.00,
+        optim_epochs=4, optim_stepsize=1e-4, optim_batchsize=64,
+        gamma=0.99, lam=0.95,
+        schedule='linear',
+        save_per_acts=500
+    )
+    env.close()
 
 
 def callback(lcl, glb):
@@ -81,8 +59,24 @@ def callback(lcl, glb):
 
 
 def main():
-    train(num_timesteps=50000000, seed=5)
-
+    '''
+    env = AntSensorEnv(human=True, is_discrete=False, enable_sensors=True)
+    model = deepq.models.mlp([64])
+    act = deepq.learn(
+        env,
+        q_func=model,
+        lr=1e-3,
+        max_timesteps=10000,
+        buffer_size=50000,
+        exploration_fraction=0.1,
+        exploration_final_eps=0.02,
+        print_freq=10,
+        callback=callback
+    )
+    print("Saving model to humanoid_sensor_model.pkl")
+    act.save("humanoid_sensor_model.pkl")
+    '''
+    train(num_timesteps=10000, seed=5)
 
 if __name__ == '__main__':
     import argparse

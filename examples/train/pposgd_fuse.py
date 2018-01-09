@@ -12,6 +12,7 @@ import os
 import tempfile
 import cloudpickle
 import zipfile
+import sys
 
 
 def save(self, path=None):
@@ -159,9 +160,16 @@ def learn(env, policy_func, *,
     atarg = tf.placeholder(dtype=tf.float32, shape=[None])  # Target advantage function (if applicable)
     ret = tf.placeholder(dtype=tf.float32, shape=[None])  # Empirical return
 
-    lrmult = tf.placeholder(name='lrmult', dtype=tf.float32,
-                            shape=[])  # learning rate multiplier, updated with schedule
-    clip_param = clip_param * lrmult  # Annealed cliping parameter epislon
+    #lrmult = tf.placeholder(name='lrmult', dtype=tf.float32,
+    #                        shape=[])  # learning rate multiplier, updated with schedule
+    #clip_param = clip_param * lrmult  # Annealed cliping parameter epislon
+    pi = policy_func("pi", ob_space, sensor_space,  ac_space) # Construct network for new policy
+    oldpi = policy_func("oldpi", ob_space, sensor_space, ac_space) # Network for old policy
+    atarg = tf.placeholder(dtype=tf.float32, shape=[None]) # Target advantage function (if applicable)
+    ret = tf.placeholder(dtype=tf.float32, shape=[None]) # Empirical return
+
+    lrmult = tf.placeholder(name='lrmult', dtype=tf.float32, shape=[]) # learning rate multiplier, updated with schedule
+    clip_param = clip_param * lrmult # Annealed cliping parameter epislon
 
     ob = U.get_placeholder_cached(name="ob")
     ob_sensor = U.get_placeholder_cached(name="ob_sensor")
@@ -193,6 +201,7 @@ def learn(env, policy_func, *,
 
     U.initialize()
     adam.sync()
+
 
     if reload_name:
         saver = tf.train.Saver()

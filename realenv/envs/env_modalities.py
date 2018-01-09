@@ -54,7 +54,7 @@ class SensorRobotEnv(BaseEnv):
         self.k = 5
         self.robot_tracking_id = -1
 
-        self.scale_up  = 1
+        self.scale_up  = 4
         self.dataset  = ViewDataSet3D(
             transform = np.array,
             mist_transform = np.array,
@@ -75,13 +75,17 @@ class SensorRobotEnv(BaseEnv):
         self.nframe = 0
         self.eps_reward = 0
 
+        self.reward = 0
+        
     def get_keys_to_action(self):
         return self.robot.keys_to_action
 
     def _reset(self):
         debugmode = 1
         if debugmode:
-            print("Episode: steps:{} score:{}".format(self.nframe, self.eps_reward))
+            print("Episode: steps:{} score:{}".format(self.nframe, self.reward))
+            body_xyz = self.robot.body_xyz
+            print("[{}, {}, {}],".format(body_xyz[0], body_xyz[1], body_xyz[2]))
         self.nframe = 0
         self.eps_reward = 0
         BaseEnv._reset(self)
@@ -91,6 +95,7 @@ class SensorRobotEnv(BaseEnv):
                     self.scene.scene_obj_list)
             self.ground_ids = set(self.scene.scene_obj_list)
 
+        ## Todo: (hzyjerry) this part is not working, robot_tracking_id = -1
         for i in range (p.getNumBodies()):
             if (p.getBodyInfo(i)[0].decode() == self.robot_body.get_name()):
                self.robot_tracking_id=i
@@ -133,11 +138,13 @@ class SensorRobotEnv(BaseEnv):
         debugmode = 0
         if debugmode:
             print("Eps frame {} reward {}".format(self.nframe, self.reward))
+            print("position", self.robot.get_position())
         if self.human:
-            humanPos, humanOrn = p.getBasePositionAndOrientation(self.robot_tracking_id)
-            humanPos = (humanPos[0], humanPos[1], humanPos[2] + self.tracking_camera['z_offset'])
+            pos = self.robot.get_position()
+            orn = self.robot.get_orientation()
+            pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
             if configs.MAKE_VIDEO or configs.DEBUG_CAMERA_FOLLOW:
-                p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],humanPos);       ## demo: kitchen, living room
+                p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos);       ## demo: kitchen, living room
             #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
 
         eye_pos = self.robot.eyes.current_position()
@@ -149,11 +156,17 @@ class SensorRobotEnv(BaseEnv):
 
         debugmode = 0
         if (debugmode):
-            print("rewards")
-            print(sum(self.rewards))
+            print("episode rewards", sum(self.rewards), "steps", self.nframe)
 
         #print(self.reward, self.rewards, self.robot.walk_target_dist_xyz)
-        return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat)
+        episode = None
+        if done:
+            episode = {'r': self.reward,
+                       'l': self.nframe}
+            debugmode = 0
+            if debugmode:
+                print("return episode:", episode)
+        return state, sum(self.rewards), bool(done), dict(eye_pos=eye_pos, eye_quat=eye_quat, episode=episode)
 
     def calc_rewards(self, a, state):
         print("Please do not directly instantiate CameraRobotEnv")
@@ -284,12 +297,26 @@ class CameraRobotEnv(SensorRobotEnv):
             pygame.init()
 
     def _reset(self):
+        ## TODO(hzyjerry): return noisy_observation
+        #  self._noisy_observation()
         sensor_state = SensorRobotEnv._reset(self)
         self.temp_target_x = self.robot.walk_target_x
         self.temp_target_y = self.robot.walk_target_y
 
         ## This is important to ensure potential doesn't change drastically when reset
         self.potential = self.robot.calc_potential()
+
+        staticMat = p.computeViewMatrix([0, 0, 0], [1, 1, 1], [0, 0, 1])
+        static_cam = {
+            'yaw': -130,
+            'pitch': -30,
+            'distance': 9.9,
+            'target': [-1.253, -4.94, 1.05]
+        }
+
+        p.resetDebugVisualizerCamera(static_cam['distance'], static_cam['yaw'], static_cam['pitch'], static_cam['target']);
+        staticImg = p.getCameraImage(self.windowsz, self.windowsz)[2]
+
 
         if not self.requires_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
@@ -328,19 +355,31 @@ class CameraRobotEnv(SensorRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
 
+                
+        #with Profiler("Render off screen"):
+        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
 
+        calc_obstacle_penalty = 1
+        if calc_obstacle_penalty:
+            screen_sz = self.robot.obs_dim[0]
+            screen_delta = int(screen_sz / 8)
+            screen_half  = int(screen_sz / 2)
+            height_offset = int(screen_sz / 4)
 
-        with Profiler("Render to screen"):
-            self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+            obstacle_dist = (np.mean(self.render_depth[screen_half  + height_offset - screen_delta : screen_half + height_offset + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
+            obstacle_penalty = 0
+            OBSTACLE_LIMIT = 1.5
+            if obstacle_dist < OBSTACLE_LIMIT:
+               obstacle_penalty = (obstacle_dist - OBSTACLE_LIMIT)
+            sensor_reward += obstacle_penalty
 
-        #Image.fromarray(self.render_rgb.astype(np.uint8)).save(
-        #    'frames/rgb%04d.png' % self.save_frame)
+            debugmode = 0
+            if debugmode:
+                #print("Obstacle screen", screen_sz, screen_delta)
+                print("Obstacle distance", obstacle_dist)
+                print("Obstacle penalty", obstacle_penalty)
 
-        #Image.fromarray(self.render_physics().astype(np.uint8)).save(
-        #    'frames/phy%04d.png' % self.save_frame)
-
-        #self.save_frame += 1
         if configs.DISPLAY_UI:
             self.renderToUI()
             #Image.fromarray(self.UI.screen_arr.astype(np.uint8)).save('frames/img%04d.png' % self.save_frame)
@@ -351,12 +390,12 @@ class CameraRobotEnv(SensorRobotEnv):
 
         visuals = self.get_visuals(self.render_rgb, self.render_depth)
 
-        robot_pos, _ = p.getBasePositionAndOrientation(self.robot_tracking_id)
+        robot_pos = self.robot.get_position()
         p.resetBasePositionAndOrientation(self.robot_mapId, [robot_pos[0]  / self.robot.mjcf_scaling, robot_pos[1] / self.robot.mjcf_scaling, 6], [0, 0, 0, 1])
 
         debugmode = 0
         if debugmode:
-            print(sensor_meta['eye_pos'])
+            print("Eye position", sensor_meta['eye_pos'])
         debugmode = 0
         if debugmode:
             print("Environment visuals shape", visuals.shape)
