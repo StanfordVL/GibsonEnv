@@ -126,6 +126,7 @@ fi
 
 docker run \
   -d \
+  --runtime=nvidia \
   --name $container \
   ${mount_local} \
   $port_arg \
