@@ -179,6 +179,28 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 #RUN conda install pytorch torchvision cuda80 -c soumith -y 
 
 
+
+# System packages 
+RUN apt-get update && apt-get install -y curl
+
+# Install miniconda to /miniconda
+RUN curl -LO http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+RUN bash Miniconda-latest-Linux-x86_64.sh -p /miniconda -b
+RUN rm Miniconda-latest-Linux-x86_64.sh
+ENV PATH=/miniconda/bin:${PATH}
+RUN conda update -y conda
+RUN conda create -y -n py35 python=3.5 
+# Python packages from conda
+
+ENV PATH /opt/conda/envs/py35/bin:$PATH
+
+
+RUN conda install -y pytorch torchvision -c pytorch
+
+RUN which python
+
+
+
 COPY etc/skel/.xinitrc /etc/skel/.xinitrc
 
 RUN useradd -m -s /bin/bash user
