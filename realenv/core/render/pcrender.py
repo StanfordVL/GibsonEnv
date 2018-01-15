@@ -21,8 +21,7 @@ from multiprocessing import Process
 from realenv.data.datasets import ViewDataSet3D
 from realenv.configs import *
 from realenv import configs
-from realenv.core.render.completion import CompletionNet
-from realenv.learn.completion2 import CompletionNet2
+from realenv.learn.completion import CompletionNet
 import torch.nn as nn
 import scipy.misc
 
@@ -34,6 +33,7 @@ LINUX_OFFSET = {
     "x_delta": 10,
     "y_delta": 100
 }
+
 
 def hist_match(source, template):
     """
@@ -147,11 +147,11 @@ class PCRenderer:
 
 
         if configs.USE_SMALL_FILLER:
-            comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 24)
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
             comp = torch.nn.DataParallel(comp).cuda()
             comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         else:
-            comp = CompletionNet2(norm = nn.BatchNorm2d, nf = 64)
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
             comp = torch.nn.DataParallel(comp).cuda()
             comp.load_state_dict(torch.load(os.path.join(file_dir, "compG_epoch4_3000.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
@@ -447,7 +447,7 @@ class PCRenderer:
         #with Profiler("Rendering off screen"):
         if not k_views:
             all_dist, _ = self.rankPosesByDistance(pose)
-            k_views = (np.argsort(alla_dist))[:self.k]
+            k_views = (np.argsort(all_dist))[:self.k]
         if set(k_views) != self.old_topk:
             self.imgs_topk = np.array([self.imgs[i] for i in k_views])
             self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
@@ -462,6 +462,7 @@ class PCRenderer:
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
         self.show_rgb = self.show
+        #self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
         self.show_unfilled_rgb = self.show_unfilled
 
         return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_unfilled_rgb

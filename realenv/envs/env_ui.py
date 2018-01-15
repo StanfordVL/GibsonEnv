@@ -51,7 +51,7 @@ class SimpleUI():
         #surf = pygame.surfarray.make_surface(self.screen_arr)
         #self.screen.blit(surf, (0, 0))
         #pygame.display.update()
-    
+
 
     def start_record(self):
         print("start recording")
@@ -122,7 +122,7 @@ class SixViewUI(SimpleUI):
         self.add_image(img_physics, self.POS_PHYSICS[0], self.POS_PHYSICS[1])
         self.add_image(img_surf, self.POS_SURF[0], self.POS_SURF[1])
         self.add_image(img_map, self.POS_MAP[0], self.POS_MAP[1])
-        
+
     def update_rgb(self, rgb):
         #rgb = pygame.transform.rotate(rgb, 90)
         self.add_image(rgb, self.POS_RGB[1], self.POS_RGB[0])
@@ -177,7 +177,7 @@ class FourViewUI(SimpleUI):
         self.add_image(img_depth, self.POS_DEPTH[0], self.POS_DEPTH[1])
         self.add_image(img_physics, self.POS_PHYSICS[0], self.POS_PHYSICS[1])
         self.add_image(img_unfill, self.POS_UNFILL[0], self.POS_UNFILL[1])
-        
+
     def update_rgb(self, rgb):
         self.add_image(rgb, self.POS_RGB[1], self.POS_RGB[0])
 
@@ -212,7 +212,7 @@ class TwoViewUI(SimpleUI):
 
         self.add_image(img_rgb, self.POS_RGB[0], self.POS_RGB[1])
         self.add_image(img_physics, self.POS_PHYSICS[0], self.POS_PHYSICS[1])
-        
+
     def update_rgb(self, rgb):
         self.add_image(rgb, self.POS_RGB[1], self.POS_RGB[0])
 
@@ -240,7 +240,7 @@ class OneViewUI(SimpleUI):
 
 def main6():
     UI = SimpleUI(768, 768)
-    
+
     ## Center left top
     grey_1 = np.zeros((512, 512, 3))
     grey_1.fill(100)
@@ -280,7 +280,7 @@ def main6():
 
 def main4():
     UI = SimpleUI(256, 256)
-    
+
     ## Center left top
     grey_1 = np.zeros((256, 256, 3))
     grey_1.fill(100)
