@@ -19,10 +19,10 @@ if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
     message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
 endif()
 if( CMAKE_SOURCE_DIR MATCHES " " )
-	message( "Your Source Directory contains spaces. If you experience problems when compiling, this can be the cause." )
+    message( "Your Source Directory contains spaces. If you experience problems when compiling, this can be the cause." )
 endif()
 if( CMAKE_BINARY_DIR MATCHES " " )
-	message( "Your Build Directory contains spaces. If you experience problems when compiling, this can be the cause." )
+    message( "Your Build Directory contains spaces. If you experience problems when compiling, this can be the cause." )
 endif()
 
 ## use this to globally use C++11 with in our project
@@ -76,64 +76,65 @@ add_subdirectory (external)
 include_directories(
     ${GLEW_INCLUDE_DIRS}
     #${GLFW3_INCLUDE_DIR}/GLFW
-	external/glfw-3.1.2/include/GLFW
-	external/lodepng/
-	${GLUT_INCLUDE_DIRS}
-	.
+    external/glfw-3.1.2/include/GLFW
+    external/lodepng/
+    ${GLUT_INCLUDE_DIRS}
+    .
     ${ZeroMQ_INCLUDE_DIR}
 )
 
 
 set(ALL_LIBS
-	${OPENGL_LIBRARY}
-	${freeimage}
+    ${OPENGL_LIBRARY}
+    ${freeimage}
     ${GLEW_LIBRARY}
     GLEW_1130
-	${GLUT_LIBRARY}
+    ${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
     glfw
 )
 
 add_definitions(
-	-DTW_STATIC
-	-DTW_NO_LIB_PRAGMA
-	-DTW_NO_DIRECT3D
-	-DGLEW_STATIC
-	-D_CRT_SECURE_NO_WARNINGS
+    -DTW_STATIC
+    -DTW_NO_LIB_PRAGMA
+    -DTW_NO_DIRECT3D
+    -DGLEW_STATIC
+    -D_CRT_SECURE_NO_WARNINGS
 )
 
 
 
 cuda_add_executable(depth_render
-	depth_render/render.cpp
-	common/render_cuda_f.cu
-	common/render_cuda_f.h
-	common/shader.cpp
-	common/shader.hpp
-	common/controls.cpp
-	common/controls.hpp
-	common/texture.cpp
-	common/texture.hpp
-	common/objloader.cpp
-	common/objloader.hpp
-	common/vboindexer.cpp
-	common/vboindexer.hpp
-	common/text2D.hpp
-	common/text2D.cpp
+    depth_render/render.cpp
+    common/render_cuda_f.cu
+    common/render_cuda_f.h
+    common/shader.cpp
+    common/shader.hpp
+    common/controls.cpp
+    common/controls.hpp
+    common/texture.cpp
+    common/texture.hpp
+    common/objloader.cpp
+    common/objloader.hpp
+    common/vboindexer.cpp
+    common/vboindexer.hpp
+    common/text2D.hpp
+    common/text2D.cpp
     common/cmdline.h
-	
-	external/lodepng/lodepng.h
-	external/lodepng/lodepng.cpp
 
-	depth_render/StandardShadingRTT.vertexshader
-	depth_render/StandardShadingRTT.fragmentshader
-	depth_render/Passthrough.vertexshader
-	depth_render/WobblyTexture.fragmentshader
+    external/lodepng/lodepng.h
+    external/lodepng/lodepng.cpp
+
+    depth_render/StandardShadingRTT.vertexshader
+    depth_render/MistShadingRTT.fragmentshader
+    depth_render/NormalShadingRTT.fragmentshader
+    depth_render/Passthrough.vertexshader
+    depth_render/WobblyTexture.fragmentshader
 )
 
 
 target_link_libraries(depth_render
-	${ALL_LIBS}
+    ${ALL_LIBS}
 )
 
 # Xcode and Visual working directories
@@ -142,33 +143,34 @@ set_target_properties(depth_render PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUIL
 
 
 add_executable(demo
-	depth_render/demo.cpp
-	common/shader.cpp
-	common/shader.hpp
-	common/controls.cpp
-	common/controls.hpp
-	common/texture.cpp
-	common/texture.hpp
-	common/objloader.cpp
-	common/objloader.hpp
-	common/vboindexer.cpp
-	common/vboindexer.hpp
-	common/text2D.hpp
-	common/text2D.cpp
+    depth_render/demo.cpp
+    common/shader.cpp
+    common/shader.hpp
+    common/controls.cpp
+    common/controls.hpp
+    common/texture.cpp
+    common/texture.hpp
+    common/objloader.cpp
+    common/objloader.hpp
+    common/vboindexer.cpp
+    common/vboindexer.hpp
+    common/text2D.hpp
+    common/text2D.cpp
     common/cmdline.h
-	
-	external/lodepng/lodepng.h
-	external/lodepng/lodepng.cpp
 
-	depth_render/StandardShadingRTT.vertexshader
-	depth_render/StandardShadingRTT.fragmentshader
-	depth_render/Passthrough.vertexshader
-	depth_render/WobblyTexture.fragmentshader
+    external/lodepng/lodepng.h
+    external/lodepng/lodepng.cpp
+
+    depth_render/StandardShadingRTT.vertexshader
+    depth_render/MistShadingRTT.fragmentshader
+    depth_render/NormalShadingRTT.fragmentshader
+    depth_render/Passthrough.vertexshader
+    depth_render/WobblyTexture.fragmentshader
 )
 
 target_link_libraries(demo
-	${ALL_LIBS}
-	${GLUT_LIBRARY}
+    ${ALL_LIBS}
+    ${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
     ${GLEW_LIBRARIES}
 )
@@ -178,12 +180,12 @@ set_target_properties(demo PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "$
 
 
 add_executable(hwclient
-	depth_render/hwclient.cpp
+    depth_render/hwclient.cpp
 )
 
 target_link_libraries(hwclient
-	${ALL_LIBS}
-	${GLUT_LIBRARY}
+    ${ALL_LIBS}
+    ${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
     ${GLEW_LIBRARIES}
 )

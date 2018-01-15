@@ -19,6 +19,7 @@ dev/transfer.c
 *.bmp
 *.bak
 *.zip
+.*.swp
 
 
 # vscode
@@ -33,3 +34,34 @@ physics/models
 
 */events*
 0_VRDemoSettings.txt
+
+
+
+cnn_policy*
+*ppo_policy*
+checkpoint
+*.log
+*.log.*
+*.model.*
+examples/train/models/
+
+
+log_*/
+baselines/
+aws/
+monitor_*
+comparison/
+0.monitor.csvpaper/
+0.monitor.csv
+
+*.idea*
+
+# Plotting
+examples/scripts/plot*
+
+
+#pycharm
+.idea*
+
+#models
+nav_models

@@ -23,18 +23,17 @@ class RandomAgent(object):
         return action
 
 if __name__ == '__main__':
-    env = HumanoidCameraEnv(human=True, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True)
-    env.reset()
+    env = HumanoidCameraEnv(human=False, timestep=1.0/(4 * 22), frame_skip=4, enable_sensors=True, mode="RGBD", use_filler=False)
+    obs = env.reset()
     agent = RandomAgent(env.action_space)
-    ob = None
-
+    
     while 1:
         frame = 0
         score = 0
         restart_delay = 0
         obs = env.reset()
         while True:
-            time.sleep(0.01)
+            time.sleep(0.5)
             a = agent.act(obs)
             with Profiler("Agent step function"):
                 obs, r, done, meta = env.step(a)
@@ -44,7 +43,7 @@ if __name__ == '__main__':
             if not done and frame < 60: continue
             if restart_delay==0:
                 print("score=%0.2f in %i frames" % (score, frame))
-                restart_delay = 20 * 4  # 2 sec at 60 fps
+                restart_delay = 3 * 4  # 2 sec at 60 fps
             else:
                 restart_delay -= 1
                 if restart_delay==0: break

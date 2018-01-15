@@ -57,17 +57,10 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <!-- Wheel Mounting Positions -->
   <!-- Wheel Properties -->
   <!-- Base link is on the ground under the robot -->
-  <link name="husky_robot"/>
-  <gazebo reference="base_footprint">
-    <material>Gazebo/DarkGrey</material>
-  </gazebo>
-  <joint name="chassis_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0.14493"/>
-    <parent link="husky_robot"/>
-    <child link="base_link"/>
-  </joint>
-  <!-- Chassis link is the center of the robot's bottom plate -->
+
   <link name="base_link">
+
+
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
@@ -83,7 +76,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </geometry>
     </collision>
     <inertial>
-      <mass value="33.455"/>
+      <mass value="30.455"/>
       <origin xyz="-0.08748 -0.00085 0.09947"/>
       <inertia ixx="0.6022" ixy="-0.02364" ixz="-0.1197" iyy="1.7386" iyz="-0.001544" izz="2.0296"/>
     </inertial>
@@ -92,14 +85,54 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     </gazebo>
   <!-- IMU Link is the standard mounting position for the UM6 IMU.-->
   <!-- Can be modified with environment variables in /etc/ros/setup.bash -->
-  <link name="imu_link"/>
+  <link name="imu_link">
+   <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
   <joint name="imu_joint" type="fixed">
     <origin rpy="$(optenv HUSKY_IMU_RPY 0 -1.5708 3.1416)" xyz="$(optenv HUSKY_IMU_XYZ 0.19 0 0.149)"/>
     <parent link="base_link"/>
     <child link="imu_link"/>
   </joint>
   <!-- Robot camera -->
-  <link name="eyes"/>
+  <link name="eyes">
+  <visual>
+  <origin xyz="0 0 0" rpy="0 1.5708 0" />
+  <geometry>
+         <cylinder radius="0.03" length="0.02"/>
+  </geometry>
+  <material name="Black">
+    <color rgba="0 0 0 1.0"/>
+  </material>
+  </visual>
+
+ <visual>
+  <origin xyz="0 0 0" rpy="0 1.5708 0" />
+  <geometry>
+         <sphere radius="0.08"/>
+  </geometry>
+  <material name="Black2">
+    <color rgba="0.1 0.1 0.1 0.3"/>
+  </material>
+  </visual>
+
+  <collision>
+  <origin xyz="0 0 0" rpy="0 1.5708 0" />
+  <geometry>
+         <sphere radius="0.25"/>
+  </geometry>
+  <material name="Black">
+    <color rgba="0.1 0.1 0.1 0.0"/>
+  </material>
+  </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+  </link>
   <joint name="eyes_joint" type="fixed">
     <!-- camera is located at front bar -->
     <origin rpy="0 0 0" xyz="-0.4 0 0.149"/>
@@ -110,7 +143,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     </gazebo>
   <!-- Husky wheel macros -->
   <link name="front_left_wheel_link">
-  	<contact>
+      <contact>
       <lateral_friction value="1.0"/>
       <rolling_friction value="0.0"/>
       <stiffness value="30000"/>
@@ -321,6 +354,12 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </geometry>
       <material name="Yellow"/>
     </visual>
+
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
   </link>
   <joint name="top_plate" type="fixed">
     <parent link="base_link"/>
@@ -336,6 +375,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </geometry>
       <material name="DarkGrey"/>
     </visual>
+     <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
   </link>
   <joint name="user_rail" type="fixed">
     <origin rpy="0 0 0" xyz="0.272 0 0.245"/>
@@ -352,6 +396,19 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </geometry>
       <material name="DarkGrey"/>
     </visual>
+
+    <collision>
+      <geometry>
+        <mesh filename="husky_meshes/bumper.stl"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </collision>
+
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
   </link>
   <joint name="front_bumper" type="fixed">
     <origin rpy="0 0 0" xyz="0.48 0 0.091"/>
@@ -368,6 +425,19 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </geometry>
       <material name="DarkGrey"/>
     </visual>
+
+    <collision>
+      <geometry>
+        <mesh filename="husky_meshes/bumper.stl"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </collision>
+
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
   </link>
   <joint name="rear_bumper" type="fixed">
     <origin rpy="0 0 3.14159" xyz="-0.48 0 0.091"/>
@@ -377,5 +447,41 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <gazebo reference="rear_bumper_link">
     <material>Gazebo/DarkGrey</material>
   </gazebo>
+
+
+
+   <link name="top_bumper_link">
+
+    <visual>
+      <geometry>
+        <mesh filename="husky_meshes/bumper.stl"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </visual>
+
+    <collision>
+      <geometry>
+        <mesh filename="husky_meshes/bumper.stl"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </collision>
+
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+  </link>
+  <joint name="top_bumper" type="fixed">
+    <origin rpy="0 -1.57 0" xyz="0 0 0.27"/>
+    <parent link="base_link"/>
+    <child link="top_bumper_link"/>
+  </joint>
+  <gazebo reference="top_bumper_link">
+    <material>Gazebo/DarkGrey</material>
+  </gazebo>
+
+
+
 </robot>
 

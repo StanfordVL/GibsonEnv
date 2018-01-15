@@ -29,6 +29,7 @@
                 <!--TODO (hzyjerry) need to override to increase contact shape, but maintain visual shape-->
                 <geom name="head" pos="0 0 0" size=".09" type="sphere" user="258"/>
                 <body name="eyes" pos="0 0 0" quat="0.27596319,  0.72403681, -0.44699833, -0.44699833" size="0.001" type="sphere">
+                <!--body name="eyes" pos="0 0 0" quat="1.000 0 0 0" size="0.001" type="sphere"-->
                     <inertial pos="0 0 0" mass="0" diaginertia="0 0 0"/>
                 </body>                    
                 <!--eyes: rotate around z by -90, then around y by -90-->
