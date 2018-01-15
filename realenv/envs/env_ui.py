@@ -13,7 +13,7 @@ from realenv import configs
 
 class SimpleUI():
     '''Static UI'''
-    RECORD_ROOT = "/home/zhiyang/Desktop/realenv/recordings/moving"
+    RECORD_ROOT = "/home/zhiyang/Desktop/realenv/recordings"
 
     def __init__(self, width, height):
         self.width  = width
@@ -42,9 +42,7 @@ class SimpleUI():
             img = np.uint8(self.screen_arr)
             cv2.imshow("Recording", img)
             if self.is_recording:
-                rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                self.curr_output.write(rgb_img)
-                cv2.imwrite(os.path.join(self.RECORD_ROOT, "img{}.jpg".format(datetime.now())), rgb_img)
+                self.curr_output.write(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         #with Profiler("Refreshing"):
         pygame.display.flip()
         surfarray.blit_array(self.screen, np.swapaxes(self.screen_arr, 0, 1))
@@ -66,7 +64,7 @@ class SimpleUI():
         folderpath = os.path.join(self.RECORD_ROOT, foldername)
 
         #os.mkdir(folderpath)
-        self.curr_output = cv2.VideoWriter(filepath, fourcc, 11.0, self.UI_DIM)
+        self.curr_output = cv2.VideoWriter(filepath, fourcc, 22.0, self.UI_DIM)
 
         self.is_recording = True
 
@@ -216,24 +214,6 @@ class TwoViewUI(SimpleUI):
     def update_rgb(self, rgb):
         self.add_image(rgb, self.POS_RGB[1], self.POS_RGB[0])
 
-    def update_physics(self, physics):
-        self.add_image(physics, self.POS_PHYSICS[1], self.POS_PHYSICS[0])
-
-class OneViewUI(SimpleUI):
-    '''UI with four modalities, default resolution
-    Physics:   512x512,
-    '''
-    UI_DIM    = (512, 512)
-    POS_PHYSICS = (0, 0)
-    def __init__(self):
-        SimpleUI.__init__(self, 512, 512)
-        self.add_all_images()
-
-    def add_all_images(self):
-        img_physics = np.zeros((512, 512, 3))
-        img_physics.fill(140)
-        self.add_image(img_physics, self.POS_PHYSICS[0], self.POS_PHYSICS[1])
-        
     def update_physics(self, physics):
         self.add_image(physics, self.POS_PHYSICS[1], self.POS_PHYSICS[0])
 
