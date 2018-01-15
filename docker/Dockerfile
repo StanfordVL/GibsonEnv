@@ -199,11 +199,6 @@ RUN pip install torchvision
 
 # (Gibson) install openai baselines
 
-WORKDIR /root
-
-RUN git clone https://github.com/openai/baselines.git && \
-	pip install -e baselines
-
 
 COPY etc/skel/.xinitrc /etc/skel/.xinitrc
 
@@ -244,6 +239,11 @@ RUN git clone -b dev https://github.com/fxia22/realenv.git && \
     pip install -e realenv
 
 RUN cd realenv && bash build.sh build_local && cd -
+
+WORKDIR /root/realenv
+
+RUN git clone https://github.com/openai/baselines.git && \
+	pip install -e baselines
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
