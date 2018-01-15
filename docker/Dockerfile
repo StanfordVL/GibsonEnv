@@ -236,8 +236,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
   mesa-utils && \
   apt-get -y clean
 
-RUN git clone https://github.com/hzyjerry/realenv.git && \
-	pip install -e realenv
+RUN git clone -b dev https://github.com/fxia22/realenv.git && \
+    pip install -e realenv
 
 RUN cd realenv && bash build.sh build_local && cd -
 
