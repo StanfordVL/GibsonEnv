@@ -20,11 +20,40 @@ class SineAgent(object):
         self.amplitude = 0.5
         self.t = 0
         self.speed = 3
+        self.step_counter = 0
         
     def act(self, observation, reward=None):
         self.t += 0 #TIMESTEP / 100
         assert(not self.is_discrete)
-        action = [math.sin(self.speed * self.t) * self.amplitude + math.pi / 2] * 8
+        #action = [math.sin(self.speed * self.t) * self.amplitude + math.pi / 2] * 8
+        sum_reward = 0
+        steps = 20000
+        amplitude_1_bound = 0.1
+        amplitude_2_bound = 0.1
+        speed = 1
+        self.step_counter += 1
+
+
+        time_step = 0.01
+        t = self.step_counter * time_step
+
+        amplitude1 = amplitude_1_bound
+        amplitude2 = amplitude_2_bound
+        steering_amplitude = 0
+        if t < 10:
+          steering_amplitude = 0.1
+        elif t < 20:
+          steering_amplitude = -0.1
+        else:
+          steering_amplitude = 0
+
+        # Applying asymmetrical sine gaits to different legs can steer the minitaur.
+        a1 = math.sin(t * speed) * (amplitude1 + steering_amplitude)
+        a2 = math.sin(t * speed + math.pi) * (amplitude1 - steering_amplitude)
+        a3 = math.sin(t * speed) * amplitude2
+        a4 = math.sin(t * speed + math.pi) * amplitude2
+        action = [a1, a2, a2, a1, a3, a4, a4, a3]
+        #action = [0, 0, 0, 0, 0, 0, 0, 0]
         return action
 
 
@@ -53,7 +82,7 @@ if __name__ == '__main__':
             score += r
             frame += 1
 
-            if not done and frame < 60: continue
+            if not done and frame < 600: continue
             if restart_delay==0:
                 print("score=%0.2f in %i frames" % (score, frame))
                 restart_delay = 20 * 6  # 2 sec at 60 fps

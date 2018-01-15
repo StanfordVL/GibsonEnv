@@ -74,6 +74,7 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor=False):
     news = np.zeros(horizon, 'int32')
     acs = np.array([ac for _ in range(horizon)])
     prevacs = acs.copy()
+    testing_result = []
 
     while True:
         prevac = ac
@@ -115,7 +116,9 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor=False):
             ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
             cur_ep_len = 0
+            testing_result.append(env.test())
             ob, ob_sensor = env.reset()
+            print(len(testing_result), np.sum(testing_result) / float(len(testing_result)))
         t += 1
 
 
@@ -136,6 +139,7 @@ def add_vtarg_and_adv(seg, gamma, lam):
     seg["tdlamret"] = seg["adv"] + seg["vpred"]
 
 
+
 def learn(env, policy_func, *,
           timesteps_per_actorbatch,  # timesteps per actor per update
           clip_param, entcoeff,  # clipping parameter epsilon, entropy coeff
@@ -149,11 +153,13 @@ def learn(env, policy_func, *,
           save_per_acts=3,
           reload_name=None
           ):
+
     # Setup losses and stuff
     # ----------------------------------------
     sensor_space = env.sensor_space
     ob_space = env.observation_space
     ac_space = env.action_space
+
 
     pi = policy_func("pi", ob_space, sensor_space, ac_space)  # Construct network for new policy
     oldpi = policy_func("oldpi", ob_space, sensor_space, ac_space)  # Network for old policy
@@ -163,6 +169,7 @@ def learn(env, policy_func, *,
     #lrmult = tf.placeholder(name='lrmult', dtype=tf.float32,
     #                        shape=[])  # learning rate multiplier, updated with schedule
     #clip_param = clip_param * lrmult  # Annealed cliping parameter epislon
+
     pi = policy_func("pi", ob_space, sensor_space,  ac_space) # Construct network for new policy
     oldpi = policy_func("oldpi", ob_space, sensor_space, ac_space) # Network for old policy
     atarg = tf.placeholder(dtype=tf.float32, shape=[None]) # Target advantage function (if applicable)

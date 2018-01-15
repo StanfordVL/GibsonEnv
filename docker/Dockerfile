@@ -1,15 +1,10 @@
 FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 
-
-#RUN echo -e "\n**********************\nNVIDIA Driver Version\n**********************\n" && \
-#	cat /proc/driver/nvidia/version && \
-#	echo -e "\n**********************\nCUDA Version\n**********************\n" && \
-#	nvcc -V && \
-
 ## Skip keyboard settings
 ENV DEBIAN_FRONTEND noninteractive
+ENV GIBSON_ENV "gibson"
 
-# Install some dependencies
+## Install basic dependencies
 RUN apt-get update && apt-get install -y \
 		bc \
 		build-essential \
@@ -81,8 +76,7 @@ RUN apt-get update && apt-get install -y \
 	# Link BLAS library to use OpenBLAS using the alternatives mechanism (https://www.scipy.org/scipylib/building/linux.html#debian-ubuntu)
 
 
-
-# Install gibson-specific dependencies
+# (Gibson) Install gibson-specific opengl dependencies
 RUN apt-get update && apt-get install -y \
 		libglew-dev \
 		libglm-dev \
@@ -103,15 +97,11 @@ RUN apt-get update && apt-get install -y \
 	apt-get autoremove && \
 	rm -rf /var/cache/apk/*
 
+
 # Install pip
 RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
 	python get-pip.py && \
 	rm get-pip.py
-
-# (Gibson) Install conda
-#RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.21-Linux-x86_64.sh -O ~/miniconda.sh && /bin/bash ~/miniconda.sh -b && rm ~/miniconda.sh && \
-#    export PATH=/home/ubuntu/miniconda2/bin:$PATH && \
-#    echo "PATH=/home/ubuntu/miniconda2/bin:$PATH" >> ~/.bashrc &&
 
 # Add SNI support to Python
 RUN pip --no-cache-dir install \
@@ -152,7 +142,7 @@ RUN pip --no-cache-dir install --upgrade ipython && \
 		&& \
 	python -m ipykernel.kernelspec
 
-# Install other Gibson-specific Python packages using pip
+# (Gibson) Install cython
 RUN pip --no-cache-dir install --upgrade opencv-python cython
 
 # (Gibson) install openai baselines
@@ -160,11 +150,109 @@ RUN pip --no-cache-dir install --upgrade opencv-python cython
 #	pip install -e baselines
 
 # (Gibson) OpenGL support
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  git \
+  libgl1-mesa-dri \
+  menu \
+  net-tools \
+  openbox \
+  python-pip \
+  sudo \
+  supervisor \
+  tint2 \
+  x11-xserver-utils \
+  x11vnc \
+  xinit \
+  xserver-xorg-video-dummy \
+  xserver-xorg-input-void \
+  websockify && \
+  rm -f /usr/share/applications/x11vnc.desktop && \
+  apt-get remove -y python-pip && \
+  wget https://bootstrap.pypa.io/get-pip.py && \
+  python get-pip.py && \
+  pip install supervisor-stdout && \
+  apt-get -y clean
+
+
+# (Gibson) Pytorch
+#ENV PATH /opt/conda/envs/pytorch-py$PYTHON_VERSION/bin:$PATH
+#RUN conda install pytorch torchvision cuda80 -c soumith -y 
+
+
+
+# System packages 
+RUN apt-get update && apt-get install -y curl
+
+# Install miniconda to /miniconda
+RUN curl -LO http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+RUN bash Miniconda-latest-Linux-x86_64.sh -p /miniconda -b
+RUN rm Miniconda-latest-Linux-x86_64.sh
+ENV PATH=/miniconda/bin:${PATH}
+RUN conda update -y conda
+RUN conda create -y -n py35 python=3.5 
+# Python packages from conda
+
+ENV PATH /opt/conda/envs/py35/bin:$PATH
+
+
+RUN conda install -y pytorch torchvision -c pytorch
+
+RUN which python
+
+
+
+COPY etc/skel/.xinitrc /etc/skel/.xinitrc
+
+RUN useradd -m -s /bin/bash user
+USER user
+
+RUN cp /etc/skel/.xinitrc /home/user/
+USER root
+RUN echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/user
+
+RUN git clone https://github.com/kanaka/noVNC.git /opt/noVNC && \
+  cd /opt/noVNC && \
+  git checkout 6a90803feb124791960e3962e328aa3cfb729aeb && \
+  ln -s vnc_auto.html index.html
+
+EXPOSE 6080 5900
+
+COPY etc /etc
+COPY usr /usr
+
+ENV DISPLAY :0
+
+WORKDIR /root
+
 
 # Install TensorFlow
 #RUN pip --no-cache-dir install \
 #	https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
 
-WORKDIR "/root"
-#CMD ["/bin/bash"]
-CMD ["sleep", "infinity"]
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  mesa-utils && \
+  apt-get -y clean
+
+RUN git clone https://github.com/hzyjerry/realenv.git && \
+	pip install -e realenv
+
+RUN cd realenv && bash build.sh build_local && cd -
+
+# Build-time metadata as defined at http://label-schema.org
+ARG BUILD_DATE
+ARG IMAGE
+ARG VCS_REF
+ARG VCS_URL
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.name=$IMAGE \
+      org.label-schema.description="Customized Docker for gibson environment" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url=$VCS_URL \
+      org.label-schema.schema-version="1.0"
+
+
+#ENV APP "python realenv/examples/demo/play_husky_sensor.py"
+ENV APP "glxgears"

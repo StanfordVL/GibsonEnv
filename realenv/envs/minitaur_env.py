@@ -33,6 +33,8 @@ import realenv
 import numpy as np
 import pybullet
 from realenv import configs
+from . import minitaur_env_randomizer
+
 
 MINITAUR_TIMESTEP  = 1.0/(4 * 22)
 MINITAUR_FRAMESKIP = 4
@@ -89,8 +91,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
                  leg_model_enabled=False,
                  hard_reset=False,
                  render=False,
-                 env_randomizer=None,
-
+                 env_randomizer=minitaur_env_randomizer.MinitaurEnvRandomizer(),
                  ## Cambria specific
                  human=True, 
                  timestep=MINITAUR_TIMESTEP, 
@@ -118,7 +119,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
             env_randomizer: An EnvRandomizer to randomize the physical properties
                 during reset().
         """
-        self._time_step = 0.01
+        self._time_step = timestep
         self._observation = []
 
         #self._is_render = render
@@ -133,22 +134,17 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         self._leg_model_enabled = leg_model_enabled
         
         self._env_randomizer = env_randomizer
-        self._time_step = timestep
 
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]        
-        self.robot = Minitaur(time_step=self._time_step, 
-                              initial_pos=initial_pos,
-                              initial_orn=initial_orn)
+        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
 
-        if self._env_randomizer is not None:
-            self._env_randomizer.randomize_env(self)
+        #if self._env_randomizer is not None:
+            #self._env_randomizer.randomize_env(self)
 
         self._last_base_position = [0, 0, 0]
         self._objectives = []        
         self.viewer = None
         self._hard_reset = hard_reset  # This assignment need to be after reset()
-
 
         self.human = human
         self.model_id = configs.NAVIGATE_MODEL_ID
@@ -157,14 +153,21 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         self.resolution = resolution
         self.tracking_camera = tracking_camera
 
+        self.total_reward = 0
+        self.total_frame = 0
+
         CameraRobotEnv.__init__(
             self, 
             mode, 
             gpu_count, 
             scene_type="building", 
             use_filler=use_filler)
-        self.total_reward = 0
-        self.total_frame = 0
+
+        self.robot = Minitaur(time_step=self._time_step, 
+                              initial_pos=initial_pos,
+                              initial_orn=initial_orn)
+        self.minitaur = self.robot
+        BaseEnv.create_scene(self)
 
 
     def set_env_randomizer(self, env_randomizer):
@@ -173,19 +176,25 @@ class MinitaurNavigateEnv(CameraRobotEnv):
     def configure(self, args):
         self._args = args
 
-    #def _reset(self):
-        #if self._env_randomizer is not None:
-        #    self._env_randomizer.randomize_env(self)
+    def _reset(self):
+        if self._env_randomizer is not None:
+            self._env_randomizer.randomize_env(self)
 
-        #self._last_base_position = [0, 0, 0]
-        #self._objectives = []
+        self._last_base_position = [0, 0, 0]
+        self._objectives = []
         
-        #if not self._torque_control_enabled:
-        #  for _ in range(1 / self.timestep):
-        #    if self._pd_control_enabled or self._accurate_motor_model_enabled:
-        #    self.robot.ApplyAction([math.pi / 2] * 8)
-        #    pybullet.stepSimulation()
+        '''
+        if not self.robot._torque_control_enabled:
+            for _ in range(1 / self.timestep):
+                if self.robot._pd_control_enabled or self.robot._accurate_motor_model_enabled:
+                    self.robot.ApplyAction([math.pi / 2] * 8)
+                    pybullet.stepSimulation()
+        '''
         #return self._noisy_observation()
+        obs = CameraRobotEnv._reset(self)
+        #self.flag_reposition()
+        return obs
+
 
 
     def _transform_action_to_motor_command(self, action):
@@ -194,6 +203,9 @@ class MinitaurNavigateEnv(CameraRobotEnv):
                 if not (-self._action_bound - ACTION_EPS <= action_component <= self._action_bound + ACTION_EPS):
                     raise ValueError("{}th action {} out of bounds.".format(i, action_component))
             action = self.robot.ConvertFromLegModel(action)
+        debugmode = 0
+        if debugmode:
+            print("Performing action", action)
         return action
     
     def _step(self, action):
