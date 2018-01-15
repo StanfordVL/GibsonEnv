@@ -191,7 +191,11 @@ RUN conda create -y -n py35 python=3.5
 # equivalent to source activate
 ENV PATH /miniconda/envs/py35/bin:$PATH
 
-RUN conda install -y pytorch torchvision -c pytorch
+#RUN conda install -y pytorch torchvision -c pytorch
+
+RUN pip install  http://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp35-cp35m-manylinux1_x86_64.whl
+
+RUN pip install torchvision
 
 # (Gibson) install openai baselines
 
