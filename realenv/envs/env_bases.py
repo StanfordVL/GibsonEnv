@@ -61,16 +61,13 @@ class BaseEnv(gym.Env):
         self._render_height = self.windowsz
         self.scene_type = scene_type
 
+        '''
         if configs.UI_MODE == configs.UI_ONE:
             self._render_width = 512
             self._render_height = 512
-
+        '''
         self.scene = None
-        try:
-            if self.robot is not None:
-                self.create_scene()
-        except:
-            return
+
 
     def create_scene(self):
         if self.scene is not None:

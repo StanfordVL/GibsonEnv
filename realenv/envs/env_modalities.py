@@ -8,7 +8,7 @@ from gym import error
 from gym.utils import seeding
 from datetime import datetime
 from transforms3d import quaternions
-from realenv.envs.env_ui import SixViewUI, FourViewUI, TwoViewUI, OneViewUI
+from realenv.envs.env_ui import *
 import pybullet as p
 import pybullet_data
 from tqdm import *
@@ -66,6 +66,7 @@ class SensorRobotEnv(BaseEnv):
         if self.human:
             assert(self.tracking_camera is not None)
             
+        '''
         try:
             self.action_space = self.robot.action_space
             ## Robot's eye observation, in sensor mode black pixels are returned
@@ -73,16 +74,33 @@ class SensorRobotEnv(BaseEnv):
             self.sensor_space = self.robot.sensor_space
         except:
             pass
-
+        '''
         self.gpu_count = gpu_count
         self.nframe = 0
         self.eps_reward = 0
         self.reward = 0
+
+        self._robot_introduced = False
+        self._scene_introduced = False
+
+    def robot_introduce(self):
+        self.action_space = self.robot.action_space
+        ## Robot's eye observation, in sensor mode black pixels are returned
+        self.observation_space = self.robot.observation_space
+        self.sensor_space = self.robot.sensor_space
+        self._robot_introduced = True
+
+    def scene_introduce(self):
+        assert(self._robot_introduced)
+        self.create_scene()
+        self._scene_introduced = True
         
     def get_keys_to_action(self):
         return self.robot.keys_to_action
 
     def _reset(self):
+        assert(self._robot_introduced)
+        assert(self._scene_introduced)
         debugmode = 1
         if debugmode:
             print("Episode: steps:{} score:{}".format(self.nframe, self.reward))
@@ -283,6 +301,13 @@ class CameraRobotEnv(SensorRobotEnv):
         self.target_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
         p.changeVisualShape(self.target_mapId, -1, rgbaColor=[1, 0, 0, 0.7])
         
+
+    def robot_introduce(self):
+        SensorRobotEnv.robot_introduce(self) 
+
+    def scene_introduce(self):
+        SensorRobotEnv.scene_introduce(self)
+
     def setup_rendering_camera(self):
         if not self.requires_camera_input or self.test_env:
             return
@@ -304,6 +329,7 @@ class CameraRobotEnv(SensorRobotEnv):
             pygame.init()
 
     def _reset(self):
+        """Called by gym.env.reset()"""
         ## TODO(hzyjerry): return noisy_observation
         #  self._noisy_observation()
         sensor_state = SensorRobotEnv._reset(self)

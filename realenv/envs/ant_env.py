@@ -8,7 +8,7 @@ import sys
 import pybullet as p
 from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
-from realenv.envs.ant_env_history import *
+#from realenv.envs.ant_env_history import *
 
 ANT_TIMESTEP  = 1.0/(4 * 22)
 ANT_FRAMESKIP = 4
@@ -64,16 +64,20 @@ class AntNavigateEnv(CameraRobotEnv):
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
         
-        self.robot = Ant(initial_pos, initial_orn, 
-            is_discrete=is_discrete, 
-            target_pos=target_pos,
-            resolution=resolution)
         CameraRobotEnv.__init__(
             self, 
             mode, 
             gpu_count, 
             scene_type="building", 
             use_filler=use_filler)
+
+        self.robot = Ant(initial_pos, initial_orn, 
+            is_discrete=is_discrete, 
+            target_pos=target_pos,
+            resolution=resolution)
+
+        self.robot_introduce()
+        self.scene_introduce()
 
         self.total_reward = 0
         self.total_frame = 0

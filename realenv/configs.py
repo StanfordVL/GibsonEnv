@@ -91,11 +91,13 @@ DEBUG_CAMERA_FOLLOW = True
 DISPLAY_UI = False
 ENABLE_UI_RECORDING = False
 UI_ONE = 1
-UI_SIX = 6
-UI_FOUR = 4
 UI_TWO = 2
+UI_THREE = 3
+UI_FOUR = 4
+UI_FIVE = 5
+UI_SIX = 6
 UI_NONE = 0
-UI_MODE = UI_NONE
+UI_MODE = UI_TWO
 
 
 ## Render window settings
