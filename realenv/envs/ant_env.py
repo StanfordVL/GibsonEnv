@@ -10,6 +10,7 @@ from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
 #from realenv.envs.ant_env_history import *
 
+
 ANT_TIMESTEP  = 1.0/(4 * 22)
 ANT_FRAMESKIP = 4
 
@@ -22,27 +23,15 @@ Each class specifies:
 """
 
 tracking_camera = {
-    'pitch': -30,
+    'pitch': -20,
     # 'pitch': -24  # demo: stairs
     #self.tracking_camera['pitch'] = -45 ## stairs
-    'yaw': 60,     ## demo: living room
+    'yaw': 46,     ## demo: living room
     #yaw = 30    ## demo: kitchen
-    'z_offset': -0.1,
-    'distance': 3 ## living room
+    'z_offset': 0.5,
+    'distance': 5 ## living room
     #self.tracking_camera['yaw'] = 90     ## demo: stairs
 }
-'''
-tracking_camera = {
-    'pitch': -10,
-    # 'pitch': -24  # demo: stairs
-    #self.tracking_camera['pitch'] = -45 ## stairs
-    'yaw': 90,     ## demo: living room
-    #yaw = 30    ## demo: kitchen
-    'z_offset': 0,
-    'distance': 13 ## living room
-    #self.tracking_camera['yaw'] = 90     ## demo: stairs
-}'''
-
 
 class AntNavigateEnv(CameraRobotEnv):
     def __init__(
@@ -395,13 +384,6 @@ class AntClimbEnv(CameraRobotEnv):
             print(reward)
         return reward, done
 
-    def test(self):
-        #if self.robot.finished_task():
-        #    return True
-        #else:
-        #    return False
-        return self.robot.finished_task()
-
     def randomize_target(self):
         if configs.RANDOM_TARGET_POSE:
             delta_x = self.np_random.uniform(low=-self.delta_target[0],
@@ -433,7 +415,8 @@ class AntClimbEnv(CameraRobotEnv):
             else:
                 self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x / self.robot.mjcf_scaling, walk_target_y / self.robot.mjcf_scaling, walk_target_z / self.robot.mjcf_scaling])
-            ''' 
+
+            '''
             for i in range(len(ANT_SENSOR_RESULT)):
                 walk_target_x, walk_target_y, walk_target_z = ANT_SENSOR_RESULT[i]
                 visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[0.5, 0, 0, 0.7])

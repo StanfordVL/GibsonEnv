@@ -412,17 +412,6 @@ class AntClimber(Ant):
             print(np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y, self.body_xyz[2] - self.walk_target_z]), [self.body_xyz[0], self.body_xyz[1], self.body_xyz[2]], [self.walk_target_x, self.walk_target_y, self.walk_target_z])
         return dist_to_goal < 0.5
 
-    def finished_task(self):
-        #body_pose = self.robot_body.pose()
-        robot_pos = self.get_position()
-        target_pos = np.array([self.walk_target_x, self.walk_target_y, self.walk_target_z])
-        dist_to_goal = np.linalg.norm(robot_pos - target_pos)
-        debugmode = 1
-        if debugmode:
-            print("Target position", target_pos)
-            print("Distance to goal", dist_to_goal)
-        return dist_to_goal
-
 
     def reset_base_position(self, enabled, delta_orn = np.pi/9, delta_pos = 0.2):
         #print("Reset base enabled", enabled)
@@ -562,6 +551,7 @@ class Husky(WalkerBase):
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
+
         ## specific offset for husky.urdf
         #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
             self.torque = 0.1

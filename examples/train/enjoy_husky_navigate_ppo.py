@@ -42,11 +42,18 @@ def train(num_timesteps, seed):
     
     env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
 
-    def policy_fn(name, ob_space, ac_space):
-        if args.mode == "SENSOR":
-            return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
-        else:
-            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+    policy = policy_fn("pi", env.observation_space, env.action_space) # Construct network for new policy
+    def execute_policy(env):
+        ob, ob_sensor = env.reset()
+        stochastic=True
+        while True:
+            #with Profiler("agent act"):
+            ac, vpred = policy.act(stochastic, ob)
+            ob, rew, new, meta = env.step(ac)
+
+            if new:
+                ob, ob_sensor = env.reset()
+
 
     env = bench.Monitor(env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))

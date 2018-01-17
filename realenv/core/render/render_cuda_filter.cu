@@ -171,8 +171,9 @@ __global__ void transform(float *points3d_after, float *points3d, float * transf
   }
 }
 
-#define FOV_SCALE 1.73205080757
-//#define FOV_SCALE 1.01229
+//#define FOV_SCALE 1.73205080757
+#define FOV_SCALE 1
+
 
 __global__ void transform2d(float *points3d_after)
 {

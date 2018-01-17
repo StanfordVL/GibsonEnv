@@ -202,6 +202,8 @@ def learn(env, policy_func, *,
         print("Loaded model successfully.")
 
 
+    #from IPython import embed; embed()
+
     # Prepare for rollouts
     # ----------------------------------------
     seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True, sensor = sensor)
