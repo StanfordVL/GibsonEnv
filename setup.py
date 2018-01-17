@@ -37,7 +37,7 @@ setup(name='realenv',
             'cloudpickle>=0.4.1',
             'pygame>=1.9.3',
             'opencv-python',
-            'torch>=0.2.0',
+            #'torch>=0.2.0',
             'torchvision>=0.1.9'
     ],
     tests_require=[],

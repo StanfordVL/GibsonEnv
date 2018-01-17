@@ -174,10 +174,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
   apt-get -y clean
 
 
-# (Gibson) Pytorch
-#ENV PATH /opt/conda/envs/pytorch-py$PYTHON_VERSION/bin:$PATH
-#RUN conda install pytorch torchvision cuda80 -c soumith -y 
-
 
 
 # System packages 
@@ -192,13 +188,16 @@ RUN conda update -y conda
 RUN conda create -y -n py35 python=3.5 
 # Python packages from conda
 
-ENV PATH /opt/conda/envs/py35/bin:$PATH
+# equivalent to source activate
+ENV PATH /miniconda/envs/py35/bin:$PATH
 
+#RUN conda install -y pytorch torchvision -c pytorch
 
-RUN conda install -y pytorch torchvision -c pytorch
+RUN pip install  http://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp35-cp35m-manylinux1_x86_64.whl
 
-RUN which python
+RUN pip install torchvision
 
+# (Gibson) install openai baselines
 
 
 COPY etc/skel/.xinitrc /etc/skel/.xinitrc
@@ -236,10 +235,16 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
   mesa-utils && \
   apt-get -y clean
 
-RUN git clone -b dev https://github.com/fxia22/realenv.git && \
-    pip install -e realenv
+RUN git clone -b dev https://github.com/fxia22/realenv.git  && \
+    pip install -e realenv && \
+    pip install tensorflow==1.3
 
 RUN cd realenv && bash build.sh build_local && cd -
+
+WORKDIR /root
+
+RUN git clone https://github.com/openai/baselines.git && \
+	pip install baselines
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
