@@ -235,15 +235,16 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
   mesa-utils && \
   apt-get -y clean
 
-RUN git clone -b dev https://github.com/fxia22/realenv.git && \
-    pip install -e realenv
+RUN git clone -b dev https://github.com/fxia22/realenv.git  && \
+    pip install -e realenv && \
+    pip install tensorflow==1.3
 
 RUN cd realenv && bash build.sh build_local && cd -
 
-WORKDIR /root/realenv
+WORKDIR /root
 
 RUN git clone https://github.com/openai/baselines.git && \
-	pip install -e baselines
+	pip install baselines
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
