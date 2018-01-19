@@ -104,8 +104,6 @@ class PCRenderer:
         self.overlay    = False
         self.show_depth = False
         self._context_phys = zmq.Context()
-        #self.socket_phys = self._context_phys.socket(zmq.REP)
-        #self.socket_phys.connect("tcp://localhost:%d" % port)
         self._context_mist = zmq.Context()
         self._context_dept = zmq.Context()      ## Channel for smoothed depth
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
@@ -301,7 +299,7 @@ class PCRenderer:
     def set_render_mode(self, mode):
         self.render_mode = mode
 
-    def render(self, imgs, depths, pose, model, poses, target_pose, show, show_unfilled=None, is_rgb=False):
+    def render(self, rgbs, depths, pose, model, poses, target_pose, show, show_unfilled=None, is_rgb=False):
         v_cam2world = target_pose
         p = (v_cam2world).dot(np.linalg.inv(pose))
         p = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
@@ -341,7 +339,7 @@ class PCRenderer:
         debugmode = 0
         if debugmode and self._require_normal:
             print("Inside show3d: surface normal max", np.max(normal_arr), "mean", np.mean(normal_arr))
-            
+
         #print("mist", np.mean(opengl_arr), np.min(opengl_arr), np.max(opengl_arr))
         def _render_pc(opengl_arr, imgs_pc, show_pc):
             #with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
@@ -368,7 +366,7 @@ class PCRenderer:
         #[t.join() for t in threads]
 
         #if need_filler:
-        _render_pc(opengl_arr, imgs, show)
+        _render_pc(opengl_arr, rgbs, show)
         if self._require_semantics:
             _render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
 
@@ -426,10 +424,6 @@ class PCRenderer:
         v_cam2cam   = self._getViewerRelativePose()
         self.render_cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
 
-        ## Entry point for change of view
-        ## Optimization
-        #depth_buffer = np.zeros(self.imgs[0].shape[:2], dtype=np.float32)
-
         relative_poses = np.copy(self.target_poses)
         for i in range(len(relative_poses)):
             relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
@@ -456,7 +450,6 @@ class PCRenderer:
             self.semantics_topk = np.array([self.semantics[i] for i in k_views])
             self.old_topk = set(k_views)
 
-        #with Profiler("Render pointcloud all", enable=ENABLE_PROFILING):
         self.show.fill(0)
 
         self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
@@ -470,30 +463,15 @@ class PCRenderer:
 
 
     def renderToScreen(self):
-        '''
-        t0 = time.time()
-        self.renderOffScreen(pose, k_views)
-        t1 = time.time()
-        t = t1-t0
-        self.fps = 1/t
-        if MAKE_VIDEO:
-            cv2.putText(self.show_unfilled_rgb,'pitch %.3f yaw %.2f roll %.3f x %.2f y %.2f z %.2f'%(self.pitch, self.yaw, self.roll, self.x, self.y, self.z),(15,self.showsz-15),0,0.5,(255,255,255))
-            cv2.putText(self.show_unfilled_rgb,'fps %.1f'%(self.fps),(15,15),0,0.5,(255,255,255))
-        '''
         def _render_depth(depth):
-            #with Profiler("Render Depth"):
-            cv2.imshow('Depth cam', depth/16.)
-            
-            if HIGH_RES_MONITOR and not MAKE_VIDEO:
-                cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], LINUX_OFFSET['y_delta'])        
+            cv2.imshow('Depth cam', depth/16.)            
 
         def _render_rgb(rgb):
             rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
             cv2.imshow('RGB cam',rgb)
-            if HIGH_RES_MONITOR and not MAKE_VIDEO:
-                cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
 
         def _render_rgb_unfilled(unfilled_rgb):
+            ## TODO: legacy MAKE_VIDEO
             assert(MAKE_VIDEO)
             cv2.imshow('RGB prefilled', unfilled_rgb)
         
@@ -517,11 +495,16 @@ class PCRenderer:
         #return self.show_rgb, self.target_depth[:, :, None]
         return self.show_rgb, self.smooth_depth[:, :, None]
 
+
 def show_target(target_img):
     cv2.namedWindow('target')
     cv2.moveWindow('target',1032,256 + 50)
     show_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
     cv2.imshow('target', show_rgb)
+
+
+
+
 
 
 if __name__=='__main__':

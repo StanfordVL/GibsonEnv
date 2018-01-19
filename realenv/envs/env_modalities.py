@@ -33,6 +33,8 @@ DEFAULT_DEBUG_CAMERA = {
     'z_offset': 0
 }
 
+DEPTH_SCALE_FACTOR = 15
+
 class SensorRobotEnv(BaseEnv):
     """Based on BaseEnv
     Handles action, reward
@@ -407,9 +409,9 @@ class CameraRobotEnv(SensorRobotEnv):
                 print("Obstacle penalty", obstacle_penalty)
 
         if configs.DISPLAY_UI:
-            with Profiler("Render to UI total speed"):
-                self.render_to_UI()
-                self.save_frame += 1
+            #with Profiler("Render to UI total speed"):
+            self.render_to_UI()
+            self.save_frame += 1
 
         elif self.human:
             self.r_camera_rgb.renderToScreen()
@@ -432,11 +434,9 @@ class CameraRobotEnv(SensorRobotEnv):
         if tag == View.RGB_FILLED: 
             return self.render_rgb
         if tag == View.DEPTH:
-            print("Render components: depth", np.mean(self.render_depth), np.max(self.render_depth), np.min(self.render_depth))
-            scaled_depth = self.render_depth * 15
+            scaled_depth = self.render_depth * DEPTH_SCALE_FACTOR
             return scaled_depth
         if tag == View.NORMAL:
-            print("Render components: normal", np.mean(self.render_normal))
             return self.render_normal
         if tag == View.SEMANTICS:
             print("Render components: semantics", np.mean(self.render_semantics))
@@ -448,48 +448,13 @@ class CameraRobotEnv(SensorRobotEnv):
         if not configs.DISPLAY_UI:
             return
 
-        with Profiler("RendertoUI: refresh"):
-            self.UI.refresh()
+        #with Profiler("RendertoUI: refresh"):
+        self.UI.refresh()
 
-        '''
-        with Profiler("RendertoUI: render physics"):
-            rgb = self.render_rgb
-            physics_rgb = self.render_physics()
-        '''
         for component in self.UI.components:
             self.UI.update_view(self.render_component(component), component)
 
-        '''
-        if configs.UI_MODE == configs.UI_SIX:
-            physics_rgb = physics_rgb[::2, ::2, :]
-
-        if configs.UI_MODE == configs.UI_SIX:
-            depth = self.render_depth
-            depth = depth[::2, ::2, :]
-            depth = np.concatenate((depth, depth, depth), axis=2)
-            semantics = self.render_semantics[::2, ::2, :] #cv2.cvtColor(self.render_semantics, cv2.COLOR_BGR2RGB)[0::2, 0::2, :]
-            normal = self.render_normal[::2, ::2, :]
-            map_rgb     = self.render_map()
-            self.UI.update_normal(normal)
-            self.UI.update_sem(semantics)
-            self.UI.update_map(map_rgb[::2, ::2, :])
-            self.UI.update_depth(depth * 16.)
-        '''
-        '''
-        if configs.UI_MODE == configs.UI_FOUR:
-            with Profiler("Rendering depth"):
-                depth = self.render_depth
-                depth = np.concatenate((depth, depth, depth), axis=2)
-                self.UI.update_depth(depth * 16.)
-            unfilled = self.render_unfilled
-            self.UI.update_unfilled(self.render_unfilled)
-
-        with Profiler("RendertoUI: update rgb"):
-            self.UI.update_rgb(rgb)
-        with Profiler("RendertoUI: update physics"):
-            self.UI.update_physics(physics_rgb)
-        '''
-
+        
     def _close(self):
         if not self._require_camera_input or self.test_env:
             return
@@ -577,12 +542,6 @@ class CameraRobotEnv(SensorRobotEnv):
             sources.append(target)
             source_depths.append(target_depth)
             source_semantics.append(target_semantics)
-        #context_mist = zmq.Context()
-        #socket_mist = context_mist.socket(zmq.REQ)
-        #socket_mist.connect("tcp://localhost:" + str(5555 + self.gpu_count))
-        #context_dept = zmq.Context()
-        #socket_dept = context_mist.socket(zmq.REQ)
-        #socket_dept.connect("tcp://localhost:" + str(5555 - 1))
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
         renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics, human=self.human, use_filler=self._use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)

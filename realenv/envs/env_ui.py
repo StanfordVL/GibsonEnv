@@ -105,7 +105,7 @@ class TwoViewUI(SimpleUI):
     def __init__(self, windowsz=256):
         self.POS = [
             (0, 0),                 # One
-            (0, windowsz)           # Two
+            (windowsz, 0)           # Two
         ]
         SimpleUI.__init__(self, 2, 1, windowsz)
 
@@ -118,8 +118,8 @@ class ThreeViewUI(SimpleUI):
     def __init__(self, windowsz=256):
         self.POS = [
             (0, 0),                 # One
-            (0, windowsz),          # Two
-            (0, windowsz * 2)       # Three
+            (windowsz, 0),          # Two
+            (windowsz * 2, 0)       # Three
         ]
         SimpleUI.__init__(self, 3, 1, windowsz)
 
