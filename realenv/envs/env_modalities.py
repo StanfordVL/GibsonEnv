@@ -74,12 +74,38 @@ class SensorRobotEnv(BaseEnv):
         self._robot_introduced = False
         self._scene_introduced = False
 
-    def robot_introduce(self):
+    def robot_introduce(self, robot):
+        self.robot = robot
         self.action_space = self.robot.action_space
         ## Robot's eye observation, in sensor mode black pixels are returned
         self.observation_space = self.robot.observation_space
         self.sensor_space = self.robot.sensor_space
+        # seed for robot
+        self.robot.np_random = self.np_random
         self._robot_introduced = True
+        assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE", "XLARGE"]), \
+            "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE/XLARGE"
+        if self.robot.resolution == "SMALL":
+            self.windowsz = 64
+            self.scale_up = 4
+        elif self.robot.resolution == "XSMALL":
+            self.windowsz = 32
+            self.scale_up = 4
+        elif self.robot.resolution == "MID":
+            self.windowsz = 128
+            self.scale_up = 4
+        elif self.robot.resolution == "LARGE":
+            self.windowsz = 512
+            self.scale_up = 1
+        elif self.robot.resolution == "NORMAL":
+            self.windowsz = 256
+            self.scale_up = 4
+        elif self.robot.resolution == "XLARGE":
+            self.windowsz = 1024
+            self.scale_up = 1
+        self._render_width = self.windowsz
+        self._render_height = self.windowsz
+        
 
     def scene_introduce(self):
         assert(self._robot_introduced)
@@ -249,38 +275,13 @@ class CameraRobotEnv(SensorRobotEnv):
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
         assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
             "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
-        assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE", "XLARGE"]), \
-            "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE/XLARGE"
         self.mode = mode
         self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
         self.use_filler = use_filler
         if self.requires_camera_input:
             self.model_path = get_model_path(self.model_id)
-        if self.robot.resolution == "SMALL":
-            self.windowsz = 64
-            self.scale_up = 4
-        elif self.robot.resolution == "XSMALL":
-            self.windowsz = 32
-            self.scale_up = 4
-        elif self.robot.resolution == "MID":
-            self.windowsz = 128
-            self.scale_up = 4
-        elif self.robot.resolution == "LARGE":
-            self.windowsz = 512
-            self.scale_up = 1
-        elif self.robot.resolution == "NORMAL":
-            self.windowsz = 256
-            self.scale_up = 4
-        elif self.robot.resolution == "XLARGE":
-            self.windowsz = 1024
-            self.scale_up = 1
 
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
-        self.setup_rendering_camera()
-
-
-        self.save_frame  = 0
-
         cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
         self.robot_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
         p.changeVisualShape(self.robot_mapId, -1, rgbaColor=[0, 0, 1, 0])
@@ -288,16 +289,18 @@ class CameraRobotEnv(SensorRobotEnv):
         cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
         self.target_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
         p.changeVisualShape(self.target_mapId, -1, rgbaColor=[1, 0, 0, 0])
+        self.save_frame  = 0
         
 
-    def robot_introduce(self):
-        SensorRobotEnv.robot_introduce(self) 
+    def robot_introduce(self, robot):
+        SensorRobotEnv.robot_introduce(self, robot)
+        self.setup_rendering_camera()
 
     def scene_introduce(self):
         SensorRobotEnv.scene_introduce(self)
 
     def setup_rendering_camera(self):
-        if not self.requires_camera_input or self.test_env:
+        if self.test_env:
             return
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
@@ -306,12 +309,12 @@ class CameraRobotEnv(SensorRobotEnv):
         self.setup_camera_multi()
         self.setup_camera_rgb()
         if configs.DISPLAY_UI:
-            if configs.UI_MODE == configs.UI_SIX:
-                self.UI = SixViewUI()
-            if configs.UI_MODE == configs.UI_FOUR:
-                self.UI = FourViewUI()
-            if configs.UI_MODE == configs.UI_TWO:
-                self.UI = TwoViewUI()
+            if configs.UI_MODE == configs.UIMode.UI_SIX:
+                self.UI = SixViewUI(self.windowsz)
+            if configs.UI_MODE == configs.UIMode.UI_FOUR:
+                self.UI = FourViewUI(self.windowsz)
+            if configs.UI_MODE == configs.UIMode.UI_TWO:
+                self.UI = TwoViewUI(self.windowsz)
             pygame.init()
 
     def _reset(self):
@@ -400,9 +403,9 @@ class CameraRobotEnv(SensorRobotEnv):
                 print("Obstacle penalty", obstacle_penalty)
 
         if configs.DISPLAY_UI:
-            self.renderToUI()
-            #Image.fromarray(self.UI.screen_arr.astype(np.uint8)).save('frames/img%04d.png' % self.save_frame)
-            self.save_frame += 1
+            with Profiler("Render to UI total speed"):
+                self.render_to_UI()
+                self.save_frame += 1
 
         elif self.human:
             self.r_camera_rgb.renderToScreen()
@@ -421,17 +424,34 @@ class CameraRobotEnv(SensorRobotEnv):
         return visuals, sensor_reward, done, sensor_meta
 
 
-    def renderToUI(self):
+    def render_component(self, tag):
+        if tag == View.RGB_FILLED: 
+            return self.render_rgb
+        if tag == View.DEPTH:
+            return self.render_depth
+        if tag == View.NORMAL:
+            return self.render_normal
+        if tag == View.SEMANTICS:
+            return self.render_semantics
+
+    def render_to_UI(self):
         '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO
         '''
         if not configs.DISPLAY_UI:
             return
 
-        self.UI.refresh()
+        with Profiler("RendertoUI: refresh"):
+            self.UI.refresh()
 
-        rgb = self.render_rgb
-        physics_rgb = self.render_physics()
+        '''
+        with Profiler("RendertoUI: render physics"):
+            rgb = self.render_rgb
+            physics_rgb = self.render_physics()
+        '''
+        for component in self.UI.components:
+            self.UI.update_view(self.render_component(component), component)
 
+        '''
         if configs.UI_MODE == configs.UI_SIX:
             physics_rgb = physics_rgb[::2, ::2, :]
 
@@ -446,7 +466,8 @@ class CameraRobotEnv(SensorRobotEnv):
             self.UI.update_sem(semantics)
             self.UI.update_map(map_rgb[::2, ::2, :])
             self.UI.update_depth(depth * 16.)
-
+        '''
+        '''
         if configs.UI_MODE == configs.UI_FOUR:
             with Profiler("Rendering depth"):
                 depth = self.render_depth
@@ -455,10 +476,11 @@ class CameraRobotEnv(SensorRobotEnv):
             unfilled = self.render_unfilled
             self.UI.update_unfilled(self.render_unfilled)
 
-
-        self.UI.update_rgb(rgb)
-        self.UI.update_physics(physics_rgb)
-
+        with Profiler("RendertoUI: update rgb"):
+            self.UI.update_rgb(rgb)
+        with Profiler("RendertoUI: update physics"):
+            self.UI.update_physics(physics_rgb)
+        '''
 
     def _close(self):
         if not self.requires_camera_input or self.test_env:
@@ -466,21 +488,18 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul.terminate()
         if self.r_camera_dep is not None:
             self.r_camera_dep.terminate()
-        if configs.UI_MODE == configs.UI_SIX:
+        if configs.UI_MODE == configs.UIMode.UI_SIX:
             self.r_camera_norm.terminate()
 
     def get_key_pressed(self, relevant=None):
         pressed_keys = []
         if configs.DISPLAY_UI:
-            #event = pygame.event.get()
             events = pygame.event.get()
             pressed_keys = [e.key for e in events if e.type == pygame.KEYDOWN]
         else:
             events = p.getKeyboardEvents()
             key_codes = events.keys()
             for key in key_codes:
-                #print("Pybullet key", key)
-                #if events[key] == p.KEY_IS_DOWN:
                 pressed_keys.append(key)
         return pressed_keys
 
@@ -567,7 +586,7 @@ class CameraRobotEnv(SensorRobotEnv):
             self.r_camera_mul.terminate()
             if self.r_camera_dep is not None:
                 self.r_camera_dep.terminate()
-            if configs.UI_MODE == configs.UI_SIX:
+            if configs.UI_MODE == configs.UIMode.UI_SIX:
                 self.r_camera_norm.terminate()
             while tb:
                 filename = tb.tb_frame.f_code.co_filename
@@ -589,7 +608,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
 
-        if configs.UI_MODE == configs.UI_SIX:
+        if configs.UI_MODE == configs.UIMode.UI_SIX:
             self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
 
         os.chdir(cur_path)

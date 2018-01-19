@@ -273,7 +273,8 @@ class ViewDataSet3D(data.Dataset):
             normal_imgs = [self.loader(item) for item in normal_img_paths]
             normal_target = self.loader(normal_target_path)
 
-            if configs.UI_MODE == configs.UI_SIX:
+            ## TODO: legacy UI SIX
+            if configs.UI_MODE == configs.UIMode.UI_SIX:
                 semantic_imgs = [self.loader(item) for item in semantic_img_paths]
                 semantic_target = self.loader(semantic_target_path)
 
@@ -300,7 +301,8 @@ class ViewDataSet3D(data.Dataset):
             if not self.target_transform is None:
                 normal_target = self.target_transform(normal_target)
 
-            if not self.semantic_trans is None and configs.UI_MODE == configs.UI_SIX:
+            ## TODO: legacy UI_SIX
+            if not self.semantic_trans is None and configs.UI_MODE == configs.UIMode.UI_SIX:
                 semantic_imgs = [self.semantic_trans(item) for item in semantic_imgs]
                 semantic_target = self.semantic_trans(semantic_target)
 

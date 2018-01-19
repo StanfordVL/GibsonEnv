@@ -43,7 +43,9 @@ class BaseEnv(gym.Env):
         
         #self.physicsClientId = p.connect(p.SHARED_MEMORY)
         if configs.DISPLAY_UI:
-            self.physicsClientId = p.connect(p.DIRECT)
+            #self.physicsClientId = p.connect(p.DIRECT)
+            self.physicsClientId = p.connect(p.GUI)
+            p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
         elif (self.human):
             self.physicsClientId = p.connect(p.GUI)
             if MAKE_VIDEO:
@@ -57,8 +59,6 @@ class BaseEnv(gym.Env):
         self._cam_dist = 3
         self._cam_yaw = 0
         self._cam_pitch = -30
-        self._render_width = self.windowsz
-        self._render_height = self.windowsz
         self.scene_type = scene_type
         '''
         if configs.UI_MODE == configs.UI_ONE:
@@ -73,7 +73,7 @@ class BaseEnv(gym.Env):
             return
         if self.scene_type == "stadium":
             self.scene = self.create_single_player_stadium_scene()
-        elif scene_type == "building":
+        elif self.scene_type == "building":
             self.scene = self.create_single_player_building_scene()
         else:
             raise AssertionError()
@@ -91,7 +91,6 @@ class BaseEnv(gym.Env):
     
     def _seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
-        self.robot.np_random = self.np_random # use the same np_randomizer for robot as for env
         return [seed]
 
     def _reset(self):
@@ -141,7 +140,7 @@ class BaseEnv(gym.Env):
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
 
-    def render_physics(self):        
+    def render_physics(self):
         robot_pos, _ = p.getBasePositionAndOrientation(self.robot_tracking_id)
         
         view_matrix = p.computeViewMatrixFromYawPitchRoll(
@@ -154,11 +153,12 @@ class BaseEnv(gym.Env):
         proj_matrix = p.computeProjectionMatrixFOV(
             fov=60, aspect=float(self._render_width)/self._render_height,
             nearVal=0.1, farVal=100.0)
-        (_, _, px, _, _) = p.getCameraImage(
-        width=self._render_width, height=self._render_height, viewMatrix=view_matrix,
-            projectionMatrix=proj_matrix,
-            renderer=p.ER_BULLET_HARDWARE_OPENGL
-            )
+        with Profiler("render physics: Get camera image"):
+            (_, _, px, _, _) = p.getCameraImage(
+            width=self._render_width, height=self._render_height, viewMatrix=view_matrix,
+                projectionMatrix=proj_matrix,
+                renderer=p.ER_TINY_RENDERER
+                )
         rgb_array = np.array(px)
         rgb_array = rgb_array[:, :, :3]
         return rgb_array

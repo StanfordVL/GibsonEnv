@@ -52,23 +52,24 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
-        #self.robot = Husky(
-        self.robot = HuskyHighCamera(
-            is_discrete=is_discrete, 
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            target_pos=target_pos,
-            resolution=resolution,
-            mode=mode)
+        self.total_reward = 0
+        self.total_frame = 0
+        
         CameraRobotEnv.__init__(
             self, 
             mode, 
             gpu_count, 
             scene_type="building", 
             use_filler=use_filler)
-        self.total_reward = 0
-        self.total_frame = 0
-        
+        self.robot_introduce(HuskyHighCamera(
+            is_discrete=is_discrete, 
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            target_pos=target_pos,
+            resolution=resolution,
+            mode=mode))
+        self.scene_introduce()
+
     def calc_rewards_and_done(self, a, state):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
@@ -206,20 +207,23 @@ class HuskyClimbEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = configs.TASK_POSE[configs.CLIMB_MODEL_ID]["climb"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.CLIMB_MODEL_ID]["climb"][0]
-        self.robot = HuskyClimber(
-            is_discrete=is_discrete, 
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            target_pos=target_pos,
-            resolution=resolution)
+        self.total_reward = 0
+        self.total_frame = 0
+
         CameraRobotEnv.__init__(
             self, 
             mode, 
             gpu_count, 
             scene_type="building", 
             use_filler=use_filler)
-        self.total_reward = 0
-        self.total_frame = 0
+        self.robot_introduce(HuskyClimber(
+            is_discrete=is_discrete, 
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            target_pos=target_pos,
+            resolution=resolution))
+        self.scene_introduce()
+
         
     def calc_rewards_and_done(self, a, state):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
@@ -334,14 +338,14 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         self.model_id = configs.FETCH_MODEL_ID
         self.tracking_camera = tracking_camera
         initial_pos, initial_orn = [0, 0, 0.3], [0, 0, 0, 1]
-        self.robot = Husky(
+        self.flag_timeout = 1
+
+        CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="stadium")
+        self.robot_introduce(Husky(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
-            initial_orn=initial_orn)
-        
-        CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="stadium")
-
-        self.flag_timeout = 1
+            initial_orn=initial_orn))
+        self.scene_introduce()
 
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
@@ -440,31 +444,28 @@ class HuskyFetchEnv(CameraRobotEnv):
         self.model_id = configs.FETCH_MODEL_ID
         ## Mode initialized with mode=SENSOR
         self.tracking_camera = tracking_camera
-
-        self.robot = Husky(
-            is_discrete,
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            target_pos=target_pos,
-            resolution=resolution)
-
+        self.flag_timeout = 1
+        self.visualid = -1
+        self.lastid = None
+        
         CameraRobotEnv.__init__(
             self,
             mode,
             gpu_count,
             scene_type="building",
             use_filler=use_filler)
-        self.flag_timeout = 1
-
-
-        self.visualid = -1
-
+        self.robot_introduce(Husky(
+            is_discrete,
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            target_pos=target_pos,
+            resolution=resolution))
+        
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
         self.lastid = None
-
         self.obstacle_dist = 100
 
 
@@ -477,8 +478,6 @@ class HuskyFetchEnv(CameraRobotEnv):
         #                                            high=+self.scene.stadium_halflen)
         #self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
         #                                            high=+self.scene.stadium_halfwidth)
-
-
         force_x = self.np_random.uniform(-300,300)
         force_y = self.np_random.uniform(-300, 300)
 
@@ -591,20 +590,20 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         
         initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][0]
-        self.robot = Husky(
-            is_discrete=is_discrete, 
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            resolution=resolution)
+        self.flag_timeout = 1
+
         CameraRobotEnv.__init__(
             self, 
             "SENSOR",
             gpu_count, 
             scene_type="building", 
             use_filler=False)
-        
-        self.flag_timeout = 1
-
+        self.robot_introduce(Husky(
+            is_discrete=is_discrete, 
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            resolution=resolution))
+        self.scene_introduce()
 
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
@@ -726,22 +725,23 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         target_orn, target_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
-        # self.robot = Husky(
-        self.robot = Husky(
-            is_discrete=is_discrete,
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            target_pos=target_pos,
-            resolution=resolution,
-            mode=mode)
+        self.total_reward = 0
+        self.total_frame = 0
+
         CameraRobotEnv.__init__(
             self,
             mode,
             gpu_count,
             scene_type="building",
             use_filler=use_filler)
-        self.total_reward = 0
-        self.total_frame = 0
+        self.robot_introduce(Husky(
+            is_discrete=is_discrete,
+            initial_pos=initial_pos,
+            initial_orn=initial_orn,
+            target_pos=target_pos,
+            resolution=resolution,
+            mode=mode))
+        self.scene_introduce()
 
     def calc_rewards_and_done(self, a, state):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[

@@ -1,4 +1,5 @@
 import numpy as np
+from enum import Enum
 
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = False
@@ -78,9 +79,8 @@ FETCH_MODEL_ID = "11HB6XZSh1Q"
 USE_SENSOR_OUTPUT = True
 USE_GPS_OUTPUT = False
 
-
 HIST_MATCHING = False
-USE_SMALL_FILLER = False
+USE_SMALL_FILLER = True
 USE_SMOOTH_MESH = False
 
 DISABLE_FILLER = False
@@ -89,18 +89,51 @@ DISABLE_FILLER = False
 DEBUG_CAMERA_FOLLOW = True
 
 
-DISPLAY_UI = False
-
+DISPLAY_UI = True
 ENABLE_UI_RECORDING = False
-UI_ONE = 1
-UI_TWO = 2
-UI_THREE = 3
-UI_FOUR = 4
-UI_FIVE = 5
-UI_SIX = 6
-UI_NONE = 0
-UI_MODE = UI_TWO
+class UIMode(Enum):
+    UI_ONE = 1
+    UI_TWO = 2
+    UI_THREE = 3
+    UI_FOUR = 4
+    UI_FIVE = 5
+    UI_SIX = 6
+    UI_NONE = 0
+    def is_valid(mode):
+        return mode in [UIMode.UI_ONE, UIMode.UI_TWO, UIMode.UI_THREE, UIMode.UI_FOUR, UIMode.UI_FIVE, UIMode.UI_SIX, UIMode.UI_NONE]
 
+UI_MODE = UIMode.UI_FOUR
+
+class View(Enum):
+    EMPTY = 0
+    RGB_FILLED = 1
+    RGB_PREFILLED = 2
+    DEPTH = 3
+    NORMAL = 4
+    SEMANTICS = 5
+    PHYSICS = 6
+
+class ViewComponent:
+    ONE   = [View.RGB_FILLED]
+    TWO   = [View.RGB_FILLED, View.DEPTH]
+    FOUR  = [View.RGB_FILLED, View.DEPTH, View.NORMAL, View.SEMANTICS]
+    THREE = [View.RGB_FILLED, View.DEPTH, View.NORMAL]
+    def getComponents(mode):
+        assert(UIMode.is_valid(mode))
+        if mode == UIMode.UI_ONE:
+            return ViewComponent.ONE
+        if mode == UIMode.UI_TWO:
+            return ViewComponent.TWO
+        if mode == UIMode.UI_THREE:
+            return ViewComponent.THREE
+        if mode == UIMode.UI_FOUR:
+            return ViewComponent.FOUR
+        if mode == UIMode.UI_FIVE:
+            return ViewComponent.FIVE
+        if mode == UIMode.UI_SIX:
+            return ViewComponent.SIX
+        if mode == UIMode.UI_NONE:
+            return None
 
 ## Render window settings
 HIGH_RES_MONITOR = False

@@ -52,6 +52,8 @@ class AntNavigateEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
+        self.total_reward = 0
+        self.total_frame = 0
         
         CameraRobotEnv.__init__(
             self, 
@@ -59,19 +61,15 @@ class AntNavigateEnv(CameraRobotEnv):
             gpu_count, 
             scene_type="building", 
             use_filler=use_filler)
-
-        self.robot = Ant(initial_pos, initial_orn, 
+        self.robot_introduce(Ant(
+            initial_pos, 
+            initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos,
-            resolution=resolution)
-
-        self.robot_introduce()
+            resolution=resolution))
         self.scene_introduce()
+        
 
-        self.total_reward = 0
-        self.total_frame = 0
-        
-        
     def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
 
@@ -169,20 +167,22 @@ class AntGoallessRunEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
         target_orn, target_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
+        self.total_reward = 0
+        self.total_frame = 0
 
-        self.robot = Ant(initial_pos, initial_orn,
-                         is_discrete=is_discrete,
-                         target_pos=target_pos,
-                         resolution=resolution)
         CameraRobotEnv.__init__(
             self,
             mode,
             gpu_count,
             scene_type="building",
             use_filler=use_filler)
-
-        self.total_reward = 0
-        self.total_frame = 0
+        self.robot_introduce(Ant(
+            initial_pos, 
+            initial_orn,
+            is_discrete=is_discrete,
+            target_pos=target_pos,
+            resolution=resolution))
+        self.scene_introduce()
 
     def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned
@@ -288,23 +288,25 @@ class AntClimbEnv(CameraRobotEnv):
         initial_orn, initial_pos = configs.TASK_POSE[configs.CLIMB_MODEL_ID]["climb"][0]
 
         self.target_pos_gt = target_pos
-        self.robot = AntClimber(initial_pos, initial_orn, 
-            is_discrete=is_discrete, 
-            target_pos=target_pos,
-            resolution=resolution,
-            mode=mode)
+        self.total_reward = 0
+        self.total_frame = 0
+        self.visual_flagId = None
+
         CameraRobotEnv.__init__(
             self, 
             mode, 
             gpu_count, 
             scene_type="building", 
             use_filler=use_filler)
+        self.robot_introduce(AntClimber(
+            initial_pos, initial_orn, 
+            is_discrete=is_discrete, 
+            target_pos=target_pos,
+            resolution=resolution,
+            mode=mode))
+        self.scene_introduce()
 
-        self.total_reward = 0
-        self.total_frame = 0
-        self.visual_flagId = None
-        
-        
+
     def calc_rewards_and_done(self, a, state):
         #time.sleep(0.1)
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
@@ -441,7 +443,6 @@ class AntClimbEnv(CameraRobotEnv):
 
 
 
-
 class AntFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
@@ -455,14 +456,17 @@ class AntFlagRunEnv(CameraRobotEnv):
         self.flag_timeout = 1
         self.tracking_camera = tracking_camera
         initial_pos, initial_orn = [0, 0, 1], [0, 0, 0, 1]
-        self.robot = Ant(initial_pos, initial_orn, 
-            is_discrete=is_discrete)
+        
         CameraRobotEnv.__init__(
             self, 
             "SENSOR", 
             gpu_count, 
             scene_type="stadium", 
             use_filler=False)
+        self.robot_introduce(Ant(
+            initial_pos, initial_orn, 
+            is_discrete=is_discrete))
+        self.scene_introduce()
 
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
@@ -562,27 +566,25 @@ class AntFetchEnv(CameraRobotEnv):
         self.model_id = configs.FETCH_MODEL_ID
         ## Mode initialized with mode=SENSOR
         self.tracking_camera = tracking_camera
-
-        self.robot = Ant(
-            is_discrete=is_discrete,
-            initial_pos=initial_pos,
-            initial_orn=initial_orn)
+        self.flag_timeout = 1
+        self.visualid = -1
+        self.lastid = None
 
         CameraRobotEnv.__init__(
             self,
             mode,
             gpu_count,
             scene_type="building")
-        self.flag_timeout = 1
-
-
-        self.visualid = -1
+        self.robot_introduce(Ant(
+            is_discrete=is_discrete,
+            initial_pos=initial_pos,
+            initial_orn=initial_orn))
+        self.scene_introduce()
 
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
-        self.lastid = None
         
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
@@ -692,21 +694,22 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         self.tracking_camera = tracking_camera
 
         initial_pos, initial_orn = configs.INITIAL_POSE["ant"][configs.FETCH_MODEL_ID][0]
-        self.robot = Ant(initial_pos, initial_orn, 
-            is_discrete=is_discrete)
+        self.lastid = None
+        
         CameraRobotEnv.__init__(
             self, 
             "SENSOR", 
             gpu_count, 
             scene_type="building", 
             use_filler=False)
-
+        self.robot_introduce(Ant(
+            initial_pos, initial_orn, 
+            is_discrete=is_discrete))
 
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
 
-        self.lastid = None
         
     def _reset(self):
         obs = CameraRobotEnv._reset(self)

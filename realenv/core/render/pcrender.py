@@ -25,6 +25,8 @@ from realenv.learn.completion import CompletionNet
 import torch.nn as nn
 import scipy.misc
 
+## TODO: legacy UI_SIX
+
 file_dir = os.path.dirname(os.path.abspath(__file__))
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
 coords  = np.load(os.path.join(file_dir, 'coord.npy'))
@@ -112,7 +114,7 @@ class PCRenderer:
         self.socket_dept = self._context_dept.socket(zmq.REQ)
         self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
-        if configs.UI_MODE == configs.UI_SIX:
+        if configs.UI_MODE == configs.UIMode.UI_SIX:
             self.socket_norm = self._context_norm.socket(zmq.REQ)
             self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
 
@@ -308,7 +310,7 @@ class PCRenderer:
         mist_msg = self.socket_mist.recv()
         self.socket_dept.send_string(s)
         dept_msg = self.socket_dept.recv()
-        if configs.UI_MODE == configs.UI_SIX:
+        if configs.UI_MODE == configs.UIMode.UI_SIX:
             self.socket_norm.send_string(s)
             norm_msg = self.socket_norm.recv()
 
@@ -326,17 +328,17 @@ class PCRenderer:
         if pano:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
-            if configs.UI_MODE == configs.UI_SIX:
+            if configs.UI_MODE == configs.UIMode.UI_SIX:
                 #normal_arr = np.moveaxis(np.frombuffer(norm_msg, dtype=np.float32).reshape((3, h, w)), 0, -1)
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
         else:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
-            if configs.UI_MODE == configs.UI_SIX:
+            if configs.UI_MODE == configs.UIMode.UI_SIX:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
                 #normal_arr = np.moveaxis(np.frombuffer(norm_msg, dtype=np.float32).reshape((3, n, n)), 0, -1)
 
-        if configs.UI_MODE == configs.UI_SIX:
+        if configs.UI_MODE == configs.UIMode.UI_SIX:
             debugmode = 0
             if debugmode:
                 print("Inside show3d: surface normal max", np.max(normal_arr), "mean", np.mean(normal_arr))
@@ -368,7 +370,7 @@ class PCRenderer:
 
         #if need_filler:
         _render_pc(opengl_arr, imgs, show)
-        if configs.UI_MODE == configs.UI_SIX:
+        if configs.UI_MODE == configs.UIMode.UI_SIX:
             _render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
 
         if configs.HIST_MATCHING and is_rgb:
@@ -394,7 +396,7 @@ class PCRenderer:
 
         self.target_depth = opengl_arr ## target depth
         self.smooth_depth = smooth_arr
-        if configs.UI_MODE == configs.UI_SIX:
+        if configs.UI_MODE == configs.UIMode.UI_SIX:
             self.surface_normal = normal_arr
 
         #Histogram matching happens here 
@@ -497,12 +499,12 @@ class PCRenderer:
             cv2.imshow('RGB prefilled', unfilled_rgb)
         
         def _render_semantics(semantics):
-            if not configs.UI_MODE == configs.UI_SIX:
+            if not configs.UI_MODE == configs.UIMode.UI_SIX:
                 return
             cv2.imshow('Semantics', semantics)
 
         def _render_normal(normal):
-            if not configs.UI_MODE == configs.UI_SIX:
+            if not configs.UI_MODE == configs.UIMode.UI_SIX:
                 return
             #print("normal", np.mean(normal), np.max(normal))
             cv2.imshow("Surface Normal", normal)

@@ -109,7 +109,9 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
             cur_ep_len = 0
+            #testing_result.append(env.test())
             ob_visual, ob = env.reset()
+            #print(len(testing_result), np.sum(testing_result) / float(len(testing_result)))
         t += 1
 
 def add_vtarg_and_adv(seg, gamma, lam):
