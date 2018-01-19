@@ -24,7 +24,7 @@ class SimpleUI():
         self.screen_arr = np.zeros([self.width, self.height, 3])
         self.screen_arr.fill(255)
         self.is_recording = False
-        self.components = ViewComponent.getComponents(configs.UI_MODE)
+        self.components = ViewComponent.getComponents()
         self._add_all_images()
 
     def _add_all_images(self):

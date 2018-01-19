@@ -72,8 +72,8 @@ USE_MJCF = True
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
 ## Gates 3rd: TVHnHa4MZwE
-CLIMB_MODEL_ID = "TVHnHa4MZwE"
-NAVIGATE_MODEL_ID = "TVHnHa4MZwE"
+CLIMB_MODEL_ID = "sRj553CTHiw"
+NAVIGATE_MODEL_ID = "sRj553CTHiw"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
 
 USE_SENSOR_OUTPUT = True
@@ -118,21 +118,21 @@ class ViewComponent:
     TWO   = [View.RGB_FILLED, View.DEPTH]
     FOUR  = [View.RGB_FILLED, View.DEPTH, View.NORMAL, View.SEMANTICS]
     THREE = [View.RGB_FILLED, View.DEPTH, View.NORMAL]
-    def getComponents(mode):
-        assert(UIMode.is_valid(mode))
-        if mode == UIMode.UI_ONE:
+    def getComponents():
+        assert(UIMode.is_valid(UI_MODE))
+        if UI_MODE == UIMode.UI_ONE:
             return ViewComponent.ONE
-        if mode == UIMode.UI_TWO:
+        if UI_MODE == UIMode.UI_TWO:
             return ViewComponent.TWO
-        if mode == UIMode.UI_THREE:
+        if UI_MODE == UIMode.UI_THREE:
             return ViewComponent.THREE
-        if mode == UIMode.UI_FOUR:
+        if UI_MODE == UIMode.UI_FOUR:
             return ViewComponent.FOUR
-        if mode == UIMode.UI_FIVE:
+        if UI_MODE == UIMode.UI_FIVE:
             return ViewComponent.FIVE
-        if mode == UIMode.UI_SIX:
+        if UI_MODE == UIMode.UI_SIX:
             return ViewComponent.SIX
-        if mode == UIMode.UI_NONE:
+        if UI_MODE == UIMode.UI_NONE:
             return None
 
 ## Render window settings

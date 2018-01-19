@@ -276,9 +276,11 @@ class CameraRobotEnv(SensorRobotEnv):
         assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
             "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
         self.mode = mode
-        self.requires_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
-        self.use_filler = use_filler
-        if self.requires_camera_input:
+        self._use_filler = use_filler
+        self._require_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
+        self._require_semantics = configs.View.SEMANTICS in configs.ViewComponent.getComponents()
+        self._require_normal = configs.View.NORMAL in configs.ViewComponent.getComponents()
+        if self._require_camera_input:
             self.model_path = get_model_path(self.model_id)
 
         SensorRobotEnv.__init__(self, scene_type, gpu_count)
@@ -313,6 +315,8 @@ class CameraRobotEnv(SensorRobotEnv):
                 self.UI = SixViewUI(self.windowsz)
             if configs.UI_MODE == configs.UIMode.UI_FOUR:
                 self.UI = FourViewUI(self.windowsz)
+            if configs.UI_MODE == configs.UIMode.UI_THREE:
+                self.UI = ThreeViewUI(self.windowsz)
             if configs.UI_MODE == configs.UIMode.UI_TWO:
                 self.UI = TwoViewUI(self.windowsz)
             pygame.init()
@@ -340,7 +344,7 @@ class CameraRobotEnv(SensorRobotEnv):
         staticImg = p.getCameraImage(self.windowsz, self.windowsz)[2]
 
 
-        if not self.requires_camera_input or self.test_env:
+        if not self._require_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_state
 
@@ -369,7 +373,7 @@ class CameraRobotEnv(SensorRobotEnv):
         sensor_meta.pop("eye_quat", None)
         sensor_meta["sensor"] = sensor_state
 
-        if not self.requires_camera_input or self.test_env:
+        if not self._require_camera_input or self.test_env:
             visuals = self.get_blank_visuals()
             return visuals, sensor_reward, done, sensor_meta
 
@@ -428,10 +432,14 @@ class CameraRobotEnv(SensorRobotEnv):
         if tag == View.RGB_FILLED: 
             return self.render_rgb
         if tag == View.DEPTH:
-            return self.render_depth
+            print("Render components: depth", np.mean(self.render_depth), np.max(self.render_depth), np.min(self.render_depth))
+            scaled_depth = self.render_depth * 15
+            return scaled_depth
         if tag == View.NORMAL:
+            print("Render components: normal", np.mean(self.render_normal))
             return self.render_normal
         if tag == View.SEMANTICS:
+            print("Render components: semantics", np.mean(self.render_semantics))
             return self.render_semantics
 
     def render_to_UI(self):
@@ -483,12 +491,12 @@ class CameraRobotEnv(SensorRobotEnv):
         '''
 
     def _close(self):
-        if not self.requires_camera_input or self.test_env:
+        if not self._require_camera_input or self.test_env:
             return
         self.r_camera_mul.terminate()
         if self.r_camera_dep is not None:
             self.r_camera_dep.terminate()
-        if configs.UI_MODE == configs.UIMode.UI_SIX:
+        if self._require_normal:
             self.r_camera_norm.terminate()
 
     def get_key_pressed(self, relevant=None):
@@ -511,7 +519,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def get_visuals(self, rgb, depth):
         ## Camera specific
-        assert(self.requires_camera_input)
+        assert(self._require_camera_input)
         if self.mode == "GREY":
             rgb = np.mean(rgb, axis=2, keepdims=True)
             visuals = np.append(rgb, depth, axis=2)
@@ -534,7 +542,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def setup_camera_rgb(self):
         ## Camera specific
-        assert(self.requires_camera_input)
+        assert(self._require_camera_input)
         scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
         ## Todo: (hzyjerry) more error handling
         if not self.model_id in scene_dict.keys():
@@ -550,6 +558,8 @@ class CameraRobotEnv(SensorRobotEnv):
             data = self.dataset[v]
             target, target_depth = data[1], data[3]
             target_semantics = data[7]
+            if self._require_semantics:
+                assert(target_semantics is not None)
             if self.scale_up !=1:
                 target =  cv2.resize(
                     target,None,
@@ -557,7 +567,7 @@ class CameraRobotEnv(SensorRobotEnv):
                     fy=1.0/self.scale_up,
                     interpolation = cv2.INTER_CUBIC)
                 target_depth =  cv2.resize(
-                    target_depth,None,
+                    target_depth, None,
                     fx=1.0/self.scale_up,
                     fy=1.0/self.scale_up,
                     interpolation = cv2.INTER_CUBIC)
@@ -575,18 +585,18 @@ class CameraRobotEnv(SensorRobotEnv):
         #socket_dept.connect("tcp://localhost:" + str(5555 - 1))
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics, human=self.human, use_filler=self.use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics, human=self.human, use_filler=self._use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
         self.r_camera_rgb = renderer
 
 
     def setup_camera_multi(self):
-        assert(self.requires_camera_input)
+        assert(self._require_camera_input)
         def camera_multi_excepthook(exctype, value, tb):
             print("killing", self.r_camera_mul)
             self.r_camera_mul.terminate()
             if self.r_camera_dep is not None:
                 self.r_camera_dep.terminate()
-            if configs.UI_MODE == configs.UIMode.UI_SIX:
+            if self._require_normal:
                 self.r_camera_norm.terminate()
             while tb:
                 filename = tb.tb_frame.f_code.co_filename
@@ -608,14 +618,14 @@ class CameraRobotEnv(SensorRobotEnv):
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
 
-        if configs.UI_MODE == configs.UIMode.UI_SIX:
+        if self._require_normal:
             self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
 
         os.chdir(cur_path)
 
 
     def check_port_available(self):
-        assert(self.requires_camera_input)
+        assert(self._require_camera_input)
         # TODO (hzyjerry) not working
         """
         s = socket.socket()

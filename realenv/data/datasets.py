@@ -92,6 +92,7 @@ class ViewDataSet3D(data.Dataset):
         self.target_transform = transform
         self.depth_trans = mist_transform
         self.semantic_trans = semantic_transform
+        self._require_semantics = configs.View.SEMANTICS in configs.ViewComponent.getComponents()
         self.off_3d = off_3d
         self.select = []
         self.fofn = self.root + '_fofn' + str(int(train)) + '.pkl'
@@ -273,8 +274,7 @@ class ViewDataSet3D(data.Dataset):
             normal_imgs = [self.loader(item) for item in normal_img_paths]
             normal_target = self.loader(normal_target_path)
 
-            ## TODO: legacy UI SIX
-            if configs.UI_MODE == configs.UIMode.UI_SIX:
+            if self._require_semantics:
                 semantic_imgs = [self.loader(item) for item in semantic_img_paths]
                 semantic_target = self.loader(semantic_target_path)
 
@@ -301,8 +301,7 @@ class ViewDataSet3D(data.Dataset):
             if not self.target_transform is None:
                 normal_target = self.target_transform(normal_target)
 
-            ## TODO: legacy UI_SIX
-            if not self.semantic_trans is None and configs.UI_MODE == configs.UIMode.UI_SIX:
+            if not self.semantic_trans is None and self._require_semantics:
                 semantic_imgs = [self.semantic_trans(item) for item in semantic_imgs]
                 semantic_target = self.semantic_trans(semantic_target)
 
