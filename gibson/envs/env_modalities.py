@@ -72,6 +72,7 @@ class SensorRobotEnv(BaseEnv):
         self.eps_reward = 0
 
         self.reward = 0
+        self.eps_count = 0
 
         self._robot_introduced = False
         self._scene_introduced = False
@@ -107,7 +108,6 @@ class SensorRobotEnv(BaseEnv):
             self.scale_up = 1
         self._render_width = self.windowsz
         self._render_height = self.windowsz
-        
 
     def scene_introduce(self):
         assert(self._robot_introduced)
@@ -125,6 +125,8 @@ class SensorRobotEnv(BaseEnv):
             print("Episode: steps:{} score:{}".format(self.nframe, self.reward))
             body_xyz = self.robot.body_xyz
             print("[{}, {}, {}],".format(body_xyz[0], body_xyz[1], body_xyz[2]))
+            print("Episode count: {}".format(self.eps_count))
+            self.eps_count += 1
         self.nframe = 0
         self.eps_reward = 0
         BaseEnv._reset(self)
@@ -182,10 +184,8 @@ class SensorRobotEnv(BaseEnv):
             pos = self.robot.get_position()
             orn = self.robot.get_orientation()
             pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
-            if configs.MAKE_VIDEO or configs.DEBUG_CAMERA_FOLLOW:
-                p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos);       ## demo: kitchen, living room
-            #p.resetDebugVisualizerCamera(distance,yaw,-42,humanPos);        ## demo: stairs
-
+            #p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos);       ## demo: kitchen, living room
+            
         eye_pos = self.robot.eyes.current_position()
         debugmode = 0
         if debugmode:
@@ -304,7 +304,7 @@ class CameraRobotEnv(SensorRobotEnv):
         SensorRobotEnv.scene_introduce(self)
 
     def setup_rendering_camera(self):
-        if self.test_env:
+        if self.test_env or not self._require_camera_input:
             return
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
