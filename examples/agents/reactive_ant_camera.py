@@ -4,8 +4,8 @@ import numpy as np
 import sys
 import gym
 from PIL import Image
-from realenv.core.render.profiler import Profiler
-from realenv.envs.ant_env import AntCameraEnv
+from gibson.core.render.profiler import Profiler
+from gibson.envs.ant_env import AntCameraEnv
 import pybullet as p
 
 

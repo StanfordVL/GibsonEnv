@@ -3,7 +3,7 @@ FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 ## Skip keyboard settings
 ENV DEBIAN_FRONTEND noninteractive
 ENV GIBSON_ENV "gibson"
-ENV MESA_GL_VERSION_OVERRIDE=4.2
+ENV MESA_GL_VERSION_OVERRIDE=4.5
 
 ## Install basic dependencies
 RUN apt-get update && apt-get install -y \

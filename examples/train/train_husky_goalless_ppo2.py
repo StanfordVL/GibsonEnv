@@ -6,7 +6,7 @@ os.sys.path.insert(0,parentdir)
 
 import gym, logging
 from mpi4py import MPI
-from realenv.envs.husky_env import HuskyNavigateEnv, HuskyGoallessRunEnv
+from gibson.envs.husky_env import HuskyNavigateEnv, HuskyGoallessRunEnv
 from baselines.common import set_global_seeds
 import pposgd_simple
 import baselines.common.tf_util as U

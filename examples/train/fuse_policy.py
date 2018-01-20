@@ -3,7 +3,7 @@ from baselines.common.mpi_running_mean_std import RunningMeanStd
 import tensorflow as tf
 import gym
 from baselines.common.distributions import make_pdtype
-from realenv.core.render.profiler import Profiler
+from gibson.core.render.profiler import Profiler
 import sys
 
 

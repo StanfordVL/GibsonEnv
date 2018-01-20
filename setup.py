@@ -14,7 +14,7 @@ class PostInstallCommand(install):
                 install.run(self)
 '''
 
-setup(name='realenv',
+setup(name='gibson',
     version='0.0.1',
     description='Real Environment Developed by Stanford University',
     url='https://github.com/fxia22/realenv',
