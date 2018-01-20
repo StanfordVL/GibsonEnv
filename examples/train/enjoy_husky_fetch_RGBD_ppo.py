@@ -8,7 +8,7 @@ os.sys.path.insert(0, parentdir)
 import tensorflow as tf
 import gym, logging
 from mpi4py import MPI
-from realenv.envs.husky_env import HuskyNavigateEnv, HuskyFetchEnv
+from gibson.envs.husky_env import HuskyNavigateEnv, HuskyFetchEnv
 from baselines.common import set_global_seeds
 import pposgd_simple
 import baselines.common.tf_util as U
@@ -49,7 +49,7 @@ def enjoy(num_timesteps, seed):
 
     policy = policy_fn("pi", env.observation_space, env.sensor_space, env.action_space)  # Construct network for new policy
 
-    reload_name = '/home/fei/Development/realenv/examples/train/models/flagrun_RGBD2_50.model'
+    reload_name = '/home/fei/Development/gibson/examples/train/models/flagrun_RGBD2_50.model'
 
     if reload_name:
         saver = tf.train.Saver()

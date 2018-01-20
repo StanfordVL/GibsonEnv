@@ -1,5 +1,5 @@
-from realenv.envs.husky_env import HuskyNavigateEnv, HuskyClimbEnv
-from realenv.utils.play import play
+from gibson.envs.husky_env import HuskyNavigateEnv, HuskyClimbEnv
+from gibson.utils.play import play
 
 timestep = 1.0/(4 * 22)
 frame_skip = 4

@@ -8,13 +8,13 @@ import os
 from datetime import datetime
 from PIL import Image
 import scipy.misc
-from realenv.core.render.profiler import Profiler
-from realenv import configs
-from realenv.configs import *
+from gibson.core.render.profiler import Profiler
+from gibson import configs
+from gibson.configs import *
 
 class SimpleUI():
     '''Static UI'''
-    RECORD_ROOT = "/home/zhiyang/Desktop/realenv/recordings"
+    RECORD_ROOT = "/home/zhiyang/Desktop/gibson/recordings"
 
     def __init__(self, width_col, height_col, windowsz):
         self.width  = width_col * windowsz

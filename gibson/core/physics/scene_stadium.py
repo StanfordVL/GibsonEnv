@@ -1,4 +1,4 @@
-from realenv.core.physics.scene_abstract import Scene
+from gibson.core.physics.scene_abstract import Scene
 import pybullet as p
 import os
 import pybullet_data

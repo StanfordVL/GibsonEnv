@@ -8,11 +8,11 @@ from torchvision import datasets, transforms
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 import torchvision.utils as vutils
-from realenv.data.datasets import PairDataset
-from realenv.learn.completion import CompletionNet, identity_init, Perceptual
+from gibson.data.datasets import PairDataset
+from gibson.learn.completion import CompletionNet, identity_init, Perceptual
 from tensorboardX import SummaryWriter
 from datetime import datetime
-import realenv.learn.vision_utils
+import gibson.learn.vision_utils
 import torch.nn.functional as F
 import torchvision.models as models
 

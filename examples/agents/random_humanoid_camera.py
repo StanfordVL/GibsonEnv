@@ -4,8 +4,8 @@ import numpy as np
 import sys
 import gym
 from PIL import Image
-from realenv.core.render.profiler import Profiler
-from realenv.envs.humanoid_env import HumanoidCameraEnv
+from gibson.core.render.profiler import Profiler
+from gibson.envs.humanoid_env import HumanoidCameraEnv
 import pybullet as p
 
 

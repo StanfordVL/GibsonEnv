@@ -7,7 +7,7 @@ import sys
 import torch
 import argparse
 import time
-import realenv.core.render.utils as utils
+import gibson.core.render.utils as utils
 import transforms3d
 import json
 import zmq
@@ -15,13 +15,13 @@ import zmq
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 from numpy import cos, sin
-from realenv.core.render.profiler import Profiler
+from gibson.core.render.profiler import Profiler
 from multiprocessing import Process
 
-from realenv.data.datasets import ViewDataSet3D
-from realenv.configs import *
-from realenv import configs
-from realenv.learn.completion import CompletionNet
+from gibson.data.datasets import ViewDataSet3D
+from gibson.configs import *
+from gibson import configs
+from gibson.learn.completion import CompletionNet
 import torch.nn as nn
 import scipy.misc
 

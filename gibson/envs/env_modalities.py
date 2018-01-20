@@ -1,13 +1,13 @@
-from realenv.data.datasets import ViewDataSet3D, get_model_path
-from realenv import configs
-from realenv.core.render.pcrender import PCRenderer
-from realenv.core.render.profiler import Profiler
-from realenv.envs.env_bases import BaseEnv
-import realenv
+from gibson.data.datasets import ViewDataSet3D, get_model_path
+from gibson import configs
+from gibson.core.render.pcrender import PCRenderer
+from gibson.core.render.profiler import Profiler
+from gibson.envs.env_bases import BaseEnv
+import gibson
 from gym import error
 from gym.utils import seeding
 from transforms3d import quaternions
-from realenv.envs.env_ui import *
+from gibson.envs.env_ui import *
 import pybullet as p
 import pybullet_data
 from tqdm import *
@@ -568,7 +568,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
         enable_render_smooth = 1 if configs.USE_SMOOTH_MESH else 0
 
-        dr_path = os.path.join(os.path.dirname(os.path.abspath(realenv.__file__)), 'core', 'channels', 'depth_render')
+        dr_path = os.path.join(os.path.dirname(os.path.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
         render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
@@ -592,11 +592,11 @@ class CameraRobotEnv(SensorRobotEnv):
             s.connect(("127.0.0.1", 5555))
         except socket.error as e:
             raise e
-            raise error.Error("Realenv starting error: port {} is in use".format(5555))
+            raise error.Error("gibson starting error: port {} is in use".format(5555))
         try:
             s.connect(("127.0.0.1", 5556))
         except socket.error as e:
-            raise error.Error("Realenv starting error: port {} is in use".format(5556))
+            raise error.Error("gibson starting error: port {} is in use".format(5556))
         """
         return
 

@@ -1,17 +1,17 @@
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
-import realenv
-from realenv.core.engine import Engine
-from realenv.core.render.profiler import Profiler
-from realenv.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
-from realenv.data.datasets import get_model_path
-from realenv.core.physics.simple_debug_env import PhysRenderer
-from realenv.core.render.pcrender import PCRenderer, sync_coords
-from realenv.data.datasets import ViewDataSet3D
+import gibson
+from gibson.core.engine import Engine
+from gibson.core.render.profiler import Profiler
+from gibson.core.scoreboard.realtime_plot import MPRewardDisplayer, RewardDisplayer
+from gibson.data.datasets import get_model_path
+from gibson.core.physics.simple_debug_env import PhysRenderer
+from gibson.core.render.pcrender import PCRenderer, sync_coords
+from gibson.data.datasets import ViewDataSet3D
 from multiprocessing import Process
-from realenv.core.channels.depth_render import run_depth_render
-from realenv.data.datasets import get_model_path
+from gibson.core.channels.depth_render import run_depth_render
+from gibson.data.datasets import get_model_path
 from tqdm import *
 import numpy as np
 import zmq

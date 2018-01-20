@@ -1,4 +1,4 @@
-from realenv.envs.husky_env import *
+from gibson.envs.husky_env import *
 import os
 
 

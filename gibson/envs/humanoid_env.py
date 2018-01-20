@@ -1,13 +1,13 @@
-from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
-from realenv.envs.env_bases import *
-from realenv.core.physics.robot_locomotors import Humanoid, Ant
+from gibson.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from gibson.envs.env_bases import *
+from gibson.core.physics.robot_locomotors import Humanoid, Ant
 from transforms3d import quaternions
-from realenv import configs
+from gibson import configs
 import os
 import numpy as np
 import sys
 import pybullet as p
-from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
+from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
 
 HUMANOID_TIMESTEP  = 1.0/(4 * 22)

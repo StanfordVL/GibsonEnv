@@ -5,8 +5,8 @@ import sys
 import gym
 import math
 from PIL import Image
-from realenv.core.render.profiler import Profiler
-from realenv.envs.minitaur_env import MinitaurNavigateEnv
+from gibson.core.render.profiler import Profiler
+from gibson.envs.minitaur_env import MinitaurNavigateEnv
 import pybullet as p
 
 TIMESTEP = 1.0/ 22

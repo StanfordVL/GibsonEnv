@@ -1,11 +1,11 @@
-from realenv.core.physics.robot_bases import BaseRobot
+from gibson.core.physics.robot_bases import BaseRobot
 import numpy as np
 import pybullet as p
 import os
 import gym, gym.spaces
 from transforms3d.euler import euler2quat
 import transforms3d.quaternions as quat
-import realenv.configs as configs
+import gibson.configs as configs
 import sys
 
 OBSERVATION_EPS = 0.01

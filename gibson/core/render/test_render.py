@@ -25,7 +25,7 @@ from numpy import cos, sin
 from profiler import Profiler
 from multiprocessing.dummy import Process
 
-from realenv.data.datasets import ViewDataSet3D
+from gibson.data.datasets import ViewDataSet3D
 
 
 # In[2]:

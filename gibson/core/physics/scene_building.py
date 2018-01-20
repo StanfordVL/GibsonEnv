@@ -4,9 +4,9 @@ parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
 import pybullet_data
 
-from realenv import configs
-from realenv.data.datasets import get_model_path
-from realenv.core.physics.scene_abstract import Scene
+from gibson import configs
+from gibson.data.datasets import get_model_path
+from gibson.core.physics.scene_abstract import Scene
 import pybullet as p
 
 

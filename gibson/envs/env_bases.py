@@ -1,8 +1,8 @@
 ## Issue related to time resolution/smoothness
 #  http://bulletphysics.org/mediawiki-1.5.8/index.php/Stepping_The_World
 
-from realenv.core.physics.scene_building import SinglePlayerBuildingScene
-from realenv.core.physics.scene_stadium import SinglePlayerStadiumScene
+from gibson.core.physics.scene_building import SinglePlayerBuildingScene
+from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet as p
 import time
 import random
@@ -13,10 +13,10 @@ import os
 import json
 import numpy as np
 from transforms3d import euler, quaternions
-from realenv import configs
-from realenv.core.physics.physics_object import PhysicsObject
-from realenv.core.render.profiler import Profiler
-from realenv.configs import *
+from gibson import configs
+from gibson.core.physics.physics_object import PhysicsObject
+from gibson.core.render.profiler import Profiler
+from gibson.configs import *
 import gym, gym.spaces, gym.utils, gym.utils.seeding
 import sys
 
@@ -41,16 +41,12 @@ class BaseEnv(gym.Env):
         #   @self.human
         #   @self.robot
         
-        #self.physicsClientId = p.connect(p.SHARED_MEMORY)
         if configs.DISPLAY_UI:
             #self.physicsClientId = p.connect(p.DIRECT)
             self.physicsClientId = p.connect(p.GUI)
             p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
         elif (self.human):
             self.physicsClientId = p.connect(p.GUI)
-            if MAKE_VIDEO:
-                #self.set_window(-1, -1, 1024, 512)
-                self.set_window(-1, -1, 512, 512)
         else:
             self.physicsClientId = p.connect(p.DIRECT)
 
@@ -60,11 +56,6 @@ class BaseEnv(gym.Env):
         self._cam_yaw = 0
         self._cam_pitch = -30
         self.scene_type = scene_type
-        '''
-        if configs.UI_MODE == configs.UI_ONE:
-            self._render_width = 512
-            self._render_height = 512
-        '''
         self.scene = None
 
 
@@ -228,7 +219,4 @@ class Camera:
         lookat = [x,y,z]
         distance = 10
         yaw = 10
-        if MAKE_VIDEO:
-            p.resetDebugVisualizerCamera(distance, yaw, -20, lookat)
-
 

@@ -11,7 +11,7 @@ import numpy as np
 import ctypes as ct
 import sys
 from tqdm import *
-from realenv import configs
+from gibson import configs
 import torchvision.transforms as transforms
 import argparse
 import json

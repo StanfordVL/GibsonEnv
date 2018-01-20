@@ -3,7 +3,7 @@ import ctypes as ct
 import cv2
 import sys
 import argparse
-from realenv.data.datasets import ViewDataSet3D
+from gibson.data.datasets import ViewDataSet3D
 import torch
 from torchvision import datasets, transforms
 from torch.autograd import Variable

@@ -4,9 +4,9 @@
 import copy
 import math
 import numpy as np
-from realenv.core.physics import motor
-from realenv.core.physics.robot_locomotors import WalkerBase
-from realenv.core.physics.robot_bases import Joint, BodyPart
+from gibson.core.physics import motor
+from gibson.core.physics.robot_locomotors import WalkerBase
+from gibson.core.physics.robot_bases import Joint, BodyPart
 import os, sys
 from gym import spaces
 import pybullet as p
@@ -53,7 +53,7 @@ class MinitaurBase(WalkerBase):
                  on_rack=False,
                  kd_for_pd_controllers=0.3, 
 
-                 ## Below: for realenv
+                 ## Below: for gibson
                  is_discrete=False, 
                  initial_pos=INIT_POSITION, 
                  initial_orn=INIT_ORIENTATION, 
@@ -582,7 +582,7 @@ class MinitaurBase(WalkerBase):
 
 
 class Minitaur(MinitaurBase):
-    '''Wrapper class for realenv interface
+    '''Wrapper class for gibson interface
     
     Attribtues:
         self.eyes
@@ -612,7 +612,7 @@ class Minitaur(MinitaurBase):
                  on_rack=False,
                  kd_for_pd_controllers=0.3, 
 
-                 ## Below: for realenv
+                 ## Below: for gibson
                  is_discrete=False, 
                  initial_pos=INIT_POSITION, 
                  initial_orn=INIT_ORIENTATION, 
@@ -634,7 +634,7 @@ class Minitaur(MinitaurBase):
                      on_rack=on_rack,
                      kd_for_pd_controllers=kd_for_pd_controllers, 
 
-                     ## Below: for realenv
+                     ## Below: for gibson
                      is_discrete=is_discrete, 
                      initial_pos=initial_pos, 
                      initial_orn=initial_orn, 

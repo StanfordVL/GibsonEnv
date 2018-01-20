@@ -20,19 +20,19 @@ Current:
 '''
 
 
-from realenv.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
-from realenv.envs.env_bases import *
-from realenv.core.physics.drivers.minitaur import Minitaur
+from gibson.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from gibson.envs.env_bases import *
+from gibson.core.physics.drivers.minitaur import Minitaur
 import os, inspect
 import math
 import time
 import gym
 from gym import spaces
 from gym.utils import seeding
-import realenv
+import gibson
 import numpy as np
 import pybullet
-from realenv import configs
+from gibson import configs
 
 MINITAUR_TIMESTEP  = 1.0/(4 * 22)
 MINITAUR_FRAMESKIP = 4

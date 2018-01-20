@@ -1,6 +1,6 @@
 ## Usage: random_husky.py debugging
 import os
-from realenv.data.datasets import get_model_path
+from gibson.data.datasets import get_model_path
 
 
 def run_depth_render():

@@ -4,11 +4,11 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 
-from realenv import configs
+from gibson import configs
 
 import gym, logging
 from mpi4py import MPI
-from realenv.envs.ant_env import AntClimbEnv, AntGoallessRunEnv
+from gibson.envs.ant_env import AntClimbEnv, AntGoallessRunEnv
 from baselines.common import set_global_seeds
 import deepq
 import cnn_policy, mlp_policy
