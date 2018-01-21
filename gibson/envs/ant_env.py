@@ -72,21 +72,15 @@ class AntNavigateEnv(CameraRobotEnv):
 
     def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
-
-        # dummy state if a is None
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
-            self.scene.global_step()
-       
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+            self.scene.global_step()       
+        done = self._terminate()
+        rewards = self._rewards()
+        print("Frame %f reward %f" % (self.nframe, sum(self.rewards)))
+        return , done
 
-        done = self.nframe > 300
-        #done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -111,8 +105,6 @@ class AntNavigateEnv(CameraRobotEnv):
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(alive)
             print("progress")
             print(progress)
             print("electricity_cost")
@@ -121,17 +113,28 @@ class AntNavigateEnv(CameraRobotEnv):
             print(joints_at_limit_cost)
             print("feet_collision_cost")
             print(feet_collision_cost)
-
-        print("Frame %f reward %f" % (self.nframe, progress))
         return [
             #alive,
             progress,
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
-         ], done
+         ]
 
-    def flag_reposition(self):
+    def _terminate(self, debugmode=False):
+        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
+            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+        done = self.nframe > 300
+        #done = alive < 0
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        if (debugmode):
+            print("alive=")
+            print(alive)
+        return done
+
+    def _flag_reposition(self):
         walk_target_x = self.robot.walk_target_x / self.robot.mjcf_scaling
         walk_target_y = self.robot.walk_target_y / self.robot.mjcf_scaling
 
@@ -144,7 +147,7 @@ class AntNavigateEnv(CameraRobotEnv):
         self.total_frame = 0
         self.total_reward = 0
         obs = CameraRobotEnv._reset(self)
-        self.flag_reposition()
+        self._flag_reposition()
         return obs
 
 
@@ -191,16 +194,12 @@ class AntGoallessRunEnv(CameraRobotEnv):
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
             self.scene.global_step()
+        done = self._terminate()
+        rewards = self._rewards()
+        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
+        return rewards, done
 
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
-
-        done = self.nframe > 300
-        # done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_goalless_potential()
         progress = float(self.potential - potential_old)
@@ -225,8 +224,6 @@ class AntGoallessRunEnv(CameraRobotEnv):
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(alive)
             print("progress")
             print(progress)
             print("electricity_cost")
@@ -235,17 +232,29 @@ class AntGoallessRunEnv(CameraRobotEnv):
             print(joints_at_limit_cost)
             print("feet_collision_cost")
             print(feet_collision_cost)
-
-        print("Frame %f reward %f" % (self.nframe, progress))
         return [
                    # alive,
                    progress,
                    # electricity_cost,
                    # joints_at_limit_cost,
                    # feet_collision_cost
-               ], done
+               ]
 
-    def flag_reposition(self):
+    def _terminate(self, debugmode=False):
+        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
+            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+        done = self.nframe > 300
+        # done = alive < 0
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        if (debugmode):
+            print("alive=")
+            print(alive)
+        return done
+
+
+    def _flag_reposition(self):
         walk_target_x = self.robot.walk_target_x / self.robot.mjcf_scaling
         walk_target_y = self.robot.walk_target_y / self.robot.mjcf_scaling
 
@@ -261,7 +270,7 @@ class AntGoallessRunEnv(CameraRobotEnv):
         self.total_frame = 0
         self.total_reward = 0
         obs = CameraRobotEnv._reset(self)
-        self.flag_reposition()
+        self._flag_reposition()
         return obs
 
 
@@ -310,20 +319,17 @@ class AntClimbEnv(CameraRobotEnv):
     def calc_rewards_and_done(self, a, state):
         #time.sleep(0.1)
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
-
         # dummy state if a is None
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
             self.scene.global_step()
        
-        alive = float(self.robot.alive_bonus(self.robot.body_rpy[0], self.robot.body_rpy[1]))  # state[0] is body height above ground (z - z initial), body_rpy[1] is pitch
+        done = self._terminate()
+        rewards = self._rewards()
+        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
+        return rewards, done
 
-        done = self.nframe > 700 or alive < 0 or self.robot.body_xyz[2] < 0
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -347,21 +353,8 @@ class AntClimbEnv(CameraRobotEnv):
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         
-        close_to_goal = 0
-        if self.robot.is_close_to_goal():
-            close_to_goal = 1
-
-        done = self.nframe > 600 or alive < 0 or close_to_goal
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
-
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(alive)
             print("progress")
             print(progress)
             print("electricity_cost")
@@ -371,7 +364,7 @@ class AntClimbEnv(CameraRobotEnv):
             print("feet_collision_cost")
             print(feet_collision_cost)
 
-        reward = [
+        rewards = [
             #alive,
             progress,
             #close_to_goal,
@@ -383,10 +376,19 @@ class AntClimbEnv(CameraRobotEnv):
         debugmode = 0
         if (debugmode):
             print("reward")
-            print(reward)
-        return reward, done
+            print(rewards)
+        return rewards
 
-    def randomize_target(self):
+    def _terminate(self, debugmode=False):
+        alive = float(self.robot.alive_bonus(self.robot.body_rpy[0], self.robot.body_rpy[1]))  # state[0] is body height above ground (z - z initial), body_rpy[1] is pitch
+        done = self.nframe > 700 or alive < 0 or self.robot.body_xyz[2] < 0 or self.robot.is_close_to_goal()
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        return done
+
+    ## TODO: refactor this function
+    def _randomize_target(self):
         if configs.RANDOM_TARGET_POSE:
             delta_x = self.np_random.uniform(low=-self.delta_target[0],
                                              high=+self.delta_target[0])
@@ -398,7 +400,7 @@ class AntClimbEnv(CameraRobotEnv):
         self.temp_target_x = (self.target_pos_gt[0] + delta_x)
         self.temp_target_y = (self.target_pos_gt[1] + delta_y)
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         walk_target_x = self.temp_target_x
         walk_target_y = self.temp_target_y
         walk_target_z = self.robot.walk_target_z
@@ -436,8 +438,8 @@ class AntClimbEnv(CameraRobotEnv):
     def  _reset(self):
         self.total_frame = 0
         self.total_reward = 0
-        self.randomize_target()
-        self.flag_reposition()
+        self._randomize_target()
+        self._flag_reposition()
         obs = CameraRobotEnv._reset(self)       ## Important: must come after flat_reposition
         return obs
 
@@ -477,7 +479,7 @@ class AntFlagRunEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         return obs
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
                                                     high=+self.scene.stadium_halflen)
         self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
@@ -502,6 +504,11 @@ class AntFlagRunEnv(CameraRobotEnv):
         self.robot.walk_target_y = self.walk_target_y
 
     def calc_rewards_and_done(self, a, state):
+        done = self._terminate()
+        rewards = self._rewards()
+        return rewards, done
+
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -520,31 +527,28 @@ class AntFlagRunEnv(CameraRobotEnv):
         else:
             alive_score = -0.1
 
-
-        done = head_touch_ground > 0 or self.nframe > 500
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(head_touch_ground)
             print("progress")
             print(progress)
-
-        return [
+        rewards = [
             alive_score,
             progress,
-        ], done
+        ]
+        return rewards
 
+    def _terminate(self, debugmode=False):
+        done = head_touch_ground > 0 or self.nframe > 500
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        return done
 
     def _step(self, a):
         state, reward, done, meta = CameraRobotEnv._step(self, a)
         if self.flag_timeout <= 0:
-            self.flag_reposition()
+            self._flag_reposition()
         self.flag_timeout -= 1
 
         return state, reward, done, meta
@@ -590,13 +594,11 @@ class AntFetchEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         return obs
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         #self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
         #                                            high=+self.scene.stadium_halflen)
         #self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
         #                                            high=+self.scene.stadium_halfwidth)
-
-
         force_x = self.np_random.uniform(-300,300)
         force_y = self.np_random.uniform(-300, 300)
 
@@ -624,12 +626,17 @@ class AntFetchEnv(CameraRobotEnv):
         self.robot.walk_target_y = ball_xyz[1]
 
     def calc_rewards_and_done(self, a, state):
+        done = self._terminate()
+        rewards = self._rewards()
+
         if self.lastid:
             ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
             self.robot.walk_target_x = ball_xyz[0]
             self.robot.walk_target_y = ball_xyz[1]
 
+        return rewards, done
 
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -648,13 +655,6 @@ class AntFetchEnv(CameraRobotEnv):
         else:
             alive_score = -0.1
 
-
-        done = head_touch_ground > 0 or self.nframe > 500
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0
         if (debugmode):
@@ -662,17 +662,23 @@ class AntFetchEnv(CameraRobotEnv):
             print(head_touch_ground)
             print("progress")
             print(progress)
-
-        return [
+        rewards = [
             alive_score,
             progress,
-        ], done
+        ]
+        return rewards
 
+    def _terminate(self, debugmode=False):
+        done = head_touch_ground > 0 or self.nframe > 500
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        return done
 
     def _step(self, a):
         state, reward, done, meta = CameraRobotEnv._step(self, a)
         if self.flag_timeout <= 0:
-            self.flag_reposition()
+            self._flag_reposition()
         self.flag_timeout -= 1
 
         return state, reward, done, meta
@@ -715,22 +721,18 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         return obs
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         #self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
         #                                            high=+self.scene.stadium_halflen)
         #self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
         #                                            high=+self.scene.stadium_halfwidth)
-
-
         force_x = self.np_random.uniform(-300,300)
         force_y = self.np_random.uniform(-300, 300)
 
         more_compact = 0.5  # set to 1.0 whole football field
         #self.walk_target_x *= more_compact
         #self.walk_target_y *= more_compact
-
         startx, starty, _ = self.robot.body_xyz
-
 
         self.flag = None
         #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
@@ -748,13 +750,7 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         self.robot.walk_target_x = ball_xyz[0]
         self.robot.walk_target_y = ball_xyz[1]
 
-    def calc_rewards_and_done(self, a, state):
-        if self.lastid:
-            ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
-            self.robot.walk_target_x = ball_xyz[0]
-            self.robot.walk_target_y = ball_xyz[1]
-
-
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -773,13 +769,6 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         else:
             alive_score = -0.1
 
-
-        done = head_touch_ground > 0 or self.nframe > 500
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0
         if (debugmode):
@@ -787,18 +776,34 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
             print(head_touch_ground)
             print("progress")
             print(progress)
-
-
-        return [
+        rewards = [
             alive_score,
             progress,
-        ], done
+        ]
+        return rewards
 
+    def _terminate(self, debugmode=False):
+        head_touch_ground = 1
+        done = head_touch_ground > 0 or self.nframe > 500
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        return done
+
+    def calc_rewards_and_done(self, a, state):
+        if self.lastid:
+            ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
+            self.robot.walk_target_x = ball_xyz[0]
+            self.robot.walk_target_y = ball_xyz[1]
+
+        done = self._terminate()
+        rewards = self._rewards()
+        return rewards, done
 
     def _step(self, a):
         state, reward, done, meta = CameraRobotEnv._step(self, a)
         if self.flag_timeout <= 0:
-            self.flag_reposition()
+            self._flag_reposition()
         self.flag_timeout -= 1
 
         return state, reward, done, meta

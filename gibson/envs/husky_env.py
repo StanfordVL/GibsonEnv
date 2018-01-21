@@ -71,17 +71,18 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.scene_introduce()
 
     def calc_rewards_and_done(self, a, state):
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
-        
-        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
+        done = self._terminate()
+        rewards = self._rewards()
+        debugmode = 0
+        if debugmode:
+            print("Frame %f reward %f" % (self.nframe, sum(rewards)))
 
-        done = not alive or self.nframe > 250 or self.robot.body_xyz[2] < 0
-        #done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
+        self.total_reward = self.total_reward + sum(rewards)
+        self.total_frame = self.total_frame + 1
+        #print(self.total_frame, self.total_reward)
+        return rewards, done
 
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -131,8 +132,6 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(alive)
             print("Wall contact points", len(wall_contact))
             print("Collision cost", wall_collision_cost)
             print("electricity_cost", electricity_cost)
@@ -146,8 +145,6 @@ class HuskyNavigateEnv(CameraRobotEnv):
             #print("feet_collision_cost")
             #print(feet_collision_cost)
 
-        if done:
-            print("Episode reset")
         rewards = [
             #alive,
             progress,
@@ -159,17 +156,24 @@ class HuskyNavigateEnv(CameraRobotEnv):
             #joints_at_limit_cost,
             #feet_collision_cost
         ]
+        return rewards
 
-        debugmode = 0
-        if debugmode:
-            print("Frame %f reward %f" % (self.nframe, sum(rewards)))
+    def _terminate(self, debugmode=False):
+        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
+            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+        
+        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
-        self.total_reward = self.total_reward + sum(rewards)
-        self.total_frame = self.total_frame + 1
-        #print(self.total_frame, self.total_reward)
-        return rewards, done
+        done = not alive or self.nframe > 250 or self.robot.body_xyz[2] < 0
+        #done = alive < 0
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        if done:
+            print("Episode reset")
+        return done
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         walk_target_x = self.robot.walk_target_x
         walk_target_y = self.robot.walk_target_y
 
@@ -182,7 +186,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.total_frame = 0
         self.total_reward = 0
         obs = CameraRobotEnv._reset(self)
-        self.flag_reposition()
+        self._flag_reposition()
         return obs
 
 
@@ -226,17 +230,16 @@ class HuskyClimbEnv(CameraRobotEnv):
 
         
     def calc_rewards_and_done(self, a, state):
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
-        
-        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
+        done = self._terminate()
+        rewards = self._rewards()
+        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
 
-        done = not alive or self.nframe > 1000
-        #done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
+        self.total_reward = self.total_reward + sum(rewards)
+        self.total_frame = self.total_frame + 1
+        #print(self.total_frame, self.total_reward)
+        return rewards, done
 
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -283,8 +286,6 @@ class HuskyClimbEnv(CameraRobotEnv):
             #print("feet_collision_cost")
             #print(feet_collision_cost)
 
-        if done:
-            print("Episode reset")
         rewards = [
             #alive,
             progress,
@@ -294,15 +295,24 @@ class HuskyClimbEnv(CameraRobotEnv):
             #joints_at_limit_cost,
             #feet_collision_cost
         ]
+        return rewards
 
-        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
+    def _terminate(self, debugmode=False):
+        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
+            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+        
+        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
-        self.total_reward = self.total_reward + sum(rewards)
-        self.total_frame = self.total_frame + 1
-        #print(self.total_frame, self.total_reward)
-        return rewards, done
+        done = not alive or self.nframe > 1000
+        #done = alive < 0
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        if done:
+            print("Episode reset")
+        return done
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         walk_target_x = self.robot.walk_target_x
         walk_target_y = self.robot.walk_target_y
         walk_target_z = self.robot.walk_target_z
@@ -320,7 +330,7 @@ class HuskyClimbEnv(CameraRobotEnv):
         self.total_frame = 0
         self.total_reward = 0
         obs = CameraRobotEnv._reset(self)
-        self.flag_reposition()
+        self._flag_reposition()
         return obs
 
 
@@ -355,7 +365,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         return obs
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
                                                     high=+self.scene.stadium_halflen)
         self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
@@ -380,6 +390,13 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         self.robot.walk_target_y = self.walk_target_y
 
     def calc_rewards_and_done(self, a, state):
+        done = self._terminate()
+        rewards = self._rewards()
+
+        return rewards, done
+
+
+    def _rewards(self, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -397,32 +414,34 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         else:
             alive_score = -0.1
 
-
-        done = alive > 0 or self.nframe > 500
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(alive)
             print("progress")
             print(progress)
 
-        return [
+        rewards = [
             alive_score,
             progress,
-        ], done
+        ]
+        return rewards
 
+    def _terminate(self, debugmode=False):
+        alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        if (debugmode):
+            print("alive=")
+            print(alive)
+        done = alive > 0 or self.nframe > 500
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        return done
 
     def _step(self, a):
         state, reward, done, meta = CameraRobotEnv._step(self, a)
         #print('dist %.1f' % self.robot.walk_target_dist)
         if self.flag_timeout <= 0 or self.robot.walk_target_dist <= 0.5:
-            self.flag_reposition()
+            self._flag_reposition()
         self.flag_timeout -= 1
 
         return state, reward, done, meta
@@ -473,7 +492,7 @@ class HuskyFetchEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         return obs
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         #self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
         #                                            high=+self.scene.stadium_halflen)
         #self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
@@ -509,16 +528,18 @@ class HuskyFetchEnv(CameraRobotEnv):
             ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
             self.robot.walk_target_x = ball_xyz[0]
             self.robot.walk_target_y = ball_xyz[1]
+        done = self._terminate()
+        rewards = self._rewards(a)
+        return rewards, done
 
-
+    def _rewards(self, action = None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         if self.flag_timeout > 225:
             progress = 0
         else:
             progress = float(self.potential - potential_old)
-
-
 
         if not a is None:
             electricity_cost = self.electricity_cost * float(np.abs(
@@ -533,18 +554,9 @@ class HuskyFetchEnv(CameraRobotEnv):
         else:
             alive_score = -0.1
 
-
-        done = alive > 0 or self.nframe > 500
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(alive)
             print("progress")
             print(progress)
         obstacle_penalty = 0
@@ -553,18 +565,28 @@ class HuskyFetchEnv(CameraRobotEnv):
         if self.obstacle_dist < 0.7:
             obstacle_penalty = self.obstacle_dist - 0.7
 
-
-        return [
+        rewards = [
             alive_score,
             progress,
             obstacle_penalty
-        ], done
+        ]
+        return rewards
 
+    def _terminate(self, debugmode=False):
+        alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        done = alive > 0 or self.nframe > 500
+        if (debugmode):
+            print("alive=")
+            print(alive)
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        return done
 
     def _step(self, a):
         state, reward, done, meta = CameraRobotEnv._step(self, a)
         if self.flag_timeout <= 0 or (self.flag_timeout < 225 and self.robot.walk_target_dist < 0.8):
-            self.flag_reposition()
+            self._flag_reposition()
         self.flag_timeout -= 1
 
         self.obstacle_dist = (np.mean(state[16:48,16:48,-1]))
@@ -615,13 +637,11 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         return obs
 
-    def flag_reposition(self):
+    def _flag_reposition(self):
         #self.walk_target_x = self.np_random.uniform(low=-self.scene.stadium_halflen,
         #                                            high=+self.scene.stadium_halflen)
         #self.walk_target_y = self.np_random.uniform(low=-self.scene.stadium_halfwidth,
         #                                            high=+self.scene.stadium_halfwidth)
-
-
         force_x = self.np_random.uniform(-300,300)
         force_y = self.np_random.uniform(-300, 300)
 
@@ -653,8 +673,12 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
             ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
             self.robot.walk_target_x = ball_xyz[0]
             self.robot.walk_target_y = ball_xyz[1]
+        done = self._terminate()
+        rewards = self._rewards(a)
+        return rewards, done
 
-
+    def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -672,13 +696,6 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         else:
             alive_score = -0.1
 
-
-        done = alive > 0 or self.nframe > 500
-
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
-
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0
         if (debugmode):
@@ -687,17 +704,24 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
             print("progress")
             print(progress)
 
-
-        return [
+        rewards = [
             alive_score,
             progress,
-        ], done
+        ]
+        return rewards
 
+    def _terminate(self, debugmode=False):
+        alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        done = alive > 0 or self.nframe > 500
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        return done
 
     def _step(self, a):
         state, reward, done, meta = CameraRobotEnv._step(self, a)
         if self.flag_timeout <= 0:
-            self.flag_reposition()
+            self._flag_reposition()
         self.flag_timeout -= 1
 
         return state, reward, done, meta
@@ -744,16 +768,22 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         self.scene_introduce()
 
     def calc_rewards_and_done(self, a, state):
+        done = self._terminate()
+        rewards = self._rewards()
+        debugmode = 0
+        if debugmode:
+            print("Frame %f reward %f" % (self.nframe, sum(rewards)))
+
+        self.total_reward = self.total_reward + sum(rewards)
+        self.total_frame = self.total_frame + 1
+        # print(self.total_frame, self.total_reward)
+        return rewards, done
+
+    def _rewards(self, debugmode=False):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
 
         alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
-
-        done = not alive or self.nframe > 250 or self.robot.body_xyz[2] < 0
-        # done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
 
         potential_old = self.potential
         self.potential = self.robot.calc_goalless_potential()
@@ -790,8 +820,6 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         wall_contact = [pt for pt in self.robot.parts['base_link'].contact_list() if pt[6][2] > 0.15]
         wall_collision_cost = self.wall_collision_cost * len(wall_contact)
 
-
-
         debugmode = 0
         if (debugmode):
             print("alive=")
@@ -808,8 +836,6 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
             # print("feet_collision_cost")
             # print(feet_collision_cost)
 
-        if done:
-            print("Episode reset")
         rewards = [
             # alive,
             progress,
@@ -818,17 +844,25 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
             # joints_at_limit_cost,
             # feet_collision_cost
         ]
+        return rewards
 
-        debugmode = 0
-        if debugmode:
-            print("Frame %f reward %f" % (self.nframe, sum(rewards)))
+    def _terminate(self, debugmode=False):
+        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
+            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
 
-        self.total_reward = self.total_reward + sum(rewards)
-        self.total_frame = self.total_frame + 1
-        # print(self.total_frame, self.total_reward)
-        return rewards, done
+        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
-    def flag_reposition(self):
+        done = not alive or self.nframe > 250 or self.robot.body_xyz[2] < 0
+        # done = alive < 0
+        if not np.isfinite(state).all():
+            print("~INF~", state)
+            done = True
+        if done:
+            print("Episode reset")
+
+        return done
+
+    def _flag_reposition(self):
         walk_target_x = self.robot.walk_target_x
         walk_target_y = self.robot.walk_target_y
 
@@ -844,5 +878,5 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         self.total_frame = 0
         self.total_reward = 0
         obs = CameraRobotEnv._reset(self)
-        self.flag_reposition()
+        self._flag_reposition()
         return obs
