@@ -351,7 +351,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUSKY_TIMESTEP,
                  frame_skip=HUSKY_FRAMESKIP, is_discrete=False, 
-                 gpu_count=0, mode="SENSOR"):
+                 gpu_count=0, mode="SENSOR", resolution="NORMAL"):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
@@ -365,7 +365,8 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         self.robot_introduce(Husky(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
-            initial_orn=initial_orn))
+            initial_orn=initial_orn, 
+            resolution=resolution))
         self.scene_introduce()
 
         if self.human:
@@ -470,7 +471,7 @@ class HuskyFetchEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUSKY_TIMESTEP,
                  frame_skip=HUSKY_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "SMALL"):
+                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "NORMAL"):
 
         target_orn, target_pos = configs.TASK_POSE[configs.FETCH_MODEL_ID]["fetch"][-1]
         initial_orn, initial_pos = configs.TASK_POSE[configs.FETCH_MODEL_ID]["fetch"][0]
@@ -751,7 +752,6 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         if self.flag_timeout <= 0:
             self._flag_reposition()
         self.flag_timeout -= 1
-
         return state, reward, done, meta
 
 

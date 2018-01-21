@@ -437,6 +437,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
         
     def _close(self):
+        BaseEnv._close(self)
         if not self._require_camera_input or self.test_env:
             return
         self.r_camera_mul.terminate()

@@ -57,10 +57,10 @@ class BaseEnv(gym.Env):
         self._cam_pitch = -30
         self.scene_type = scene_type
         self.scene = None
-
-    def exit(self):
+    
+    def _close(self):
         p.disconnect()
-
+        
     def create_scene(self):
         if self.scene is not None:
             return
@@ -91,7 +91,6 @@ class BaseEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
         p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
         p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
-        #p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     
         #visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
@@ -108,7 +107,7 @@ class BaseEnv(gym.Env):
         self.scene.episode_restart()
         return state
 
-    def _render(self, mode, close):        
+    def _render(self, mode, close):
         base_pos=[0,0,0]
         if (hasattr(self,'robot')):
             if (hasattr(self.robot,'body_xyz')):

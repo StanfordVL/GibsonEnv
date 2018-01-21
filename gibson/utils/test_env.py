@@ -25,7 +25,7 @@ class RandomAgent(object):
 
 def testEnv(Env):
     print("Currently testing", Env)
-    env = Env(human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode='RGBD')
+    env = Env(human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode='RGBD', resolution="NORMAL")
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
     frame = 0
@@ -39,7 +39,7 @@ def testEnv(Env):
         score += r
         frame += 1
         if not done and frame < 10: continue
-        env.exit()
+        env.close()
         return
     
 if __name__ == '__main__':   
