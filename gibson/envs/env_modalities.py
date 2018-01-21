@@ -144,6 +144,10 @@ class SensorRobotEnv(BaseEnv):
         i = 0
 
         state = self.robot.calc_state()
+        pos = self.robot.get_position()
+        orn = self.robot.get_orientation()
+        pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])    
+        p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
         return state
 
 
@@ -185,7 +189,7 @@ class SensorRobotEnv(BaseEnv):
             pos = self.robot.get_position()
             orn = self.robot.get_orientation()
             pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
-            #p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos);       ## demo: kitchen, living room
+            p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
             
         eye_pos = self.robot.eyes.current_position()
         debugmode = 0
