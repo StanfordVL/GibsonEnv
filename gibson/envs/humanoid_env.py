@@ -70,14 +70,14 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         self.total_frame = 0
 
     def calc_rewards_and_done(self, a, state):
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         print("Frame %f reward %f" % (self.nframe, sum(rewards)))
         self.total_reward = self.total_reward + sum(rewards)
         self.total_frame = self.total_frame + 1
         return rewards, done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -117,7 +117,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
             ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = float(self.robot.alive_bonus(state[0]+self.robot.initial_z, self.robot.body_rpy[1])) # state[0] is body height above ground, body_rpy[1] is pitch
         done = alive < 0
         if not np.isfinite(state).all():

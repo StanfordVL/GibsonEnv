@@ -71,8 +71,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.scene_introduce()
 
     def calc_rewards_and_done(self, a, state):
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         debugmode = 0
         if debugmode:
             print("Frame %f reward %f" % (self.nframe, sum(rewards)))
@@ -82,7 +82,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         #print(self.total_frame, self.total_reward)
         return rewards, done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -124,8 +124,12 @@ class HuskyNavigateEnv(CameraRobotEnv):
         if self.robot.is_close_to_goal():
             close_to_goal = 0.5
 
-        #angle_cost = 0
         angle_cost = self.robot.angle_cost()
+
+        obstacle_penalty = 0
+        if CALC_OBSTACLE_PENALTY:
+            obstacle_penalty =get_obstacle_penalty(self.robot)
+
         debugmode = 0
         if debugmode:
             print("angle cost", angle_cost)
@@ -151,14 +155,15 @@ class HuskyNavigateEnv(CameraRobotEnv):
             #wall_collision_cost,
             close_to_goal,
             steering_cost,
-            angle_cost
+            angle_cost,
+            obstacle_penalty
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
         
@@ -230,8 +235,8 @@ class HuskyClimbEnv(CameraRobotEnv):
 
         
     def calc_rewards_and_done(self, a, state):
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         print("Frame %f reward %f" % (self.nframe, sum(rewards)))
 
         self.total_reward = self.total_reward + sum(rewards)
@@ -239,7 +244,7 @@ class HuskyClimbEnv(CameraRobotEnv):
         #print(self.total_frame, self.total_reward)
         return rewards, done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -260,8 +265,6 @@ class HuskyClimbEnv(CameraRobotEnv):
 
         electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we 
         electricity_cost  += self.stall_torque_cost * float(np.square(a).mean())
-
-
         #alive = len(self.robot.parts['top_bumper_link'].contact_list())
         #if alive == 0:
         #    alive_score = 0.1
@@ -275,6 +278,11 @@ class HuskyClimbEnv(CameraRobotEnv):
         close_to_goal = 0
         if self.robot.is_close_to_goal():
             close_to_goal = 0.5
+
+        obstacle_penalty = 0
+        if CALC_OBSTACLE_PENALTY:
+            obstacle_penalty =get_obstacle_penalty(self.robot)
+
         debugmode = 0
         if (debugmode):
             print("progress")
@@ -291,13 +299,14 @@ class HuskyClimbEnv(CameraRobotEnv):
             progress,
             #wall_collision_cost,
             close_to_goal,
+            obstacle_penalty
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
         
@@ -390,13 +399,13 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         self.robot.walk_target_y = self.walk_target_y
 
     def calc_rewards_and_done(self, a, state):
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
 
         return rewards, done
 
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -415,6 +424,11 @@ class HuskyFlagRunEnv(CameraRobotEnv):
             alive_score = -0.1
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+
+        obstacle_penalty = 0
+        if CALC_OBSTACLE_PENALTY:
+            obstacle_penalty =get_obstacle_penalty(self.robot)
+
         debugmode = 0
         if (debugmode):
             print("progress")
@@ -423,10 +437,11 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         rewards = [
             alive_score,
             progress,
+            obstacle_penalty
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = len(self.robot.parts['top_bumper_link'].contact_list())
         if (debugmode):
             print("alive=")
@@ -528,7 +543,7 @@ class HuskyFetchEnv(CameraRobotEnv):
             ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
             self.robot.walk_target_x = ball_xyz[0]
             self.robot.walk_target_y = ball_xyz[1]
-        done = self._terminate()
+        done = self._termination(state)
         rewards = self._rewards(a)
         return rewards, done
 
@@ -559,6 +574,7 @@ class HuskyFetchEnv(CameraRobotEnv):
         if (debugmode):
             print("progress")
             print(progress)
+
         obstacle_penalty = 0
 
         #print("obs dist %.3f" %self.obstacle_dist)
@@ -572,7 +588,7 @@ class HuskyFetchEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = len(self.robot.parts['top_bumper_link'].contact_list())
         done = alive > 0 or self.nframe > 500
         if (debugmode):
@@ -673,7 +689,7 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
             ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
             self.robot.walk_target_x = ball_xyz[0]
             self.robot.walk_target_y = ball_xyz[1]
-        done = self._terminate()
+        done = self._termination(state)
         rewards = self._rewards(a)
         return rewards, done
 
@@ -697,6 +713,11 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
             alive_score = -0.1
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+
+        obstacle_penalty = 0
+        if CALC_OBSTACLE_PENALTY:
+            obstacle_penalty =get_obstacle_penalty(self.robot)
+
         debugmode = 0
         if (debugmode):
             print("alive=")
@@ -707,10 +728,11 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         rewards = [
             alive_score,
             progress,
+            obstacle_penalty
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = len(self.robot.parts['top_bumper_link'].contact_list())
         done = alive > 0 or self.nframe > 500
         if not np.isfinite(state).all():
@@ -768,8 +790,8 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         self.scene_introduce()
 
     def calc_rewards_and_done(self, a, state):
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         debugmode = 0
         if debugmode:
             print("Frame %f reward %f" % (self.nframe, sum(rewards)))
@@ -779,7 +801,7 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         # print(self.total_frame, self.total_reward)
         return rewards, done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
 
@@ -807,6 +829,11 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
 
         steering_cost = self.robot.steering_cost(a)
+
+        obstacle_penalty = 0
+        if CALC_OBSTACLE_PENALTY:
+            obstacle_penalty =get_obstacle_penalty(self.robot)
+
         debugmode = 0
         if debugmode:
             print("steering cost", steering_cost)
@@ -839,6 +866,7 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         rewards = [
             # alive,
             progress,
+            obstacle_penalty
             # wall_collision_cost,
             # electricity_cost,
             # joints_at_limit_cost,
@@ -846,7 +874,7 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
 
@@ -880,3 +908,25 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         self._flag_reposition()
         return obs
+
+
+CALC_OBSTACLE_PENALTY = 1
+
+def get_obstacle_penalty(robot):
+    screen_sz = robot.obs_dim[0]
+    screen_delta = int(screen_sz / 8)
+    screen_half  = int(screen_sz / 2)
+    height_offset = int(screen_sz / 4)
+
+    obstacle_dist = (np.mean(self.render_depth[screen_half  + height_offset - screen_delta : screen_half + height_offset + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
+    obstacle_penalty = 0
+    OBSTACLE_LIMIT = 1.5
+    if obstacle_dist < OBSTACLE_LIMIT:
+       obstacle_penalty = (obstacle_dist - OBSTACLE_LIMIT)
+    
+    debugmode = 0
+    if debugmode:
+        #print("Obstacle screen", screen_sz, screen_delta)
+        print("Obstacle distance", obstacle_dist)
+        print("Obstacle penalty", obstacle_penalty)
+    return obstacle_penalty

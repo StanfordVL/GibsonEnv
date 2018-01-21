@@ -14,6 +14,7 @@ import pybullet_data
 ANT_TIMESTEP  = 1.0/(4 * 22)
 ANT_FRAMESKIP = 4
 
+
 """Task specific classes for Ant Environment
 Each class specifies: 
     (1) Target position
@@ -75,12 +76,12 @@ class AntNavigateEnv(CameraRobotEnv):
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
             self.scene.global_step()       
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         print("Frame %f reward %f" % (self.nframe, sum(self.rewards)))
         return , done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -121,7 +122,7 @@ class AntNavigateEnv(CameraRobotEnv):
             #feet_collision_cost
          ]
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
         done = self.nframe > 300
@@ -194,12 +195,12 @@ class AntGoallessRunEnv(CameraRobotEnv):
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
             self.scene.global_step()
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         print("Frame %f reward %f" % (self.nframe, sum(rewards)))
         return rewards, done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_goalless_potential()
         progress = float(self.potential - potential_old)
@@ -240,7 +241,7 @@ class AntGoallessRunEnv(CameraRobotEnv):
                    # feet_collision_cost
                ]
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
         done = self.nframe > 300
@@ -324,12 +325,12 @@ class AntClimbEnv(CameraRobotEnv):
             self.robot.apply_action(a)
             self.scene.global_step()
        
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         print("Frame %f reward %f" % (self.nframe, sum(rewards)))
         return rewards, done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -379,7 +380,7 @@ class AntClimbEnv(CameraRobotEnv):
             print(rewards)
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         alive = float(self.robot.alive_bonus(self.robot.body_rpy[0], self.robot.body_rpy[1]))  # state[0] is body height above ground (z - z initial), body_rpy[1] is pitch
         done = self.nframe > 700 or alive < 0 or self.robot.body_xyz[2] < 0 or self.robot.is_close_to_goal()
         if not np.isfinite(state).all():
@@ -504,11 +505,11 @@ class AntFlagRunEnv(CameraRobotEnv):
         self.robot.walk_target_y = self.walk_target_y
 
     def calc_rewards_and_done(self, a, state):
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         return rewards, done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -538,7 +539,7 @@ class AntFlagRunEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         done = head_touch_ground > 0 or self.nframe > 500
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -626,8 +627,8 @@ class AntFetchEnv(CameraRobotEnv):
         self.robot.walk_target_y = ball_xyz[1]
 
     def calc_rewards_and_done(self, a, state):
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
 
         if self.lastid:
             ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
@@ -636,7 +637,7 @@ class AntFetchEnv(CameraRobotEnv):
 
         return rewards, done
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -668,7 +669,7 @@ class AntFetchEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         done = head_touch_ground > 0 or self.nframe > 500
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -750,7 +751,7 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         self.robot.walk_target_x = ball_xyz[0]
         self.robot.walk_target_y = ball_xyz[1]
 
-    def _rewards(self, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -782,7 +783,7 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _terminate(self, debugmode=False):
+    def _termination(self, state=None, debugmode=False):
         head_touch_ground = 1
         done = head_touch_ground > 0 or self.nframe > 500
         if not np.isfinite(state).all():
@@ -796,8 +797,8 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
             self.robot.walk_target_x = ball_xyz[0]
             self.robot.walk_target_y = ball_xyz[1]
 
-        done = self._terminate()
-        rewards = self._rewards()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         return rewards, done
 
     def _step(self, a):
@@ -807,3 +808,4 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         self.flag_timeout -= 1
 
         return state, reward, done, meta
+

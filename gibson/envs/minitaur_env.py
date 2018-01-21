@@ -222,10 +222,10 @@ class MinitaurNavigateEnv(CameraRobotEnv):
 
     def calc_rewards_and_done(self, action, state):
         ## TODO (hzyjerry): make use of action, state
-        reward = self._reward()
-        done = self._termination()
+        done = self._termination(state)
+        rewards = self._rewards(a)
         #return reward, False
-        return reward, done
+        return rewards, done
 
 
     def get_minitaur_motor_angles(self):
@@ -277,12 +277,12 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         return (np.dot(np.asarray([0, 0, 1]), np.asarray(local_up)) < 0.85 or
                 pos[2] < 0.13)
 
-    def _termination(self):
+    def _termination(self, state=None, debugmode=False):
         position = self.robot.GetBasePosition()
         distance = math.sqrt(position[0]**2 + position[1]**2)
         return self.is_fallen() or distance > self._distance_limit
 
-    def _reward(self):
+    def _reward(self, action=None, debugmode=False):
         current_base_position = self.robot.GetBasePosition()
         forward_reward = current_base_position[0] - self._last_base_position[0]
         drift_reward = -abs(current_base_position[1] - self._last_base_position[1])

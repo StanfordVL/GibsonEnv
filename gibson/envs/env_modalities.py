@@ -164,7 +164,9 @@ class SensorRobotEnv(BaseEnv):
             self.scene.global_step()
 
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
-        self.rewards, done = self.calc_rewards_and_done(a, state)
+        #self.rewards, done = self.calc_rewards_and_done(a, state)
+        self.rewards = self._rewards(a)
+        done = self.termination(state)
         debugmode=0
         if (debugmode):
             print("rewards=")
@@ -385,27 +387,7 @@ class CameraRobotEnv(SensorRobotEnv):
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
 
         # Speed bottleneck        
-        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)3
-
-        calc_obstacle_penalty = 1
-        if calc_obstacle_penalty:
-            screen_sz = self.robot.obs_dim[0]
-            screen_delta = int(screen_sz / 8)
-            screen_half  = int(screen_sz / 2)
-            height_offset = int(screen_sz / 4)
-
-            obstacle_dist = (np.mean(self.render_depth[screen_half  + height_offset - screen_delta : screen_half + height_offset + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
-            obstacle_penalty = 0
-            OBSTACLE_LIMIT = 1.5
-            if obstacle_dist < OBSTACLE_LIMIT:
-               obstacle_penalty = (obstacle_dist - OBSTACLE_LIMIT)
-            sensor_reward += obstacle_penalty
-
-            debugmode = 0
-            if debugmode:
-                #print("Obstacle screen", screen_sz, screen_delta)
-                print("Obstacle distance", obstacle_dist)
-                print("Obstacle penalty", obstacle_penalty)
+        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         if configs.DISPLAY_UI:
             with Profiler("Rendering visuals: render to visuals"):
