@@ -1,5 +1,7 @@
 ## Gibson release docker
 
+### Note: deprecated, use the one in project root directory
+
 Much of the Dockerfile is based on: https://github.com/thewtex/docker-opengl
 
 For Gibson platform:
