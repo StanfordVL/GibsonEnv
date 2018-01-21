@@ -155,7 +155,7 @@ PUT_RED_FLAGS = True
 
 TASK_POSE = {
 
-"Gn4zCib6aCV": {
+    "Gn4zCib6aCV": {
         "navigate": [
             [[0, 0, 3.14/2], [7, -7, 1.2]],
             [[0, 0, 0], [0, 0, 0]]
@@ -171,7 +171,7 @@ TASK_POSE = {
     },  # basement house
 
 
-"8ohVSvgSpxP": {
+    "8ohVSvgSpxP": {
         "navigate": [
             [[0, 0, -3.14/2], [1, 1, 1.2]],
             [[0, 0, 0], [0, 0, 0]]
@@ -186,7 +186,7 @@ TASK_POSE = {
         ]
     },  # basement house
 
-"4sJvhG2KCVH": {
+    "4sJvhG2KCVH": {
         "navigate": [
             [[0, 0, 3.14/2], [-10, 10, 2]],
             [[0, 0, 0], [0, 0, 0]]

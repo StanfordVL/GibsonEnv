@@ -5,7 +5,7 @@ import sys
 import gym
 from PIL import Image
 from gibson.core.render.profiler import Profiler
-from gibson.envs.husky_env import HuskyNavigateEnv
+from gibson.envs.husky_env import HuskyNavigateEnv, HuskyClimbEnv, HuskyFlagRunEnv, HuskyFetchEnv, HuskyFetchKernelizedRewardEnv, HuskyGoallessRunEnv
 import pybullet as p
 
 class RandomAgent(object):
@@ -24,6 +24,7 @@ class RandomAgent(object):
         return action
 
 def testEnv(Env):
+    print("Currently testing", Env)
     env = Env(human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode='RGBD')
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
@@ -38,7 +39,13 @@ def testEnv(Env):
         score += r
         frame += 1
         if not done and frame < 10: continue
+        env.exit()
         return
     
 if __name__ == '__main__':   
     testEnv(HuskyNavigateEnv)
+    testEnv(HuskyClimbEnv)
+    testEnv(HuskyFlagRunEnv)
+    testEnv(HuskyFetchEnv)
+    testEnv(HuskyFetchKernelizedRewardEnv)
+    testEnv(HuskyGoallessRunEnv)

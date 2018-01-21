@@ -58,6 +58,8 @@ class BaseEnv(gym.Env):
         self.scene_type = scene_type
         self.scene = None
 
+    def exit(self):
+        p.disconnect()
 
     def create_scene(self):
         if self.scene is not None:

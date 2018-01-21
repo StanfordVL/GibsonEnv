@@ -136,7 +136,6 @@ class ViewDataSet3D(data.Dataset):
             print("Indexing")
 
             for scene, meta in tqdm(list(self.meta.items())):
-                print(scene, len(meta), self.seqlen)
                 if len(meta) < self.seqlen:
                     continue
                 for uuid, v in list(meta.items()):

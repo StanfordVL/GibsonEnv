@@ -151,6 +151,13 @@ download_data () {
     fi
     cd -
 
+    if [ ! -d dataset/test ]; then
+        wget https://www.dropbox.com/s/x7u9bbyv51xv2tv/test.zip
+        unzip -q test.zip && rm test.zip
+        mv test dataset
+    fi
+    cd -
+
     ## Physics Models
     if [ ! -d ./gibson/core/physics/models ]; then
         cd ./gibson/core/physics

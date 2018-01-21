@@ -351,7 +351,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
     """
     def __init__(self, human=True, timestep=HUSKY_TIMESTEP,
                  frame_skip=HUSKY_FRAMESKIP, is_discrete=False, 
-                 gpu_count=0):
+                 gpu_count=0, mode="SENSOR"):
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
@@ -361,7 +361,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         initial_pos, initial_orn = [0, 0, 0.3], [0, 0, 0, 1]
         self.flag_timeout = 1
 
-        CameraRobotEnv.__init__(self, mode="SENSOR", gpu_count=gpu_count, scene_type="stadium")
+        CameraRobotEnv.__init__(self, mode=mode, gpu_count=gpu_count, scene_type="stadium")
         self.robot_introduce(Husky(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
@@ -472,9 +472,9 @@ class HuskyFetchEnv(CameraRobotEnv):
                  frame_skip=HUSKY_FRAMESKIP, is_discrete=False,
                  gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True, resolution = "SMALL"):
 
-        target_orn, target_pos = configs.INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][-1]
-        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][0]
-
+        target_orn, target_pos = configs.TASK_POSE[configs.FETCH_MODEL_ID]["fetch"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.FETCH_MODEL_ID]["fetch"][0]
+        
         self.human = human
         self.timestep = timestep
         self.frame_skip = frame_skip
@@ -497,7 +497,8 @@ class HuskyFetchEnv(CameraRobotEnv):
             initial_orn=initial_orn,
             target_pos=target_pos,
             resolution=resolution))
-        
+        self.scene_introduce()
+
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
@@ -620,7 +621,8 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
             timestep=HUSKY_TIMESTEP,
             frame_skip=HUSKY_FRAMESKIP, 
             is_discrete=False,
-            gpu_count=0, 
+            gpu_count=0,
+            mode="SENSOR",
             scene_type="building", 
             resolution="NORMAL"):
         self.human = human
@@ -630,12 +632,13 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         self.model_id = configs.FETCH_MODEL_ID
         self.tracking_camera = tracking_camera
         
-        initial_orn, initial_pos = configs.INITIAL_POSE["husky"][configs.FETCH_MODEL_ID][0]
+        target_orn, target_pos = configs.TASK_POSE[configs.FETCH_MODEL_ID]["fetch"][-1]
+        initial_orn, initial_pos = configs.TASK_POSE[configs.FETCH_MODEL_ID]["fetch"][0]
         self.flag_timeout = 1
 
         CameraRobotEnv.__init__(
             self, 
-            "SENSOR",
+            mode,
             gpu_count, 
             scene_type="building", 
             use_filler=False)
@@ -806,11 +809,6 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
 
     def _rewards(self, action=None, debugmode=False):
         a = action
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
-
-        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
-
         potential_old = self.potential
         self.potential = self.robot.calc_goalless_potential()
         progress = float(self.potential - potential_old)
@@ -853,8 +851,6 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
 
         debugmode = 0
         if (debugmode):
-            print("alive=")
-            print(alive)
             print("Wall contact points", len(wall_contact))
             print("Collision cost", wall_collision_cost)
             print("electricity_cost", electricity_cost)
@@ -868,7 +864,6 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
             # print(feet_collision_cost)
 
         rewards = [
-            # alive,
             progress,
             obstacle_penalty
             # wall_collision_cost,
