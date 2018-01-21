@@ -370,7 +370,6 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
     def _step(self, a):
-        #with Profiler("Rendering visuals"):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
         sensor_meta.pop("eye_pos", None)
@@ -385,8 +384,7 @@ class CameraRobotEnv(SensorRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
 
-                
-        #with Profiler("Render off screen"):
+        # Speed bottleneck        
         self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
 
@@ -411,11 +409,12 @@ class CameraRobotEnv(SensorRobotEnv):
                 print("Obstacle penalty", obstacle_penalty)
 
         if configs.DISPLAY_UI:
-            #with Profiler("Render to UI total speed"):
-            self.render_to_UI()
-            self.save_frame += 1
+            with Profiler("Rendering visuals: render to visuals"):
+                self.render_to_UI()
+                self.save_frame += 1
 
         elif self.human:
+            # Speed bottleneck 2, 116fps
             self.r_camera_rgb.renderToScreen()
 
         visuals = self.get_visuals(self.render_rgb, self.render_depth)

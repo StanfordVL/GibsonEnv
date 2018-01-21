@@ -191,10 +191,6 @@ class PCRenderer:
             cv2.moveWindow('RGB cam', -1 , 768)
             cv2.moveWindow('Depth cam', 512, 768)
 
-        #cv2.imshow('RGB cam', self.show_rgb)
-        #cv2.imshow('Depth cam', self.show_rgb)
-        #cv2.setMouseCallback('RGB cam',self._onmouse)
-
 
     def _onmouse(self, *args):
         if args[0] == cv2.EVENT_LBUTTONDOWN:
@@ -305,7 +301,8 @@ class PCRenderer:
         p = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
         s = utils.mat_to_str(p)
 
-        #with Profiler("Depth request round-trip"):
+        #with Profiler("Render: depth request round-trip"):
+        ## Speed bottleneck: 100fps for mist + depth
         self.socket_mist.send_string(s)
         mist_msg = self.socket_mist.recv()
         self.socket_dept.send_string(s)
@@ -315,7 +312,6 @@ class PCRenderer:
             norm_msg = self.socket_norm.recv()
 
 
-        #with Profiler("Read from framebuffer and make pano"):
         wo, ho = self.showsz * 4, self.showsz * 3
 
         # Calculate height and width of output image, and size of each square face
@@ -365,7 +361,8 @@ class PCRenderer:
         #[t.start() for t in threads]
         #[t.join() for t in threads]
 
-        #if need_filler:
+        #with Profiler("Render: render point cloud"):
+        ## Speed bottleneck
         _render_pc(opengl_arr, rgbs, show)
         if self._require_semantics:
             _render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
@@ -373,7 +370,8 @@ class PCRenderer:
         if configs.HIST_MATCHING and is_rgb:
             show_unfilled[:, :, :] = show[:, :, :]
 
-        #with Profiler("NN total time", enable= ENABLE_PROFILING):
+        #with Profiler("Render: NN total time"):
+        ## Speed bottleneck
         if self.use_filler and self.model and is_rgb and need_filler:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
@@ -381,13 +379,10 @@ class PCRenderer:
             mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
             source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
             source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
-            #print(mask.size(), source_depth.size())
             mask = torch.cat([source_depth, mask], 0)
             self.imgv.data.copy_(source)
             self.maskv.data.copy_(mask)
-            #with Profiler("NNtime", enable=ENABLE_PROFILING):
             recon = model(self.imgv, self.maskv)
-            #with Profiler("Transfer to CPU time", enable=ENABLE_PROFILING):
             show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
             show[:] = (show2[:] * 255).astype(np.uint8)
 
@@ -397,6 +392,7 @@ class PCRenderer:
             self.surface_normal = normal_arr
 
         #Histogram matching happens here 
+        #with Profiler("Render: hist matching"):
         if configs.HIST_MATCHING and is_rgb:
             template = (show_unfilled/255.0).astype(np.float32)
             source = (show/255.0).astype(np.float32)
@@ -439,7 +435,6 @@ class PCRenderer:
 
 
     def renderOffScreen(self, pose, k_views=None):
-        #with Profiler("Rendering off screen"):
         if not k_views:
             all_dist, _ = self.rankPosesByDistance(pose)
             k_views = (np.argsort(all_dist))[:self.k]
@@ -456,7 +451,6 @@ class PCRenderer:
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
         self.show_rgb = self.show
-        #self.show_rgb = cv2.cvtColor(self.show, cv2.COLOR_BGR2RGB)
         self.show_unfilled_rgb = self.show_unfilled
 
         return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_unfilled_rgb
