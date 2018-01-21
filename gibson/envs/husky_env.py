@@ -83,6 +83,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -127,8 +128,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         angle_cost = self.robot.angle_cost()
 
         obstacle_penalty = 0
-        if CALC_OBSTACLE_PENALTY:
-            obstacle_penalty =get_obstacle_penalty(self.robot)
+        if CALC_OBSTACLE_PENALTY and self._require_camera_input:
+            obstacle_penalty = get_obstacle_penalty(self.robot, self.render_depth)
 
         debugmode = 0
         if debugmode:
@@ -245,6 +246,7 @@ class HuskyClimbEnv(CameraRobotEnv):
         return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -280,8 +282,8 @@ class HuskyClimbEnv(CameraRobotEnv):
             close_to_goal = 0.5
 
         obstacle_penalty = 0
-        if CALC_OBSTACLE_PENALTY:
-            obstacle_penalty =get_obstacle_penalty(self.robot)
+        if CALC_OBSTACLE_PENALTY and self._require_camera_input:
+            obstacle_penalty =get_obstacle_penalty(self.robot, self.render_depth)
 
         debugmode = 0
         if (debugmode):
@@ -406,6 +408,7 @@ class HuskyFlagRunEnv(CameraRobotEnv):
 
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -426,8 +429,8 @@ class HuskyFlagRunEnv(CameraRobotEnv):
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
 
         obstacle_penalty = 0
-        if CALC_OBSTACLE_PENALTY:
-            obstacle_penalty =get_obstacle_penalty(self.robot)
+        if CALC_OBSTACLE_PENALTY and self._require_camera_input:
+            obstacle_penalty =get_obstacle_penalty(self.robot, self.render_depth)
 
         debugmode = 0
         if (debugmode):
@@ -715,8 +718,8 @@ class HuskyFetchKernelizedRewardEnv(CameraRobotEnv):
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
 
         obstacle_penalty = 0
-        if CALC_OBSTACLE_PENALTY:
-            obstacle_penalty =get_obstacle_penalty(self.robot)
+        if CALC_OBSTACLE_PENALTY and self._require_camera_input:
+            obstacle_penalty=get_obstacle_penalty(self.robot, self.render_depth)
 
         debugmode = 0
         if (debugmode):
@@ -802,6 +805,7 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
             1]))  # state[0] is body height above ground, body_rpy[1] is pitch
 
@@ -831,8 +835,8 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
         steering_cost = self.robot.steering_cost(a)
 
         obstacle_penalty = 0
-        if CALC_OBSTACLE_PENALTY:
-            obstacle_penalty =get_obstacle_penalty(self.robot)
+        if CALC_OBSTACLE_PENALTY and self._require_camera_input:
+            obstacle_penalty =get_obstacle_penalty(self.robot, self.render_depth)
 
         debugmode = 0
         if debugmode:
@@ -912,13 +916,13 @@ class HuskyGoallessRunEnv(CameraRobotEnv):
 
 CALC_OBSTACLE_PENALTY = 1
 
-def get_obstacle_penalty(robot):
+def get_obstacle_penalty(robot, depth):
     screen_sz = robot.obs_dim[0]
     screen_delta = int(screen_sz / 8)
     screen_half  = int(screen_sz / 2)
     height_offset = int(screen_sz / 4)
 
-    obstacle_dist = (np.mean(self.render_depth[screen_half  + height_offset - screen_delta : screen_half + height_offset + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
+    obstacle_dist = (np.mean(depth[screen_half  + height_offset - screen_delta : screen_half + height_offset + screen_delta, screen_half - screen_delta : screen_half + screen_delta, -1]))
     obstacle_penalty = 0
     OBSTACLE_LIMIT = 1.5
     if obstacle_dist < OBSTACLE_LIMIT:

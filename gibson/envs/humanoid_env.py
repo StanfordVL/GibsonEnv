@@ -78,6 +78,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)

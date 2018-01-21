@@ -147,17 +147,6 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
             #time.sleep(1.0/fps)
         if callback is not None:
             callback(prev_obs, obs, action, rew, env_done, info)
-        if record_num == 100:
-            print("Total recording", record_total / 100)
-            sys.exit()
-        '''
-        if obs is not None:
-            if len(obs.shape) == 2:
-                obs = obs[:, :, None]
-            if obs.shape[2] == 1:
-                obs = obs.repeat(3, axis=2)
-            display_arr(screen, obs, transpose=transpose, video_size=video_size)
-        '''
         # process pygame events
         key_codes = env.get_key_pressed(relevant_keys)
         #print("Key codes", key_codes)

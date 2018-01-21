@@ -1,6 +1,9 @@
 import numpy as np
 from enum import Enum
 
+
+TEST_MODE = True
+
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = False
 RANDOM_TARGET_POSE  = False
@@ -72,9 +75,16 @@ USE_MJCF = True
 ## Basement: 13wHkWg1BWZ
 ## Street scene: 15N3xPvXqFR
 ## Gates 3rd: TVHnHa4MZwE
+
 CLIMB_MODEL_ID = "sRj553CTHiw"
 NAVIGATE_MODEL_ID = "sRj553CTHiw"
 FETCH_MODEL_ID = "11HB6XZSh1Q"
+
+if TEST_MODE:
+    CLIMB_MODEL_ID = "test"
+    NAVIGATE_MODEL_ID = "test"
+    FETCH_MODEL_ID = "test"
+
 
 USE_SENSOR_OUTPUT = True
 USE_GPS_OUTPUT = False
@@ -326,8 +336,22 @@ TASK_POSE = {
             #[[0, 0, 0], [15.0, -1.92, -1.65]],    ## end of second half, right
             #[[0, 0, 0], [15.60, -7.98, -1.64]]    ## end of second half, left
         ]
-
-    }
+    },
+    "test": {
+        "navigate": [
+            [[0, 0, 3 * 3.14/2], [-14.3, 5, 1.2]],  ## initial: end of hall way
+            [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial: end of hall way
+            [[0, 0, 3.14/2], [-14.3, 45.07, 0.5]],  ## down silvio's room
+        ],
+        "fetch": [
+            [[0, 0, 3 * 3.14/2], [-14.3, 5, 0.5]],  ## initial
+            [[0, 0, 3.14], [-7, 2.6, 0.5]]          ## target
+        ],
+        "climb": [
+            [[0, 0, 3.14], [-7, 2.6, 0.5]],
+            [[0, 0, 3.14], [-7, 2.6, 0.5]],
+        ]
+    },
 }
 
 OFFSET_GROUND = {

@@ -136,11 +136,11 @@ class ViewDataSet3D(data.Dataset):
             print("Indexing")
 
             for scene, meta in tqdm(list(self.meta.items())):
+                print(scene, len(meta), self.seqlen)
                 if len(meta) < self.seqlen:
                     continue
                 for uuid, v in list(meta.items()):
-                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2, v2 in
-                                 list(meta.items())]
+                    dist_list = [(uuid2, np.linalg.norm(np.array(v2[1]) - np.array(v[1]))) for uuid2, v2 in list(meta.items())]
                     dist_list = sorted(dist_list, key=lambda x: x[-1])
 
                     if not dist_filter is None:

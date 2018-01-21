@@ -283,6 +283,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         return self.is_fallen() or distance > self._distance_limit
 
     def _reward(self, action=None, debugmode=False):
+        a = action
         current_base_position = self.robot.GetBasePosition()
         forward_reward = current_base_position[0] - self._last_base_position[0]
         drift_reward = -abs(current_base_position[1] - self._last_base_position[1])

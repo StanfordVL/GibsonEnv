@@ -82,6 +82,7 @@ class AntNavigateEnv(CameraRobotEnv):
         return , done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -201,6 +202,7 @@ class AntGoallessRunEnv(CameraRobotEnv):
         return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_goalless_potential()
         progress = float(self.potential - potential_old)
@@ -331,6 +333,7 @@ class AntClimbEnv(CameraRobotEnv):
         return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -510,6 +513,7 @@ class AntFlagRunEnv(CameraRobotEnv):
         return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -638,6 +642,7 @@ class AntFetchEnv(CameraRobotEnv):
         return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -752,6 +757,7 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         self.robot.walk_target_y = ball_xyz[1]
 
     def _rewards(self, action=None, debugmode=False):
+        a = action
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)

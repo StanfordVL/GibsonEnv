@@ -144,7 +144,6 @@ class SensorRobotEnv(BaseEnv):
         i = 0
 
         state = self.robot.calc_state()
-
         return state
 
 
@@ -166,7 +165,7 @@ class SensorRobotEnv(BaseEnv):
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
         #self.rewards, done = self.calc_rewards_and_done(a, state)
         self.rewards = self._rewards(a)
-        done = self.termination(state)
+        done = self._termination(state)
         debugmode=0
         if (debugmode):
             print("rewards=")
@@ -360,9 +359,9 @@ class CameraRobotEnv(SensorRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
 
-        rgb, depth, semantics, normal, unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
-        visuals = self.get_visuals(rgb, depth)
+        visuals = self.get_visuals(self.render_rgb, self.render_depth)
 
         target_x = self.temp_target_x
         target_y = self.temp_target_y
@@ -386,7 +385,7 @@ class CameraRobotEnv(SensorRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
 
-        # Speed bottleneck        
+        # Speed bottleneck
         self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         if configs.DISPLAY_UI:
@@ -508,7 +507,7 @@ class CameraRobotEnv(SensorRobotEnv):
             if self._require_semantics:
                 assert(target_semantics is not None)
             if self.scale_up !=1:
-                target =  cv2.resize(
+                target = cv2.resize(
                     target,None,
                     fx=1.0/self.scale_up,
                     fy=1.0/self.scale_up,
