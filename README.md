@@ -23,8 +23,6 @@ docker build . -t gibson
 ```
 If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson` to create a container.
 
-#### Build from source
-
 
 2. Download our docker image
 TBA
