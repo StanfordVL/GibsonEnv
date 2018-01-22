@@ -67,8 +67,8 @@ RUN  apt-get install -y vim wget unzip
 
 RUN  apt-get install -y libzmq3-dev
 
-ADD  realenv /root/mount/realenv
-WORKDIR /root/mount/realenv
+ADD  . /root/mount/gibson
+WORKDIR /root/mount/gibson
 
 RUN bash build.sh build_local
 RUN  pip install -e .
