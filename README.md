@@ -16,7 +16,7 @@ We use docker to distribute our software, you need to install [nvidia-docker2.0]
 #### Quick installation (docker)
 
 1. Build your own docker image
-```
+```bash
 git clone -b dev https://github.com/fxia22/realenv.git 
 ./build.sh download_data ### Download data outside docker, in case docker images need to be rebuilt
 docker build . -t gibson
