@@ -10,7 +10,7 @@ from baselines.ppo1 import pposgd_simple
 from baselines import deepq
 
 from mpi4py import MPI
-from realenv.envs.husky_env import HuskyNavigateEnv
+from gibson.envs.husky_env import HuskyNavigateEnv
 import resnet_policy
 import baselines.common.tf_util as U
 import datetime

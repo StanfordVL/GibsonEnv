@@ -10,8 +10,8 @@ from baselines.ppo1 import pposgd_simple
 from baselines import deepq
 
 from mpi4py import MPI
-from realenv.envs.husky_env import HuskyNavigateEnv, HuskyFlagRunEnv
-#from realenv.envs.ant_env import AntCameraEnv, AntSensorEnv
+from gibson.envs.husky_env import HuskyNavigateEnv, HuskyFlagRunEnv
+#from gibson.envs.ant_env import AntCameraEnv, AntSensorEnv
 import resnet_policy
 import baselines.common.tf_util as U
 import utils

@@ -7,7 +7,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 import gym
-from realenv.envs.husky_env import HuskyNavigateEnv
+from gibson.envs.husky_env import HuskyNavigateEnv
 import deepq
 import numpy as np
 

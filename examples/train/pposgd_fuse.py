@@ -7,7 +7,7 @@ from baselines.common.mpi_adam import MpiAdam
 from baselines.common.mpi_moments import mpi_moments
 from mpi4py import MPI
 from collections import deque
-from realenv.core.render.profiler import Profiler
+from gibson.core.render.profiler import Profiler
 import os
 import tempfile
 import cloudpickle

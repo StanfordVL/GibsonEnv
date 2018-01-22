@@ -90,29 +90,29 @@ install() {
 
 build_local() {
     ## Core renderer
-    if [ ! -d ./realenv/core/channels/external/glfw-3.1.2 ]; then
+    if [ ! -d ./gibson/core/channels/external/glfw-3.1.2 ]; then
         wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
         unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
-        mv glfw-3.1.2 ./realenv/core/channels/external/glfw-3.1.2
+        mv glfw-3.1.2 ./gibson/core/channels/external/glfw-3.1.2
     fi
-    [ ! -d ./realenv/core/channels/build ] || rm -rf ./realenv/core/channels/build
+    [ ! -d ./gibson/core/channels/build ] || rm -rf ./gibson/core/channels/build
 
-    mkdir -p ./realenv/core/channels/build
-    cd ./realenv/core/channels/build
+    mkdir -p ./gibson/core/channels/build
+    cd ./gibson/core/channels/build
     cmake .. && make clean && make -j 10
     cd -
 
 
-    cd ./realenv/core/render/
+    cd ./gibson/core/render/
     bash build_cuda.sh
     cd -
 }
 
 download_data () {
     ## Data set
-    cd ./realenv/data
+    cd ./gibson/data
     [ -d dataset ] || mkdir dataset
-    [ ! -d ./realenv/core/physics/models ] || rm -rf ./realenv/core/physics/models
+    [ ! -d ./gibson/core/physics/models ] || rm -rf ./gibson/core/physics/models
 
 
     ## Psych building -1F, 919Mb
@@ -151,15 +151,22 @@ download_data () {
     fi
     cd -
 
+    if [ ! -d dataset/test ]; then
+        wget https://www.dropbox.com/s/x7u9bbyv51xv2tv/test.zip
+        unzip -q test.zip && rm test.zip
+        mv test dataset
+    fi
+    cd -
+
     ## Physics Models
-    if [ ! -d ./realenv/core/physics/models ]; then
-        cd ./realenv/core/physics
+    if [ ! -d ./gibson/core/physics/models ]; then
+        cd ./gibson/core/physics
         wget --quiet https://www.dropbox.com/s/3w9vxc8f071u1h0/models.zip
         unzip -q models.zip && rm models.zip
         cd -
     fi
 
-    cd ./realenv/core/render/
+    cd ./gibson/core/render/
         if [ ! -f coord.npy ]; then
             wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
         fi
@@ -169,8 +176,8 @@ download_data () {
         fi
     cd -
 
-    if [ -f "realenv/data/*.pkl" ]; then
-        rm realenv/data/*.pkl
+    if [ -f "gibson/data/*.pkl" ]; then
+        rm gibson/data/*.pkl
     fi
 }
 

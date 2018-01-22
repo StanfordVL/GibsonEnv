@@ -1,5 +1,5 @@
-from realenv.envs.humanoid_env import HumanoidNavigateEnv
-from realenv.utils.play import play
+from gibson.envs.humanoid_env import HumanoidNavigateEnv
+from gibson.utils.play import play
 
 timestep = 1.0/200
 frame_skip = 1

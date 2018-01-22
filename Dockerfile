@@ -1,104 +1,77 @@
-## Scratch ubuntu:16.04 image with NVIDIA GPU
-FROM nvidia/cuda
+# gibson graphical sample provided with the CUDA toolkit.
 
-## Skip keyboard settings
-ENV DEBIAN_FRONTEND noninteractive
+# docker build -t gibson .
+# docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson
 
-RUN apt-get update \
-    && apt-get install -y libav-tools \
-    libpq-dev \
-    libjpeg-dev \
-    cmake \
-    wget \
-    unzip \
-    git \
-    xpra \
-    vnc4server \
-    golang-go \
-    libboost-all-dev \
-    make \
-    && apt-get clean
-    ## This line raises error when building docker image
-    # && rm -rf /var/lib/apt/lists/* \
+FROM nvidia/cudagl:9.0-base-ubuntu16.04
 
-## Install conda, opencv
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cuda-samples-$CUDA_PKG_VERSION && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.14-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh
+WORKDIR /usr/local/cuda/samples/5_Simulations/nbody
 
-ENV PATH /opt/conda/bin:$PATH
+RUN make
 
-RUN conda install -c menpo opencv -y
-#RUN conda install -y \
-#    scikit-image \
-#    flask \
-#    pillow
+#CMD ./nbody
 
-RUN conda install pytorch torchvision cuda80 -c soumith
+RUN apt-get update && apt-get install -y curl
 
-## Install Universe
-WORKDIR /usr/local/realenv
-RUN git clone https://github.com/openai/universe.git
-WORKDIR /usr/local/realenv/universe
-RUN pip install -e .
+# Install miniconda to /miniconda
+RUN curl -LO http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+RUN bash Miniconda-latest-Linux-x86_64.sh -p /miniconda -b
+RUN rm Miniconda-latest-Linux-x86_64.sh
+ENV PATH=/miniconda/bin:${PATH}
+RUN conda update -y conda
+RUN conda create -y -n py35 python=3.5 
+# Python packages from conda
 
-## Install Realenv
-WORKDIR /usr/local/realenv
-RUN wget https://www.dropbox.com/s/xmhgkmhgp9dfw52/realenv.tar.gz && tar -xvzf realenv.tar.gz && rm realenv.tar.gz
-WORKDIR /usr/local/realenv/realenv
-RUN pip install -e .
-RUN pip install progressbar
+ENV PATH /miniconda/envs/py35/bin:$PATH
 
-## Set up data & model for view synthesizer
-#nvidia-docker run -it --rm -v realenv-data:/usr/local/realenv/data realenv bash
+RUN pip install http://download.pytorch.org/whl/cu90/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
+RUN pip install torchvision
+RUN pip install tensorflow==1.3
 
-## Start VNC server
+WORKDIR /root
 
-#RUN apt-get install -y x11vnc xvfb
+RUN apt-get install -y git build-essential cmake libopenmpi-dev 
+		
+RUN git clone -b dev https://github.com/fxia22/realenv.git
 
-#RUN mkdir ~/.vnc
-# Setup a password
-#RUN x11vnc -storepasswd 1234 ~/.vnc/passwd
+RUN apt-get install -y zlib1g-dev
 
-COPY . /usr/local/realenv/
+RUN git clone https://github.com/openai/baselines.git && \
+	pip install -e baselines
 
-## Entry point
-WORKDIR /usr/local/realenv/
+RUN apt-get update && apt-get install -y \
+		libglew-dev \
+		libglm-dev \
+		libassimp-dev \
+		xorg-dev \
+		libglu1-mesa-dev \
+		libboost-dev \
+		mesa-common-dev \
+		freeglut3-dev \
+		libopenmpi-dev \
+		cmake \
+		golang \
+		libjpeg-turbo8-dev \
+		wmctrl \ 
+		xdotool \
+		&& \
+	apt-get clean && \
+	apt-get autoremove && \
+	rm -rf /var/cache/apk/*
 
-RUN ["chmod", "+x", "/usr/local/realenv/init.sh"]
+RUN  apt-get install -y vim wget unzip 
 
+RUN  apt-get install -y libzmq3-dev
 
-#ENTRYPOINT [ "/usr/local/realenv/init.sh" ]
-#ENTRYPOINT [ "/bin/bash", "-c" ]
-#CMD ["x11vnc", "-forever", "-usepw", "-create"]
+ADD  . /root/mount/gibson
+WORKDIR /root/mount/gibson
 
+RUN bash build.sh build_local
+RUN  pip install -e .
 
+ENV QT_X11_NO_MITSHM 1
 
-LABEL io.k8s.description="Headless VNC Container with Xfce window manager, firefox and chromium" \
-      io.k8s.display-name="Headless VNC Container based on Ubuntu" \
-      io.openshift.expose-services="6901:http,5901:xvnc" \
-      io.openshift.tags="vnc, ubuntu, xfce" \
-      io.openshift.non-scalable=true
-
-## Connection ports for controlling the UI:
-# VNC port:5901
-# noVNC webport, connect via http://IP:6901/?password=vncpassword
-ENV DISPLAY :1
-ENV VNC_PORT 5901
-ENV NO_VNC_PORT 6901
-EXPOSE $VNC_PORT $NO_VNC_PORT
-
-ENV HOME /usr/local/realenv/
-ENV STARTUPDIR /dockerstartup
-WORKDIR $HOME
-
-### Envrionment config
-ENV DEBIAN_FRONTEND noninteractive
-ENV NO_VNC_HOME $HOME/noVNC
-ENV VNC_COL_DEPTH 24
-ENV VNC_RESOLUTION 1280x1024
-ENV VNC_PW vncpassword
-
-RUN printf "qwertyui\nqwertyui\n\n" | vncpasswd

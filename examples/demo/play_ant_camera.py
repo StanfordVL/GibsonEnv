@@ -1,5 +1,5 @@
-from realenv.envs.ant_env import AntNavigateEnv, AntClimbEnv
-from realenv.utils.play import play
+from gibson.envs.ant_env import AntNavigateEnv, AntClimbEnv
+from gibson.utils.play import play
 
 timestep = 1.0/(4 * 22)
 frame_skip = 4

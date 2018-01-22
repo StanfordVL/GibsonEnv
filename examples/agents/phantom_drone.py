@@ -3,9 +3,9 @@ import time
 import numpy as np
 import sys
 from PIL import Image
-from realenv.envs.simple_env import SimpleEnv, SimpleDebugEnv
+from gibson.envs.simple_env import SimpleEnv, SimpleDebugEnv
 from generate_actions import *
-from realenv.core.render.profiler import Profiler
+from gibson.core.render.profiler import Profiler
 
 
 class RandomAgent(object):

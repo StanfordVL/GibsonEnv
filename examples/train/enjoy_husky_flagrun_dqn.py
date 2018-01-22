@@ -6,12 +6,12 @@ parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0, parentdir)
 
 import gym
-from realenv.envs.husky_env import HuskyFlagRunEnv
+from gibson.envs.husky_env import HuskyFlagRunEnv
 
 from baselines import deepq
 import matplotlib.pyplot as plt
 import datetime
-from realenv.core.render.profiler import Profiler
+from gibson.core.render.profiler import Profiler
 import time
 
 def callback(lcl, glb):

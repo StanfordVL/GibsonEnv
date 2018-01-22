@@ -7,7 +7,7 @@ os.sys.path.insert(0, parentdir)
 
 from baselines import deepq
 import gym
-from realenv.envs.husky_env import HuskyFlagRunEnv
+from gibson.envs.husky_env import HuskyFlagRunEnv
 
 import deepq
 import matplotlib.pyplot as plt

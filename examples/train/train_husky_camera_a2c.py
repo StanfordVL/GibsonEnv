@@ -5,7 +5,7 @@ parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 
 import gym
-from realenv.envs.husky_env import HuskyCameraEnv
+from gibson.envs.husky_env import HuskyCameraEnv
 from baselines import logger
 from baselines.common import set_global_seeds
 from baselines import bench

@@ -14,7 +14,7 @@ class PostInstallCommand(install):
                 install.run(self)
 '''
 
-setup(name='realenv',
+setup(name='gibson',
     version='0.0.1',
     description='Real Environment Developed by Stanford University',
     url='https://github.com/fxia22/realenv',
@@ -27,7 +27,7 @@ setup(name='realenv',
             'Pillow>=3.3.0',
             'PyYAML>=3.12',
             'numpy>=1.13',
-            'pybullet>=1.5.6',
+            'pybullet==1.7.4',
             'transforms3d>=0.3.1',
             'tqdm >= 4',
             'pyzmq>=16.0.2',
@@ -37,7 +37,7 @@ setup(name='realenv',
             'cloudpickle>=0.4.1',
             'pygame>=1.9.3',
             'opencv-python',
-            'torch>=0.2.0',
+            #'torch>=0.2.0',
             'torchvision>=0.1.9'
     ],
     tests_require=[],

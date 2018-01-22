@@ -4,8 +4,8 @@ import numpy as np
 import sys
 import gym
 from PIL import Image
-from realenv.core.render.profiler import Profiler
-from realenv.envs.husky_env import HuskyFlagRunEnv
+from gibson.core.render.profiler import Profiler
+from gibson.envs.husky_env import HuskyFlagRunEnv
 import pybullet as p
 
 

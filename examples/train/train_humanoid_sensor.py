@@ -5,7 +5,7 @@ parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 
 import gym
-from realenv.envs.humanoid_env import HumanoidSensorEnv
+from gibson.envs.humanoid_env import HumanoidSensorEnv
 
 from baselines import deepq
 
