@@ -1,4 +1,4 @@
-# Real Environment for Training Real World AI
+# Gibson Environment for Training Real World AI
 You shouldn't play video games all day, so shouldn't your AI. In this project we build a virtual environment that offers real world experience. You can think of it like [The Matrix](https://www.youtube.com/watch?v=3Ep_rnYweaI).
 
 ## Note
@@ -20,7 +20,7 @@ We use docker to distribute our software, you need to install [docker](https://d
 
 1. Build your own docker image (recommended)
 ```bash
-git clone -b dev https://github.com/fxia22/realenv.git 
+git clone -b dev https://github.com/fxia22/gibson.git 
 ./build.sh download_data ### Download data outside docker, in case docker images need to be rebuilt
 docker build . -t gibson
 ```
