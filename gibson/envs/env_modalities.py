@@ -448,14 +448,13 @@ class CameraRobotEnv(SensorRobotEnv):
 
     def get_key_pressed(self, relevant=None):
         pressed_keys = []
-        if configs.DISPLAY_UI:
-            events = pygame.event.get()
-            pressed_keys = [e.key for e in events if e.type == pygame.KEYDOWN]
-        else:
-            events = p.getKeyboardEvents()
-            key_codes = events.keys()
-            for key in key_codes:
-                pressed_keys.append(key)
+        #if configs.DISPLAY_UI:
+        #    events = pygame.event.get()
+        #    pressed_keys = [e.key for e in events if e.type == pygame.KEYDOWN]
+        events = p.getKeyboardEvents()
+        key_codes = events.keys()
+        for key in key_codes:
+            pressed_keys.append(key)
         return pressed_keys
 
     def get_blank_visuals(self):

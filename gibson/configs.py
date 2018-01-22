@@ -2,7 +2,7 @@ import numpy as np
 from enum import Enum
 
 
-TEST_MODE = True
+TEST_MODE = False
 
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = False
@@ -90,7 +90,7 @@ USE_SENSOR_OUTPUT = True
 USE_GPS_OUTPUT = False
 
 HIST_MATCHING = False
-USE_SMALL_FILLER = True
+USE_SMALL_FILLER = False
 USE_SMOOTH_MESH = False
 
 DISABLE_FILLER = False
