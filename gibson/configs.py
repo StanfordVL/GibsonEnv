@@ -2,7 +2,7 @@ import numpy as np
 from enum import Enum
 
 
-TEST_MODE = True
+TEST_MODE = False
 
 ## Randomize agent initial position & orientation
 RANDOM_INITIAL_POSE = False
@@ -112,7 +112,7 @@ class UIMode(Enum):
     def is_valid(mode):
         return mode in [UIMode.UI_ONE, UIMode.UI_TWO, UIMode.UI_THREE, UIMode.UI_FOUR, UIMode.UI_FIVE, UIMode.UI_SIX, UIMode.UI_NONE]
 
-UI_MODE = UIMode.UI_ONE
+UI_MODE = UIMode.UI_TWO
 
 class View(Enum):
     EMPTY = 0

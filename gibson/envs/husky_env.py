@@ -61,7 +61,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
             gpu_count, 
             scene_type="building", 
             use_filler=use_filler)
-        self.robot_introduce(HuskyHighCamera(
+        self.robot_introduce(Husky(
+            #HuskyHighCamera(
             is_discrete=is_discrete, 
             initial_pos=initial_pos,
             initial_orn=initial_orn,
