@@ -16,6 +16,8 @@ The minimal system requirements are the following:
 
 We use docker to distribute our software, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
 
+Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
+
 #### Quick installation (docker)
 
 1. Build your own docker image (recommended)
@@ -35,6 +37,18 @@ TBA
 
 
 ## Demo
-TBA
+
+After getting into the docker container, you can run a few demos. You might need to run `xhost +local:root` to enable display.
+
+```bash
+python examples/demo/play_husky_sensor.py ### Use ASWD to control a car to navigate around gates
+
+python examples/demo/play_husky_camera.py ### Use ASWD to control a car to navigate around gates, with camera output
+
+python examples/train/train_husky_navigate_ppo2.py --resolution NORMAL ### Use PPO2 to train a car to navigate down the hall way in gates based on visual input
+
+###More to come!
+
+```
 
 
