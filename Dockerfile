@@ -36,7 +36,7 @@ WORKDIR /root
 
 RUN apt-get install -y git build-essential cmake libopenmpi-dev 
 		
-RUN git clone -b dev https://github.com/fxia22/realenv.git
+RUN git clone -b dev https://github.com/fxia22/gibson.git
 
 RUN apt-get install -y zlib1g-dev
 
