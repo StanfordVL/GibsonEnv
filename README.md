@@ -6,16 +6,19 @@ This is a 0.1.0 beta release, bug reports are welcome.
 
 ### Installation
 
-#### Dependencies
-We use docker to distribute our software, you need to install [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. The minimal system requirements are the following:
+The minimal system requirements are the following:
 
 - Nvidia GPU with VRAM > 6.0GB
 - Nvidia driver >= 384
 - CUDA >= 9.0, CuDNN >= v7
 
+#### Dependencies
+
+We use docker to distribute our software, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
+
 #### Quick installation (docker)
 
-1. Build your own docker image
+1. Build your own docker image (recommended)
 ```bash
 git clone -b dev https://github.com/fxia22/realenv.git 
 ./build.sh download_data ### Download data outside docker, in case docker images need to be rebuilt
