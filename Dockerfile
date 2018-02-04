@@ -36,11 +36,9 @@ WORKDIR /root
 
 RUN apt-get install -y git build-essential cmake libopenmpi-dev 
 		
-RUN git clone -b dev https://github.com/fxia22/gibson.git
-
 RUN apt-get install -y zlib1g-dev
 
-RUN git clone https://github.com/openai/baselines.git && \
+RUN git clone https://github.com/fxia22/baselines.git&& \
 	pip install -e baselines
 
 RUN apt-get update && apt-get install -y \

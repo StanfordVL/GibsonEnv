@@ -172,10 +172,10 @@ __global__ void transform(float *points3d_after, float *points3d, float * transf
 }
 
 //#define FOV_SCALE 1.73205080757
-#define FOV_SCALE 1
+//#define FOV_SCALE 1
 
 
-__global__ void transform2d(float *points3d_after)
+__global__ void transform2d(float *points3d_after, float fov_scale)
 {
  int x = blockIdx.x * TILE_DIM + threadIdx.x;
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
@@ -193,7 +193,7 @@ __global__ void transform2d(float *points3d_after)
     //points3d_after[(ih * w + iw) * 3 + 1] = atan2(y, x);
     //points3d_after[(ih * w + iw) * 3 + 2] = atan2(sqrt(x * x + y * y), z);
 
-      float x2 = FOV_SCALE * x;
+      float x2 = fov_scale * x;
       if ((x2 > 0) && (y < x2) && (y > -x2) && (z < x2) && (z > -x2)) {
           points3d_after[(ih * w + iw) * 3 + 1] = y / (x2 + 1e-5);
           points3d_after[(ih * w + iw) * 3 + 2] = -z / (x2 + 1e-5);
@@ -401,7 +401,7 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
 
 extern "C"{
     
-void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * depth,float * pose, unsigned char * render, float * depth_render){
+void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * depth,float * pose, unsigned char * render, float * depth_render, float fov){
     //int ih, iw, i, ic;
     //printf("inside cuda code %d\n", depth);
     
@@ -474,7 +474,10 @@ void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * dep
 
         to3d_point<<< dimGrid, dimBlock >>>(d_depth, d_3dpoint);
         transform<<< dimGrid, dimBlock >>>(d_3dpoint_after, d_3dpoint, d_pose);
-        transform2d<<<dimGrid, dimBlock>>>(d_3dpoint_after);
+
+        float fov_scale = tan(fov/2);
+
+        transform2d<<<dimGrid, dimBlock>>>(d_3dpoint_after, fov_scale);
 
         char_to_int <<< dimGrid, dimBlock >>> (d_img2, d_img);
 

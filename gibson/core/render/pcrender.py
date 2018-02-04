@@ -352,7 +352,8 @@ class PCRenderer:
                            depths.ctypes.data_as(ct.c_void_p),
                            np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
                            show_pc.ctypes.data_as(ct.c_void_p),
-                           opengl_arr.ctypes.data_as(ct.c_void_p)
+                           opengl_arr.ctypes.data_as(ct.c_void_p),
+                           ct.c_float(configs.FOV)
                           )
 
         #threads = [
