@@ -23,9 +23,9 @@ class RandomAgent(object):
                 action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
         return action
 
-def testEnv(Env):
+def testEnv(Env, mode="RGBD"):
     print("Currently testing", Env)
-    env = Env(human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode='RGBD', resolution="NORMAL")
+    env = Env(human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode=mode, resolution="NORMAL")
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
     frame = 0
@@ -43,9 +43,16 @@ def testEnv(Env):
         return
     
 if __name__ == '__main__':   
-    testEnv(HuskyNavigateEnv)
-    testEnv(HuskyClimbEnv)
-    testEnv(HuskyFlagRunEnv)
-    testEnv(HuskyFetchEnv)
-    testEnv(HuskyFetchKernelizedRewardEnv)
-    testEnv(HuskyGoallessRunEnv)
+    testEnv(HuskyNavigateEnv, "RGBD")
+    testEnv(HuskyClimbEnv, "RGBD")
+    testEnv(HuskyFlagRunEnv, "RGBD")
+    testEnv(HuskyFetchEnv, "RGBD")
+    testEnv(HuskyFetchKernelizedRewardEnv, "RGBD")
+    testEnv(HuskyGoallessRunEnv, "RGBD")
+
+    testEnv(HuskyNavigateEnv, "SENSOR")
+    testEnv(HuskyClimbEnv, "SENSOR")
+    testEnv(HuskyFlagRunEnv, "SENSOR")
+    testEnv(HuskyFetchEnv, "SENSOR")
+    testEnv(HuskyFetchKernelizedRewardEnv, "SENSOR")
+    testEnv(HuskyGoallessRunEnv, "SENSOR")
