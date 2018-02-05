@@ -10,7 +10,7 @@ import pybullet as p
 from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
 
-HUSKY_TIMESTEP  = 1.0/(4 * 22)
+HUSKY_TIMESTEP  = 1.0/(4 * 12)
 HUSKY_FRAMESKIP = 4
 
 tracking_camera = {
