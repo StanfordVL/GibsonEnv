@@ -100,7 +100,6 @@ class PCRenderer:
         self.org_x, self.org_y, self.org_z = 0, 0, 0
         self.clickstart = (0,0)
         self.mousedown  = False
-        self.fps = 0
         self.overlay    = False
         self.show_depth = False
         self._context_phys = zmq.Context()
