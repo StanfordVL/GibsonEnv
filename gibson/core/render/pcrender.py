@@ -12,6 +12,8 @@ import transforms3d
 import json
 import zmq
 
+from gibson import assets
+
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 from numpy import cos, sin
@@ -27,8 +29,10 @@ import scipy.misc
 
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
+assets_file_dir = os.path.dirname(assets.__file__)
+
 cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
-coords  = np.load(os.path.join(file_dir, 'coord.npy'))
+coords  = np.load(os.path.join(assets_file_dir, 'coord.npy'))
 
 LINUX_OFFSET = {
     "x_delta": 10,
@@ -150,11 +154,11 @@ class PCRenderer:
         if configs.USE_SMALL_FILLER:
             comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
             comp = torch.nn.DataParallel(comp).cuda()
-            comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
+            comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model.pth")))
         else:
             comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
             comp = torch.nn.DataParallel(comp).cuda()
-            comp.load_state_dict(torch.load(os.path.join(file_dir, "compG_epoch4_3000.pth")))
+            comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "compG_epoch4_3000.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module

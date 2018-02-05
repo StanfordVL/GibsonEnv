@@ -18,13 +18,19 @@ We use docker to distribute our software, you need to install [docker](https://d
 
 Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
 
+#### Download data
+
+Download data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0) and put `assets.tar.gz` it in `gibson/assets` folder.
+
+
 #### Quick installation (docker)
 
 1. Build your own docker image (recommended)
 ```bash
 git clone -b dev https://github.com/fxia22/gibson.git 
 cd gibson
-./build.sh download_data ### Download data outside docker, in case docker images need to be rebuilt
+#download data file from https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0 and put it into gibson/assets folder
+./build.sh decompress_data ### Download data outside docker, in case docker images need to be rebuilt
 docker build . -t gibson
 ```
 If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson` to create a container.
@@ -55,7 +61,8 @@ Clone the repository, download data and build
 ```bash
 git clone -b dev https://github.com/fxia22/gibson.git 
 cd gibson
-./build.sh download_data ### Download data 
+#download data from google drive
+./build.sh decompress_data ### decompress data 
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
 ```
