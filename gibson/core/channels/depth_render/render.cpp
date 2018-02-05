@@ -63,7 +63,7 @@ size_t panoWidth = 2048;
 size_t panoHeight = 1024;
 int cudaDevice = -1;
 
-float camera_fov = 90.0f;
+//float camera_fov = 90.0f;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
@@ -237,6 +237,10 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Height", 'h', "Render window height", false, 256);
     cmdp.add<int>("Smooth", 's', "Whether render depth only", false, 0);
     cmdp.add<int>("Normal", 'n', "Whether render surface normal", false, 0);
+    cmdp.add<float>("fov", 'f', "field of view", false, 90.0);
+
+
+
 
     cmdp.parse_check(argc, argv);
 
@@ -244,6 +248,8 @@ int main( int argc, char * argv[] )
     int GPU_NUM = cmdp.get<int>("GPU");
     int smooth = cmdp.get<int>("Smooth");
     int normal = cmdp.get<int>("Normal");
+
+    float camera_fov = cmdp.get<float>("fov");
 
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");

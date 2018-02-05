@@ -299,7 +299,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.target_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
         p.changeVisualShape(self.target_mapId, -1, rgbaColor=[1, 0, 0, 0])
         self.save_frame  = 0
-        
+        self.fps = 0
 
     def robot_introduce(self, robot):
         SensorRobotEnv.robot_introduce(self, robot)
@@ -374,6 +374,9 @@ class CameraRobotEnv(SensorRobotEnv):
         return visuals, sensor_state
 
 
+    def add_text(self, img):
+        return img
+
     def _step(self, a):
         sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
@@ -390,7 +393,17 @@ class CameraRobotEnv(SensorRobotEnv):
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
 
         # Speed bottleneck
+        t = time.time()
+
         self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+
+        dt = time.time() - t
+        self.fps = 0.9 * self.fps + 0.1 * 1/dt
+
+        # Add quantifications
+        visuals = self.get_visuals(self.render_rgb, self.render_depth)
+        self.render_rgb = self.add_text(self.render_rgb)
+
 
         if configs.DISPLAY_UI:
             with Profiler("Rendering visuals: render to visuals"):
@@ -401,7 +414,7 @@ class CameraRobotEnv(SensorRobotEnv):
             # Speed bottleneck 2, 116fps
             self.r_camera_rgb.renderToScreen()
 
-        visuals = self.get_visuals(self.render_rgb, self.render_depth)
+
 
         robot_pos = self.robot.get_position()
         p.resetBasePositionAndOrientation(self.robot_mapId, [robot_pos[0]  / self.robot.mjcf_scaling, robot_pos[1] / self.robot.mjcf_scaling, 6], [0, 0, 0, 1])
@@ -557,8 +570,8 @@ class CameraRobotEnv(SensorRobotEnv):
         dr_path = os.path.join(os.path.dirname(os.path.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
-        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
-        render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz)
+        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, configs.FOV/np.pi*180)
+        render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, configs.FOV/np.pi*180)
         render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)

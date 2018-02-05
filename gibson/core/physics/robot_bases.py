@@ -54,7 +54,9 @@ class BaseRobot:
                 parts[part_name] = BodyPart(part_name, bodies, i, -1, self.scale, model_type=self.model_type)
             for j in range(p.getNumJoints(bodies[i])):
                 p.setJointMotorControl2(bodies[i],j,p.POSITION_CONTROL,positionGain=0.1,velocityGain=0.1,force=0)
-                _,joint_name,joint_type,_,_,_,_,_,_,_,_,_,part_name = p.getJointInfo(bodies[i], j)
+                ## TODO (hzyjerry): the following is diabled due to pybullet update
+                #_,joint_name,joint_type, _,_,_, _,_,_,_, _,_, part_name = p.getJointInfo(bodies[i], j)
+                _,joint_name,joint_type, _,_,_, _,_,_,_, _,_, part_name, _,_,_,_ = p.getJointInfo(bodies[i], j)
 
                 joint_name = joint_name.decode("utf8")
                 part_name = part_name.decode("utf8")
@@ -193,7 +195,7 @@ class Joint:
         self.bodyIndex = bodyIndex
         self.jointIndex = jointIndex
         self.joint_name = joint_name
-        _,_,_,_,_,_,_,_,self.lowerLimit, self.upperLimit,_,_,_ = p.getJointInfo(self.bodies[self.bodyIndex], self.jointIndex)
+        _,_,_,_,_,_,_,_,self.lowerLimit, self.upperLimit,_,_,_, _,_,_,_ = p.getJointInfo(self.bodies[self.bodyIndex], self.jointIndex)
         self.power_coeff = 0
         if model_type=="mjcf":
             self.scale = scale

@@ -100,7 +100,6 @@ class PCRenderer:
         self.org_x, self.org_y, self.org_z = 0, 0, 0
         self.clickstart = (0,0)
         self.mousedown  = False
-        self.fps = 0
         self.overlay    = False
         self.show_depth = False
         self._context_phys = zmq.Context()
@@ -352,7 +351,8 @@ class PCRenderer:
                            depths.ctypes.data_as(ct.c_void_p),
                            np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
                            show_pc.ctypes.data_as(ct.c_void_p),
-                           opengl_arr.ctypes.data_as(ct.c_void_p)
+                           opengl_arr.ctypes.data_as(ct.c_void_p),
+                           ct.c_float(configs.FOV)
                           )
 
         #threads = [

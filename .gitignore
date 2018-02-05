@@ -55,6 +55,7 @@ comparison/
 0.monitor.csv
 
 cvpr/
+gibson/cpp-household
 
 *.idea*
 

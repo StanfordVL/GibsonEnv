@@ -9,8 +9,10 @@ import sys
 import pybullet as p
 from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
+import cv2
 
-HUSKY_TIMESTEP  = 1.0/(4 * 22)
+
+HUSKY_TIMESTEP  = 1.0/(4 * 12)
 HUSKY_FRAMESKIP = 4
 
 tracking_camera = {
@@ -82,6 +84,16 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.total_frame = self.total_frame + 1
         #print(self.total_frame, self.total_reward)
         return rewards, done
+
+    def add_text(self, img):
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        x,y,z = self.robot.body_xyz
+        r,p,ya = self.robot.body_rpy
+        cv2.putText(img, 'x:{0:.4f} y:{1:.4f} z:{2:.4f}'.format(x,y,z), (10, 20), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(img, 'ro:{0:.4f} pth:{1:.4f} ya:{2:.4f}'.format(r,p,ya), (10, 40), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(img, 'potential:{0:.4f}'.format(self.potential), (10, 60), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(img, 'fps:{0:.4f}'.format(self.fps), (10, 80), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        return img
 
     def _rewards(self, action=None, debugmode=False):
         a = action
