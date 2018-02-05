@@ -69,7 +69,7 @@ def main():
     parser.add_argument('--joint', action='store_true', help='debug mode')
     parser.add_argument('--use_depth', action='store_true', default=False, help='debug mode')
 
-    mean = torch.from_numpy(np.array([0.57441127, 0.54226291, 0.50356019]).astype(np.float32))
+    mean = torch.from_numpy(np.array([0.57441127, 0.54226291, 0.50356019]).astype(np.float32)).clone()
     opt = parser.parse_args()
     print(opt)
     writer = SummaryWriter(opt.outf + '/runs/' + datetime.now().strftime('%B%d  %H:%M:%S'))
@@ -148,8 +148,8 @@ def main():
     for param in p.parameters():
         param.requires_grad = False
 
-    imgnet_mean = torch.from_numpy(np.array([0.485, 0.456, 0.406]).astype(np.float32))
-    imgnet_std = torch.from_numpy(np.array([0.229, 0.224, 0.225]).astype(np.float32))
+    imgnet_mean = torch.from_numpy(np.array([0.485, 0.456, 0.406]).astype(np.float32)).clone()
+    imgnet_std = torch.from_numpy(np.array([0.229, 0.224, 0.225]).astype(np.float32)).clone()
 
     imgnet_mean_img = Variable(imgnet_mean.view(1, 3, 1, 1).repeat(opt.batchsize * 4, 1, 256, 256)).cuda()
     imgnet_std_img = Variable(imgnet_std.view(1, 3, 1, 1).repeat(opt.batchsize * 4, 1, 256, 256)).cuda()
@@ -192,13 +192,13 @@ def main():
                 org_percept = p((img_originalc - imgnet_mean_img) / (imgnet_std_img)).detach()
                 loss = l2(recon_percept, org_percept)
                 for scale in [32]:
-                    img_originalc_patch = img_originalc.view(opt.batchsize * 4, 3, 256 / scale, scale, 256 / scale,
+                    img_originalc_patch = img_originalc.view(opt.batchsize * 4, 3, 256 // scale, scale, 256 // scale,
                                                              scale).transpose(4, 3).contiguous().view(opt.batchsize * 4,
-                                                                                                      3, 256 / scale,
-                                                                                                      256 / scale, -1)
-                    recon_patch = recon.view(opt.batchsize * 4, 3, 256 / scale, scale, 256 / scale, scale).transpose(4,
+                                                                                                      3, 256 // scale,
+                                                                                                      256 // scale, -1)
+                    recon_patch = recon.view(opt.batchsize * 4, 3, 256 // scale, scale, 256 // scale, scale).transpose(4,
                                                                                                                      3).contiguous().view(
-                        opt.batchsize * 4, 3, 256 / scale, 256 / scale, -1)
+                        opt.batchsize * 4, 3, 256 // scale, 256 // scale, -1)
                     img_originalc_patch_mean = img_originalc_patch.mean(dim=-1)
                     recon_patch_mean = recon_patch.mean(dim=-1)
                     # recon_patch_cov = []
@@ -292,7 +292,7 @@ def main():
 
             if i % 200 == 0:
 
-                test_i, test_data = test_loader_enum.next()
+                test_i, test_data = next(test_loader_enum)
                 if test_i > len(dataloader_test) - 5:
                     test_loader_enum = enumerate(dataloader_test)
 
