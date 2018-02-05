@@ -23,6 +23,7 @@ Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your ins
 1. Build your own docker image (recommended)
 ```bash
 git clone -b dev https://github.com/fxia22/gibson.git 
+cd gibson
 ./build.sh download_data ### Download data outside docker, in case docker images need to be rebuilt
 docker build . -t gibson
 ```
@@ -33,12 +34,43 @@ If the installation is successful, you should be able to run `docker run --runti
 TBA
 
 #### Build from source
-TBA
+
+First, make sure you have Nvidia driver and CUDA installed. If you install from source, CUDA 9 is not necessary, as that is for nvidia-docker 2.0. Then, let's install some dependencies:
+
+```bash
+apt-get update 
+apt-get install libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev \
+		mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \ 
+		xdotool libzmq3-dev zlib1g-dev\
+```	
+
+Install required deep learning libraries: Using python3.5 is recommended. You can create a python3.5 environment first. 
+
+```bash
+pip install http://download.pytorch.org/whl/cu90/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
+pip install torchvision
+pip install tensorflow==1.3
+```
+Clone the repository, download data and build
+```bash
+git clone -b dev https://github.com/fxia22/gibson.git 
+cd gibson
+./build.sh download_data ### Download data 
+./build.sh build_local ### build C++ and CUDA files
+pip install -e . ### Install python libraries
+```
+
+Install OpenAI baselines if you need to run training demo.
+
+```bash
+git clone https://github.com/fxia22/baselines.git
+pip install -e baselines
+```
 
 
 ## Demo
 
-After getting into the docker container, you can run a few demos. You might need to run `xhost +local:root` to enable display.
+After getting into the docker container, you can run a few demos. You might need to run `xhost +local:root` to enable display. If you installed from source, you can run those directly. 
 
 ```bash
 python examples/demo/play_husky_sensor.py ### Use ASWD to control a car to navigate around gates
