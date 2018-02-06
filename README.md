@@ -38,7 +38,7 @@ If the installation is successful, you should be able to run `docker run --runti
 
 2. Or pull from our docker image
 ```bash
-docker pull xf1280/gibson:latest
+docker pull xf1280/gibson:0.1
 ```
 
 #### Build from source
