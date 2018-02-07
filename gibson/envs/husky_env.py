@@ -256,7 +256,7 @@ class HuskyFetchEnv(CameraRobotEnv):
 
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
-        self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
+        self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2])
 
         self.lastid = None
         self.obstacle_dist = 100
@@ -283,7 +283,7 @@ class HuskyFetchEnv(CameraRobotEnv):
 
         self.flag = None
         #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
-        self.flag_timeout = 600 / self.scene.frame_skip
+        self.flag_timeout = 3000 / self.scene.frame_skip
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
         if self.lastid:
