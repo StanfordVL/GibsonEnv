@@ -14,7 +14,6 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, default=config_file)
     args = parser.parse_args()
 
-    env = HuskyNavigateEnv(human=True, timestep=timestep, frame_skip=frame_skip, mode="SENSOR", is_discrete = True, resolution="MID", config = args.config)
-    #env = HuskyClimbEnv(human=True, timestep=timestep, frame_skip=frame_skip, mode="SENSOR", is_discrete = True, resolution="MID")
+    env = HuskyNavigateEnv(human=True, timestep=timestep, frame_skip=frame_skip, mode="SENSOR", is_discrete = True, config = args.config)
     print(env.config)
     play(env, zoom=4, fps=int( 1.0/(timestep * frame_skip)))

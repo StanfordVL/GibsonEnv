@@ -86,26 +86,22 @@ class SensorRobotEnv(BaseEnv):
         # seed for robot
         self.robot.np_random = self.np_random
         self._robot_introduced = True
-        assert (self.robot.resolution in ["SMALL", "XSMALL", "MID", "NORMAL", "LARGE", "XLARGE"]), \
-            "Robot resolution must be in SMALL/XSMALL/MID/NORMAL/LARGE/XLARGE"
-        if self.robot.resolution == "SMALL":
+        assert (self.robot.resolution in [64,128,256,512]), \
+            "Robot resolution must be in 64/128/256/512"
+        if self.robot.resolution == 64:
             self.windowsz = 64
             self.scale_up = 4
-        elif self.robot.resolution == "XSMALL":
-            self.windowsz = 32
-            self.scale_up = 4
-        elif self.robot.resolution == "MID":
+        elif self.robot.resolution == 128:
             self.windowsz = 128
             self.scale_up = 4
-        elif self.robot.resolution == "LARGE":
+        elif self.robot.resolution == 256:
+            self.windowsz = 256
+            self.scale_up = 2
+        else:
             self.windowsz = 512
             self.scale_up = 1
-        elif self.robot.resolution == "NORMAL":
-            self.windowsz = 256
-            self.scale_up = 4
-        elif self.robot.resolution == "XLARGE":
-            self.windowsz = 1024
-            self.scale_up = 1
+
+        
         self._render_width = self.windowsz
         self._render_height = self.windowsz
 

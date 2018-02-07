@@ -44,15 +44,14 @@ class HuskyNavigateEnv(CameraRobotEnv):
             is_discrete=False, 
             mode="RGBD", 
             use_filler=True, 
-            gpu_count=0, 
-            resolution="NORMAL"):
+            gpu_count=0):
 
         self.config = self.parse_config(config)
         self.human = human
         self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
-        self.resolution = resolution
+        self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"] #configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
         initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"] #configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
@@ -72,7 +71,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
             initial_pos=initial_pos,
             initial_orn=initial_orn,
             target_pos=target_pos,
-            resolution=resolution,
+            resolution=self.resolution,
             mode=mode))
         self.scene_introduce()
 

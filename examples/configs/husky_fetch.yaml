@@ -20,4 +20,3 @@ random:
   random_init_rot_range: [-0.1, 0.1]
 
 output: [sensor, gps, rgb_filled, depth]
-resolution: 512
