@@ -6,3 +6,7 @@ initial_orn: [0, 0, 4.71]
 initial_pos: [-14.3, 5, 1.2]
 fov: 1.57
 use_filler: true
+views: []
+display_ui: true
+show_dignostic: true
+ui_num: 2

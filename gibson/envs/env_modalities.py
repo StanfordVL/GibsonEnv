@@ -285,8 +285,9 @@ class CameraRobotEnv(SensorRobotEnv):
         self.mode = mode
         self._use_filler = use_filler
         self._require_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
-        self._require_semantics = configs.View.SEMANTICS in configs.ViewComponent.getComponents()
-        self._require_normal = configs.View.NORMAL in configs.ViewComponent.getComponents()
+        self._require_semantics = 'semantics' in self.config["views"]  # configs.View.SEMANTICS in configs.ViewComponent.getComponents()
+        self._require_normal = 'normal' in self.config["views"]  # configs.View.NORMAL in configs.ViewComponent.getComponents()
+
         if self._require_camera_input:
             self.model_path = get_model_path(self.model_id)
 
@@ -317,18 +318,19 @@ class CameraRobotEnv(SensorRobotEnv):
         self.check_port_available()
         self.setup_camera_multi()
         self.setup_camera_rgb()
-        if configs.DISPLAY_UI:
-            if configs.UI_MODE == configs.UIMode.UI_SIX:
-                self.UI = SixViewUI(self.windowsz)
-            if configs.UI_MODE == configs.UIMode.UI_FOUR:
-                self.UI = FourViewUI(self.windowsz)
-            if configs.UI_MODE == configs.UIMode.UI_THREE:
-                self.UI = ThreeViewUI(self.windowsz)
-            if configs.UI_MODE == configs.UIMode.UI_TWO:
-                self.UI = TwoViewUI(self.windowsz)
-            if configs.UI_MODE == configs.UIMode.UI_ONE:
-                self.UI = OneViewUI(self.windowsz)
+        ui_map = {
+            1: OneViewUI,
+            2: TwoViewUI,
+            3: ThreeViewUI,
+            4: FourViewUI,
+        }
+
+
+        if self.config["display_ui"]:
+            self.UI = ui_map[self.config["ui_num"]](self.windowsz)
             pygame.init()
+
+
 
     def _reset(self):
         """Called by gym.env.reset()"""
@@ -402,10 +404,11 @@ class CameraRobotEnv(SensorRobotEnv):
 
         # Add quantifications
         visuals = self.get_visuals(self.render_rgb, self.render_depth)
-        self.render_rgb = self.add_text(self.render_rgb)
+        if self.config["show_dignostic"]:
+            self.render_rgb = self.add_text(self.render_rgb)
 
 
-        if configs.DISPLAY_UI:
+        if self.config["display_ui"]:
             with Profiler("Rendering visuals: render to visuals"):
                 self.render_to_UI()
                 self.save_frame += 1
@@ -443,7 +446,7 @@ class CameraRobotEnv(SensorRobotEnv):
     def render_to_UI(self):
         '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO
         '''
-        if not configs.DISPLAY_UI:
+        if not self.config["display_ui"]:
             return
 
         #with Profiler("RendertoUI: refresh"):

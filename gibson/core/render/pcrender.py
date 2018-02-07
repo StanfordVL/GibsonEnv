@@ -116,8 +116,8 @@ class PCRenderer:
         self._context_dept = zmq.Context()      ## Channel for smoothed depth
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
 
-        self._require_semantics = configs.View.SEMANTICS in configs.ViewComponent.getComponents()
-        self._require_normal = configs.View.NORMAL in configs.ViewComponent.getComponents()
+        self._require_semantics = 'semantics' in self.env.config["views"]#configs.View.SEMANTICS in configs.ViewComponent.getComponents()
+        self._require_normal = 'normal' in self.env.config["views"] #configs.View.NORMAL in configs.ViewComponent.getComponents()
 
         self.socket_mist = self._context_mist.socket(zmq.REQ)
         self.socket_mist.connect("tcp://localhost:{}".format(5555 + gpu_count))
@@ -169,14 +169,14 @@ class PCRenderer:
         self.model = comp.module
         self.model.eval()
 
-        if configs.DISABLE_FILLER:
+        if not self.env.config["use_filler"]:
             self.model = None
 
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
-        if human and not configs.DISPLAY_UI:
+        if human and not self.env.config["display_ui"]: #configs.DISPLAY_UI:
             self.renderToScreenSetup()
 
     def renderToScreenSetup(self):
@@ -361,7 +361,7 @@ class PCRenderer:
                            np.asarray(poses_after, dtype = np.float32).ctypes.data_as(ct.c_void_p),
                            show_pc.ctypes.data_as(ct.c_void_p),
                            opengl_arr.ctypes.data_as(ct.c_void_p),
-                           ct.c_float(configs.FOV)
+                           ct.c_float(self.env.config["fov"])
                           )
 
         #threads = [
@@ -376,8 +376,8 @@ class PCRenderer:
         if self._require_semantics:
             _render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
 
-        if configs.HIST_MATCHING and is_rgb:
-            show_unfilled[:, :, :] = show[:, :, :]
+        #if configs.HIST_MATCHING and is_rgb:
+        #    show_unfilled[:, :, :] = show[:, :, :]
 
         #with Profiler("Render: NN total time"):
         ## Speed bottleneck
@@ -403,11 +403,11 @@ class PCRenderer:
 
         #Histogram matching happens here 
         #with Profiler("Render: hist matching"):
-        if configs.HIST_MATCHING and is_rgb:
-            template = (show_unfilled/255.0).astype(np.float32)
-            source = (show/255.0).astype(np.float32)
-            source_matched = hist_match3(source, template)
-            show[:] = (source_matched[:] * 255).astype(np.uint8)
+        #if configs.HIST_MATCHING and is_rgb:
+        #    template = (show_unfilled/255.0).astype(np.float32)
+        #    source = (show/255.0).astype(np.float32)
+        #    source_matched = hist_match3(source, template)
+        #    show[:] = (source_matched[:] * 255).astype(np.uint8)
             
 
     def renderOffScreenInitialPose(self):
