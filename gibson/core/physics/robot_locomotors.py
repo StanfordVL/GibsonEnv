@@ -5,7 +5,6 @@ import os
 import gym, gym.spaces
 from transforms3d.euler import euler2quat
 import transforms3d.quaternions as quat
-import gibson.configs as configs
 import sys
 
 OBSERVATION_EPS = 0.01
@@ -172,10 +171,10 @@ class WalkerBase(BaseRobot):
         if debugmode:
             print("Robot more", more)
 
-        if not configs.USE_SENSOR_OUTPUT:
+        if not 'sensor' in self.env.config["output"]:
             j.fill(0)
 
-        if not configs.USE_GPS_OUTPUT:
+        if not 'gps' in self.env.config["output"]:
             more.fill(0)
         return np.clip( np.concatenate([more] + [j] + [self.feet_contact]), -5, +5)
 
@@ -322,7 +321,7 @@ class Ant(WalkerBase):
         self.robot_body.reset_position(self.initial_pos)
         #print("Initial position", self.initial_pos)
 
-        self.reset_base_position(configs.RANDOM_INITIAL_POSE, delta_pos = 0.25)
+        self.reset_base_position(self.env.config["random"]["random_initial_pose"], delta_pos = 0.25)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
@@ -423,10 +422,10 @@ class AntClimber(Ant):
         #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
         #while True:
-        new_pos = [ pos[0] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_X[0], high=config.RANDOM_INITIAL_RANGE_X[1]),
-                    pos[1] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_Y[0], high=configs.RANDOM_INITIAL_RANGE_Y[1]),
-                    pos[2] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_Z[0], high=configs.RANDOM_INITIAL_RANGE_Z[1])]
-        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_DEG[0], high=configs.RANDOM_INITIAL_RANGE_DEG[1])), orn)
+        new_pos = [ pos[0] + self.np_random.uniform(low=self.env.config["random_init_x_range"][0], high=self.env.config["random_init_x_range"][1]),
+                    pos[1] + self.np_random.uniform(low=self.env.config["random_init_y_range"][0], high=self.env.config["random_init_y_range"][1]),
+                    pos[2] + self.np_random.uniform(low=self.env.config["random_init_z_range"][0], high=self.env.config["random_init_z_range"][1])]
+        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=self.env.config["random_init_rot_range"][0], high=self.env.config["random_init_rot_range"][1])), orn)
         self.robot_body.reset_orientation(new_orn)
         self.robot_body.reset_position(new_pos)
 
@@ -511,7 +510,7 @@ class Humanoid(WalkerBase):
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
         self.robot_body.reset_position(self.initial_pos)
 
-        self.reset_base_position(configs.RANDOM_INITIAL_POSE)
+        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
 
 
 
@@ -609,7 +608,7 @@ class Husky(WalkerBase):
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
         self.robot_body.reset_position(self.initial_pos)
 
-        self.reset_base_position(configs.RANDOM_INITIAL_POSE)
+        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
 
 
     def alive_bonus(self, z, pitch):

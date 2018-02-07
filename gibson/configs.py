@@ -60,6 +60,9 @@ elif LEARNING_RATE_NAME == "LARGE":
 CHOOSE_SMALL_RANDOM_RANGE = False
 CHOOSE_TINY_RANDOM_RANGE = False
 
+
+CAPTURE_DIR = "/home/jerry/Dropbox/Cambria Paper/Experiments"
+
 ENABLE_PROFILING = True
 
 ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
@@ -111,6 +114,7 @@ class UIMode(Enum):
         return mode in [UIMode.UI_ONE, UIMode.UI_TWO, UIMode.UI_THREE, UIMode.UI_FOUR, UIMode.UI_FIVE, UIMode.UI_SIX, UIMode.UI_NONE]
 
 UI_MODE = UIMode.UI_TWO
+
 
 ## Render window settings
 HIGH_RES_MONITOR = False

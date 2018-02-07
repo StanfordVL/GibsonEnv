@@ -28,6 +28,7 @@ class BaseRobot:
         self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
         self.scale = scale
         self._load_model()
+        self.env = None
 
     def addToScene(self, bodies):
         if self.parts is not None:

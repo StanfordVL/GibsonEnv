@@ -78,6 +78,7 @@ class SensorRobotEnv(BaseEnv):
 
     def robot_introduce(self, robot):
         self.robot = robot
+        self.robot.env = self
         self.action_space = self.robot.action_space
         ## Robot's eye observation, in sensor mode black pixels are returned
         self.observation_space = self.robot.observation_space

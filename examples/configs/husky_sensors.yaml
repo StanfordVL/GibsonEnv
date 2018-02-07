@@ -11,3 +11,12 @@ display_ui: true
 show_dignostic: true
 ui_num: 2
 ui_components: [RGB_FILLED, DEPTH]
+random:
+  random_initial_pose : false
+  random_target_pose : false
+  random_init_x_range: [-0.1, 0.1]
+  random_init_y_range: [-0.1, 0.1]
+  random_init_z_range: [-0.1, 0.1]
+  random_init_rot_range: [-0.1, 0.1]
+
+output: [sensor, gps, rgb_filled, depth]
