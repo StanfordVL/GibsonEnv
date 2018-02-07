@@ -101,7 +101,6 @@ class SensorRobotEnv(BaseEnv):
             self.windowsz = 512
             self.scale_up = 1
 
-        
         self._render_width = self.windowsz
         self._render_height = self.windowsz
 

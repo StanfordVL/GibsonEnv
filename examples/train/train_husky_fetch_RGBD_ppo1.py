@@ -44,13 +44,18 @@ def train(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
 
-    env = HuskyFetchEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count,
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
+                               'husky_fetch_train.yaml')
+    print(config_file)
+
+
+    env = HuskyFetchEnv(config = config_file, human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count,
                            use_filler=False)
 
     print(env.sensor_space)
 
     def policy_fn(name, ob_space, sensor_space, ac_space):
-        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space = sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space = sensor_space, ac_space=ac_space, save_per_acts=10000, hid_size=64, num_hid_layers=2, session=sess)
 
     #env = bench.Monitor(env, logger.get_dir() and
     #                    osp.join(logger.get_dir(), str(rank)))
@@ -90,7 +95,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--mode', type=str, default="DEPTH")
+    parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
     parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)

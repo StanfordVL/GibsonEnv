@@ -38,18 +38,7 @@ class WalkerBase(BaseRobot):
 
         self.resolution = resolution
         self.obs_dim = None
-        if resolution == "SMALL":
-            self.obs_dim = [64, 64, 4]
-        elif resolution == "XSMALL":
-            self.obs_dim = [32, 32, 4]
-        elif resolution == "MID":
-            self.obs_dim = [128, 128, 4]
-        elif resolution == "LARGE":
-            self.obs_dim = [512, 512, 4]
-        elif resolution == "XLARGE":
-            self.obs_dim = [1024, 1024, 4]
-        else:
-            self.obs_dim = [256, 256, 4]
+        self.obs_dim = [self.resolution, self.resolution, 4]
 
         if mode=="RGB":
             self.obs_dim[2] = 3

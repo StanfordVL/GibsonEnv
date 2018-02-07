@@ -34,12 +34,13 @@ class FusePolicy(object):
             self.ob_rms = RunningMeanStd(shape=sensor_space.shape)
 
         obz_sensor = tf.clip_by_value((ob_sensor - self.ob_rms.mean) / self.ob_rms.std, -5.0, 5.0)
-        
+        #x = tf.nn.relu(tf.layers.dense(x, 256, name='lin', kernel_initializer=U.normc_initializer(1.0)))
+
         ## Adapted from mlp_policy
         last_out = obz_sensor
         for i in range(num_hid_layers):
-            last_out = tf.nn.tanh(U.dense(last_out, hid_size, "vffc%i"%(i+1), weight_init=U.normc_initializer(1.0)))
-        y = U.dense(last_out, 64, "vffinal", weight_init=U.normc_initializer(1.0))
+            last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="vffc%i"%(i+1), kernel_initializer=U.normc_initializer(1.0)))
+        y = tf.layers.dense(last_out, 64, name="vffinal", kernel_initializer=U.normc_initializer(1.0))
 
         #y = ob_sensor
         #y = obz_sensor
@@ -50,13 +51,13 @@ class FusePolicy(object):
             x = tf.nn.relu(U.conv2d(x, 16, "l1", [8, 8], [4, 4], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 32, "l2", [4, 4], [2, 2], pad="VALID"))
             x = U.flattenallbut0(x)
-            x = tf.nn.relu(U.dense(x, 256, 'lin', U.normc_initializer(1.0)))
+            x = tf.nn.relu(tf.layers.dense(x, 256, name='lin', kernel_initializer=U.normc_initializer(1.0)))
         elif kind == 'large':  # Nature DQN
             x = tf.nn.relu(U.conv2d(x, 32, "l1", [8, 8], [4, 4], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 64, "l2", [4, 4], [2, 2], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 64, "l3", [3, 3], [1, 1], pad="VALID"))
             x = U.flattenallbut0(x)
-            x = tf.nn.relu(U.dense(x, 64, 'lin', U.normc_initializer(1.0)))
+            x = tf.nn.relu(tf.layers.dense(x, 64, name='lin', kernel_initializer=U.normc_initializer(1.0)))
         else:
             raise NotImplementedError
 
@@ -67,9 +68,9 @@ class FusePolicy(object):
         # self.saver = tf.train.Saver()
 
 
-        logits = U.dense(x, pdtype.param_shape()[0], "logits", U.normc_initializer(0.01))
+        logits = tf.layers.dense(x, pdtype.param_shape()[0], name="logits", kernel_initializer=U.normc_initializer(0.01))
         self.pd = pdtype.pdfromflat(logits)
-        self.vpred = U.dense(x, 1, "value", U.normc_initializer(1.0))[:, 0]
+        self.vpred = tf.layers.dense(x, 1, name="value", kernel_initializer=U.normc_initializer(1.0))[:, 0]
 
         self.state_in = []
         self.state_out = []
