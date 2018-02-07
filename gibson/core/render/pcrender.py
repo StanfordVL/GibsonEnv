@@ -94,7 +94,12 @@ def hist_match3(source, template):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=None, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=None, \
+                 human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256, env = None):
+
+        self.env = env
+        print("from pcrender", self.env.config)
+
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -247,8 +252,8 @@ class PCRenderer:
             self.overlay = not self.overlay
         elif cmd == ord('f'):
             self.show_depth = not self.show_depth
-        elif cmd == ord('v'):
-            cv2.imwrite('save.jpg', show_rgb)
+        #elif cmd == ord('v'):
+        #    cv2.imwrite('save.jpg', show_rgb)
         return True
 
     def _getPoseOrientationFromPhysics(self):

@@ -40,8 +40,8 @@ class SensorRobotEnv(BaseEnv):
     Handles action, reward
     """
 
-    def __init__(self, scene_type="building", gpu_count=0):
-        BaseEnv.__init__(self, scene_type)
+    def __init__(self, config, scene_type="building", gpu_count=0):
+        BaseEnv.__init__(self, config, scene_type)
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
         #   @self.timestep
@@ -271,7 +271,7 @@ class CameraRobotEnv(SensorRobotEnv):
     """CameraRobotEnv has full modalities. If it's initialized with mode="SENSOR",
     PC renderer is not initialized to save time.
     """
-    def __init__(self, mode, gpu_count, scene_type, use_filler=True):
+    def __init__(self, config, mode, gpu_count, scene_type, use_filler=True):
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
         #   @self.timestep
@@ -290,7 +290,7 @@ class CameraRobotEnv(SensorRobotEnv):
         if self._require_camera_input:
             self.model_path = get_model_path(self.model_id)
 
-        SensorRobotEnv.__init__(self, scene_type, gpu_count)
+        SensorRobotEnv.__init__(self, config, scene_type, gpu_count)
         cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
         self.robot_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
         p.changeVisualShape(self.robot_mapId, -1, rgbaColor=[0, 0, 1, 0])
@@ -543,7 +543,9 @@ class CameraRobotEnv(SensorRobotEnv):
             source_semantics.append(target_semantics)
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics, human=self.human, use_filler=self._use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz)
+        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics,
+                              human=self.human, use_filler=self._use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
+
         self.r_camera_rgb = renderer
 
 
@@ -570,8 +572,8 @@ class CameraRobotEnv(SensorRobotEnv):
         dr_path = os.path.join(os.path.dirname(os.path.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
-        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, configs.FOV/np.pi*180)
-        render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, configs.FOV/np.pi*180)
+        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)

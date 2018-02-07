@@ -37,7 +37,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
     def __init__(
-            self, 
+            self,
+            config,
             human=True, 
             timestep=HUSKY_TIMESTEP, 
             frame_skip=HUSKY_FRAMESKIP, 
@@ -46,21 +47,24 @@ class HuskyNavigateEnv(CameraRobotEnv):
             use_filler=True, 
             gpu_count=0, 
             resolution="NORMAL"):
+
+        self.config = self.parse_config(config)
         self.human = human
-        self.model_id = configs.NAVIGATE_MODEL_ID
+        self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
+        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"] #configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
+        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"] #configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
         self.total_reward = 0
         self.total_frame = 0
         
         CameraRobotEnv.__init__(
-            self, 
+            self,
+            config,
             mode, 
-            gpu_count, 
+            gpu_count,
             scene_type="building", 
             use_filler=use_filler)
         self.robot_introduce(Husky(
@@ -72,6 +76,9 @@ class HuskyNavigateEnv(CameraRobotEnv):
             resolution=resolution,
             mode=mode))
         self.scene_introduce()
+
+        assert(self.config["envname"] == self.__class__.__name__)
+
 
     def calc_rewards_and_done(self, a, state):
         done = self._termination(state)

@@ -19,7 +19,7 @@ from gibson.core.render.profiler import Profiler
 from gibson.configs import *
 import gym, gym.spaces, gym.utils, gym.utils.seeding
 import sys
-
+import yaml
 
 class BaseEnv(gym.Env):
     """
@@ -36,7 +36,7 @@ class BaseEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self, scene_type):
+    def __init__(self, config, scene_type):
         ## Properties already instantiated from SensorEnv/CameraEnv
         #   @self.human
         #   @self.robot
@@ -57,9 +57,17 @@ class BaseEnv(gym.Env):
         self._cam_pitch = -30
         self.scene_type = scene_type
         self.scene = None
+        if self.config is None:
+            self.config = self.parse_config(config)
     
     def _close(self):
         p.disconnect()
+
+
+    def parse_config(self, config):
+        with open(config, 'r') as f:
+            config_data = yaml.load(f)
+        return config_data
         
     def create_scene(self):
         if self.scene is not None:
