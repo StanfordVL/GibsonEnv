@@ -112,7 +112,7 @@ class UIMode(Enum):
     def is_valid(mode):
         return mode in [UIMode.UI_ONE, UIMode.UI_TWO, UIMode.UI_THREE, UIMode.UI_FOUR, UIMode.UI_FIVE, UIMode.UI_SIX, UIMode.UI_NONE]
 
-UI_MODE = UIMode.UI_TWO
+UI_MODE = UIMode.UI_FIVE
 
 class View(Enum):
     EMPTY = 0
@@ -128,6 +128,7 @@ class ViewComponent:
     TWO   = [View.RGB_FILLED, View.DEPTH]
     FOUR  = [View.RGB_FILLED, View.DEPTH, View.NORMAL, View.SEMANTICS]
     THREE = [View.RGB_FILLED, View.DEPTH, View.NORMAL]
+    FIVE  = [View.RGB_FILLED, View.DEPTH, View.SEMANTICS]
     def getComponents():
         assert(UIMode.is_valid(UI_MODE))
         if UI_MODE == UIMode.UI_ONE:

@@ -41,6 +41,9 @@ using namespace std;
 #include "common/cmdline.h"
 #include <common/render_cuda_f.h>
 
+#include <common/MTLtexture.hpp>
+#include <common/MTLobjloader.hpp>
+
 #include <zmq.hpp>
 
 #ifndef _WIN32
@@ -227,6 +230,12 @@ void debug_mat(glm::mat4 mat, std::string name) {
     }
 }
 
+
+void render_processing() {
+
+}
+
+
 int main( int argc, char * argv[] )
 {
 
@@ -237,6 +246,8 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Height", 'h', "Render window height", false, 256);
     cmdp.add<int>("Smooth", 's', "Whether render depth only", false, 0);
     cmdp.add<int>("Normal", 'n', "Whether render surface normal", false, 0);
+    cmdp.add<int>("Semantic", 'sem', "Whether render semantics", false, 0);
+    cmdp.add<int>("RGBfromMesh", 'rgbMesh', "Whether render RGB directly from Mesh", false, 0);
 
     cmdp.parse_check(argc, argv);
 
@@ -244,18 +255,34 @@ int main( int argc, char * argv[] )
     int GPU_NUM = cmdp.get<int>("GPU");
     int smooth = cmdp.get<int>("Smooth");
     int normal = cmdp.get<int>("Normal");
+    int semantic = cmdp.get<int>("Semantic");
+    int rgbMesh = cmdp.get<int>("RGBfromMesh");
 
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
 
-    std::string name_obj = model_path + "/" + "modeldata/out_res.obj";
+    std::string obj_path = model_path + "/modeldata/";
+    std::string name_obj = obj_path + "out_res.obj";
     if (smooth > 0) {
-        name_obj = model_path + "/" + "modeldata/out_smoothed.obj";
+        name_obj = obj_path + "out_smoothed.obj";
         GPU_NUM = -1;
     }
 
+    // if rendering normals
     if (normal > 0) {
-        name_obj = model_path + "/" + "modeldata/rgb.obj";
+        name_obj = obj_path + "rgb.obj";
+        GPU_NUM = -2;
+    }
+
+    // if rendering semantics
+    if (semantic > 0) {
+        name_obj = obj_path + "semantic.obj";
+        GPU_NUM = -2;
+    }
+
+    // if rendering RGB from Mesh
+    if (rgbMesh > 0) {
+        name_obj = obj_path + "rgb.obj";
         GPU_NUM = -2;
     }
 
@@ -414,10 +441,13 @@ int main( int argc, char * argv[] )
 
     // Create and compile our GLSL program from the shaders
     GLuint programID;
-    if (normal == 0) {
+    if (normal == 0 && semantic == 0) {
         programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./MistShadingRTT.fragmentshader" );
-    } else {
+    } else if (normal >0 && semantic == 0) {
         programID = LoadShaders( "./NormalShadingRTT.vertexshader", "./NormalShadingRTT.fragmentshader" );
+    } else {
+        printf("NEED TO ADJUST THE SHADERS!");
+        programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./MistShadingRTT.fragmentshader" );
     }
 
     // Get a handle for our "MVP" uniform
@@ -425,7 +455,34 @@ int main( int argc, char * argv[] )
     GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
     GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 
-    // Load the texture
+    if (semantic == 0) {
+        //Do X
+        // Load the texture
+        //GLuint Texture = loadDDS("uvmap.DDS");
+        
+        // Read our .obj file
+        //std::vector<glm::vec3> vertices;
+        //std::vector<glm::vec2> uvs;
+        //std::vector<glm::vec3> normals;
+
+        //bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
+    }
+    if ( semantic > 0) {
+        //Do Y
+        // Read the .obj file
+        std::vector<std::vector<glm::vec3>> vertices;
+        std::vector<std::vector<glm::vec2>> uvs;
+        std::vector<std::vector<glm::vec3>> normals;
+        std::vector<std::string> material_name;
+        std::string mtllib;
+
+        bool res = loadOBJ_MTL(name_obj.c_str(), vertices, uvs, normals, material_name, mtllib);
+        // Load the textures
+        const std::string mtl_path = obj_path + mtllib;
+        std::vector<TextureObj> TextureObj = loadMTLtextures (mtl_path);
+    }
+
+        // Load the texture
     GLuint Texture = loadDDS("uvmap.DDS");
 
     // Get a handle for our "myTextureSampler" uniform
