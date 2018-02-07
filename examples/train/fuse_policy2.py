@@ -23,27 +23,27 @@ class FusePolicy(object):
             h3_camera = conv(h2_camera, 'c3', nf=64, rf=3, stride=1, init_scale=np.sqrt(2))
             h3_camera = conv_to_fc(h3_camera)
             h4_camera = fc(h3_camera, 'fc1', nh=512, init_scale=np.sqrt(2))
-            pi_camera = fc(h4_camera, 'pi', actdim, act=lambda x:x, init_scale=0.01)
-            vf_camera = fc(h4_camera, 'v', 1, act=lambda x:x)[:,0]
+            pi_camera = fc(h4_camera, 'pi', actdim, init_scale=0.01)
+            vf_camera = fc(h4_camera, 'v', 1)[:,0]
 
         self.pd = self.pdtype.pdfromflat(pi_camera)
 
         with tf.variable_scope("model_sensor", reuse=reuse):
             h1_sensor = fc(X_sensor, 'pi_fc1', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
             h2_sensor = fc(h1_sensor, 'pi_fc2', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
-            pi_sensor = fc(h2_sensor, 'pi', actdim, act=lambda x:x, init_scale=0.01)
+            pi_sensor = fc(h2_sensor, 'pi', actdim, init_scale=0.01)
             h1_sensor = fc(X_sensor, 'vf_fc1', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
             h2_sensor = fc(h1_sensor, 'vf_fc2', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
-            vf_sensor = fc(h2_sensor, 'vf', 1, act=lambda x:x)[:,0]
+            vf_sensor = fc(h2_sensor, 'vf', 1)[:,0]
 
         with tf.variable_scope("model", reuse=reuse):
             logstd = tf.get_variable(name="logstd", shape=[1, actdim], 
                 initializer=tf.zeros_initializer())
             X = tf.concat([X_camera, X_sensor], 0)
             pi_full = tf.concat([pi_camera, pi_sensor], 0)
-            pi = fc(pi_full, 'pi', actdim, act=lambda x:x, init_scale=0.01)
+            pi = fc(pi_full, 'pi', actdim, init_scale=0.01)
             vf_full = tf.concat([vf_camera, vf_sensor], 0)
-            vf = fc(vf_full, 'vf', 1, act=lambda x:x)[:,0]
+            vf = fc(vf_full, 'vf', 1)[:,0]
 
         pdparam = tf.concat([pi, pi * 0.0 + logstd], axis=1)
         self.pd = self.pdtype.pdfromflat(pdparam)
@@ -91,8 +91,8 @@ class CnnPolicy(object):
             h3 = conv(h2, 'c3', nf=64, rf=3, stride=1, init_scale=np.sqrt(2))
             h3 = conv_to_fc(h3)
             h4 = fc(h3, 'fc1', nh=512, init_scale=np.sqrt(2))
-            pi = fc(h4, 'pi', nact, act=lambda x:x, init_scale=0.01)
-            vf = fc(h4, 'v', 1, act=lambda x:x)[:,0]
+            pi = fc(h4, 'pi', nact, init_scale=0.01)
+            vf = fc(h4, 'v', 1)[:,0]
 
             if not self.is_discrete:
                 logstd = tf.get_variable(name="logstd", shape=[1, nact],
@@ -136,10 +136,10 @@ class MlpPolicy(object):
         with tf.variable_scope("model", reuse=reuse):
             h1 = fc(X, 'pi_fc1', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
             h2 = fc(h1, 'pi_fc2', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
-            pi = fc(h2, 'pi', actdim, act=lambda x:x, init_scale=0.01)
+            pi = fc(h2, 'pi', actdim, init_scale=0.01)
             h1 = fc(X, 'vf_fc1', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
             h2 = fc(h1, 'vf_fc2', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
-            vf = fc(h2, 'vf', 1, act=lambda x:x)[:,0]
+            vf = fc(h2, 'vf', 1)[:,0]
             logstd = tf.get_variable(name="logstd", shape=[1, actdim], 
                 initializer=tf.zeros_initializer())
 

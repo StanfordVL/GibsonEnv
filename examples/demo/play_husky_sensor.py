@@ -6,7 +6,7 @@ import os
 timestep = 1.0/(4 * 22)
 frame_skip = 4
 
-config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_sensors.yaml')
+config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate.yaml')
 print(config_file)
 
 if __name__ == '__main__':
