@@ -11,7 +11,6 @@ import numpy as np
 import ctypes as ct
 import sys
 from tqdm import *
-from gibson import configs
 import torchvision.transforms as transforms
 import argparse
 import json
@@ -45,55 +44,24 @@ def get_model_path(model_id):
     return os.path.join(data_path, model_id)
 
 
-def get_model_initial_pose(robot):
-    if robot == "humanoid":
-        if MODEL_ID == "11HB6XZSh1Q":
-            # return [0, 0, 3 * 3.14/2], [-3.38, -7, 1.4] ## living room open area
-            # return [0, 0, 3 * 3.14/2], [-4.8, -5.2, 1.9]   ## living room kitchen table
-            return [0, 0, 3.14 / 2], [-4.655, -9.038, 1.532]  ## living room couch
-            # return [0, 0, 3.14], [-0.603, -1.24, 2.35]  ## stairs
-        if MODEL_ID == "BbxejD15Etk":
-            return [0, 0, 3 * 3.14 / 2], [-6.76, -12, 1.4]  ## Gates Huang
-        if MODEL_ID == "15N3xPvXqFR":
-            return [0, 0, 3 * 3.14 / 2], [-0, -0, 1.4]
-    elif robot == "husky":
-        if MODEL_ID == "11HB6XZSh1Q":
-            return [0, 0, 3.14], [-2, 3.5, 0.4]  ## living room
-            # return [0, 0, 0], [-0.203, -1.74, 1.8]  ## stairs
-        elif MODEL_ID == "sRj553CTHiw":
-            return [0, 0, 3.14], [-7, 2.6, 0.8]
-        elif MODEL_ID == "BbxejD15Etk":
-            return [0, 0, 3.14], [0, 0, 0.4]
-        elif MODEL_ID == "13wHkWg1BWZ":  # basement house
-            return [0, 0, 3.14], [-1, -1, -0.4]
-        else:
-            return [0, 0, 3.14], [0, 0, 0.4]
-    elif robot == "quadruped":
-        return [0, 0, 3.14], [-2, 3.5, 0.4]  ## living room
-        # return [0, 0, 0], [-0.203, -1.74, 1.8]  ## stairs
-    elif robot == "ant":
-        return [0, 0, 3.14], [-2.5, 5.5, 0.4]  ## living room couch
-    else:
-        return [0, 0, 0], [0, 0, 1.4]
-
-
 class ViewDataSet3D(data.Dataset):
     def __init__(self, root=None, train=False, transform=None, mist_transform=None, loader=default_loader, seqlen=5,
                  debug=False, dist_filter=None, off_3d=True, off_pc_render=True, overwrite_fofn=False,
-                 semantic_transform=np.array):
+                 semantic_transform=np.array, env = None):
         print('Processing the data:')
         if not root:
             self.root = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), "dataset")
         else:
             self.root = root
         self.train = train
+        self.env = env
         self.loader = loader
         self.seqlen = seqlen
         self.transform = transform
         self.target_transform = transform
         self.depth_trans = mist_transform
         self.semantic_trans = semantic_transform
-        self._require_semantics = configs.View.SEMANTICS in configs.ViewComponent.getComponents()
+        self._require_semantics = "SEMANTICS" in self.env.config["ui_components"]
         self.off_3d = off_3d
         self.select = []
         self.fofn = self.root + '_fofn' + str(int(train)) + '.pkl'

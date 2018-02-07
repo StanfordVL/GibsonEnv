@@ -1,5 +1,4 @@
 from gibson.data.datasets import ViewDataSet3D, get_model_path
-from gibson import configs
 from gibson.core.render.pcrender import PCRenderer
 from gibson.core.render.profiler import Profiler
 from gibson.envs.env_bases import BaseEnv
@@ -63,7 +62,7 @@ class SensorRobotEnv(BaseEnv):
             seqlen = 2,
             off_3d = False,
             train = False,
-            overwrite_fofn=True)
+            overwrite_fofn=True, env = self)
         self.ground_ids = None
         if self.human:
             assert(self.tracking_camera is not None)
@@ -327,7 +326,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
         if self.config["display_ui"]:
-            self.UI = ui_map[self.config["ui_num"]](self.windowsz)
+            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self)
             pygame.init()
 
 
@@ -570,7 +569,8 @@ class CameraRobotEnv(SensorRobotEnv):
             print(' %s: %s' %(exctype.__name__, value))
         sys.excepthook = camera_multi_excepthook
 
-        enable_render_smooth = 1 if configs.USE_SMOOTH_MESH else 0
+        #enable_render_smooth = 1 if configs.USE_SMOOTH_MESH else 0
+        enable_render_smooth = 0
 
         dr_path = os.path.join(os.path.dirname(os.path.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()

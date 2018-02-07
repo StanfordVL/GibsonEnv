@@ -21,8 +21,6 @@ from gibson.core.render.profiler import Profiler
 from multiprocessing import Process
 
 from gibson.data.datasets import ViewDataSet3D
-from gibson.configs import *
-from gibson import configs
 from gibson.learn.completion import CompletionNet
 import torch.nn as nn
 import scipy.misc
@@ -156,14 +154,14 @@ class PCRenderer:
         self.surface_normal  = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
 
 
-        if configs.USE_SMALL_FILLER:
-            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
-            comp = torch.nn.DataParallel(comp).cuda()
-            comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model.pth")))
-        else:
-            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
-            comp = torch.nn.DataParallel(comp).cuda()
-            comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "compG_epoch4_3000.pth")))
+        #if configs.USE_SMALL_FILLER:
+        #    comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
+        #    comp = torch.nn.DataParallel(comp).cuda()
+        #    comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model.pth")))
+        #else:
+        comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
+        comp = torch.nn.DataParallel(comp).cuda()
+        comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "compG_epoch4_3000.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module

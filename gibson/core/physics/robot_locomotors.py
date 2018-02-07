@@ -423,7 +423,7 @@ class AntClimber(Ant):
         #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
         #while True:
-        new_pos = [ pos[0] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_X[0], high=configs.RANDOM_INITIAL_RANGE_X[1]),
+        new_pos = [ pos[0] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_X[0], high=config.RANDOM_INITIAL_RANGE_X[1]),
                     pos[1] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_Y[0], high=configs.RANDOM_INITIAL_RANGE_Y[1]),
                     pos[2] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_Z[0], high=configs.RANDOM_INITIAL_RANGE_Z[1])]
         new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_DEG[0], high=configs.RANDOM_INITIAL_RANGE_DEG[1])), orn)

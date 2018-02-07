@@ -2,7 +2,6 @@ from gibson.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from gibson.envs.env_bases import *
 from gibson.core.physics.robot_locomotors import Husky, HuskyClimber, HuskyHighCamera
 from transforms3d import quaternions
-from gibson import configs
 import os
 import numpy as np
 import sys
@@ -204,7 +203,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         walk_target_y = self.robot.walk_target_y
 
         self.flag = None
-        if self.human and not configs.DISPLAY_UI:
+        if self.human and not self.config["display_ui"]:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
 

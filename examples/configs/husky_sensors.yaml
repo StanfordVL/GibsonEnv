@@ -10,3 +10,4 @@ views: []
 display_ui: true
 show_dignostic: true
 ui_num: 2
+ui_components: [RGB_FILLED, DEPTH]
