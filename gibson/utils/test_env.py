@@ -5,7 +5,8 @@ import sys
 import gym
 from PIL import Image
 from gibson.core.render.profiler import Profiler
-from gibson.envs.husky_env import HuskyNavigateEnv, HuskyClimbEnv, HuskyFlagRunEnv, HuskyFetchEnv, HuskyFetchKernelizedRewardEnv, HuskyGoallessRunEnv
+from gibson.envs.husky_env import *
+from gibson.envs.ant_env import *
 import pybullet as p
 
 class RandomAgent(object):
@@ -25,7 +26,8 @@ class RandomAgent(object):
 
 def testEnv(Env, mode="RGBD"):
     print("Currently testing", Env)
-    env = Env(human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode=mode, resolution="NORMAL")
+    config = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'examples', 'configs', "test.yaml")
+    env = Env(config, human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode=mode)
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
     frame = 0
@@ -42,17 +44,20 @@ def testEnv(Env, mode="RGBD"):
         env.close()
         return
     
-if __name__ == '__main__':   
+if __name__ == '__main__':
+    '''
     testEnv(HuskyNavigateEnv, "RGBD")
-    testEnv(HuskyClimbEnv, "RGBD")
-    testEnv(HuskyFlagRunEnv, "RGBD")
     testEnv(HuskyFetchEnv, "RGBD")
-    testEnv(HuskyFetchKernelizedRewardEnv, "RGBD")
-    testEnv(HuskyGoallessRunEnv, "RGBD")
-
+    
     testEnv(HuskyNavigateEnv, "SENSOR")
-    testEnv(HuskyClimbEnv, "SENSOR")
-    testEnv(HuskyFlagRunEnv, "SENSOR")
     testEnv(HuskyFetchEnv, "SENSOR")
-    testEnv(HuskyFetchKernelizedRewardEnv, "SENSOR")
-    testEnv(HuskyGoallessRunEnv, "SENSOR")
+    '''
+    
+    #testEnv(AntNavigateEnv, "RGBD")
+    #testEnv(AntGoallessRunEnv, "RGBD")
+    #testEnv(AntClimbEnv, "RGBD")
+    testEnv(AntFlagRunEnv, "RGBD")
+    testEnv(AntFetchEnv, "RGBD")
+    testEnv(AntFetchKernelizedRewardEnv, "RGBD")
+    testEnv(AntNavigateEnv, "RGBD")
+    

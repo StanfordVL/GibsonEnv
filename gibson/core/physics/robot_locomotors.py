@@ -31,13 +31,14 @@ class WalkerBase(BaseRobot):
         target_pos,
         sensor_dim=None,
         scale = 1, 
-        resolution="NORMAL",
+        resolution=512,
         mode="RGBD"
     ):
         BaseRobot.__init__(self, filename, robot_name, scale)
 
         self.resolution = resolution
         self.obs_dim = None
+        print("resolution", self.resolution)
         self.obs_dim = [self.resolution, self.resolution, 4]
 
         if mode=="RGB":
@@ -252,7 +253,7 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD", power=2.5):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, mode="RGBD", power=2.5):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
@@ -342,7 +343,7 @@ class Ant(WalkerBase):
 
 
 class AntClimber(Ant):
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD"):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, mode="RGBD"):
         Ant.__init__(self, initial_pos, initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos, 
@@ -427,7 +428,7 @@ class Humanoid(WalkerBase):
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
 
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL"):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512):
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.6
         self.is_discrete = is_discrete
@@ -529,7 +530,7 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGB"):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, mode="RGB"):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
         self.mjcf_scaling = 1
@@ -631,7 +632,7 @@ class HuskyClimber(Husky):
                 print("Power coef", self.jdict[k].power_coef)
 
 class HuskyHighCamera(Husky):
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGB"):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, mode="RGB"):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
         self.mjcf_scaling = 1

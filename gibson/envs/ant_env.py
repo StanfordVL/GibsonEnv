@@ -37,39 +37,41 @@ tracking_camera = {
 class AntNavigateEnv(CameraRobotEnv):
     def __init__(
             self, 
+            config,
             human=True, 
             timestep=ANT_TIMESTEP, 
             frame_skip=ANT_FRAMESKIP, 
             is_discrete=False, 
-            mode="RGBD", 
-            use_filler=True, 
-            gpu_count=0, 
-            resolution="NORMAL"):
+            mode="RGBD",  
+            gpu_count=0):
+        
+        self.config = self.parse_config(config)
         self.human = human
-        self.model_id = configs.NAVIGATE_MODEL_ID
+        self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
-        self.resolution = resolution
+        self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
+        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
+        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
         self.total_reward = 0
         self.total_frame = 0
         
         CameraRobotEnv.__init__(
-            self, 
+            self,
+            config,
             mode, 
             gpu_count, 
             scene_type="building", 
-            use_filler=use_filler)
+            use_filler=self.config["use_filler"])
         self.robot_introduce(Ant(
             initial_pos, 
             initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos,
-            resolution=resolution))
+            resolution=self.resolution))
         self.scene_introduce()
-        
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
     def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
@@ -156,38 +158,41 @@ class AntNavigateEnv(CameraRobotEnv):
 class AntGoallessRunEnv(CameraRobotEnv):
     def __init__(
             self,
+            config,
             human=True,
             timestep=ANT_TIMESTEP,
             frame_skip=ANT_FRAMESKIP,
             is_discrete=False,
             mode="RGBD",
-            use_filler=True,
-            gpu_count=0,
-            resolution="NORMAL"):
+            gpu_count=0):
+        self.config = self.parse_config(config)
         self.human = human
-        self.model_id = configs.NAVIGATE_MODEL_ID
+        self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
-        self.resolution = resolution
+        self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
-        target_orn, target_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
+        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
+        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
         self.total_reward = 0
         self.total_frame = 0
 
         CameraRobotEnv.__init__(
             self,
+            config,
             mode,
             gpu_count,
             scene_type="building",
-            use_filler=use_filler)
+            use_filler=self.config["use_filler"])
         self.robot_introduce(Ant(
             initial_pos, 
             initial_orn,
             is_discrete=is_discrete,
             target_pos=target_pos,
-            resolution=resolution))
+            resolution=self.resolution))
         self.scene_introduce()
+
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
     def calc_rewards_and_done(self, a, state):
         ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned
@@ -281,43 +286,44 @@ class AntClimbEnv(CameraRobotEnv):
     delta_target = [configs.RANDOM_TARGET_RANGE, configs.RANDOM_TARGET_RANGE]
 
     def __init__(
-            self, 
+            self,
+            config,
             human=True, 
             timestep=ANT_TIMESTEP, 
             frame_skip=ANT_FRAMESKIP,           ## increase frame skip, as the motion is too flashy 
             is_discrete=False, 
             mode="RGBD", 
-            use_filler=True, 
-            gpu_count=0, 
-            resolution="NORMAL"):
+            gpu_count=0):
+        self.config = self.parse_config(config)
         self.human = human
-        self.model_id = configs.CLIMB_MODEL_ID
+        self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
-        self.resolution = resolution
+        self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = configs.TASK_POSE[configs.CLIMB_MODEL_ID]["climb"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.CLIMB_MODEL_ID]["climb"][0]
-
-        self.target_pos_gt = target_pos
+        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
+        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
         self.total_reward = 0
         self.total_frame = 0
+        self.target_pos_gt = target_pos
         self.visual_flagId = None
 
         CameraRobotEnv.__init__(
-            self, 
+            self,
+            config,
             mode, 
             gpu_count, 
             scene_type="building", 
-            use_filler=use_filler)
+            use_filler=self.config["use_filler"])
         self.robot_introduce(AntClimber(
             initial_pos, initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos,
-            resolution=resolution,
+            resolution=self.resolution,
             mode=mode))
         self.scene_introduce()
 
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
     def calc_rewards_and_done(self, a, state):
         #time.sleep(0.1)
@@ -452,19 +458,31 @@ class AntClimbEnv(CameraRobotEnv):
 class AntFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, human=True, timestep=ANT_TIMESTEP,
-                 frame_skip=ANT_FRAMESKIP, is_discrete=False, 
-                 gpu_count=0):
+    def __init__(
+            self, 
+            config,
+            human=True, 
+            timestep=ANT_TIMESTEP,
+            frame_skip=ANT_FRAMESKIP, 
+            is_discrete=False,
+            mode="RGBD",
+            gpu_count=0):
+        self.config = self.parse_config(config)
         self.human = human
+        self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
-        ## Mode initialized with mode=SENSOR
-        self.flag_timeout = 1
+        self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
-        initial_pos, initial_orn = [0, 0, 1], [0, 0, 0, 1]
-        
+        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
+        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
+        self.total_reward = 0
+        self.total_frame = 0
+        self.flag_timeout = 1
+
         CameraRobotEnv.__init__(
             self, 
+            config,
             "SENSOR", 
             gpu_count, 
             scene_type="stadium", 
@@ -478,6 +496,7 @@ class AntFlagRunEnv(CameraRobotEnv):
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
         self.lastid = None
 
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
@@ -544,6 +563,11 @@ class AntFlagRunEnv(CameraRobotEnv):
         return rewards
 
     def _termination(self, state=None, debugmode=False):
+        head_touch_ground = 1
+        if head_touch_ground == 0:
+            alive_score = 0.1
+        else:
+            alive_score = -0.1
         done = head_touch_ground > 0 or self.nframe > 500
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -562,25 +586,36 @@ class AntFlagRunEnv(CameraRobotEnv):
 class AntFetchEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, human=True, timestep=ANT_TIMESTEP,
-                 frame_skip=ANT_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building", mode = 'SENSOR'):
+    def __init__(
+            self,
+            config, 
+            human=True, 
+            timestep=ANT_TIMESTEP,
+            frame_skip=ANT_FRAMESKIP, 
+            is_discrete=False,
+            gpu_count=0, 
+            scene_type="building", 
+            mode = 'SENSOR'):
 
-        target_orn, target_pos = INITIAL_POSE["ant"][configs.FETCH_MODEL_ID][-1]
-        initial_orn, initial_pos = configs.INITIAL_POSE["ant"][configs.FETCH_MODEL_ID][0]
-
+        self.config = self.parse_config(config)
         self.human = human
+        self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
-        self.model_id = configs.FETCH_MODEL_ID
-        ## Mode initialized with mode=SENSOR
+        self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
+        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
+        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
+        self.total_reward = 0
+        self.total_frame = 0
+
         self.flag_timeout = 1
         self.visualid = -1
         self.lastid = None
 
         CameraRobotEnv.__init__(
             self,
+            config,
             mode,
             gpu_count,
             scene_type="building")
@@ -593,7 +628,7 @@ class AntFetchEnv(CameraRobotEnv):
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
-
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
         
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
@@ -675,6 +710,11 @@ class AntFetchEnv(CameraRobotEnv):
         return rewards
 
     def _termination(self, state=None, debugmode=False):
+        head_touch_ground = 1
+        if head_touch_ground == 0:
+            alive_score = 0.1
+        else:
+            alive_score = -0.1
         done = head_touch_ground > 0 or self.nframe > 500
         if not np.isfinite(state).all():
             print("~INF~", state)
@@ -693,23 +733,33 @@ class AntFetchEnv(CameraRobotEnv):
 class AntFetchKernelizedRewardEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, human=True, timestep=ANT_TIMESTEP,
-                 frame_skip=ANT_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building"):
+    def __init__(
+            self, 
+            config,
+            human=True, 
+            timestep=ANT_TIMESTEP,    
+            frame_skip=ANT_FRAMESKIP, 
+            is_discrete=False,
+            gpu_count=0,
+            mode="SENSOR", 
+            scene_type="building"):
+        self.config = self.parse_config(config)
         self.human = human
+        self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
-        ## Mode initialized with mode=SENSOR
-        self.model_id = configs.FETCH_MODEL_ID
-
-        self.flag_timeout = 1
+        self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
-
-        initial_pos, initial_orn = configs.INITIAL_POSE["ant"][configs.FETCH_MODEL_ID][0]
+        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
+        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
+        self.total_reward = 0
+        self.total_frame = 0
         self.lastid = None
+        self.flag_timeout = 1
         
         CameraRobotEnv.__init__(
             self, 
+            config,
             "SENSOR", 
             gpu_count, 
             scene_type="building", 
@@ -717,11 +767,12 @@ class AntFetchKernelizedRewardEnv(CameraRobotEnv):
         self.robot_introduce(Ant(
             initial_pos, initial_orn, 
             is_discrete=is_discrete))
+        self.scene_introduce()
 
         if self.human:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
-
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
         
     def _reset(self):
         obs = CameraRobotEnv._reset(self)

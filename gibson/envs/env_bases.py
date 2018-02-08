@@ -85,7 +85,7 @@ class BaseEnv(gym.Env):
         return SinglePlayerBuildingScene(self.robot, model_id=self.model_id, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip, env=self)
         
     def create_single_player_stadium_scene(self):
-        return SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        return SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip, env=self)
 
 
     def configure(self, args):

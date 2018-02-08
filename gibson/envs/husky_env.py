@@ -74,7 +74,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
             mode=mode))
         self.scene_introduce()
 
-        assert(self.config["envname"] == self.__class__.__name__)
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
 
     def calc_rewards_and_done(self, a, state):
@@ -259,7 +259,7 @@ class HuskyFetchEnv(CameraRobotEnv):
 
         self.lastid = None
         self.obstacle_dist = 100
-
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
     def _reset(self):
         obs = CameraRobotEnv._reset(self)

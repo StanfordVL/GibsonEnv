@@ -8,8 +8,8 @@ class StadiumScene(Scene):
     stadium_halflen   = 105*0.25    # FOOBALL_FIELD_HALFLEN
     stadium_halfwidth = 50*0.25  # FOOBALL_FIELD_HALFWID
 
-    def __init__(self, robot, gravity, timestep, frame_skip):
-        Scene.__init__(self, gravity, timestep, frame_skip)
+    def __init__(self, robot, gravity, timestep, frame_skip, env=None):
+        Scene.__init__(self, gravity, timestep, frame_skip, env)
 
         filename = os.path.join(pybullet_data.getDataPath(), "stadium_no_collision.sdf")
         self.stadium = p.loadSDF(filename)
