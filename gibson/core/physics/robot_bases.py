@@ -8,7 +8,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
 import pybullet_data
-
+from gibson import assets
 
 class BaseRobot:
     """
@@ -25,7 +25,7 @@ class BaseRobot:
         self.robot_ids = None
         self.model_file = model_file
         self.robot_name = robot_name
-        self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+        self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), "models")
         self.scale = scale
         self._load_model()
         self.env = None

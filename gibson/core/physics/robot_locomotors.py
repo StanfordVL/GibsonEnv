@@ -428,11 +428,11 @@ class Humanoid(WalkerBase):
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
 
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512):
+    def __init__(self, initial_pos, initial_orn, is_discrete = True, target_pos=[1, 0, 0], resolution=512, mode="RGBD"):
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.6
         self.is_discrete = is_discrete
-        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = self.mjcf_scaling, target_pos=target_pos, resolution=resolution)
+        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = self.mjcf_scaling, target_pos=target_pos, resolution=resolution, mode=mode)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
         #self.eye_offset_orn = euler2quat(0, 0, 0, axes='sxyz')

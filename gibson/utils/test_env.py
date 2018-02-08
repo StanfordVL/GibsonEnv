@@ -7,6 +7,7 @@ from PIL import Image
 from gibson.core.render.profiler import Profiler
 from gibson.envs.husky_env import *
 from gibson.envs.ant_env import *
+from gibson.envs.humanoid_env import *
 import pybullet as p
 
 class RandomAgent(object):
@@ -45,19 +46,12 @@ def testEnv(Env, mode="RGBD"):
         return
     
 if __name__ == '__main__':
-    '''
+
+
+    testEnv(HumanoidNavigateEnv, "RGBD")
     testEnv(HuskyNavigateEnv, "RGBD")
     testEnv(HuskyFetchEnv, "RGBD")
-    
-    testEnv(HuskyNavigateEnv, "SENSOR")
-    testEnv(HuskyFetchEnv, "SENSOR")
-    '''
-    
-    #testEnv(AntNavigateEnv, "RGBD")
-    #testEnv(AntGoallessRunEnv, "RGBD")
-    #testEnv(AntClimbEnv, "RGBD")
+    testEnv(AntClimbEnv, "RGBD")
     testEnv(AntFlagRunEnv, "RGBD")
     testEnv(AntFetchEnv, "RGBD")
-    testEnv(AntFetchKernelizedRewardEnv, "RGBD")
     testEnv(AntNavigateEnv, "RGBD")
-    

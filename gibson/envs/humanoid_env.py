@@ -2,7 +2,6 @@ from gibson.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from gibson.envs.env_bases import *
 from gibson.core.physics.robot_locomotors import Humanoid, Ant
 from transforms3d import quaternions
-from gibson import configs
 import os
 import numpy as np
 import sys
@@ -37,7 +36,8 @@ class HumanoidNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
     def __init__(
-            self, 
+            self,
+            config,
             human=True, 
             timestep=HUMANOID_TIMESTEP, 
             frame_skip=HUMANOID_FRAMESKIP, 
@@ -45,27 +45,35 @@ class HumanoidNavigateEnv(CameraRobotEnv):
             mode="RGBD", 
             use_filler=True, 
             gpu_count=0, 
-            resolution="NORMAL"):
+            resolution=512):
+        self.config = self.parse_config(config)
         self.human = human
-        self.model_id = configs.NAVIGATE_MODEL_ID
+        self.model_id = self.config["model_id"]
         self.timestep = timestep
         self.frame_skip = frame_skip
         self.resolution = resolution
         self.tracking_camera = tracking_camera
-        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]
-        self.robot = Humanoid(
-            is_discrete=is_discrete, 
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            target_pos=target_pos,
-            resolution=resolution)
+        target_orn, target_pos = self.config["target_orn"], self.config["target_pos"]
+        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
+
         CameraRobotEnv.__init__(
-            self, 
-            mode, 
-            gpu_count, 
-            scene_type="building", 
-            use_filler=use_filler)
+            self,
+            config,
+            mode,
+            gpu_count,
+            scene_type="building",
+            use_filler=self.config["use_filler"])
+
+
+        self.robot_introduce(Humanoid(
+            initial_pos,
+            initial_orn,
+            is_discrete=is_discrete,
+            target_pos=target_pos,
+            resolution=self.resolution))
+
+        self.scene_introduce()
+
         self.total_reward = 0
         self.total_frame = 0
 
@@ -110,7 +118,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
             print(feet_collision_cost)
 
         rewards =[
-            alive,
+            #alive,
             progress,
             electricity_cost,
             joints_at_limit_cost,
@@ -134,7 +142,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         walk_target_y = self.robot.walk_target_y
 
         self.flag = None
-        if self.human and not configs.DISPLAY_UI:
+        if self.human and not self.config["display_ui"]:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
