@@ -47,7 +47,7 @@ def testEnv(Env, mode="RGBD"):
     
 if __name__ == '__main__':
 
-
+    testEnv(HumanoidFetchEnv, "RGBD")
     testEnv(HumanoidNavigateEnv, "RGBD")
     testEnv(HuskyNavigateEnv, "RGBD")
     testEnv(HuskyFetchEnv, "RGBD")
