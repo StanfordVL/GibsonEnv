@@ -3,8 +3,8 @@ from gibson.utils.play import play
 import argparse
 import os
 
-timestep = 1.0/(4 * 22)
-frame_skip = 4
+timestep = 1.0/(1000.0)
+frame_skip = 1
 
 config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate.yaml')
 print(config_file)

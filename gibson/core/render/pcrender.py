@@ -96,7 +96,6 @@ class PCRenderer:
                  human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256, env = None):
 
         self.env = env
-        print("from pcrender", self.env.config)
 
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
@@ -180,22 +179,22 @@ class PCRenderer:
     def renderToScreenSetup(self):
         cv2.namedWindow('RGB cam')
         cv2.namedWindow('Depth cam')
-        if MAKE_VIDEO:
-            cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
-            cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
-            cv2.namedWindow('RGB prefilled')
-            cv2.namedWindow('Semantics')
-            cv2.namedWindow('Surface Normal')
-            cv2.moveWindow('Surface Normal', self.showsz + self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
-            cv2.moveWindow('RGB prefilled', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
-            cv2.moveWindow('Semantics', self.showsz + self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
-        elif HIGH_RES_MONITOR:
-            cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
-            cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
-
-        if LIVE_DEMO:
-            cv2.moveWindow('RGB cam', -1 , 768)
-            cv2.moveWindow('Depth cam', 512, 768)
+        #if MAKE_VIDEO:
+        #    cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+        #    cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
+        cv2.namedWindow('RGB prefilled')
+        cv2.namedWindow('Semantics')
+        cv2.namedWindow('Surface Normal')
+        #    cv2.moveWindow('Surface Normal', self.showsz + self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], -1)
+        #    cv2.moveWindow('RGB prefilled', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+        #    cv2.moveWindow('Semantics', self.showsz + self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+        #elif HIGH_RES_MONITOR:
+        #    cv2.moveWindow('RGB cam', -1 , self.showsz + LINUX_OFFSET['y_delta'])
+        #    cv2.moveWindow('Depth cam', self.showsz + LINUX_OFFSET['x_delta'] + LINUX_OFFSET['y_delta'], self.showsz + LINUX_OFFSET['y_delta'])
+        #
+        #if LIVE_DEMO:
+        #    cv2.moveWindow('RGB cam', -1 , 768)
+        #    cv2.moveWindow('Depth cam', 512, 768)
 
 
     def _onmouse(self, *args):
@@ -474,7 +473,6 @@ class PCRenderer:
 
         def _render_rgb_unfilled(unfilled_rgb):
             ## TODO: legacy MAKE_VIDEO
-            assert(MAKE_VIDEO)
             cv2.imshow('RGB prefilled', unfilled_rgb)
         
         def _render_semantics(semantics):
