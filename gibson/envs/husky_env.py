@@ -43,7 +43,6 @@ class HuskyNavigateEnv(CameraRobotEnv):
             frame_skip=HUSKY_FRAMESKIP, 
             is_discrete=False, 
             mode="RGBD", 
-            use_filler=True, 
             gpu_count=0):
 
         self.config = self.parse_config(config)
@@ -64,7 +63,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
             mode, 
             gpu_count,
             scene_type="building", 
-            use_filler=use_filler)
+            use_filler=self.config["use_filler"])
         self.robot_introduce(Husky(
             #HuskyHighCamera(
             is_discrete=is_discrete, 
@@ -220,7 +219,7 @@ class HuskyFetchEnv(CameraRobotEnv):
     """
     def __init__(self, config, human=True, timestep=HUSKY_TIMESTEP,
                  frame_skip=HUSKY_FRAMESKIP, is_discrete=False,
-                 gpu_count=0, scene_type="building", mode = 'SENSOR', use_filler=True):
+                 gpu_count=0, scene_type="building", mode = 'SENSOR'):
 
         self.config = self.parse_config(config)
         target_orn, target_pos = self.config["target_orn"], self.config[
@@ -244,7 +243,7 @@ class HuskyFetchEnv(CameraRobotEnv):
             mode,
             gpu_count,
             scene_type="building",
-            use_filler=use_filler,
+            use_filler=self.config["use_filler"],
             )
         self.robot_introduce(Husky(
             is_discrete,

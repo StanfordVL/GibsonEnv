@@ -79,7 +79,7 @@ class AntNavigateEnv(CameraRobotEnv):
         done = self._termination(state)
         rewards = self._rewards(a)
         print("Frame %f reward %f" % (self.nframe, sum(self.rewards)))
-        return , done
+        return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
         a = action
