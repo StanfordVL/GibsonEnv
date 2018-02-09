@@ -80,6 +80,9 @@ class WalkerBase(BaseRobot):
     def get_position(self):
         return self.robot_body.current_position()
 
+    def get_scaled_position(self):
+        return self.robot_body.current_position() / self.mjcf_scaling
+
     def get_orientation(self):
         return self.robot_body.current_orientation()
 

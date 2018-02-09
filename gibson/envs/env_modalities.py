@@ -139,7 +139,7 @@ class BaseRobotEnv(BaseEnv):
         i = 0
 
         state = self.robot.calc_state()
-        pos = self.robot.get_position()
+        pos = self.robot.get_scaled_position()
         orn = self.robot.get_orientation()
         pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])    
         p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
@@ -181,7 +181,7 @@ class BaseRobotEnv(BaseEnv):
             print("Eps frame {} reward {}".format(self.nframe, self.reward))
             print("position", self.robot.get_position())
         if self.human:
-            pos = self.robot.get_position()
+            pos = self.robot.get_scaled_position()
             orn = self.robot.get_orientation()
             pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
             p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
