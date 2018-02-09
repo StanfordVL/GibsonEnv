@@ -6,7 +6,6 @@ initial_orn: [0, 0, 4.71]
 initial_pos: [-14.3, 5, 1.2]
 fov: 1.57
 use_filler: true
-views: []
 display_ui: true
 show_dignostic: true
 ui_num: 2
@@ -20,7 +19,7 @@ random:
   random_init_rot_range: [-0.1, 0.1]
   random_target_range: 0.1
 
-output: [sensor, gps, rgb_filled, depth]
+output: [nonviz_sensor, rgb_filled, depth]
 resolution: 512
 
 speed:

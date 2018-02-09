@@ -5,7 +5,7 @@ import sys
 import gym
 from PIL import Image
 from gibson.core.render.profiler import Profiler
-from gibson.envs.husky_env import HuskyFetchEnv
+from gibson.envs.husky_env import HuskyGibsonFlagRunEnv
 import pybullet as p
 
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--human', action='store_true', default=False)
     args = parser.parse_args()
 
-    env = HuskyFetchEnv(human=args.human, timestep=1.0 / (4 * 22), frame_skip=4, is_discrete=True,  mode="DEPTH", use_filler=False, resolution = "LARGE")
+    env = HuskyGibsonFlagRunEnv(human=args.human, timestep=1.0 / (4 * 22), frame_skip=4, is_discrete=True, mode="DEPTH", use_filler=False, resolution ="LARGE")
     #env = HuskyFetchEnv(human=args.human, timestep=1.0 / (4 * 22), frame_skip=4, is_discrete=True,  mode="DEPTH", use_filler=False, resolution = "NORMAL")
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete=True)

@@ -32,19 +32,20 @@ class WalkerBase(BaseRobot):
         sensor_dim=None,
         scale = 1, 
         resolution=512,
-        mode="RGBD"
+        env = None
     ):
-        BaseRobot.__init__(self, filename, robot_name, scale)
+        BaseRobot.__init__(self, filename, robot_name, scale, env)
 
         self.resolution = resolution
         self.obs_dim = None
         print("resolution", self.resolution)
-        self.obs_dim = [self.resolution, self.resolution, 4]
+        self.obs_dim = [self.resolution, self.resolution, 0]
 
-        if mode=="RGB":
-            self.obs_dim[2] = 3
-        elif mode=="DEPTH":
-            self.obs_dim[2] = 1
+        if "rgb_filled" in self.env.config["output"]:
+            self.obs_dim[2] += 3
+        if "depth" in self.env.config["output"]:
+            self.obs_dim[2] += 1
+
         assert type(sensor_dim) == int, "Sensor dimension must be int, got {}".format(type(sensor_dim))
         assert type(action_dim) == int, "Action dimension must be int, got {}".format(type(action_dim))
 
@@ -161,11 +162,16 @@ class WalkerBase(BaseRobot):
         if debugmode:
             print("Robot more", more)
 
-        if not 'sensor' in self.env.config["output"]:
-            j.fill(0)
+        #if not 'sensor' in self.env.config["output"]:
+        #    j.fill(0)
 
-        if not 'gps' in self.env.config["output"]:
+        #if not 'gps' in self.env.config["output"]:
+        #    more.fill(0)
+
+        if not 'nonvis_sensor' in self.env.config["output"]:
+            j.fill(0)
             more.fill(0)
+
         return np.clip( np.concatenate([more] + [j] + [self.feet_contact]), -5, +5)
 
     def calc_potential(self):
@@ -253,12 +259,12 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, mode="RGBD", power=2.5):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, mode="RGBD", power=2.5, env = None):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.25
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=power, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, mode=mode)
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=power, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, env=env)
         self.is_discrete = is_discrete
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
@@ -343,12 +349,12 @@ class Ant(WalkerBase):
 
 
 class AntClimber(Ant):
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, mode="RGBD"):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, env = None):
         Ant.__init__(self, initial_pos, initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos, 
             resolution=resolution, 
-            mode=mode, power=5)
+            env=env, power=5)
         self.eye_offset_orn = euler2quat(np.pi/4, 0, np.pi/2, axes='sxyz')  ## looking 45 degs down
         
     def robot_specific_reset(self):
@@ -428,11 +434,11 @@ class Humanoid(WalkerBase):
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
 
-    def __init__(self, initial_pos, initial_orn, is_discrete = True, target_pos=[1, 0, 0], resolution=512, mode="RGBD"):
+    def __init__(self, initial_pos, initial_orn, is_discrete = True, target_pos=[1, 0, 0], resolution=512, env = None):
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.6
         self.is_discrete = is_discrete
-        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = self.mjcf_scaling, target_pos=target_pos, resolution=resolution, mode=mode)
+        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = self.mjcf_scaling, target_pos=target_pos, resolution=resolution, env = env)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
         #self.eye_offset_orn = euler2quat(0, 0, 0, axes='sxyz')
@@ -530,11 +536,11 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, mode="RGB"):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, env = None):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, mode=mode)
+        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, env = env)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
@@ -630,33 +636,3 @@ class HuskyClimber(Husky):
         if debugmode:
             for k in self.jdict.keys():
                 print("Power coef", self.jdict[k].power_coef)
-
-class HuskyHighCamera(Husky):
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, mode="RGB"):
-        self.model_type = "URDF"
-        self.is_discrete = is_discrete
-        self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "husky_high.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, mode=mode)
-        self.initial_pos = initial_pos
-        self.initial_orn = initial_orn
-        self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
-        if self.is_discrete:
-            self.action_space = gym.spaces.Discrete(5)
-        ## specific offset for husky.urdf
-        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
-            self.torque = 0.1
-            self.action_list = [[self.torque/4, self.torque/4, self.torque/4, self.torque/4],
-                                #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
-                                [-self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9],
-                                [self.torque, -self.torque, self.torque, -self.torque],
-                                [-self.torque, self.torque, -self.torque, self.torque],
-                                [0, 0, 0, 0]]
-
-            self.setup_keys_to_action()
-        else:
-            action_high = 0.02 * np.ones([4])
-            self.action_space = gym.spaces.Box(-action_high, action_high)
-
-        ## specific offset for husky.urdf
-        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
-    

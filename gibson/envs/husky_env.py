@@ -1,6 +1,6 @@
 from gibson.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
 from gibson.envs.env_bases import *
-from gibson.core.physics.robot_locomotors import Husky, HuskyClimber, HuskyHighCamera
+from gibson.core.physics.robot_locomotors import Husky
 from transforms3d import quaternions
 import os
 import numpy as np
@@ -13,21 +13,17 @@ import cv2
 CALC_OBSTACLE_PENALTY = 1
 
 tracking_camera = {
-    'yaw': 20,  # demo: living room, stairs
-    #'yaw'; 30,   # demo: kitchen
+    'yaw': 20,
     'z_offset': 0.5,
     'distance': 1,
     'pitch': -20
-    # 'pitch': -24  # demo: stairs
 }
 
 tracking_camera_top = {
     'yaw': 20,  # demo: living room, stairs
-    #'yaw'; 30,   # demo: kitchen
     'z_offset': 0.5,
     'distance': 1,
     'pitch': -20
-    # 'pitch': -24  # demo: stairs
 }
 
 class HuskyNavigateEnv(CameraRobotEnv):
@@ -38,7 +34,6 @@ class HuskyNavigateEnv(CameraRobotEnv):
             config,
             human=True,
             is_discrete=False, 
-            mode="RGBD", 
             gpu_count=0):
 
         self.config = self.parse_config(config)
@@ -56,7 +51,6 @@ class HuskyNavigateEnv(CameraRobotEnv):
         CameraRobotEnv.__init__(
             self,
             config,
-            mode, 
             gpu_count,
             scene_type="building", 
             use_filler=self.config["use_filler"])
@@ -67,7 +61,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
             initial_orn=initial_orn,
             target_pos=target_pos,
             resolution=self.resolution,
-            mode=mode))
+            env = self
+            ))
         self.scene_introduce()
 
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
@@ -210,11 +205,11 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
 
 
-class HuskyFetchEnv(CameraRobotEnv):
+class HuskyGibsonFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
     def __init__(self, config, human=True, is_discrete=False,
-                 gpu_count=0, scene_type="building", mode = 'SENSOR'):
+                 gpu_count=0, scene_type="building"):
 
         self.config = self.parse_config(config)
         target_orn, target_pos = self.config["target_orn"], self.config[
@@ -235,7 +230,6 @@ class HuskyFetchEnv(CameraRobotEnv):
         CameraRobotEnv.__init__(
             self,
             config,
-            mode,
             gpu_count,
             scene_type="building",
             use_filler=self.config["use_filler"],
@@ -245,7 +239,8 @@ class HuskyFetchEnv(CameraRobotEnv):
             initial_pos=initial_pos,
             initial_orn=initial_orn,
             target_pos=target_pos,
-            resolution=self.resolution))
+            resolution=self.resolution,
+            env = self))
         self.scene_introduce()
 
         if self.human:

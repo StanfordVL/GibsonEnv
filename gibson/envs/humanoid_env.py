@@ -149,7 +149,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         return obs
 
 
-class HumanoidFetchEnv(CameraRobotEnv):
+class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
 

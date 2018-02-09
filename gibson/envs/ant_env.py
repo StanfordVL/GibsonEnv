@@ -20,15 +20,12 @@ Each class specifies:
 """
 
 tracking_camera = {
-    'pitch': -20,
-    # 'pitch': -24  # demo: stairs
-    #self.tracking_camera['pitch'] = -45 ## stairs
-    'yaw': 46,     ## demo: living room
-    #yaw = 30    ## demo: kitchen
+    'yaw': 20,
     'z_offset': 0.5,
-    'distance': 5 ## living room
-    #self.tracking_camera['yaw'] = 90     ## demo: stairs
+    'distance': 1,
+    'pitch': -20
 }
+
 
 class AntNavigateEnv(CameraRobotEnv):
     def __init__(
@@ -36,7 +33,6 @@ class AntNavigateEnv(CameraRobotEnv):
             config,
             human=True,
             is_discrete=False, 
-            mode="RGBD",  
             gpu_count=0):
         
         self.config = self.parse_config(config)
@@ -54,8 +50,7 @@ class AntNavigateEnv(CameraRobotEnv):
         CameraRobotEnv.__init__(
             self,
             config,
-            mode, 
-            gpu_count, 
+            gpu_count,
             scene_type="building", 
             use_filler=self.config["use_filler"])
 
@@ -64,7 +59,8 @@ class AntNavigateEnv(CameraRobotEnv):
             initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos,
-            resolution=self.resolution))
+            resolution=self.resolution,
+            env = self))
         self.scene_introduce()
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
@@ -178,8 +174,7 @@ class AntClimbEnv(CameraRobotEnv):
         CameraRobotEnv.__init__(
             self,
             config,
-            mode, 
-            gpu_count, 
+            gpu_count,
             scene_type="building", 
             use_filler=self.config["use_filler"])
         self.robot_introduce(AntClimber(
@@ -187,7 +182,7 @@ class AntClimbEnv(CameraRobotEnv):
             is_discrete=is_discrete, 
             target_pos=target_pos,
             resolution=self.resolution,
-            mode=mode))
+            env = self))
         self.scene_introduce()
 
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
@@ -348,8 +343,7 @@ class AntFlagRunEnv(CameraRobotEnv):
         CameraRobotEnv.__init__(
             self, 
             config,
-            "SENSOR", 
-            gpu_count, 
+            gpu_count,
             scene_type="stadium", 
             use_filler=False)
         self.robot_introduce(Ant(
@@ -448,7 +442,7 @@ class AntFlagRunEnv(CameraRobotEnv):
         return state, reward, done, meta
 
 
-class AntFetchEnv(CameraRobotEnv):
+class AntGibsonFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
     def __init__(
@@ -457,8 +451,7 @@ class AntFetchEnv(CameraRobotEnv):
             human=True,
             is_discrete=False,
             gpu_count=0, 
-            scene_type="building", 
-            mode = 'SENSOR'):
+            scene_type="building"):
 
         self.config = self.parse_config(config)
         self.human = human
@@ -479,7 +472,6 @@ class AntFetchEnv(CameraRobotEnv):
         CameraRobotEnv.__init__(
             self,
             config,
-            mode,
             gpu_count,
             scene_type="building")
         self.robot_introduce(Ant(

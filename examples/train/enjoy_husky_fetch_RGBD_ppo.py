@@ -8,7 +8,7 @@ os.sys.path.insert(0, parentdir)
 import tensorflow as tf
 import gym, logging
 from mpi4py import MPI
-from gibson.envs.husky_env import HuskyNavigateEnv, HuskyFetchEnv
+from gibson.envs.husky_env import HuskyNavigateEnv, HuskyGibsonFlagRunEnv
 from baselines.common import set_global_seeds
 import pposgd_simple
 import baselines.common.tf_util as U
@@ -35,8 +35,8 @@ def enjoy(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
 
-    env = HuskyFetchEnv(human=True, is_discrete=True, mode='DEPTH', gpu_count=0,
-                           use_filler=False)
+    env = HuskyGibsonFlagRunEnv(human=True, is_discrete=True, mode='DEPTH', gpu_count=0,
+                                use_filler=False)
     #env = bench.Monitor(env, logger.get_dir() and
     #                    osp.join(logger.get_dir(), str(rank)))
 

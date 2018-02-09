@@ -16,7 +16,7 @@ class BaseRobot:
     Handles object loading
     """
 
-    def __init__(self, model_file, robot_name, scale = 1):
+    def __init__(self, model_file, robot_name, scale = 1, env = None):
         self.parts = None
         self.jdict = None
         self.ordered_joints = None
@@ -28,7 +28,7 @@ class BaseRobot:
         self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), "models")
         self.scale = scale
         self._load_model()
-        self.env = None
+        self.env = env
 
     def addToScene(self, bodies):
         if self.parts is not None:

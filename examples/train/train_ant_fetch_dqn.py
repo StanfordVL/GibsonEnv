@@ -7,7 +7,7 @@ os.sys.path.insert(0, parentdir)
 
 from baselines import deepq
 import gym
-from gibson.envs.ant_env import AntFetchEnv, AntFetchKernelizedRewardEnv
+from gibson.envs.ant_env import AntGibsonFlagRunEnv, AntFetchKernelizedRewardEnv
 
 import deepq
 import matplotlib.pyplot as plt

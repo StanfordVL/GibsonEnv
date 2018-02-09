@@ -47,11 +47,11 @@ def testEnv(Env, mode="RGBD"):
     
 if __name__ == '__main__':
 
-    testEnv(HumanoidFetchEnv, "RGBD")
+    testEnv(HumanoidGibsonFlagRunEnv, "RGBD")
     testEnv(HumanoidNavigateEnv, "RGBD")
     testEnv(HuskyNavigateEnv, "RGBD")
-    testEnv(HuskyFetchEnv, "RGBD")
+    testEnv(HuskyGibsonFlagRunEnv, "RGBD")
     testEnv(AntClimbEnv, "RGBD")
     testEnv(AntFlagRunEnv, "RGBD")
-    testEnv(AntFetchEnv, "RGBD")
+    testEnv(AntGibsonFlagRunEnv, "RGBD")
     testEnv(AntNavigateEnv, "RGBD")

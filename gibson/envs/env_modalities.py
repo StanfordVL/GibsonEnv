@@ -266,7 +266,7 @@ class CameraRobotEnv(SensorRobotEnv):
     """CameraRobotEnv has full modalities. If it's initialized with mode="SENSOR",
     PC renderer is not initialized to save time.
     """
-    def __init__(self, config, mode, gpu_count, scene_type, use_filler=True):
+    def __init__(self, config, gpu_count, scene_type, use_filler=True):
         ## The following properties are already instantiated inside xxx_env.py:
         #   @self.human
         #   @self.timestep
@@ -275,13 +275,14 @@ class CameraRobotEnv(SensorRobotEnv):
             #self.screen = pygame.display.set_mode([612, 512], 0, 32)
             self.screen_arr = np.zeros([612, 512, 3])
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
-        assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
-            "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
-        self.mode = mode
+        #assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
+        #    "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
+        #self.mode = mode
         self._use_filler = use_filler
-        self._require_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
-        self._require_semantics = 'semantics' in self.config["views"]  # configs.View.SEMANTICS in configs.ViewComponent.getComponents()
-        self._require_normal = 'normal' in self.config["views"]  # configs.View.NORMAL in configs.ViewComponent.getComponents()
+        #self._require_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
+        self._require_camera_input = 'rgb_filled' in self.config["output"]
+        self._require_semantics = 'semantics' in self.config["output"]  # configs.View.SEMANTICS in configs.ViewComponent.getComponents()
+        self._require_normal = 'normal' in self.config["output"]  # configs.View.NORMAL in configs.ViewComponent.getComponents()
 
         if self._require_camera_input:
             self.model_path = get_model_path(self.model_id)
@@ -346,8 +347,8 @@ class CameraRobotEnv(SensorRobotEnv):
             'target': [-1.253, -4.94, 1.05]
         }
 
-        p.resetDebugVisualizerCamera(static_cam['distance'], static_cam['yaw'], static_cam['pitch'], static_cam['target']);
-        staticImg = p.getCameraImage(self.windowsz, self.windowsz)[2]
+        #p.resetDebugVisualizerCamera(static_cam['distance'], static_cam['yaw'], static_cam['pitch'], static_cam['target'])
+        #staticImg = p.getCameraImage(self.windowsz, self.windowsz)[2]
 
 
         if not self._require_camera_input or self.test_env:
@@ -485,24 +486,16 @@ class CameraRobotEnv(SensorRobotEnv):
     def get_visuals(self, rgb, depth):
         ## Camera specific
         assert(self._require_camera_input)
-        if self.mode == "GREY":
-            rgb = np.mean(rgb, axis=2, keepdims=True)
-            visuals = np.append(rgb, depth, axis=2)
-        elif self.mode == "RGBD":
-            visuals = np.append(rgb, depth, axis=2)
-        elif self.mode == "RGB":
+
+        visuals = None
+        if "rgb_filled" in self.config["output"]:
             visuals = rgb
-            if self.robot.observation_space.shape[2] == 4:  ## backward compatibility, will remove in the future
-                visuals = np.append(rgb, depth, axis=2)
-        elif self.mode == "DEPTH":
-            visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
-            if self.robot.observation_space.shape[2] == 1:  ## backward compatibility, will remove in the future
+        if "depth" in self.config["output"]:
+            if not visuals is None:
+                visuals = np.append(visuals, depth)
+            else:
                 visuals = depth
-        elif self.mode == "SENSOR":
-            visuals = np.append(rgb, depth, axis=2)         ## RC renderer: rgb = np.zeros()
-        else:
-            print("Visual mode not supported: {}".format(self.mode))
-            raise AssertionError()
+
         return visuals
 
     def setup_camera_rgb(self):

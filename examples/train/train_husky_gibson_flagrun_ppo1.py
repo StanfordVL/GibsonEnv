@@ -7,7 +7,7 @@ os.sys.path.insert(0, parentdir)
 
 import gym, logging
 from mpi4py import MPI
-from gibson.envs.husky_env import HuskyFetchEnv
+from gibson.envs.husky_env import HuskyGibsonFlagRunEnv
 from baselines.common import set_global_seeds
 import pposgd_fuse
 import baselines.common.tf_util as U
@@ -45,11 +45,11 @@ def train(num_timesteps, seed):
     set_global_seeds(workerseed)
 
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
-                               'husky_fetch_train.yaml')
+                               'husky_gibson_flagrun_train.yaml')
     print(config_file)
 
 
-    env = HuskyFetchEnv(config = config_file, human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count)
+    env = HuskyGibsonFlagRunEnv(config = config_file, human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count)
 
     print(env.sensor_space)
 

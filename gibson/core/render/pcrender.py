@@ -93,7 +93,7 @@ def hist_match3(source, template):
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
     def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=None, \
-                 human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256, env = None):
+                 human=True,  use_filler=True, gpu_count=0, windowsz=256, env = None):
 
         self.env = env
 
@@ -113,8 +113,8 @@ class PCRenderer:
         self._context_dept = zmq.Context()      ## Channel for smoothed depth
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
 
-        self._require_semantics = 'semantics' in self.env.config["views"]#configs.View.SEMANTICS in configs.ViewComponent.getComponents()
-        self._require_normal = 'normal' in self.env.config["views"] #configs.View.NORMAL in configs.ViewComponent.getComponents()
+        self._require_semantics = 'semantics' in self.env.config["output"]#configs.View.SEMANTICS in configs.ViewComponent.getComponents()
+        self._require_normal = 'normal' in self.env.config["output"] #configs.View.NORMAL in configs.ViewComponent.getComponents()
 
         self.socket_mist = self._context_mist.socket(zmq.REQ)
         self.socket_mist.connect("tcp://localhost:{}".format(5555 + gpu_count))
@@ -132,7 +132,6 @@ class PCRenderer:
         self.model = None
         self.old_topk = set([])
         self.k = 5
-        self.render_mode = render_mode
         self.use_filler = use_filler
 
         self.showsz = windowsz
@@ -305,8 +304,6 @@ class PCRenderer:
         quat_wxyz  = utils.quat_xyzw_to_wxyz(utils.mat_to_quat_xyzw(p))
         return pos, quat_wxyz
 
-    def set_render_mode(self, mode):
-        self.render_mode = mode
 
     def render(self, rgbs, depths, pose, model, poses, target_pose, show, show_unfilled=None, is_rgb=False):
         v_cam2world = target_pose
@@ -332,7 +329,7 @@ class PCRenderer:
         w = 2*h
         n = ho//3
 
-        need_filler = self.render_mode in ["RGB", "RGBD", "GREY"]
+        need_filler = True
         pano = False
         if pano:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
