@@ -538,7 +538,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
         self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics,
-                              human=self.human, use_filler=self._use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
+                              human=self.human, use_filler=self._use_filler,  gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
 
 
 

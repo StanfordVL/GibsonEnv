@@ -154,7 +154,6 @@ class AntClimbEnv(CameraRobotEnv):
             config,
             human=True,
             is_discrete=False, 
-            mode="RGBD", 
             gpu_count=0):
         self.config = self.parse_config(config)
         self.delta_target = [self.config["random"]["random_target_range"], self.config["random"]["random_target_range"]]
