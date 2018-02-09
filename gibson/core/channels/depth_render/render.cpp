@@ -483,7 +483,7 @@ int main( int argc, char * argv[] )
         // Load the textures
         std::string mtl_path = obj_path + mtllib;
         std::vector<TextureObj> TextObj;
-        bool MTL_loaded = loadMTLtextures(mtl_path, TextObj);
+        bool MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);
         if (MTL_loaded == false) { printf("Was not able to load the semantic.mtl file\n"); exit(-1); }
         else { printf("Semantic.mtl file was loaded with success.\n"); }
     }

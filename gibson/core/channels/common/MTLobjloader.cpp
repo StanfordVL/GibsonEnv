@@ -92,10 +92,10 @@ bool loadOBJ_MTL(
             fscanf(file, "%s\n", &material_name );
             std::stringstream ss;
             std::string tempmat2;
-            ss << material_name;
+            ss << &material_name;
             ss >> tempmat2;
-            //printf("material name: %s\n", &material_name);
-            out_material_name.push_back(tempmat2);
+            //printf("material name: %s, length: %i\n", tempmat2.c_str(), tempmat2.length());
+            out_material_name.push_back(tempmat2.c_str());
             temp_vertexIndices.clear();
             temp_uvIndices.clear();
             temp_normalIndices.clear();
