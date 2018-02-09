@@ -10,10 +10,9 @@ import gym, logging
 from mpi4py import MPI
 from gibson.envs.husky_env import HuskyNavigateEnv, HuskyGibsonFlagRunEnv
 from baselines.common import set_global_seeds
-import pposgd_simple
 import baselines.common.tf_util as U
-import cnn_policy, fuse_policy
-import utils
+from gibson.utils import cnn_policy, fuse_policy
+from gibson.utils import utils
 import datetime
 from baselines import logger
 from baselines import bench
@@ -35,8 +34,9 @@ def enjoy(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
 
-    env = HuskyGibsonFlagRunEnv(human=True, is_discrete=True, mode='DEPTH', gpu_count=0,
-                                use_filler=False)
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
+                               'husky_gibson_flagrun_train.yaml')
+    env = HuskyGibsonFlagRunEnv(human=True, is_discrete=True, gpu_count=0, config=config_file)
     #env = bench.Monitor(env, logger.get_dir() and
     #                    osp.join(logger.get_dir(), str(rank)))
 

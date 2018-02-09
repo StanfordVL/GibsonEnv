@@ -8,14 +8,11 @@ import gym, logging
 from mpi4py import MPI
 from gibson.envs.ant_env import AntGibsonFlagRunEnv
 from baselines.common import set_global_seeds
-import pposgd_sensor
-import deepq
-import cnn_policy, mlp_policy
-import utils
+from gibson.utils import pposgd_sensor
+from gibson.utils import cnn_policy, mlp_policy
 import baselines.common.tf_util as U
 import datetime
 from baselines import logger
-import pposgd_simple
 import os.path as osp
 import random
 

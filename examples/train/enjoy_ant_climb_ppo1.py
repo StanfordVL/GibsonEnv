@@ -10,14 +10,13 @@ import gym, logging
 from mpi4py import MPI
 from gibson.envs.ant_env import AntClimbEnv
 from baselines.common import set_global_seeds
-import deepq
-import cnn_policy, mlp_policy
-import pposgd_sensor, pposgd_fuse, fuse_policy
-import utils
+from gibson.utils import cnn_policy, mlp_policy
+from gibson.utils import pposgd_sensor, pposgd_fuse, fuse_policy
+from gibson.utils import utils
 import baselines.common.tf_util as U
 import datetime
 from baselines import logger
-from monitor import Monitor
+from gibson.utils.monitor import Monitor
 import os.path as osp
 import random
 import sys
@@ -32,7 +31,10 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = AntClimbEnv(human=args.human, is_discrete=False, mode=args.mode)
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
+                               'ant_climb.yaml')
+
+    env = AntClimbEnv(human=args.human, is_discrete=False, config=config_file)
     
     env = Monitor(env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))

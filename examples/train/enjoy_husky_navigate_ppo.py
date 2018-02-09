@@ -8,10 +8,9 @@ import gym, logging
 from mpi4py import MPI
 from gibson.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
-import pposgd_simple
+from gibson.utils import pposgd_simple
 import baselines.common.tf_util as U
-import cnn_policy, mlp_policy
-import utils
+from gibson.utils import utils
 import datetime
 from baselines import logger
 from baselines import bench
@@ -39,8 +38,11 @@ def train(num_timesteps, seed):
     set_global_seeds(workerseed)
 
     use_filler = not args.disable_filler
-    
-    env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
+                               'husky_navigate_train.yaml')
+    print(config_file)
+
+    env = HuskyNavigateEnv(human=args.human, is_discrete=True, gpu_count=args.gpu_count, config = config_file)
 
     policy = policy_fn("pi", env.observation_space, env.action_space) # Construct network for new policy
     def execute_policy(env):

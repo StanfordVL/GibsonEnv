@@ -9,10 +9,10 @@ import gym, logging
 from mpi4py import MPI
 from gibson.envs.husky_env import HuskyGibsonFlagRunEnv
 from baselines.common import set_global_seeds
-import pposgd_fuse
+from gibson.utils import pposgd_fuse
 import baselines.common.tf_util as U
-import fuse_policy
-import utils
+from gibson.utils import fuse_policy
+from gibson.utils import utils
 import datetime
 from baselines import logger
 from baselines import bench

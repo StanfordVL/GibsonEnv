@@ -8,14 +8,13 @@ import gym, logging
 from mpi4py import MPI
 from gibson.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
-import pposgd_simple
-import pposgd_fuse, fuse_policy
+from gibson.utils import pposgd_simple
 import baselines.common.tf_util as U
-import cnn_policy, mlp_policy
-import utils
+from gibson.utils import cnn_policy, mlp_policy
+from gibson.utils import utils
 import datetime
 from baselines import logger
-from monitor import Monitor
+from gibson.utils.monitor import Monitor
 import os.path as osp
 import tensorflow as tf
 import random
