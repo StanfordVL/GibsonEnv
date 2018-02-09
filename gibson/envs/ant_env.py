@@ -373,7 +373,7 @@ class AntFlagRunEnv(CameraRobotEnv):
 
         self.flag = None
         #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
-        self.flag_timeout = 600 / self.scene.frame_skip
+        self.flag_timeout = 3000 / self.scene.frame_skip
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
         if self.human:
@@ -507,7 +507,7 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
 
         self.flag = None
         #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
-        self.flag_timeout = 600 / self.scene.frame_skip
+        self.flag_timeout = 3000 / self.scene.frame_skip
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
         if self.lastid:
@@ -566,12 +566,8 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
         return rewards
 
     def _termination(self, state=None, debugmode=False):
-        head_touch_ground = 1
-        if head_touch_ground == 0:
-            alive_score = 0.1
-        else:
-            alive_score = -0.1
-        done = head_touch_ground > 0 or self.nframe > 500
+
+        done = self.nframe > 500
         if not np.isfinite(state).all():
             print("~INF~", state)
             done = True

@@ -4,7 +4,6 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 
-from gibson import configs
 
 import gym, logging
 from mpi4py import MPI
@@ -22,6 +21,8 @@ import os.path as osp
 import random
 import sys
 
+LEARNING_RATE = 3e-5
+
 def train(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
     sess = utils.make_gpu_session(args.num_gpu)
@@ -32,7 +33,12 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = AntClimbEnv(human=args.human, is_discrete=False, mode=args.mode)
+
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
+                               'ant_climb.yaml')
+    print(config_file)
+
+    env = AntClimbEnv(human=args.human, is_discrete=False, config=config_file)
     
     env = Monitor(env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))
@@ -62,7 +68,7 @@ def train(num_timesteps, seed):
             max_timesteps=int(num_timesteps * 1.1),
             timesteps_per_actorbatch=2000,
             clip_param=0.2, entcoeff=0.01,
-            optim_epochs=4, optim_stepsize=configs.LEARNING_RATE, optim_batchsize=64,
+            optim_epochs=4, optim_stepsize=LEARNING_RATE, optim_batchsize=64,
             gamma=0.99, lam=0.95,
             schedule='linear',
             save_per_acts=50,
