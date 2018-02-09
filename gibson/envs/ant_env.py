@@ -10,9 +10,6 @@ import pybullet_data
 #from gibson.envs.ant_env_history import *
 
 
-ANT_TIMESTEP  = 1.0/(4 * 22)
-ANT_FRAMESKIP = 4
-
 
 """Task specific classes for Ant Environment
 Each class specifies: 
@@ -37,9 +34,7 @@ class AntNavigateEnv(CameraRobotEnv):
     def __init__(
             self, 
             config,
-            human=True, 
-            timestep=ANT_TIMESTEP, 
-            frame_skip=ANT_FRAMESKIP, 
+            human=True,
             is_discrete=False, 
             mode="RGBD",  
             gpu_count=0):
@@ -47,8 +42,8 @@ class AntNavigateEnv(CameraRobotEnv):
         self.config = self.parse_config(config)
         self.human = human
         self.model_id = self.config["model_id"]
-        self.timestep = timestep
-        self.frame_skip = frame_skip
+        self.timestep = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
         self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
@@ -161,9 +156,7 @@ class AntClimbEnv(CameraRobotEnv):
     def __init__(
             self,
             config,
-            human=True, 
-            timestep=ANT_TIMESTEP, 
-            frame_skip=ANT_FRAMESKIP,           ## increase frame skip, as the motion is too flashy 
+            human=True,
             is_discrete=False, 
             mode="RGBD", 
             gpu_count=0):
@@ -171,8 +164,8 @@ class AntClimbEnv(CameraRobotEnv):
         self.delta_target = [self.config["random"]["random_target_range"], self.config["random"]["random_target_range"]]
         self.human = human
         self.model_id = self.config["model_id"]
-        self.timestep = timestep
-        self.frame_skip = frame_skip
+        self.timestep = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
         self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
@@ -335,17 +328,15 @@ class AntFlagRunEnv(CameraRobotEnv):
     def __init__(
             self, 
             config,
-            human=True, 
-            timestep=ANT_TIMESTEP,
-            frame_skip=ANT_FRAMESKIP, 
+            human=True,
             is_discrete=False,
             mode="RGBD",
             gpu_count=0):
         self.config = self.parse_config(config)
         self.human = human
         self.model_id = self.config["model_id"]
-        self.timestep = timestep
-        self.frame_skip = frame_skip
+        self.timestep = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
         self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
@@ -463,9 +454,7 @@ class AntFetchEnv(CameraRobotEnv):
     def __init__(
             self,
             config, 
-            human=True, 
-            timestep=ANT_TIMESTEP,
-            frame_skip=ANT_FRAMESKIP, 
+            human=True,
             is_discrete=False,
             gpu_count=0, 
             scene_type="building", 
@@ -474,8 +463,8 @@ class AntFetchEnv(CameraRobotEnv):
         self.config = self.parse_config(config)
         self.human = human
         self.model_id = self.config["model_id"]
-        self.timestep = timestep
-        self.frame_skip = frame_skip
+        self.timestep = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
         self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]

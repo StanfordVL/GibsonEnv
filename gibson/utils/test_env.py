@@ -28,7 +28,7 @@ class RandomAgent(object):
 def testEnv(Env, mode="RGBD"):
     print("Currently testing", Env)
     config = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'examples', 'configs', "test.yaml")
-    env = Env(config, human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode=mode)
+    env = Env(config, human=True, is_discrete = False, mode=mode)
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
     frame = 0

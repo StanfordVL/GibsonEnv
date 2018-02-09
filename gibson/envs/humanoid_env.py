@@ -9,9 +9,6 @@ import pybullet as p
 from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
 
-HUMANOID_TIMESTEP  = 1.0/(4 * 22)
-HUMANOID_FRAMESKIP = 4
-
 
 tracking_camera = {
     'yaw': 20,  # demo: living room, stairs
@@ -38,9 +35,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
     def __init__(
             self,
             config,
-            human=True, 
-            timestep=HUMANOID_TIMESTEP, 
-            frame_skip=HUMANOID_FRAMESKIP, 
+            human=True,
             is_discrete=False, 
             mode="RGBD", 
             use_filler=True, 
@@ -49,8 +44,8 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         self.config = self.parse_config(config)
         self.human = human
         self.model_id = self.config["model_id"]
-        self.timestep = timestep
-        self.frame_skip = frame_skip
+        self.timestep = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
         self.resolution = resolution
         self.tracking_camera = tracking_camera
         target_orn, target_pos = self.config["target_orn"], self.config["target_pos"]
@@ -162,8 +157,6 @@ class HumanoidFetchEnv(CameraRobotEnv):
             self,
             config,
             human=True,
-            timestep=HUMANOID_TIMESTEP,
-            frame_skip=HUMANOID_FRAMESKIP,
             is_discrete=False,
             gpu_count=0,
             scene_type="building",
@@ -172,8 +165,8 @@ class HumanoidFetchEnv(CameraRobotEnv):
         self.config = self.parse_config(config)
         self.human = human
         self.model_id = self.config["model_id"]
-        self.timestep = timestep
-        self.frame_skip = frame_skip
+        self.timestep = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
         self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
         target_orn, target_pos = self.config["target_orn"], self.config["target_pos"]

@@ -453,9 +453,12 @@ class CameraRobotEnv(SensorRobotEnv):
         
     def _close(self):
         BaseEnv._close(self)
+
         if not self._require_camera_input or self.test_env:
             return
         self.r_camera_mul.terminate()
+        self.r_camera_rgb._close()
+
         if self.r_camera_dep is not None:
             self.r_camera_dep.terminate()
         if self._require_normal:
@@ -541,10 +544,9 @@ class CameraRobotEnv(SensorRobotEnv):
             source_semantics.append(target_semantics)
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        renderer = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics,
+        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics,
                               human=self.human, use_filler=self._use_filler, render_mode=self.mode, gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
 
-        self.r_camera_rgb = renderer
 
 
     def setup_camera_multi(self):

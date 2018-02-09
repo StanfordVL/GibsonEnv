@@ -45,7 +45,7 @@ def train(num_timesteps, seed):
     print(config_file)
 
     raw_env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count,
-                               use_filler=use_filler, config=config_file)
+                               config=config_file)
 
 #    def policy_fn(name, ob_space, sensor_space, ac_space):
     def policy_fn(name, ob_space, ac_space):

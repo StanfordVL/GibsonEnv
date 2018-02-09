@@ -49,8 +49,7 @@ def train(num_timesteps, seed):
     print(config_file)
 
 
-    env = HuskyFetchEnv(config = config_file, human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count,
-                           use_filler=False)
+    env = HuskyFetchEnv(config = config_file, human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count)
 
     print(env.sensor_space)
 

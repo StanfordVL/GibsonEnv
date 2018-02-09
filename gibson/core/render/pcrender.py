@@ -160,7 +160,7 @@ class PCRenderer:
         #else:
         comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
         comp = torch.nn.DataParallel(comp).cuda()
-        comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "compG_epoch4_3000.pth")))
+        comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module
@@ -175,6 +175,14 @@ class PCRenderer:
 
         if human and not self.env.config["display_ui"]: #configs.DISPLAY_UI:
             self.renderToScreenSetup()
+
+
+    def _close(self):
+        self._context_dept.destroy()
+        self._context_mist.destroy()
+        self._context_norm.destroy()
+        self._context_phys.destroy()
+
 
     def renderToScreenSetup(self):
         cv2.namedWindow('RGB cam')
@@ -386,7 +394,6 @@ class PCRenderer:
             source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).clone().repeat(1,self.showsz,self.showsz)
             source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
             mask = torch.cat([source_depth, mask], 0)
-            print(self.imgv.data.shape, source.shape)
             self.imgv.data.copy_(source[None])
             self.maskv.data.copy_(mask)
             recon = model(self.imgv, self.maskv)

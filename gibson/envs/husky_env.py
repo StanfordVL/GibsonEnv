@@ -10,9 +10,7 @@ from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
 import cv2
 
-
-HUSKY_TIMESTEP  = 1.0/(4 * 12)
-HUSKY_FRAMESKIP = 4
+CALC_OBSTACLE_PENALTY = 1
 
 tracking_camera = {
     'yaw': 20,  # demo: living room, stairs
@@ -38,9 +36,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
     def __init__(
             self,
             config,
-            human=True, 
-            timestep=HUSKY_TIMESTEP, 
-            frame_skip=HUSKY_FRAMESKIP, 
+            human=True,
             is_discrete=False, 
             mode="RGBD", 
             gpu_count=0):
@@ -48,8 +44,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self.config = self.parse_config(config)
         self.human = human
         self.model_id = self.config["model_id"]
-        self.timestep = timestep
-        self.frame_skip = frame_skip
+        self.timestep = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
         self.resolution = self.config["resolution"]
         self.tracking_camera = tracking_camera
         target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
@@ -217,8 +213,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
 class HuskyFetchEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, config, human=True, timestep=HUSKY_TIMESTEP,
-                 frame_skip=HUSKY_FRAMESKIP, is_discrete=False,
+    def __init__(self, config, human=True, is_discrete=False,
                  gpu_count=0, scene_type="building", mode = 'SENSOR'):
 
         self.config = self.parse_config(config)
@@ -228,8 +223,8 @@ class HuskyFetchEnv(CameraRobotEnv):
             "initial_pos"]
 
         self.human = human
-        self.timestep = timestep
-        self.frame_skip = frame_skip
+        self.timestep = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
         self.model_id = self.config["model_id"]
         ## Mode initialized with mode=SENSOR
         self.tracking_camera = tracking_camera
@@ -369,7 +364,6 @@ class HuskyFetchEnv(CameraRobotEnv):
 
 
 
-CALC_OBSTACLE_PENALTY = 1
 
 def get_obstacle_penalty(robot, depth):
     screen_sz = robot.obs_dim[0]

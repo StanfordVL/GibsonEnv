@@ -22,3 +22,7 @@ random:
 
 output: [sensor, gps, rgb_filled, depth]
 resolution: 512
+
+speed:
+  timestep: 0.01
+  frameskip: 1

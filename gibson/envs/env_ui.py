@@ -23,8 +23,6 @@ class View(Enum):
 
 class SimpleUI():
     '''Static UI'''
-    RECORD_ROOT = "/home/zhiyang/Desktop/gibson/recordings"
-
     def __init__(self, width_col, height_col, windowsz, env = None):
         self.env = env
         self.width  = width_col * windowsz
@@ -36,6 +34,8 @@ class SimpleUI():
         self.is_recording = False
         self.components = [View[item] for item in self.env.config["ui_components"]]
         self._add_all_images()
+        self.record_root = None
+
 
     def _add_all_images(self):
         for index, component in enumerate(self.components):
