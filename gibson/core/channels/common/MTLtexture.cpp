@@ -19,7 +19,13 @@ bool parseMTL(std::string mtlpath, std::vector<Material> & out_material){
     }
 
     /* verify the type of file */
-    if (strncmp(texturePath, "mtl ", 4) != 0) {
+    const char* extension;
+    size_t i = mtlpath.rfind('.', mtlpath.length());
+    if (i != std::string::npos) {
+       extension = mtlpath.substr(i+1, mtlpath.length() - i).c_str();
+    }
+    if (strncmp(extension, "mtl ", 3) != 0) {
+        printf("The file is not an .mtl (%s)\n", texturePath);
         inFile.close();
         return 0;
     }
@@ -45,6 +51,17 @@ bool parseMTL(std::string mtlpath, std::vector<Material> & out_material){
             else {
                 // Generate the material
                 // Push Back loaded Material
+
+                /*
+                //Debug
+                printf("Temp name: %s\n", tempMaterial.name.c_str());
+                printf("Temp Ka: %i %i %i\n", (int)tempMaterial.Ka.X, (int)tempMaterial.Ka.Y, (int)tempMaterial.Ka.Z);
+                printf("Temp Kd: %i %i %i\n", (int)tempMaterial.Ks.X, (int)tempMaterial.Ks.Y, (int)tempMaterial.Ks.Z);
+                printf("Temp Ks: %i %i %i\n", (int)tempMaterial.Kd.X, (int)tempMaterial.Kd.Y, (int)tempMaterial.Kd.Z);
+                printf("Temp map_Ka: %s\n", tempMaterial.map_Ka.c_str());
+                printf("\n");
+                */
+
                 out_material.push_back(tempMaterial);
                 // Clear Loaded Material
                 tempMaterial = Material();
@@ -143,7 +160,10 @@ bool parseMTL(std::string mtlpath, std::vector<Material> & out_material){
     if (out_material.empty()) {
         printf("The %s file gave no materials back.\n", texturePath); getchar();
         return 0;
-      }
+    }
+    else {
+      printf("Number of loaded materials: %i\n", (int)out_material.size());
+    }
 
     return true;
 }
@@ -324,8 +344,15 @@ GLuint solidColorTexture(Vector3 Ka, GLenum minificationFilter, GLenum magnifica
         printf("You can't allocate the texture image.\n");
         exit(-1);
     }
-    unsigned char color2[4] = {Ka.X*255, Ka.Y*255, Ka.Z*255, 255};
-    FreeImage_FillBackground(bitmap32, color2);
+    unsigned char color[4] = {Ka.X*255, Ka.Y*255, Ka.Z*255, 255};
+    FreeImage_FillBackground(bitmap32, color);
+    /* Debug Image colorization
+    if (FreeImage_Save( FIF_PNG ,  bitmap32 , "/root/mount/gibson/FreeImageTexture.png" , 0 )) {
+      printf("Saved image succesfully!\n");
+    }
+    */
+
+    // Assign texture to OpenGL
     GLubyte* textureData = FreeImage_GetBits(bitmap32);
 
     // Generate a texture ID and bind to it
@@ -380,6 +407,7 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText) {
     // load texture images only if they exist, or assign standard color
     for ( unsigned int i = 0; i < parsed_mtl_file.size(); i++) {
         if (!parsed_mtl_file[i].map_Ka.empty() || !parsed_mtl_file[i].map_Kd.empty() || !parsed_mtl_file[i].map_Ks.empty()) {
+            printf("Reading Texture Images for textures.\n");  //debug
             if (!parsed_mtl_file[i].map_Ka.empty()) {
                 imagePath = parsed_mtl_file[i].map_Ka;
             }
@@ -416,10 +444,13 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText) {
             objText.push_back(tempText);
         }
         if (parsed_mtl_file[i].map_Ka.empty() || parsed_mtl_file[i].map_Kd.empty() || parsed_mtl_file[i].map_Ks.empty()) {
+            //printf("Generating Texture Images for textures (no texture images exist).\n"); //debug
             // Create a handle for our texture
             GLuint tempTextureID;
             TextureObj tempText;
             tempText.name = parsed_mtl_file[i].name;
+            //printf("material name to generate image: %s\n", tempText.name.c_str());  //debug
+
             // Generate an image of solid texture and bind it to texture
             tempText.textureID = solidColorTexture(parsed_mtl_file[i].Ka);
             objText.push_back(tempText);
