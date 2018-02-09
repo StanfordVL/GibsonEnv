@@ -112,8 +112,12 @@ cuda_add_executable(depth_render
     common/shader.hpp
     common/controls.cpp
     common/controls.hpp
+    common/MTLtexture.cpp
+    common/MTLtexture.hpp
     common/texture.cpp
     common/texture.hpp
+    common/MTLobjloader.cpp
+    common/MTLobjloader.hpp
     common/objloader.cpp
     common/objloader.hpp
     common/vboindexer.cpp
@@ -148,8 +152,12 @@ add_executable(demo
     common/shader.hpp
     common/controls.cpp
     common/controls.hpp
+    common/MTLtexture.cpp
+    common/MTLtexture.hpp
     common/texture.cpp
     common/texture.hpp
+    common/MTLobjloader.cpp
+    common/MTLobjloader.hpp
     common/objloader.cpp
     common/objloader.hpp
     common/vboindexer.cpp
