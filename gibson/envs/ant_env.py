@@ -1,4 +1,4 @@
-from gibson.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from gibson.envs.env_modalities import CameraRobotEnv, BaseRobotEnv
 from gibson.envs.env_bases import *
 from gibson.core.physics.robot_locomotors import Ant, AntClimber
 from transforms3d import quaternions
@@ -347,7 +347,8 @@ class AntFlagRunEnv(CameraRobotEnv):
             use_filler=False)
         self.robot_introduce(Ant(
             initial_pos, initial_orn, 
-            is_discrete=is_discrete))
+            is_discrete=is_discrete,
+            env = self))
         self.scene_introduce()
 
         if self.human:
@@ -476,7 +477,8 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
         self.robot_introduce(Ant(
             is_discrete=is_discrete,
             initial_pos=initial_pos,
-            initial_orn=initial_orn))
+            initial_orn=initial_orn,
+            env=self))
         self.scene_introduce()
 
         if self.human:

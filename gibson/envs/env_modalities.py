@@ -34,7 +34,7 @@ DEFAULT_DEBUG_CAMERA = {
 
 DEPTH_SCALE_FACTOR = 15
 
-class SensorRobotEnv(BaseEnv):
+class BaseRobotEnv(BaseEnv):
     """Based on BaseEnv
     Handles action, reward
     """
@@ -262,7 +262,7 @@ class SensorRobotEnv(BaseEnv):
         pass
 
 
-class CameraRobotEnv(SensorRobotEnv):
+class CameraRobotEnv(BaseRobotEnv):
     """CameraRobotEnv has full modalities. If it's initialized with mode="SENSOR",
     PC renderer is not initialized to save time.
     """
@@ -287,7 +287,7 @@ class CameraRobotEnv(SensorRobotEnv):
         if self._require_camera_input:
             self.model_path = get_model_path(self.model_id)
 
-        SensorRobotEnv.__init__(self, config, scene_type, gpu_count)
+        BaseRobotEnv.__init__(self, config, scene_type, gpu_count)
         cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
         self.robot_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
         p.changeVisualShape(self.robot_mapId, -1, rgbaColor=[0, 0, 1, 0])
@@ -299,11 +299,11 @@ class CameraRobotEnv(SensorRobotEnv):
         self.fps = 0
 
     def robot_introduce(self, robot):
-        SensorRobotEnv.robot_introduce(self, robot)
+        BaseRobotEnv.robot_introduce(self, robot)
         self.setup_rendering_camera()
 
     def scene_introduce(self):
-        SensorRobotEnv.scene_introduce(self)
+        BaseRobotEnv.scene_introduce(self)
 
     def setup_rendering_camera(self):
         if self.test_env or not self._require_camera_input:
@@ -332,7 +332,7 @@ class CameraRobotEnv(SensorRobotEnv):
         """Called by gym.env.reset()"""
         ## TODO(hzyjerry): return noisy_observation
         #  self._noisy_observation()
-        sensor_state = SensorRobotEnv._reset(self)
+        sensor_state = BaseRobotEnv._reset(self)
         self.temp_target_x = self.robot.walk_target_x
         self.temp_target_y = self.robot.walk_target_y
 
@@ -376,7 +376,7 @@ class CameraRobotEnv(SensorRobotEnv):
         return img
 
     def _step(self, a):
-        sensor_state, sensor_reward, done, sensor_meta = SensorRobotEnv._step(self, a)
+        sensor_state, sensor_reward, done, sensor_meta = BaseRobotEnv._step(self, a)
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
         sensor_meta.pop("eye_pos", None)
         sensor_meta.pop("eye_quat", None)
@@ -492,7 +492,7 @@ class CameraRobotEnv(SensorRobotEnv):
             visuals = rgb
         if "depth" in self.config["output"]:
             if not visuals is None:
-                visuals = np.append(visuals, depth)
+                visuals = np.concatenate([visuals, depth], 2)
             else:
                 visuals = depth
 

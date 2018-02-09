@@ -25,10 +25,10 @@ class RandomAgent(object):
                 action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
         return action
 
-def testEnv(Env, mode="RGBD"):
+def testEnv(Env):
     print("Currently testing", Env)
     config = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'examples', 'configs', "test.yaml")
-    env = Env(config, human=True, is_discrete = False, mode=mode)
+    env = Env(config, human=True, is_discrete = False)
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
     frame = 0
@@ -47,11 +47,11 @@ def testEnv(Env, mode="RGBD"):
     
 if __name__ == '__main__':
 
-    testEnv(HumanoidGibsonFlagRunEnv, "RGBD")
-    testEnv(HumanoidNavigateEnv, "RGBD")
-    testEnv(HuskyNavigateEnv, "RGBD")
-    testEnv(HuskyGibsonFlagRunEnv, "RGBD")
-    testEnv(AntClimbEnv, "RGBD")
-    testEnv(AntFlagRunEnv, "RGBD")
-    testEnv(AntGibsonFlagRunEnv, "RGBD")
-    testEnv(AntNavigateEnv, "RGBD")
+    testEnv(HumanoidGibsonFlagRunEnv)
+    testEnv(HumanoidNavigateEnv)
+    testEnv(HuskyNavigateEnv)
+    testEnv(HuskyGibsonFlagRunEnv)
+    testEnv(AntClimbEnv)
+    testEnv(AntFlagRunEnv)
+    testEnv(AntGibsonFlagRunEnv)
+    testEnv(AntNavigateEnv)

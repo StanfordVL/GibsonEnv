@@ -1,4 +1,4 @@
-from gibson.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from gibson.envs.env_modalities import CameraRobotEnv, BaseRobotEnv
 from gibson.envs.env_bases import *
 from gibson.core.physics.robot_locomotors import Humanoid, Ant
 from transforms3d import quaternions
@@ -37,8 +37,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
             config,
             human=True,
             is_discrete=False, 
-            mode="RGBD", 
-            use_filler=True, 
+            use_filler=True,
             gpu_count=0, 
             resolution=512):
         self.config = self.parse_config(config)
@@ -54,7 +53,6 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         CameraRobotEnv.__init__(
             self,
             config,
-            mode,
             gpu_count,
             scene_type="building",
             use_filler=self.config["use_filler"])
@@ -65,7 +63,8 @@ class HumanoidNavigateEnv(CameraRobotEnv):
             initial_orn,
             is_discrete=is_discrete,
             target_pos=target_pos,
-            resolution=self.resolution))
+            resolution=self.resolution,
+            env = self))
 
         self.scene_introduce()
 
@@ -160,7 +159,7 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
             is_discrete=False,
             gpu_count=0,
             scene_type="building",
-            mode='SENSOR'):
+            ):
 
         self.config = self.parse_config(config)
         self.human = human
@@ -181,7 +180,6 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
         CameraRobotEnv.__init__(
             self,
             config,
-            mode,
             gpu_count,
             scene_type="building")
 
@@ -190,7 +188,8 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
             initial_orn,
             is_discrete=is_discrete,
             target_pos=target_pos,
-            resolution=self.resolution))
+            resolution=self.resolution,
+            env = self))
 
         self.scene_introduce()
 
