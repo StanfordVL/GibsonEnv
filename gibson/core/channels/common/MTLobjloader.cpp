@@ -60,8 +60,8 @@ bool loadOBJ_MTL(
         if ( strcmp( lineHeader, "mtllib") == 0 ){
             char mtllib;
             fscanf(file, "%s \n", &mtllib);
-            out_mtllib.push_back(mtllib);
-            printf("MATERIAL LIBRARY: %s", mtllib);
+            out_mtllib = &mtllib;
+            //printf("Material Name: %s\n", &mtllib);
         }
         //vertices
         else if ( strcmp( lineHeader, "v" ) == 0 ){
@@ -92,9 +92,10 @@ bool loadOBJ_MTL(
             fscanf(file, "%s\n", &material_name );
             std::stringstream ss;
             std::string tempmat2;
-            ss << material_name;
+            ss << &material_name;
             ss >> tempmat2;
-            out_material_name.push_back(tempmat2);
+            //printf("material name: %s, length: %i\n", tempmat2.c_str(), tempmat2.length());
+            out_material_name.push_back(tempmat2.c_str());
             temp_vertexIndices.clear();
             temp_uvIndices.clear();
             temp_normalIndices.clear();
@@ -148,7 +149,7 @@ bool loadOBJ_MTL(
         }
     }
 
-    printf("SEMANTICS 1.\n");
+
     // For each vertex of each triangle
     for( unsigned int i=0; i<vertexIndices.size(); i++ ){
         std::vector<glm::vec3> temp_out_vertices;
@@ -188,7 +189,7 @@ bool loadOBJ_MTL(
         if (temp_out_normals.size() > 0)
             out_normals.push_back(temp_out_normals);
     }
-    printf("SEMANTICS 2.\n");
+
     // construct the temp_normals vector here, using vertex positions and face vertex indices
     // TODO: this is not well-tested yet
     if ( out_normals.size() == 0 ) {
@@ -228,19 +229,18 @@ bool loadOBJ_MTL(
             }
         }
     }
-  printf("SEMANTICS 3.\n");
+
     // TODO: (hzyjerry) this is a dummy place holder
-    /*for ( unsigned int i=0; i<out_vertices.size(); i++ ){
-        if ( out_uvs[i].size() == 0) {
+    if ( out_uvs.size() == 0 ) {
+      for ( unsigned int i=0; i<out_vertices.size(); i++ ){
             std::vector<glm::vec2> temp_out_uvs;
             for ( unsigned int j=0; j<out_vertices[i].size(); j++ ){
                 temp_out_uvs.push_back(glm::vec2(0.0));
             }
             out_uvs.push_back(temp_out_uvs);
         }
-    }*/
-    printf("SEMANTICS 4. %s: size of temp vertices %lu, vertex indices %lu out vertices %lu\n", path, temp_vertices.size(), vertexIndices.size(), out_vertices.size());
+    }
+    printf("%s: size of temp vertices %lu, vertex indices %lu out vertices %lu\n", path, temp_vertices.size(), vertexIndices.size(), out_vertices.size());
     fclose(file);
-    printf("SEMANTICS 5.\n");
     return true;
 }
