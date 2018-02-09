@@ -1,27 +1,26 @@
 #include <fstream>
-#include <FreeImage.h>
+#include <FreeImagePlus.h>
 #include <GL/glew.h>
 #include <glfw3.h>
 #include "MTLtexture.hpp"
 
 
 /* parse MTL file */
-bool parseMTL(const std::string * mtlpath, std::vector<Material> & out_material){
-    ifstream inFile;
-    printf("Parsing %s file for material textures.\n", mtlpath);
+bool parseMTL(std::string mtlpath, std::vector<Material> & out_material){
+    const char* texturePath = mtlpath.c_str();
+    std::ifstream inFile;
+    printf("Parsing %s file for material textures.\n", texturePath);
 
     /* try to open the file */
-    inFile.open(mtlpath);
+    inFile.open(texturePath);
     if (!inFile) {
-        printf("%s could not be opened. Are you in the right directory ? Don't forget to read the FAQ !\n", mtlpath); getchar();
+        printf("%s could not be opened. Are you in the right directory ? Don't forget to read the FAQ !\n", texturePath); getchar();
         return 0;
     }
 
     /* verify the type of file */
-    char filecode[4];
-    fread(filecode, 1, 4, fp);
-    if (strncmp(filecode, "mtl ", 4) != 0) {
-        fclose(fp);
+    if (strncmp(texturePath, "mtl ", 4) != 0) {
+        inFile.close();
         return 0;
     }
 
@@ -31,7 +30,7 @@ bool parseMTL(const std::string * mtlpath, std::vector<Material> & out_material)
     Material tempMaterial;
     bool listening = false;
     std::string curline;
-    while (std::getline(file, curline)) {
+    while (std::getline(inFile, curline)) {
         // new material and material name
         if (algorithm::firstToken(curline) == "newmtl") {
             if (!listening) {
@@ -134,18 +133,18 @@ bool parseMTL(const std::string * mtlpath, std::vector<Material> & out_material)
             tempMaterial.map_bump = algorithm::tail(curline);
         }
     }
-        
+
     // Deal with last material
     // Push Back loaded Material
     out_material.push_back(tempMaterial);
-    
+
     // Test to see if anything was loaded
     // If not return false
-    if (out_material.empty())
-        printf("The %s file gave no materials back.\n", mtlpath); getchar();
+    if (out_material.empty()) {
+        printf("The %s file gave no materials back.\n", texturePath); getchar();
         return 0;
-    
-    printf("Found %i materials.\n", out_material.length())
+      }
+
     return true;
 }
 
@@ -153,7 +152,7 @@ bool parseMTL(const std::string * mtlpath, std::vector<Material> & out_material)
 /* Method to load an image into a texture using the freeimageplus library. */
 /* Returns the texture ID or dies trying */
 /* code from: https://r3dux.org/2014/10/how-to-load-an-opengl-texture-using-the-freeimage-library-or-freeimageplus-technically/ */
-GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilter = GL_LINEAR, GLenum magnificationFilter = GL_LINEAR)
+GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilter, GLenum magnificationFilter)
 {
 
     // Get the texturePath as a pointer to a const char array to play nice with FreeImage
@@ -167,36 +166,36 @@ GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilte
     // you might find preferable to dumping the user back to the desktop.
     if (format == -1)
     {
-        printf("Could not find image: %s - Aborting.\n", texturePathString);
-        return;
+        printf("Could not find image: %s - Aborting.\n", texturePath);
+        exit(-1);
     }
 
     // Found image, but couldn't determine the file format? Try again...
     if (format == FIF_UNKNOWN)
     {
         printf("Couldn't determine file format - attempting to get from file extension...\n");
-       
+
         // ...by getting the filetype from the texturePath extension (i.e. .PNG, .GIF etc.)
         // Note: This is slower and more error-prone that getting it from the file itself,
         // also, we can't use the 'U' (unicode) variant of this method as that's Windows only.
         format = FreeImage_GetFIFFromFilename(texturePath);
- 
+
         // Check that the plugin has reading capabilities for this format (if it's FIF_UNKNOWN,
         // for example, then it won't have) - if we can't read the file, then we bail out =(
         if ( !FreeImage_FIFSupportsReading(format) )
         {
             printf("Detected image format cannot be read!\n");
-            return;
+            exit(-1);
         }
     }
 
     // If we're here we have a known image format, so load the image into a bitap
-    FIBITMAP* bitmap = FreeImage_Load(format, filename);
- 
+    FIBITMAP* bitmap = FreeImage_Load(format, texturePath);
+
     // How many bits-per-pixel is the source image?
     int bitsPerPixel =  FreeImage_GetBPP(bitmap);
 
- 
+
     // Convert our image up to 32 bits (8 bits per channel, Red/Green/Blue/Alpha) -
     // but only if the image is not already 32 bits (i.e. 8 bits per channel).
     // Note: ConvertTo32Bits returns a CLONE of the image data - so if we
@@ -226,18 +225,18 @@ GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilte
         printf("Source image has %i bits per pixel. Converting to 32-bit color.\n", bitsPerPixel);
         bitmap32 = FreeImage_ConvertTo32Bits(bitmap);
     }
- 
+
     // Some basic image info - strip it out if you don't care
     int imageWidth  = FreeImage_GetWidth(bitmap32);
     int imageHeight = FreeImage_GetHeight(bitmap32);
-    printf("Image: %s is of size: %i x %i.\n", texturePathString, imageWidth, imageHeight);
+    printf("Image: %s is of size: %i x %i.\n", texturePath, imageWidth, imageHeight);
 
     // Get a pointer to the texture data as an array of unsigned bytes.
     // Note: At this point bitmap32 ALWAYS holds a 32-bit colour version of our image - so we get our data from that.
     // Also, we don't need to delete or delete[] this textureData because it's not on the heap (so attempting to do
     // so will cause a crash) - just let it go out of scope and the memory will be returned to the stack.
     GLubyte* textureData = FreeImage_GetBits(bitmap32);
- 
+
     // Generate a texture ID and bind to it
     GLuint tempTextureID;
     glGenTextures(1, &tempTextureID);
@@ -269,37 +268,37 @@ GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilte
     {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
- 
+
     // Check for OpenGL texture creation errors
     GLenum glError = glGetError();
     if(glError)
     {
-        cout << "There was an error loading the texture: "<< filenameString << endl;
- 
+        printf("There was an error loading the texture: %s\n", texturePath);
+
         switch (glError)
         {
             case GL_INVALID_ENUM:
-                cout << "Invalid enum." << endl;
+                printf("Invalid enum.\n");
                 break;
- 
+
             case GL_INVALID_VALUE:
-                cout << "Invalid value." << endl;
+                printf("Invalid value.\n");
                 break;
- 
+
             case GL_INVALID_OPERATION:
-                cout << "Invalid operation." << endl;
- 
+                printf("Invalid operation.\n");
+
             default:
-                cout << "Unrecognised GLenum." << endl;
+                printf("Unrecognised GLenum.\n");
                 break;
         }
- 
-        cout << "See https://www.opengl.org/sdk/docs/man/html/glTexImage2D.xhtml for further details." << endl;
+
+        printf("See https://www.opengl.org/sdk/docs/man/html/glTexImage2D.xhtml for further details.\n");
     }
- 
+
     // Unload the 32-bit colour bitmap
     FreeImage_Unload(bitmap32);
- 
+
     // If we had to do a conversion to 32-bit colour, then unload the original
     // non-32-bit-colour version of the image data too. Otherwise, bitmap32 and
     // bitmap point at the same data, and that data's already been free'd, so
@@ -308,7 +307,7 @@ GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilte
     {
         FreeImage_Unload(bitmap);
     }
- 
+
     // Finally, return the texture ID
     return tempTextureID;
 }
@@ -316,34 +315,17 @@ GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilte
 
 /* Generate images of solid color and assign them to textures */
 /* For mtl files with no associated maps (textureimages) */
-GLuint solidColorTexture(Vector3 Ka) {
+GLuint solidColorTexture(Vector3 Ka, GLenum minificationFilter, GLenum magnificationFilter) {
     int imageWidth = 100;
     int imageHeight = 100;
-    FIBITMAP* bitmap = FreeImage_Allocate(imageWidth, imageHeight, 32);
-    RGBQuad color;
+    FIBITMAP* bitmap32 = FreeImage_Allocate(imageWidth, imageHeight, 32);
 
-    color.rgbRed = Ka.X;
-    color.rgbBlue = Ka.Y;
-    color.rgbGreen = Ka.Z;
-
-    if (!bitmap) {
+    if (!bitmap32) {
         printf("You can't allocate the texture image.\n");
-        return;
+        exit(-1);
     }
-
-    FreeImage.FillBackground(bitmap, color, FICO_DEFAULT);
-    FIBITMAP* bitmap32;
-    if (bitsPerPixel == 32)
-    {
-        printf("Source image has %i bits per pixel. Skipping conversion.\n", bitsPerPixel);
-        bitmap32 = bitmap;
-    }
-    else
-    {
-        printf("Source image has %i bits per pixel. Converting to 32-bit color.\n", bitsPerPixel);
-        bitmap32 = FreeImage_ConvertTo32Bits(bitmap);
-    }
-
+    unsigned char color2[4] = {Ka.X*255, Ka.Y*255, Ka.Z*255, 255};
+    FreeImage_FillBackground(bitmap32, color2);
     GLubyte* textureData = FreeImage_GetBits(bitmap32);
 
     // Generate a texture ID and bind to it
@@ -367,7 +349,7 @@ GLuint solidColorTexture(Vector3 Ka) {
     // Specify our minification and magnification filters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minificationFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magnificationFilter);
- 
+
      // If we're using MipMaps, then we'll generate them here.
     // Note: The glGenerateMipmap call requires OpenGL 3.0 as a minimum.
     if (minificationFilter == GL_LINEAR_MIPMAP_LINEAR   ||
@@ -382,75 +364,71 @@ GLuint solidColorTexture(Vector3 Ka) {
 }
 
 /* main function to parse MTL files, load or generate texture iamges and generate openGL texture IDs */
-std::vector<TextureObj> loadMTLtextures (const std::string * mtlpath) {
+bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText) {
     std::vector<Material> parsed_mtl_file;
     if (parseMTL(mtlpath, parsed_mtl_file) == 0){
         printf("The Material list is empty! Nothing more to process.\n"); getchar();
         return 0;
     }
 
-    std::vector<TextureObj> textureObjs;
     //  ----- Initialise the FreeImage library -----
     // Note: Flag is whether we should load ONLY local (built-in) libraries, so
     // false means 'no, use external libraries also', and 'true' means - use built
     // in libs only, so it's like using the library as a static version of itself.
     FreeImage_Initialise(true);
-    
+    std::string imagePath;
     // load texture images only if they exist, or assign standard color
-    for ( unsigned int i = 0; i < parsed_mtl_file.length(); i++) {
-        if (parsed_mtl_file[i].map_Ka != NULL|| parsed_mtl_file[i].map_Kd != NULL || parsed_mtl_file[i].map_Ks != NULL) {
-            if (parsed_mtl_file[i].map_Ka != NULL) {
-                std::string imagePath = parsed_mtl_file[i].map_Ka;
+    for ( unsigned int i = 0; i < parsed_mtl_file.size(); i++) {
+        if (!parsed_mtl_file[i].map_Ka.empty() || !parsed_mtl_file[i].map_Kd.empty() || !parsed_mtl_file[i].map_Ks.empty()) {
+            if (!parsed_mtl_file[i].map_Ka.empty()) {
+                imagePath = parsed_mtl_file[i].map_Ka;
             }
-            else if (parsed_mtl_file[i].map_Kd != NULL) {
-                std::string imagePath = parsed_mtl_file[i].map_Kd;
+            else if (!parsed_mtl_file[i].map_Kd.empty()) {
+                imagePath = parsed_mtl_file[i].map_Kd;
             }
-            else if (parsed_mtl_file[i].map_Ks != NULL) {
-                std::string imagePath = parsed_mtl_file[i].map_Ks;
+            else if (!parsed_mtl_file[i].map_Ks.empty()) {
+                imagePath = parsed_mtl_file[i].map_Ks;
             }
             else {
                 printf("Could not find any image path.\n");
-                return;
+                return 0;
             }
-            std::string path = mtlpath;
             std::string texturePath;
             std::string rgbString = "rgb.mtl";
             std::string semanticString = "semantic.mtl";
-            if (path.find(rgbString) != std::string::npos) {
-                texturePath = path.erase(path.end()-rgbString.length(), path.end()) + imagePath;
+            if (mtlpath.find(rgbString) != std::string::npos) {
+                texturePath.append(mtlpath.c_str(), mtlpath.length() - rgbString.length());
+                texturePath.append(imagePath);
             }
-            else if (path.find(semanticString) != std::string::npos) {
-                texturePath = path.erase(path.end()-semanticString.length(), path.end()) + imagePath;
+            else if (mtlpath.find(semanticString) != std::string::npos) {
+              texturePath.append(mtlpath.c_str(), mtlpath.length() - semanticString.length());
+              texturePath.append(imagePath);
             }
             else {
                 printf("Could not find folder path to the image.\n");
-                return;
+                return 0;
             }
 
             TextureObj tempText;
             tempText.name = parsed_mtl_file[i].name;
             // Load an image and bind it to a texture
-            tempText.textureID = = loadTexture(texturePath);
-            textureObjs.pushback(tempText);
+            tempText.textureID = loadTextureImages(texturePath);
+            objText.push_back(tempText);
         }
-        if (parsed_mtl_file[i].map_Ka == NULL|| parsed_mtl_file[i].map_Kd == NULL || parsed_mtl_file[i].map_Ks == NULL) {
+        if (parsed_mtl_file[i].map_Ka.empty() || parsed_mtl_file[i].map_Kd.empty() || parsed_mtl_file[i].map_Ks.empty()) {
             // Create a handle for our texture
             GLuint tempTextureID;
             TextureObj tempText;
             tempText.name = parsed_mtl_file[i].name;
             // Generate an image of solid texture and bind it to texture
             tempText.textureID = solidColorTexture(parsed_mtl_file[i].Ka);
-            textureObjs.pushback(tempText);
+            objText.push_back(tempText);
         }
     }
-    
-    if (parsed_mtl_file.length() != textureObjs.length()) {
-        printf("The number of parsed materials is not equal to the generated texture IDs (%i vs %i)", parsed_mtl_file.length(), textureIDs.length());
-        return;
-    }
+
 
     // todo: UV map coordinates howe to add it to the texture map/
     // maybe not here???
 
-    return textureObjs;
+    return true;
 }

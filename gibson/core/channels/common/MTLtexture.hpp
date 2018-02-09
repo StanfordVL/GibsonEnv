@@ -1,9 +1,12 @@
+#ifndef MTLTEXTURE_HPP
+#define MTLTEXTURE_HPP
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 
-#ifndef TEXTURE_HPP
-#define TEXTURE_HPP
+
 
 struct Vector3
     {
@@ -78,7 +81,7 @@ struct Material
         std::string map_Ks;      // Specular Texture Map
         std::string map_Ns;      // Specular Hightlight Map
         std::string map_d;       // Alpha Texture Map
-        std::string map_bump;    // Bump Map   
+        std::string map_bump;    // Bump Map
 };
 
 struct TextureObj
@@ -184,18 +187,18 @@ namespace algorithm {
 }
 
 /* parse MTL file */
-bool parseMTL(const std::string * mtlpath, std::vector<Material> & out_material)
+bool parseMTL(std::string mtlpath, std::vector<Material> & out_material);
 
 /* Method to load an image into a texture using the freeimageplus library. */
 /* Returns the texture ID or dies trying */
 /* code from: https://r3dux.org/2014/10/how-to-load-an-opengl-texture-using-the-freeimage-library-or-freeimageplus-technically/ */
-GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilter = GL_LINEAR, GLenum magnificationFilter = GL_LINEAR)
+GLuint loadTextureImages(std::string texturePathString, GLenum minificationFilter = GL_LINEAR, GLenum magnificationFilter = GL_LINEAR);
 
 /* Generate images of solid color and assign them to textures */
 /* For mtl files with no associated maps (textureimages) */
-GLuint solidColorTexture(Vector3 Ka)
+GLuint solidColorTexture(Vector3 Ka, GLenum minificationFilter = GL_LINEAR, GLenum magnificationFilter = GL_LINEAR);
 
 /* main function to parse MTL files, load or generate texture iamges and generate openGL texture IDs */
-std::vector<GLuint> loadMTLtextures (const std::string * mtlpath);
+bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objtext);
 
 #endif

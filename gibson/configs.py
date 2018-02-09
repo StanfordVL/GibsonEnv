@@ -127,9 +127,9 @@ class View(Enum):
 class ViewComponent:
     ONE   = [View.RGB_FILLED]
     TWO   = [View.RGB_FILLED, View.DEPTH]
-    FOUR  = [View.RGB_FILLED, View.DEPTH, View.NORMAL, View.SEMANTICS]
     THREE = [View.RGB_FILLED, View.DEPTH, View.NORMAL]
-    FIVE  = [View.RGB_FILLED, View.DEPTH, View.SEMANTICS]
+    FOUR  = [View.RGB_FILLED, View.DEPTH, View.NORMAL, View.SEMANTICS]
+    FIVE  = [View.RGB_FILLED, View.SEMANTICS]
     def getComponents():
         assert(UIMode.is_valid(UI_MODE))
         if UI_MODE == UIMode.UI_ONE:
@@ -412,7 +412,3 @@ INITIAL_POSE = {
         ]
     }
 }
-
-
-
-

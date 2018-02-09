@@ -25,6 +25,7 @@ from gibson.learn.completion import CompletionNet
 import torch.nn as nn
 import scipy.misc
 
+import pdb
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 assets_file_dir = os.path.dirname(assets.__file__)
@@ -58,7 +59,7 @@ def hist_match(source, template):
 
     oldshape = source.shape
     source = source.ravel()
-    template = template.ravel() 
+    template = template.ravel()
     template = template[template > 0]
 
     # get the set of unique pixel values and their corresponding indices and
@@ -92,11 +93,7 @@ def hist_match3(source, template):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=None, \
-                 human=True,  use_filler=True, gpu_count=0, windowsz=256, env = None):
-
-        self.env = env
-
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=1, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -112,6 +109,7 @@ class PCRenderer:
         self._context_mist = zmq.Context()
         self._context_dept = zmq.Context()      ## Channel for smoothed depth
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
+        self._context_semt = zmq.Context()
 
         self._require_semantics = 'semantics' in self.env.config["output"]#configs.View.SEMANTICS in configs.ViewComponent.getComponents()
         self._require_normal = 'normal' in self.env.config["output"] #configs.View.NORMAL in configs.ViewComponent.getComponents()
@@ -123,6 +121,9 @@ class PCRenderer:
         if self._require_normal:
             self.socket_norm = self._context_norm.socket(zmq.REQ)
             self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
+        if self._require_semantics:
+            self.socket_semt = self._context_semt.socket(zmq.REQ)
+            self.socket_semt.connect("tcp://localhost:{}".format(5555 - 2))
 
         self.target_poses = target_poses
         self.imgs = imgs
@@ -142,15 +143,16 @@ class PCRenderer:
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
 
-        self.show   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
-        self.show_rgb   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
-        self.show_semantics   = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')        
+        self.show            = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        self.show_rgb        = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
+        self.show_semantics  = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
 
         #self.show_unfilled  = None
         #if configs.MAKE_VIDEO or configs.HIST_MATCHING:
         self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
         self.surface_normal  = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
 
+        self.semtimg_count = 0
 
         #if configs.USE_SMALL_FILLER:
         #    comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
@@ -320,6 +322,9 @@ class PCRenderer:
         if self._require_normal:
             self.socket_norm.send_string(s)
             norm_msg = self.socket_norm.recv()
+        if self._require_semantics:
+            self.socket_semt.send_string(s)
+            semt_msg = self.socket_semt.recv()
 
 
         wo, ho = self.showsz * 4, self.showsz * 3
@@ -336,11 +341,15 @@ class PCRenderer:
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
             if self._require_normal:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
+            if self._require_semantics:
+                semantic_arr = np.frombuffer(semt_msg, dtype=np.float32).reshape((n, n, 3))
         else:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
             if self._require_normal:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
+            if self._require_semantics:
+                semantic_arr = np.frombuffer(semt_msg, dtype=np.float32).reshape((n, n, 3))
 
         debugmode = 0
         if debugmode and self._require_normal:
@@ -375,8 +384,8 @@ class PCRenderer:
         #with Profiler("Render: render point cloud"):
         ## Speed bottleneck
         _render_pc(opengl_arr, rgbs, show)
-        if self._require_semantics:
-            _render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
+        #if self._require_semantics:
+            #_render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
 
         #if configs.HIST_MATCHING and is_rgb:
         #    show_unfilled[:, :, :] = show[:, :, :]
@@ -401,8 +410,13 @@ class PCRenderer:
         self.smooth_depth = smooth_arr
         if self._require_normal:
             self.surface_normal = normal_arr
+        if self._require_semantics:
+            self.show_semantics = semantic_arr
+            if self.semtimg_count == 3:
+                scipy.misc.toimage(self.show_semantics, cmin=0.0, cmax=...).save(os.path.join(file_dir, "semt_render_" + str(self.semtimg_count) + '.jpg'))
+            self.semtimg_count = self.semtimg_count + 1
 
-        #Histogram matching happens here 
+        #Histogram matching happens here
         #with Profiler("Render: hist matching"):
         #if configs.HIST_MATCHING and is_rgb:
         #    template = (show_unfilled/255.0).astype(np.float32)
@@ -410,6 +424,11 @@ class PCRenderer:
         #    source_matched = hist_match3(source, template)
         #    show[:] = (source_matched[:] * 255).astype(np.uint8)
             
+        if configs.HIST_MATCHING and is_rgb:
+            template = (show_unfilled/255.0).astype(np.float32)
+            source = (show/255.0).astype(np.float32)
+            source_matched = hist_match3(source, template)
+            show[:] = (source_matched[:] * 255).astype(np.uint8)
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling
@@ -469,7 +488,7 @@ class PCRenderer:
 
     def renderToScreen(self):
         def _render_depth(depth):
-            cv2.imshow('Depth cam', depth/16.)            
+            cv2.imshow('Depth cam', depth/16.)
 
         def _render_rgb(rgb):
             rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
@@ -478,15 +497,15 @@ class PCRenderer:
         def _render_rgb_unfilled(unfilled_rgb):
             ## TODO: legacy MAKE_VIDEO
             cv2.imshow('RGB prefilled', unfilled_rgb)
-        
+
         def _render_semantics(semantics):
             if not self._require_semantics: return
             cv2.imshow('Semantics', semantics)
 
         def _render_normal(normal):
-            if not self._require_semantics: return
+            if not self._require_normal: return
             cv2.imshow("Surface Normal", normal)
-         
+
         _render_depth(self.target_depth)
         _render_depth(self.smooth_depth)
         _render_rgb(self.show_rgb)
@@ -565,7 +584,5 @@ if __name__=='__main__':
     #renderer.renderToScreen(sources, source_depths, poses, model, target, target_depth, rts)
     renderer.renderOffScreenSetup()
     while True:
+        print("renderingOffScreen")
         print(renderer.renderOffScreen().size)
-
-
-

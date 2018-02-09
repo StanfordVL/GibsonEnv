@@ -2,13 +2,14 @@
 #include <stdio.h>
 #include <string>
 #include <cstring>
+#include <sstream>
 
 #include <glm/glm.hpp>
 
 #include "MTLobjloader.hpp"
 
 // Very, VERY simple OBJ loader.
-// Here is a short list of features a real function would provide : 
+// Here is a short list of features a real function would provide :
 // - Binary files. Reading a model should be just a few memcpy's away, not parsing a file at runtime. In short : OBJ is not very great.
 // - Animations & bones (includes bones weights)
 // - Multiple UVs
@@ -23,7 +24,7 @@ bool loadOBJ_MTL(
     std::vector<std::vector<glm::vec2>> & out_uvs,
     std::vector<std::vector<glm::vec3>> & out_normals,
     std::vector<std::string> & out_material_name,
-    std::string & out_mtllib,
+    std::string & out_mtllib
 ){
     printf("Loading OBJ file %s...\n", path);
 
@@ -32,9 +33,14 @@ bool loadOBJ_MTL(
     std::vector<glm::vec2> temp_uvs;
     std::vector<glm::vec3> temp_normals;
 
+    std::vector<unsigned int> temp_vertexIndices;
+    std::vector<unsigned int> temp_uvIndices;
+    std::vector<unsigned int> temp_normalIndices;
+
+
     FILE * file = fopen(path, "r");
     if( file == NULL ){
-        printf("Impossible to open the file ! Are you in the right path ? See Tutorial 1 for details\n");
+        printf("Impossible to open the file ! Are you in the right path ? Given path: %s\n", path);
         getchar();
         return false;
     }
@@ -52,9 +58,10 @@ bool loadOBJ_MTL(
 
         // get mtllib name
         if ( strcmp( lineHeader, "mtllib") == 0 ){
-            std::string mtllib;
+            char mtllib;
             fscanf(file, "%s \n", &mtllib);
             out_mtllib.push_back(mtllib);
+            printf("MATERIAL LIBRARY: %s", mtllib);
         }
         //vertices
         else if ( strcmp( lineHeader, "v" ) == 0 ){
@@ -72,25 +79,29 @@ bool loadOBJ_MTL(
             fscanf(file, "%f %f\n", &uv.x, &uv.y );
             uv.y = -uv.y; // Invert V coordinate since we will only use DDS texture, which are inverted. Remove if you want to use TGA or BMP loaders.
             temp_uvs.push_back(uv);
-        }    
+        }
         // normal
         else if ( strcmp( lineHeader, "vn" ) == 0 ){
             glm::vec3 normal;
             fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
             temp_normals.push_back(normal);
-        } 
+        }
         // material name
         else if ( strcmp( lineHeader, "usemtl" ) == 0 ){
-            std::string material_name;
+            char material_name;
             fscanf(file, "%s\n", &material_name );
-            out_material_name.push_back(material_name);
-            std::vector<unsigned int> temp_vertexIndices;
-            std::vector<unsigned int> temp_uvIndices;
-            std::vector<unsigned int> temp_normalIndices;
+            std::stringstream ss;
+            std::string tempmat2;
+            ss << material_name;
+            ss >> tempmat2;
+            out_material_name.push_back(tempmat2);
+            temp_vertexIndices.clear();
+            temp_uvIndices.clear();
+            temp_normalIndices.clear();
             vertexIndices.push_back(temp_vertexIndices);
             uvIndices.push_back(temp_uvIndices);
             normalIndices.push_back(temp_normalIndices);
-            mtl_count ++;   
+            mtl_count ++;
         }
         // face
         else if ( mtl_count > 0 && strcmp( lineHeader, "f" ) == 0 ){
@@ -137,6 +148,7 @@ bool loadOBJ_MTL(
         }
     }
 
+    printf("SEMANTICS 1.\n");
     // For each vertex of each triangle
     for( unsigned int i=0; i<vertexIndices.size(); i++ ){
         std::vector<glm::vec3> temp_out_vertices;
@@ -170,13 +182,13 @@ bool loadOBJ_MTL(
                 temp_out_normals.push_back(normal);
             }
         }
-        out_vertices.push_back(temp_out_vertices)
+        out_vertices.push_back(temp_out_vertices);
         if (temp_out_uvs.size() > 0)
             out_uvs.push_back(temp_out_uvs);
         if (temp_out_normals.size() > 0)
             out_normals.push_back(temp_out_normals);
     }
-
+    printf("SEMANTICS 2.\n");
     // construct the temp_normals vector here, using vertex positions and face vertex indices
     // TODO: this is not well-tested yet
     if ( out_normals.size() == 0 ) {
@@ -188,7 +200,7 @@ bool loadOBJ_MTL(
             out_normals.push_back(temp_out_normals);
         }
 
-        std::vector<std::vector<unsigned int>> vertexFaces; 
+        std::vector<std::vector<unsigned int>> vertexFaces;
         for ( unsigned int i=0; i<vertexIndices.size(); i++ ){
             std::vector<unsigned int> temp_vertexFaces(out_vertices[i].size());
             std::fill(temp_vertexFaces.begin(), temp_vertexFaces.end(), 0);
@@ -213,12 +225,12 @@ bool loadOBJ_MTL(
                 glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
                 out_normals[i][vertexIndex-1] += normal / float(vertexFaces[i][vertexIndex-1]);
                 //printf("%f %f %f\n", normal[0], normal[1], normal[2]);
-            }  
+            }
         }
     }
-
+  printf("SEMANTICS 3.\n");
     // TODO: (hzyjerry) this is a dummy place holder
-    for ( unsigned int i=0; i<out_vertices.size(); i++ ){
+    /*for ( unsigned int i=0; i<out_vertices.size(); i++ ){
         if ( out_uvs[i].size() == 0) {
             std::vector<glm::vec2> temp_out_uvs;
             for ( unsigned int j=0; j<out_vertices[i].size(); j++ ){
@@ -226,8 +238,9 @@ bool loadOBJ_MTL(
             }
             out_uvs.push_back(temp_out_uvs);
         }
-    }
-    printf("size of temp vertices %lu, vertex indices %lu out vertices %lu\n", temp_vertices.size(), vertexIndices.size(), out_vertices.size());
+    }*/
+    printf("SEMANTICS 4. %s: size of temp vertices %lu, vertex indices %lu out vertices %lu\n", path, temp_vertices.size(), vertexIndices.size(), out_vertices.size());
     fclose(file);
+    printf("SEMANTICS 5.\n");
     return true;
 }
