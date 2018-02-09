@@ -1,4 +1,4 @@
-envname: AntNavigateEnv
+envname: HumanoidNavigateEnv
 model_id: sRj553CTHiw
 target_orn: [0, 0, 1.57]
 target_pos: [-14.3, 45.07, 0.5]
@@ -19,7 +19,7 @@ random:
   random_init_rot_range: [-0.1, 0.1]
   random_target_range: 0.1
 
-output: [nonviz_sensor]
+output: [nonviz_sensor, rgb_filled, depth]
 resolution: 512
 
 speed:
