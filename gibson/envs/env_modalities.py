@@ -113,7 +113,7 @@ class SensorRobotEnv(BaseEnv):
         assert(self._robot_introduced)
         self.create_scene()
         self._scene_introduced = True
-        
+
     def get_keys_to_action(self):
         return self.robot.keys_to_action
 
@@ -146,7 +146,7 @@ class SensorRobotEnv(BaseEnv):
         state = self.robot.calc_state()
         pos = self.robot.get_position()
         orn = self.robot.get_orientation()
-        pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])    
+        pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
         p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
         return state
 
@@ -190,7 +190,7 @@ class SensorRobotEnv(BaseEnv):
             orn = self.robot.get_orientation()
             pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
             p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
-            
+
         eye_pos = self.robot.eyes.current_position()
         debugmode = 0
         if debugmode:
@@ -299,7 +299,7 @@ class CameraRobotEnv(SensorRobotEnv):
         self.target_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
         p.changeVisualShape(self.target_mapId, -1, rgbaColor=[1, 0, 0, 0])
         self.save_frame  = 0
-        
+
 
     def robot_introduce(self, robot):
         SensorRobotEnv.robot_introduce(self, robot)
@@ -320,6 +320,8 @@ class CameraRobotEnv(SensorRobotEnv):
         if configs.DISPLAY_UI:
             if configs.UI_MODE == configs.UIMode.UI_SIX:
                 self.UI = SixViewUI(self.windowsz)
+            if configs.UI_MODE == configs.UIMode.UI_FIVE:
+                self.UI = TwoViewUI(self.windowsz)
             if configs.UI_MODE == configs.UIMode.UI_FOUR:
                 self.UI = FourViewUI(self.windowsz)
             if configs.UI_MODE == configs.UIMode.UI_THREE:
@@ -416,7 +418,7 @@ class CameraRobotEnv(SensorRobotEnv):
 
 
     def render_component(self, tag):
-        if tag == View.RGB_FILLED: 
+        if tag == View.RGB_FILLED:
             return self.render_rgb
         if tag == View.DEPTH:
             scaled_depth = self.render_depth * DEPTH_SCALE_FACTOR
@@ -439,7 +441,7 @@ class CameraRobotEnv(SensorRobotEnv):
         for component in self.UI.components:
             self.UI.update_view(self.render_component(component), component)
 
-        
+
     def _close(self):
         BaseEnv._close(self)
         if not self._require_camera_input or self.test_env:
@@ -449,6 +451,8 @@ class CameraRobotEnv(SensorRobotEnv):
             self.r_camera_dep.terminate()
         if self._require_normal:
             self.r_camera_norm.terminate()
+        if self._require_semantics:
+            self.r_camera_semt.terminate()
 
     def get_key_pressed(self, relevant=None):
         pressed_keys = []
@@ -543,6 +547,8 @@ class CameraRobotEnv(SensorRobotEnv):
                 self.r_camera_dep.terminate()
             if self._require_normal:
                 self.r_camera_norm.terminate()
+            if self._require_semantics:
+                self.r_camera_semt.terminate()
             while tb:
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
@@ -560,11 +566,14 @@ class CameraRobotEnv(SensorRobotEnv):
         render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz)
         render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz)
         render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
+        render_semt  = "./depth_render --modelpath {} -t 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
 
         if self._require_normal:
             self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
+        if self._require_semantics:
+            self.r_camera_semt = subprocess.Popen(shlex.split(render_semt), shell=False)
 
         os.chdir(cur_path)
 

@@ -5,8 +5,29 @@ project (Tutorials)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
-
-# ------ Cuda 
+# find freeimageplus
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+SET(FREEIMAGEPLUS_FIND_REQUIRED TRUE)
+SET(FREEIMAGEPLUS_FIND_QUIETLY FALSE)
+find_package(FreeImagePlus)
+if (FREEIMAGEPLUS_FOUND)
+    include_directories(${FREEIMAGEPLUS_INCLUDE_DIR})
+    link_libraries(${FREEIMAGEPLUS_LIBRARY})
+    message(${FREEIMAGEPLUS_LIBRARY})
+else()
+    message("FREEIMAGEPLUS NOT FOUND")
+endif()
+SET(FREEIMAGE_FIND_REQUIRED TRUE)
+SET(FREEIMAGE_FIND_QUIETLY FALSE)
+find_package(FreeImage)
+if (FREEIMAGE_FOUND)
+    include_directories(${FREEIMAGE_INCLUDE_DIRS})
+    link_libraries(${FREEIMAGE_LIBRARY})
+    message(${FREEIMAGE_LIBRARY})
+else()
+    message("FREEIMAGE_FOUND NOT FOUND")
+endif()
+# ------ Cuda
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 link_directories(${CUDA_LIBRARY_DIRS})
@@ -60,10 +81,10 @@ endif()
 find_package(ASSIMP REQUIRED)
 if(ASSIMP_FOUND)
     include_directories(${ASSIMP_INCLUDE_DIR})
-endif() 
+endif()
 
 
-# Compile external dependencies 
+# Compile external dependencies
 add_subdirectory (external)
 
 # On Visual 2005 and above, this module can set the debug working directory
@@ -75,6 +96,8 @@ add_subdirectory (external)
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
+    ${FREEIMAGEPLUS_INCLUDE_DIR}
+    ${FREEIMAGE_INCLUDE_DIRS}
     #${GLFW3_INCLUDE_DIR}/GLFW
     external/glfw-3.1.2/include/GLFW
     external/lodepng/
@@ -86,7 +109,8 @@ include_directories(
 
 set(ALL_LIBS
     ${OPENGL_LIBRARY}
-    ${freeimage}
+    ${FREEIMAGEPLUS_LIBRARY}
+    ${FREEIMAGE_LIBRARY}
     ${GLEW_LIBRARY}
     GLEW_1130
     ${GLUT_LIBRARY}
@@ -206,4 +230,3 @@ add_custom_command(
    TARGET depth_render POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/depth_render${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
-

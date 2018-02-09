@@ -246,8 +246,8 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Height", 'h', "Render window height", false, 256);
     cmdp.add<int>("Smooth", 's', "Whether render depth only", false, 0);
     cmdp.add<int>("Normal", 'n', "Whether render surface normal", false, 0);
-    cmdp.add<int>("Semantic", 'sem', "Whether render semantics", false, 0);
-    cmdp.add<int>("RGBfromMesh", 'rgbMesh', "Whether render RGB directly from Mesh", false, 0);
+    cmdp.add<int>("Semantic", 't', "Whether render semantics", false, 0);
+    cmdp.add<int>("RGBfromMesh", 'm', "Whether render RGB directly from Mesh", false, 0);
 
     cmdp.parse_check(argc, argv);
 
@@ -459,7 +459,7 @@ int main( int argc, char * argv[] )
         //Do X
         // Load the texture
         //GLuint Texture = loadDDS("uvmap.DDS");
-        
+
         // Read our .obj file
         //std::vector<glm::vec3> vertices;
         //std::vector<glm::vec2> uvs;
@@ -477,9 +477,15 @@ int main( int argc, char * argv[] )
         std::string mtllib;
 
         bool res = loadOBJ_MTL(name_obj.c_str(), vertices, uvs, normals, material_name, mtllib);
+        if (res == false) { printf("Was not able to load the semantic.obj file.\n"); exit(-1); }
+        else { printf("Semantic.obj file was loaded with success.\n"); }
+
         // Load the textures
-        const std::string mtl_path = obj_path + mtllib;
-        std::vector<TextureObj> TextureObj = loadMTLtextures (mtl_path);
+        std::string mtl_path = obj_path + mtllib;
+        std::vector<TextureObj> TextObj;
+        bool MTL_loaded = loadMTLtextures(mtl_path, TextObj);
+        if (MTL_loaded == false) { printf("Was not able to load the semantic.mtl file\n"); exit(-1); }
+        else { printf("Semantic.mtl file was loaded with success.\n"); }
     }
 
         // Load the texture
@@ -1042,7 +1048,7 @@ int main( int argc, char * argv[] )
                 } else {
                     glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
                 }
-                
+
                 //std::cout << "Render time: " << t.elapsed() << std::endl;
 
 
