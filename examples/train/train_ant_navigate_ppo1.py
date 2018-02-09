@@ -15,7 +15,6 @@ import utils
 import baselines.common.tf_util as U
 import datetime
 from baselines import logger
-from baselines import bench
 import pposgd_simple
 import os.path as osp
 import random
@@ -30,7 +29,12 @@ def train(num_timesteps, seed):
         logger.configure(format_strs=[])
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = AntNavigateEnv(human=args.human, is_discrete=False, mode=args.mode)
+
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
+                               'ant_navigate.yaml')
+    print(config_file)
+
+    env = AntNavigateEnv(human=args.human, is_discrete=False, config = config_file)
     
     def mlp_policy_fn(name, sensor_space, ac_space):
         return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
@@ -81,13 +85,10 @@ def main():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--mode', type=str, default="SENSOR")
     parser.add_argument('--num_gpu', type=int, default=1)
     parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
-    parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
-    parser.add_argument('--resolution', type=str, default="NORMAL")
     parser.add_argument('--reload_name', type=str, default=None)
     parser.add_argument('--save_name', type=str, default=None)
     args = parser.parse_args()
