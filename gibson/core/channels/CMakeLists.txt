@@ -179,17 +179,6 @@ target_link_libraries(demo
 set_target_properties(demo PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
 
 
-add_executable(hwclient
-    depth_render/hwclient.cpp
-)
-
-target_link_libraries(hwclient
-    ${ALL_LIBS}
-    ${GLUT_LIBRARY}
-    ${ZeroMQ_LIBRARY}
-    ${GLEW_LIBRARIES}
-)
-
 SOURCE_GROUP(common REGULAR_EXPRESSION ".*/common/.*" )
 SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
 
