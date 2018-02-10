@@ -31,7 +31,7 @@ def train(num_timesteps, seed):
                                'ant_gibson_flagrun.yaml')
     print(config_file)
 
-    env = AntGibsonFlagRunEnv(human=args.human, is_discrete=False, config = config_file)
+    env = AntGibsonFlagRunEnv(is_discrete=False, config = config_file)
     
     def mlp_policy_fn(name, sensor_space, ac_space):
         return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
@@ -83,7 +83,6 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--meta', type=str, default="")
     parser.add_argument('--reload_name', type=str, default=None)

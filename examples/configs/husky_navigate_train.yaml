@@ -24,3 +24,6 @@ resolution: 128
 speed:
   timestep: 0.01
   frameskip: 1
+
+mode: gui #gui|headless
+verbose: false

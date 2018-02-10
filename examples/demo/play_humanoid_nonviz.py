@@ -10,5 +10,5 @@ print(config_file)
 
 if __name__ == '__main__':
     #env = HuskyNavigateEnv(human=True, timestep=timestep, frame_skip=frame_skip, mode="SENSOR", is_discrete = True, resolution="MID")
-    env = HumanoidNavigateEnv(human=True, is_discrete = True, config=config_file)
+    env = HumanoidNavigateEnv(is_discrete = True, config=config_file)
     play(env, zoom=4, fps=int( 1.0/(timestep * frame_skip)))

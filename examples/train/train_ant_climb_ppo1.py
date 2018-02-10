@@ -37,7 +37,7 @@ def train(num_timesteps, seed):
                                'ant_climb.yaml')
     print(config_file)
 
-    env = AntClimbEnv(human=args.human, is_discrete=False, config=config_file)
+    env = AntClimbEnv(is_discrete=False, config=config_file)
     
     env = Monitor(env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))
@@ -94,7 +94,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
