@@ -5,6 +5,10 @@ project (Tutorials)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
+MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CMAKE_BINARY_DIR} )
+MESSAGE( STATUS "CMAKE_SOURCE_DIR:         " ${CMAKE_SOURCE_DIR} )
+
+
 # find freeimageplus
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 SET(FREEIMAGEPLUS_FIND_REQUIRED TRUE)
@@ -17,6 +21,7 @@ if (FREEIMAGEPLUS_FOUND)
 else()
     message("FREEIMAGEPLUS NOT FOUND")
 endif()
+
 SET(FREEIMAGE_FIND_REQUIRED TRUE)
 SET(FREEIMAGE_FIND_QUIETLY FALSE)
 find_package(FreeImage)
@@ -36,9 +41,6 @@ link_directories(${CUDA_LIBRARY_DIRS})
 # set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${CUDA_ARCH} -Xcompiler -fPIC -shared -o)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} " --Wno-deprecated-gpu-targets -std=c++11")
 
-if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
-    message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
-endif()
 if( CMAKE_SOURCE_DIR MATCHES " " )
     message( "Your Source Directory contains spaces. If you experience problems when compiling, this can be the cause." )
 endif()
@@ -167,48 +169,6 @@ target_link_libraries(depth_render
 
 # Xcode and Visual working directories
 set_target_properties(depth_render PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
-
-
-
-add_executable(demo
-    depth_render/demo.cpp
-    common/shader.cpp
-    common/shader.hpp
-    common/controls.cpp
-    common/controls.hpp
-    common/MTLtexture.cpp
-    common/MTLtexture.hpp
-    common/texture.cpp
-    common/texture.hpp
-    common/MTLobjloader.cpp
-    common/MTLobjloader.hpp
-    common/objloader.cpp
-    common/objloader.hpp
-    common/vboindexer.cpp
-    common/vboindexer.hpp
-    common/text2D.hpp
-    common/text2D.cpp
-    common/cmdline.h
-
-    external/lodepng/lodepng.h
-    external/lodepng/lodepng.cpp
-
-    depth_render/StandardShadingRTT.vertexshader
-    depth_render/MistShadingRTT.fragmentshader
-    depth_render/NormalShadingRTT.fragmentshader
-    depth_render/Passthrough.vertexshader
-    depth_render/WobblyTexture.fragmentshader
-)
-
-target_link_libraries(demo
-    ${ALL_LIBS}
-    ${GLUT_LIBRARY}
-    ${ZeroMQ_LIBRARY}
-    ${GLEW_LIBRARIES}
-)
-
-# Xcode and Visual working directories
-set_target_properties(demo PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
 
 
 add_executable(hwclient

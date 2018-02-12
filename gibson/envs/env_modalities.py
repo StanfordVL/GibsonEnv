@@ -314,7 +314,7 @@ class CameraRobotEnv(BaseRobotEnv):
         self.check_port_available()
         self.setup_camera_multi()
         self.setup_camera_rgb()
-        '''
+        
         ui_map = {
             1: OneViewUI,
             2: TwoViewUI,
@@ -340,7 +340,7 @@ class CameraRobotEnv(BaseRobotEnv):
             if configs.UI_MODE == configs.UIMode.UI_ONE:
                 self.UI = OneViewUI(self.windowsz)
             pygame.init()
-
+        '''
 
 
     def _reset(self):

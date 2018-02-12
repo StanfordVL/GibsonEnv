@@ -344,11 +344,10 @@ GLuint loadTextureImages(std::string texturePathString, int Vrtx, GLenum minific
 /* Generate images of solid color and assign them to textures */
 /* For mtl files with no associated maps (textureimages) */
 /* Vrtx variable is only used when saving the images (debugging) */
-GLuint solidColorTexture(Vector3 Ka, int Vrtx, GLenum minificationFilter, GLenum magnificationFilter) {
+GLuint solidColorTexture(Vector3 Ka, int texLevel, GLenum minificationFilter, GLenum magnificationFilter) {
     int imageWidth = 100;
     int imageHeight = 100;
     FIBITMAP* bitmap32 = FreeImage_Allocate(imageWidth, imageHeight, 32);
-
     if (!bitmap32) {
         printf("You can't allocate the texture image.\n");
         exit(-1);
@@ -366,6 +365,7 @@ GLuint solidColorTexture(Vector3 Ka, int Vrtx, GLenum minificationFilter, GLenum
     // Assign texture to OpenGL
     GLubyte* textureData = FreeImage_GetBits(bitmap32);
 
+    /*
     // Generate a texture ID and bind to it
     GLuint tempTextureID;
     glGenTextures(1, &tempTextureID);
@@ -375,7 +375,7 @@ GLuint solidColorTexture(Vector3 Ka, int Vrtx, GLenum minificationFilter, GLenum
     // Note: The 'Data format' is the format of the image data as provided by the image library. FreeImage decodes images into
     // BGR/BGRA format, but we want to work with it in the more common RGBA format, so we specify the 'Internal format' as such.
     glTexImage2D(GL_TEXTURE_2D,    // Type of texture
-                 0,                // Mipmap level (0 being the top level i.e. full size)
+                 texLevel,         // Mipmap level (0 being the top level i.e. full size)
                  GL_RGBA,          // Internal format
                  imageWidth,       // Width of the texture
                  imageHeight,      // Height of the texture,
@@ -397,8 +397,10 @@ GLuint solidColorTexture(Vector3 Ka, int Vrtx, GLenum minificationFilter, GLenum
     {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
+    */
 
-    return tempTextureID;
+    //return tempTextureID;
+    return 0;
 }
 
 #include <sstream>
@@ -466,7 +468,7 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText, st
               //printf("material name to generate image: %s\n", tempText.name.c_str());  //debug
 
               // Generate an image of solid texture and bind it to texture
-              tempText.textureID = solidColorTexture(parsed_mtl_file[i].Ka);
+              tempText.textureID = solidColorTexture(parsed_mtl_file[i].Ka, i);
               objText.push_back(tempText);
           }
         }

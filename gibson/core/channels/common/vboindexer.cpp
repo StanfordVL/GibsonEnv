@@ -142,7 +142,49 @@ void indexVBO(
     printf("Size of output vertex vector %lu\n", out_vertices.size());
 }
 
+// TODO: Inplement index_SEM from load MTL
+void indexVBO_MTL(
+    std::vector<std::vector<glm::vec3>> & mtl_vertices,
+    std::vector<std::vector<glm::vec2>> & mtl_uvs,
+    std::vector<std::vector<glm::vec3>> & mtl_normals,
 
+    std::vector<unsigned int> & out_indices,
+    std::vector<glm::vec3> & out_vertices,
+    std::vector<glm::vec2> & out_uvs,
+    std::vector<glm::vec3> & out_normals,
+    std::vector<unsigned int> & out_semantics
+) {
+    std::map<PackedVertex,unsigned int> VertexToOutIndex;
+
+    // In group j
+    for (unsigned int j=0; j<mtl_vertices.size(); j++ ) {
+        std::vector<glm::vec3> group_vertices = mtl_vertices[j];
+        std::vector<glm::vec2> group_uvs = mtl_uvs[j];
+        std::vector<glm::vec3> group_normals = mtl_normals[j];
+        unsigned int semantic_layer = j;
+        printf("mtl %d groups, current size %d\n", mtl_vertices.size(), group_vertices.size());
+
+        for (unsigned int i=0; i<group_vertices.size(); i++ ) {
+            PackedVertex packed = {group_vertices[i], group_uvs[i], group_normals[i]};
+            unsigned int index;
+            bool found = getSimilarVertexIndex_fast( packed, VertexToOutIndex, index);
+
+            if ( found ) {
+                out_indices.push_back( index );
+            } else {
+                out_vertices .push_back( group_vertices[i]);
+                out_uvs      .push_back( group_uvs[i]);
+                out_normals  .push_back( group_normals[i]);
+                out_semantics.push_back(semantic_layer);
+                unsigned int newindex = (unsigned int)out_vertices.size() - 1;
+                out_indices .push_back( newindex);
+
+                VertexToOutIndex [ packed ] = newindex;
+            }
+        }
+    }
+
+}
 
 
 void indexVBO_TBN(

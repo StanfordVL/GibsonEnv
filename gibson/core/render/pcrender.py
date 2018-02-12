@@ -93,7 +93,7 @@ def hist_match3(source, template):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=1, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=1, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256, env=None):
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -111,6 +111,8 @@ class PCRenderer:
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
         self._context_semt = zmq.Context()
 
+        self.env = env
+
         self._require_semantics = 'semantics' in self.env.config["output"]#configs.View.SEMANTICS in configs.ViewComponent.getComponents()
         self._require_normal = 'normal' in self.env.config["output"] #configs.View.NORMAL in configs.ViewComponent.getComponents()
 
@@ -123,7 +125,7 @@ class PCRenderer:
             self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
         if self._require_semantics:
             self.socket_semt = self._context_semt.socket(zmq.REQ)
-            self.socket_semt.connect("tcp://localhost:{}".format(5555 - 2))
+            self.socket_semt.connect("tcp://localhost:{}".format(5555 - 3))
 
         self.target_poses = target_poses
         self.imgs = imgs
@@ -161,7 +163,9 @@ class PCRenderer:
         #else:
         comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
         comp = torch.nn.DataParallel(comp).cuda()
-        comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
+        #comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
+        ## TODO: temporary change
+        comp.load_state_dict(torch.load(os.path.join(assets_file_dir, 'compG_epoch4_3000.pth')))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module
@@ -315,6 +319,7 @@ class PCRenderer:
 
         #with Profiler("Render: depth request round-trip"):
         ## Speed bottleneck: 100fps for mist + depth
+        print("mist socket sending out")
         self.socket_mist.send_string(s)
         mist_msg = self.socket_mist.recv()
         self.socket_dept.send_string(s)
@@ -323,6 +328,7 @@ class PCRenderer:
             self.socket_norm.send_string(s)
             norm_msg = self.socket_norm.recv()
         if self._require_semantics:
+            print("Semantic socket sending out")
             self.socket_semt.send_string(s)
             semt_msg = self.socket_semt.recv()
 
@@ -412,10 +418,12 @@ class PCRenderer:
             self.surface_normal = normal_arr
         if self._require_semantics:
             self.show_semantics = semantic_arr
+            print("Semantics array", np.max(semantic_arr), np.min(semantic_arr), np.mean(semantic_arr), semantic_arr.shape)
+            '''
             if self.semtimg_count == 3:
                 scipy.misc.toimage(self.show_semantics, cmin=0.0, cmax=...).save(os.path.join(file_dir, "semt_render_" + str(self.semtimg_count) + '.jpg'))
             self.semtimg_count = self.semtimg_count + 1
-
+            '''
         #Histogram matching happens here
         #with Profiler("Render: hist matching"):
         #if configs.HIST_MATCHING and is_rgb:
@@ -423,12 +431,6 @@ class PCRenderer:
         #    source = (show/255.0).astype(np.float32)
         #    source_matched = hist_match3(source, template)
         #    show[:] = (source_matched[:] * 255).astype(np.uint8)
-            
-        if configs.HIST_MATCHING and is_rgb:
-            template = (show_unfilled/255.0).astype(np.float32)
-            source = (show/255.0).astype(np.float32)
-            source_matched = hist_match3(source, template)
-            show[:] = (source_matched[:] * 255).astype(np.uint8)
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling
