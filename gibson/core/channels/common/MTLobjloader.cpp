@@ -96,12 +96,12 @@ bool loadOBJ_MTL(
             ss >> tempmat2;
             //printf("material name: %s, length: %i\n", tempmat2.c_str(), tempmat2.length());
             out_material_name.push_back(tempmat2.c_str());
-            temp_vertexIndices.clear();
-            temp_uvIndices.clear();
-            temp_normalIndices.clear();
             vertexIndices.push_back(temp_vertexIndices);
             uvIndices.push_back(temp_uvIndices);
             normalIndices.push_back(temp_normalIndices);
+            temp_vertexIndices.clear();
+            temp_uvIndices.clear();
+            temp_normalIndices.clear();
             mtl_count ++;
         }
         // face
