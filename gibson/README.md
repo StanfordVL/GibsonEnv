@@ -1,4 +1,4 @@
-## RealEnv Core Environment
+## Gibson Core Environment
 
 This folder contains the code base for running universe engine, as well as instructions needed for implementing custom environment and agent
 ### File Structure
@@ -19,5 +19,3 @@ observation, reward, done, info = env._step({})
  - *done* (boolean): whether the episode has ended. The agent is responsible for taking care of this, by calling `env.restart()`
  - *info* (dict): auxiliary diagnostic information (helpful for debugging, and sometimes learning)
 
-
-### Implementing Environment
