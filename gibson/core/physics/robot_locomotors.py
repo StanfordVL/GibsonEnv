@@ -639,3 +639,39 @@ class HuskyClimber(Husky):
         if debugmode:
             for k in self.jdict.keys():
                 print("Power coef", self.jdict[k].power_coef)
+
+
+class Quadrotor(WalkerBase):
+
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, env=None):
+        self.model_type = "URDF"
+        self.is_discrete = is_discrete
+        self.mjcf_scaling = 1
+        WalkerBase.__init__(self, "quadrotor.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale=0.6,
+                            target_pos=target_pos, resolution=resolution, env=env)
+        self.initial_pos = initial_pos
+        self.initial_orn = initial_orn
+        self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
+
+        self.setup_keys_to_action()
+
+        self.foot_list = []
+    def apply_action(self, action):
+        pass
+
+    def robot_specific_reset(self):
+        WalkerBase.robot_specific_reset(self)
+        roll = self.initial_orn[0]
+        pitch = self.initial_orn[1]
+        yaw = self.initial_orn[2]
+        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
+        self.robot_body.reset_position(self.initial_pos)
+
+        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
+
+
+    def setup_keys_to_action(self):
+        self.keys_to_action = {
+            (ord('w'), ): 0,
+            (): 1
+        }

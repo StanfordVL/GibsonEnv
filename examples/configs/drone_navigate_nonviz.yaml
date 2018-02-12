@@ -1,0 +1,29 @@
+envname: DroneNavigateEnv
+model_id: sRj553CTHiw
+target_orn: [0, 0, 1.57]
+target_pos: [-14.3, 45.07, 0.5]
+initial_orn: [0, 0, 4.71]
+initial_pos: [-14.3, 5, 1.2]
+fov: 1.57
+use_filler: true
+display_ui: true
+show_dignostic: false
+ui_num: 2
+ui_components: [RGB_FILLED, DEPTH]
+random:
+  random_initial_pose : false
+  random_target_pose : false
+  random_init_x_range: [-0.1, 0.1]
+  random_init_y_range: [-0.1, 0.1]
+  random_init_z_range: [-0.1, 0.1]
+  random_init_rot_range: [-0.1, 0.1]
+
+output: [nonviz_sensor]
+resolution: 256
+
+speed:
+  timestep: 0.0001
+  frameskip: 1
+
+mode: gui #gui|headless
+verbose: false
