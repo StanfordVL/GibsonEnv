@@ -79,6 +79,7 @@ install() {
     echo $password | sudo -s apt install cmake -y
     echo $password | sudo -s apt install golang libjpeg-turbo8-dev unzip -y
     echo $password | sudo -s apt install wmctrl xdotool -y
+    echo $password | sudo -s apt install libfreeimageplus3 libfreeimageplus-dev libfreeimage3 libfreeimage-dev -y
 
     ## Core renderer
     echo $password | sudo -s apt install nvidia-cuda-toolkit -y    ## Huge, 1121M

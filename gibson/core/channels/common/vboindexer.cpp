@@ -162,13 +162,15 @@ void indexVBO_MTL(
         std::vector<glm::vec2> group_uvs = mtl_uvs[j];
         std::vector<glm::vec3> group_normals = mtl_normals[j];
         unsigned int semantic_layer = j;
-        printf("mtl %d groups, current size %d\n", mtl_vertices.size(), group_vertices.size());
+        
+        uint group_size = group_vertices.size();
+        if (group_uvs.size() < group_size)
+            group_size = group_uvs.size();
 
-        for (unsigned int i=0; i<group_vertices.size(); i++ ) {
+        for (unsigned int i=0; i<group_size; i++ ) {
             PackedVertex packed = {group_vertices[i], group_uvs[i], group_normals[i]};
             unsigned int index;
             bool found = getSimilarVertexIndex_fast( packed, VertexToOutIndex, index);
-
             if ( found ) {
                 out_indices.push_back( index );
             } else {

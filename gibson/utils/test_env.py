@@ -25,9 +25,9 @@ class RandomAgent(object):
                 action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
         return action
 
-def testEnv(Env):
+def testEnv(Env, config="test.yaml", frame_total=10):
     print("Currently testing", Env)
-    config = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'examples', 'configs', "test.yaml")
+    config = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'examples', 'configs', config)
     env = Env(config, human=True, is_discrete = False)
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
@@ -41,12 +41,12 @@ def testEnv(Env):
         obs, r, done, meta = env.step(a)
         score += r
         frame += 1
-        if not done and frame < 10: continue
+        if not done and frame < frame_total: continue
         env.close()
         return
     
 if __name__ == '__main__':
-
+    '''
     testEnv(HumanoidGibsonFlagRunEnv)
     testEnv(HumanoidNavigateEnv)
     testEnv(HuskyNavigateEnv)
@@ -55,3 +55,5 @@ if __name__ == '__main__':
     testEnv(AntFlagRunEnv)
     testEnv(AntGibsonFlagRunEnv)
     testEnv(AntNavigateEnv)
+    '''
+    testEnv(HuskyNavigateEnv, "test_semantics.yaml", 100)
