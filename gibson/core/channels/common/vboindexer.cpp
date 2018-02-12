@@ -152,7 +152,7 @@ void indexVBO_MTL(
     std::vector<glm::vec3> & out_vertices,
     std::vector<glm::vec2> & out_uvs,
     std::vector<glm::vec3> & out_normals,
-    std::vector<unsigned int> & out_semantics
+    std::vector<glm::vec2> & out_semantics
 ) {
     std::map<PackedVertex,unsigned int> VertexToOutIndex;
 
@@ -161,7 +161,7 @@ void indexVBO_MTL(
         std::vector<glm::vec3> group_vertices = mtl_vertices[j];
         std::vector<glm::vec2> group_uvs = mtl_uvs[j];
         std::vector<glm::vec3> group_normals = mtl_normals[j];
-        unsigned int semantic_layer = j;
+        float semantic_layer = (float) j;
         
         uint group_size = group_vertices.size();
         if (group_uvs.size() < group_size)
@@ -171,15 +171,19 @@ void indexVBO_MTL(
             PackedVertex packed = {group_vertices[i], group_uvs[i], group_normals[i]};
             unsigned int index;
             bool found = getSimilarVertexIndex_fast( packed, VertexToOutIndex, index);
+            glm::vec2 semantic_uv;
+            semantic_uv.x = semantic_layer;
+            semantic_uv.y = 0;
+
             if ( found ) {
                 out_indices.push_back( index );
             } else {
                 out_vertices .push_back( group_vertices[i]);
                 out_uvs      .push_back( group_uvs[i]);
                 out_normals  .push_back( group_normals[i]);
-                out_semantics.push_back(semantic_layer);
+                out_semantics.push_back( semantic_uv);
                 unsigned int newindex = (unsigned int)out_vertices.size() - 1;
-                out_indices .push_back( newindex);
+                out_indices  .push_back( newindex);
 
                 VertexToOutIndex [ packed ] = newindex;
             }

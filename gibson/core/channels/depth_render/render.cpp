@@ -475,13 +475,13 @@ int main( int argc, char * argv[] )
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec2> uvs;
     std::vector<glm::vec3> normals;
-
+    std::vector<TextureObj> TextObj;
+    uint num_layers;
 
     GLuint gArrayTexture(0);
     if ( semantic > 0) {
         // Do Y
         // Read the .obj file
-        int num_layers = 2; // TextObj.size();
         bool res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
         res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
         if (res == false) { printf("Was not able to load the semantic.obj file.\n"); exit(-1); }
@@ -489,12 +489,13 @@ int main( int argc, char * argv[] )
 
         // Load the textures
         std::string mtl_path = obj_path + mtllib;
-        std::vector<TextureObj> TextObj;
+        
         
         bool MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);
         if (MTL_loaded == false) { printf("Was not able to load the semantic.mtl file\n"); exit(-1); }
         else { printf("Semantic.mtl file was loaded with success.\n"); }
 
+        num_layers = TextObj.size();
         //Generate an array texture
         glGenTextures( 1, &gArrayTexture );
         glActiveTexture(GL_TEXTURE0);
@@ -508,14 +509,11 @@ int main( int argc, char * argv[] )
                       num_layers                   //Number of layers
                     );
 
-        printf("Generating array texture\n");
         for( unsigned int i(0); i!=num_layers;++i)
         {
-            printf("Generating array texture %d\n", i);    
             //Choose a random color for the i-essim image
             GLubyte color[3] = {rand()%255,rand()%255,rand()%255};
 
-            printf("Generating array texture %d finished color\n", i);    
             //printf("Create one layer %d\n", TextObj.size());
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,
@@ -525,14 +523,12 @@ int main( int argc, char * argv[] )
                              GL_RGB,                //format
                              GL_UNSIGNED_BYTE,      //type
                              color);                //pointer to data
-            printf("Generating array texture %d finished sub image\n", i);    
         }
 
         glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-        printf("Finished generating array texture\n");
     } else {
         bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
     }
@@ -552,13 +548,15 @@ int main( int argc, char * argv[] )
     std::vector<glm::vec3> indexed_vertices;
     std::vector<glm::vec2> indexed_uvs;
     std::vector<glm::vec3> indexed_normals;
-    std::vector<unsigned int> indexed_semantics;
+    std::vector<glm::vec2> indexed_semantics;
 
     if (semantic > 0) {
-        printf("Indexing vbo mtl \n");
         indexVBO_MTL(mtl_vertices, mtl_uvs, mtl_normals, indices, indexed_vertices, indexed_uvs, indexed_normals, indexed_semantics);
         //indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
-        printf("Finished indexing vbo mtl \n");
+        printf("Finished indexing %d vbo mtl \n", indexed_semantics.size());
+        for (uint q = 0; q < 100000; q+= 10000) {
+            printf("Indexing semantics %d: %d\n", q, indexed_semantics[q].x);
+        }
     } else {
         indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
     }
@@ -582,12 +580,10 @@ int main( int argc, char * argv[] )
     glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
 
     if (semantic > 0) {
-        printf("generating semantic buffer\n");
         GLuint semanticlayerbuffer;
         glGenBuffers(1, &semanticlayerbuffer);
         glBindBuffer(GL_ARRAY_BUFFER, semanticlayerbuffer);
-        glBufferData(GL_ARRAY_BUFFER, indexed_semantics.size() * sizeof(unsigned int), &indexed_semantics[0], GL_STATIC_DRAW);
-        printf("Finished generating semantic buffer");
+        glBufferData(GL_ARRAY_BUFFER, indexed_semantics.size() * sizeof(glm::vec2), &indexed_semantics[0], GL_STATIC_DRAW);
     }
 
     // Generate a buffer for the indices as well
@@ -808,9 +804,7 @@ int main( int argc, char * argv[] )
         //std::cout << "Realenv Channel Renderer: waiting for pose" << std::endl;
 
         //  Wait for next request from client
-        printf("Socket receiving GPU %d\n", GPU_NUM);
         socket.recv (&request);
-        printf("Socket received GPU %d\n", GPU_NUM);
         
         boost::timer t;
 
@@ -906,6 +900,7 @@ int main( int argc, char * argv[] )
                 glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
                 // Set our "myTextureSampler" sampler to use Texture Unit 0
                 glUniform1i(TextureID, 0);
+
 
                 // 1rst attribute buffer : vertices
                 glEnableVertexAttribArray(0);
@@ -1087,7 +1082,10 @@ int main( int argc, char * argv[] )
                 // Bind our texture in Texture Unit 0
                 glActiveTexture(GL_TEXTURE0);
                 //glBindTexture(GL_TEXTURE_2D, Texture);
-                glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
+                if (semantic > 0) {
+                    glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
+                    glUniform1i(num_layers, 3);
+                }
                 // Set our "myTextureSampler" sampler to use Texture Unit 0
                 glUniform1i(TextureID, 0);
 

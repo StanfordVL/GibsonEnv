@@ -319,7 +319,6 @@ class PCRenderer:
 
         #with Profiler("Render: depth request round-trip"):
         ## Speed bottleneck: 100fps for mist + depth
-        print("mist socket sending out")
         self.socket_mist.send_string(s)
         mist_msg = self.socket_mist.recv()
         self.socket_dept.send_string(s)
@@ -328,7 +327,6 @@ class PCRenderer:
             self.socket_norm.send_string(s)
             norm_msg = self.socket_norm.recv()
         if self._require_semantics:
-            print("Semantic socket sending out")
             self.socket_semt.send_string(s)
             semt_msg = self.socket_semt.recv()
 
