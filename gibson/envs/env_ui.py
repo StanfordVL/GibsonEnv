@@ -10,6 +10,11 @@ from PIL import Image
 import scipy.misc
 from gibson.core.render.profiler import Profiler
 from enum import Enum
+import cv2
+import socket
+import sys
+import zmq
+import pickle
 
 class View(Enum):
     EMPTY = 0
@@ -29,13 +34,16 @@ class SimpleUI():
         self.height = height_col * windowsz
         self.windowsz = windowsz
         self.screen = pygame.display.set_mode([self.width, self.height], 0, 32)
-        self.screen_arr = np.zeros([self.width, self.height, 3])
+        self.screen_arr = np.zeros([self.width, self.height, 3]).astype(np.uint8)
         self.screen_arr.fill(255)
         self.is_recording = False
         self.components = [View[item] for item in self.env.config["ui_components"]]
         self._add_all_images()
         self.record_root = None
-
+        self.port = 6666
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.PUB)
+        self.socket.bind("tcp://*:%s" % self.port)
 
     def _add_all_images(self):
         for index, component in enumerate(self.components):
@@ -48,7 +56,7 @@ class SimpleUI():
         for index, component in enumerate(self.components):
             if tag == component:
                 self._add_image(
-                    np.swapaxes(view, 0, 1), 
+                    np.swapaxes(view, 0, 1),
                     self.POS[index][0],
                     self.POS[index][1])
                 return
@@ -76,6 +84,15 @@ class SimpleUI():
         #with Profiler("Refreshing"):
         pygame.display.flip()
         surfarray.blit_array(self.screen, self.screen_arr)
+        #print(self.screen_arr.shape)
+        screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1,0,2), cv2.COLOR_BGR2RGB)
+        screen = pickle.dumps(cv2.imencode('.jpg', screen_to_dump), protocol=0)
+        #from IPython import embed; embed()
+        
+        self.socket.send(b"ui" + screen)
+
+
+
         #surf = pygame.surfarray.make_surface(self.screen_arr)
         #self.screen.blit(surf, (0, 0))
         #pygame.display.update()
