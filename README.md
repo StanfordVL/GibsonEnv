@@ -76,6 +76,9 @@ git clone https://github.com/fxia22/baselines.git
 pip install -e baselines
 ```
 
+### Uninstalling
+Uninstall gibson is easy, if you installed with docker, just run `docker images -a | grep "gibson" | awk '{print $3}' | xargs docker rmi` to clean up the image. If you installed from source, uninstall with `pip uninstall gibson`
+
 
 ## Demo
 

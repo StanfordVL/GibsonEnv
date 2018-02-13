@@ -45,7 +45,7 @@ def train(num_timesteps, seed):
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate_train.yaml')
     print(config_file)
 
-    raw_env = HuskyNavigateEnv(human=args.human, is_discrete=True, gpu_count=args.gpu_count,
+    raw_env = HuskyNavigateEnv(is_discrete=True, gpu_count=args.gpu_count,
                                 config=config_file)
 
     env = Monitor(raw_env, logger.get_dir() and
@@ -96,7 +96,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")

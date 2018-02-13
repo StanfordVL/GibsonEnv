@@ -31,12 +31,12 @@ class AntNavigateEnv(CameraRobotEnv):
     def __init__(
             self, 
             config,
-            human=True,
-            is_discrete=False, 
+            is_discrete=False,
             gpu_count=0):
         
         self.config = self.parse_config(config)
-        self.human = human
+        self.gui = self.config["mode"] == "gui"
+
         self.model_id = self.config["model_id"]
         self.timestep = self.config["speed"]["timestep"]
         self.frame_skip = self.config["speed"]["frameskip"]
@@ -134,7 +134,7 @@ class AntNavigateEnv(CameraRobotEnv):
         walk_target_y = self.robot.walk_target_y / self.robot.mjcf_scaling
 
         self.flag = None
-        if self.human and not self.config["display_ui"]:
+        if self.gui and not self.config["display_ui"]:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
@@ -152,12 +152,11 @@ class AntClimbEnv(CameraRobotEnv):
     def __init__(
             self,
             config,
-            human=True,
-            is_discrete=False, 
+            is_discrete=False,
             gpu_count=0):
         self.config = self.parse_config(config)
         self.delta_target = [self.config["random"]["random_target_range"], self.config["random"]["random_target_range"]]
-        self.human = human
+        self.gui = self.config["mode"] == "gui"
         self.model_id = self.config["model_id"]
         self.timestep = self.config["speed"]["timestep"]
         self.frame_skip = self.config["speed"]["frameskip"]
@@ -281,7 +280,7 @@ class AntClimbEnv(CameraRobotEnv):
         self.robot.walk_target_z = walk_target_z
 
         self.flag = None
-        if not self.human:
+        if not self.gui:
             return
 
         if self.visual_flagId is None:
@@ -322,12 +321,11 @@ class AntFlagRunEnv(CameraRobotEnv):
     def __init__(
             self, 
             config,
-            human=True,
             is_discrete=False,
             mode="RGBD",
             gpu_count=0):
         self.config = self.parse_config(config)
-        self.human = human
+        self.gui = self.config["mode"] == "gui"
         self.model_id = self.config["model_id"]
         self.timestep = self.config["speed"]["timestep"]
         self.frame_skip = self.config["speed"]["frameskip"]
@@ -351,7 +349,7 @@ class AntFlagRunEnv(CameraRobotEnv):
             env = self))
         self.scene_introduce()
 
-        if self.human:
+        if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
         self.lastid = None
 
@@ -376,7 +374,7 @@ class AntFlagRunEnv(CameraRobotEnv):
         self.flag_timeout = 3000 / self.scene.frame_skip
         #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
         #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
-        if self.human:
+        if self.gui:
             if self.lastid:
                 p.removeBody(self.lastid)
 
@@ -448,13 +446,12 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
     def __init__(
             self,
             config, 
-            human=True,
             is_discrete=False,
             gpu_count=0, 
             scene_type="building"):
 
         self.config = self.parse_config(config)
-        self.human = human
+        self.gui = self.config["mode"] == "gui"
         self.model_id = self.config["model_id"]
         self.timestep = self.config["speed"]["timestep"]
         self.frame_skip = self.config["speed"]["frameskip"]
@@ -481,7 +478,7 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
             env=self))
         self.scene_introduce()
 
-        if self.human:
+        if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")

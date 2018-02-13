@@ -10,5 +10,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     args = parser.parse_args()
 
-    env = HumanoidNavigateEnv(human=True, is_discrete = True, config = config_file)
+    env = HumanoidNavigateEnv(is_discrete = True, config = config_file)
     play(env, zoom=4, fps=int( 1.0/(timestep * frame_skip)))

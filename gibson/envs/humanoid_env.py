@@ -35,13 +35,12 @@ class HumanoidNavigateEnv(CameraRobotEnv):
     def __init__(
             self,
             config,
-            human=True,
-            is_discrete=False, 
+            is_discrete=False,
             use_filler=True,
             gpu_count=0, 
             resolution=512):
         self.config = self.parse_config(config)
-        self.human = human
+        self.gui = self.config["mode"] == "gui"
         self.model_id = self.config["model_id"]
         self.timestep = self.config["speed"]["timestep"]
         self.frame_skip = self.config["speed"]["frameskip"]
@@ -136,7 +135,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         walk_target_y = self.robot.walk_target_y
 
         self.flag = None
-        if self.human and not self.config["display_ui"]:
+        if self.gui and not self.config["display_ui"]:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0])
             self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
         
@@ -155,14 +154,13 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
     def __init__(
             self,
             config,
-            human=True,
             is_discrete=False,
             gpu_count=0,
             scene_type="building",
             ):
 
         self.config = self.parse_config(config)
-        self.human = human
+        self.gui = self.config["mode"] == "gui"
         self.model_id = self.config["model_id"]
         self.timestep = self.config["speed"]["timestep"]
         self.frame_skip = self.config["speed"]["frameskip"]
@@ -193,7 +191,7 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
 
         self.scene_introduce()
 
-        if self.human:
+        if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH,
                                                 fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
                                                 meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
