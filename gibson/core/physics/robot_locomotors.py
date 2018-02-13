@@ -653,11 +653,33 @@ class Quadrotor(WalkerBase):
         self.initial_orn = initial_orn
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
 
-        self.setup_keys_to_action()
+
+
+        if self.is_discrete:
+            self.action_space = gym.spaces.Discrete(7)
+
+            self.action_list = [[1,0,0,0,0,0],
+                                [-1,0,0,0,0,0],
+                                [0,1,0,0,0,0],
+                                [0,-1,0,0,0,0],
+                                [0,0,1,0,0,0],
+                                [0,0,-1,0,0,0],
+                                [0,0,0,0,0,0]
+                                ]
+            self.setup_keys_to_action()
+        else:
+            action_high = 0.02 * np.ones([6])
+            self.action_space = gym.spaces.Box(-action_high, action_high)
 
         self.foot_list = []
     def apply_action(self, action):
-        pass
+        if self.is_discrete:
+            realaction = self.action_list[action]
+        else:
+            realaction = action
+
+        p.setGravity(0, 0, 0)
+        p.resetBaseVelocity(self.robot_ids[0], realaction[:3], realaction[3:])
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
@@ -672,6 +694,11 @@ class Quadrotor(WalkerBase):
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            (ord('w'), ): 0,
-            (): 1
+            (ord('s'),): 0,  ## backward
+            (ord('w'),): 1,  ## forward
+            (ord('d'),): 2,  ## turn right
+            (ord('a'),): 3,  ## turn left
+            (ord('z'),): 4,  ## turn left
+            (ord('x'),): 5,  ## turn left
+            (): 6
         }

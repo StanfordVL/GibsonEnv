@@ -173,5 +173,6 @@ class DroneNavigateEnv(CameraRobotEnv):
     def  _reset(self):
         self.total_frame = 0
         self.total_reward = 0
+
         obs = CameraRobotEnv._reset(self)
         return obs
