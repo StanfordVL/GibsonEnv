@@ -11,7 +11,11 @@ Table of contents
 =================
 
    * [Installation](#installation)
+        * [Quick Installation (docker)](#quick-installation)
+        * [Building from source](#building-from-source)
+        * [Uninstalling](#uninstalling)
    * [Quick Start](#quick-start)
+   * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
 
 Installation
@@ -19,22 +23,23 @@ Installation
 
 The minimal system requirements are the following:
 
+- Ubuntu 16.04
 - Nvidia GPU with VRAM > 6.0GB
 - Nvidia driver >= 384
 - CUDA >= 9.0, CuDNN >= v7
-
-#### Dependencies
-
-We use docker to distribute our software, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
-
-Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
 
 #### Download data
 
 Download data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0) and put `assets.tar.gz` it in `gibson/assets` folder.
 
+Quick installation
+-----
 
-#### Quick installation (docker)
+
+We use docker to distribute our software, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
+
+Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
+
 
 1. Build your own docker image (recommended)
 ```bash
@@ -52,7 +57,8 @@ If the installation is successful, you should be able to run `docker run --runti
 docker pull xf1280/gibson:0.1
 ```
 
-#### Build from source
+Building from source
+-----
 
 First, make sure you have Nvidia driver and CUDA installed. If you install from source, CUDA 9 is not necessary, as that is for nvidia-docker 2.0. Then, let's install some dependencies:
 
@@ -87,7 +93,9 @@ git clone https://github.com/fxia22/baselines.git
 pip install -e baselines
 ```
 
-### Uninstalling
+Uninstalling
+----
+
 Uninstall gibson is easy, if you installed with docker, just run `docker images -a | grep "gibson" | awk '{print $3}' | xargs docker rmi` to clean up the image. If you installed from source, uninstall with `pip uninstall gibson`
 
 
@@ -98,12 +106,54 @@ After getting into the docker container, you can run a few demos. You might need
 
 ```bash
 python examples/demo/play_husky_sensor.py ### Use ASWD to control a car to navigate around gates
+```
+![husky_nonviz](misc/husky_nonviz.png)
+You are able to use ASWD to control a car to navigate around gates. You will not see camera output. 
+
+```bash
 python examples/demo/play_husky_camera.py ### Use ASWD to control a car to navigate around gates, with camera output
+```
+![husky_nonviz](misc/husky_camera.png)
+You are able to use ASWD to control a car to navigate around gates. You will also be able to see camera output. 
+
+```bash
 python examples/train/train_husky_navigate_ppo2.py ### Use PPO2 to train a car to navigate down the hall way in gates based on visual input
 ```
 
+![husky_train](misc/husky_train.png)
+Running this command you will start training a husky robot to navigate in gates and go down the corridor. You will see some RL related statistics in terminal after each episode.
+
+
+```bash
+python examples/train/train_ant_navigate_ppo1.py ### Use PPO2 to train an ant to navigate down the hall way in gates based on visual input
+```
+
+![ant_train](misc/ant_train.png)
+Running this command you will start training an ant to navigate in gates and go down the corridor. You will see some RL related statistics in terminal after each episode.
+
+
 More examples can be found in `examples/demo` and `examples/train` folder.
+
+
+Coding Your RL Agent
+====
+You can code your RL agent following our convention. The interface with our environment is very simple.
+
+First, you can create an environment by creating an instance of classes in `gibson/core/envs` folder. 
+
+
+```python
+env = AntNavigateEnv(is_discrete=False, config = config_file)
+```
+
+Then do one step of the simulation with `env.step`. And reset with `env.reset()`
+```python
+obs, rew, env_done, info = env.step(action)
+```
+`obs` gives the observation of the robot. `rew` is the defined reward. `env_done` marks the end of one episode, for example, when the robot dies. 
+`info` gives some additional information of this step, sometimes we use this to pass additional non-visual sensor values.
+
 
 Environment Configuration
 =================
-Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained [here](gibson/configs/README.md).
+Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained [here](examples/configs/README.md).
