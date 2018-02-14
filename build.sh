@@ -108,77 +108,14 @@ build_local() {
     cd -
 }
 
-download_data () {
-    ## Data set
-    cd ./gibson/data
-    [ -d dataset ] || mkdir dataset
-    [ ! -d ./gibson/core/physics/models ] || rm -rf ./gibson/core/physics/models
-
-
-    ## Psych building -1F, 919Mb
-    if [ $dset_name="stanford_1" ] && [ ! -d dataset/BbxejD15Etk ]; then
-        wget https://www.dropbox.com/s/uyjnhmnbrrghx13/BbxejD15Etk.zip
-        unzip -q BbxejD15Etk.zip && rm BbxejD15Etk.zip
-        mv BbxejD15Etk dataset
-    fi
-
-    ## Psych building 1F, 794.2Mb
-    if [ $dset_name="stanford_2" ] && [ ! -d dataset/sitktXish3E ]; then
-        wget https://www.dropbox.com/s/bt4pctsnh3recs7/sitktXish3E.zip
-        unzip -q sitktXish3E.zip && rm sitktXish3E.zip
-        mv sitktXish3E dataset
-    fi
-
-    ## Gates building 1F, 616.1Mb
-    if [ $dset_name="stanford_3" ] && [ ! -d dataset/sRj553CTHiw ]; then
-        wget https://www.dropbox.com/s/m9t9njmymwfvt6d/sRj553CTHiw.zip
-        unzip -q sRj553CTHiw.zip && rm sRj553CTHiw.zip
-        mv sRj553CTHiw dataset
-    fi
-
-    ## Gates building 2F, 294.1Mb
-    if [ $dset_name="stanford_4" ] && [ ! -d dataset/TVHnHa4MZwE ]; then
-        wget https://www.dropbox.com/s/f9y73pafshhjlbu/TVHnHa4MZwE.zip
-        unzip -q TVHnHa4MZwE.zip && rm TVHnHa4MZwE.zip
-        mv TVHnHa4MZwE dataset
-    fi
-
-
-    if [ ! -d dataset/11HB6XZSh1Q ]; then
-        wget https://www.dropbox.com/s/zplz70g7dxdcnii/11HB6XZSh1Q.zip
-        unzip -q 11HB6XZSh1Q.zip && rm 11HB6XZSh1Q.zip
-        mv 11HB6XZSh1Q dataset
+decompress_data () {
+    cd gibson/assets
+    tar -zxf assets.tar.gz -C ..
+    rm assets.tar.gz
+    if [ -f "gibson/assets/*.pkl" ]; then
+        rm gibson/assets/*.pkl
     fi
     cd -
-
-    if [ ! -d dataset/test ]; then
-        wget https://www.dropbox.com/s/x7u9bbyv51xv2tv/test.zip
-        unzip -q test.zip && rm test.zip
-        mv test dataset
-    fi
-    cd -
-
-    ## Physics Models
-    if [ ! -d ./gibson/core/physics/models ]; then
-        cd ./gibson/core/physics
-        wget --quiet https://www.dropbox.com/s/3w9vxc8f071u1h0/models.zip
-        unzip -q models.zip && rm models.zip
-        cd -
-    fi
-
-    cd ./gibson/core/render/
-        if [ ! -f coord.npy ]; then
-            wget --quiet https://www.dropbox.com/s/msd32wg144eew5r/coord.npy
-        fi
-        if [ ! -f model.pth ]; then
-            wget --quiet https://www.dropbox.com/s/e7far9okgv7oq8p/model.pth
-            wget --quiet https://www.dropbox.com/s/ywrkh66porlqcax/compG_epoch4_3000.pth
-        fi
-    cd -
-
-    if [ -f "gibson/data/*.pkl" ]; then
-        rm gibson/data/*.pkl
-    fi
 }
 
 
@@ -214,8 +151,8 @@ case "$subcommand" in
   "verify_conda")
     verify_conda
     ;;
-  "download_data")
-    download_data
+  "decompress_data")
+    decompress_data
     ;;
   "build_local")
     build_local

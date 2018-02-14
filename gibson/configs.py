@@ -115,36 +115,6 @@ class UIMode(Enum):
 
 UI_MODE = UIMode.UI_TWO
 
-class View(Enum):
-    EMPTY = 0
-    RGB_FILLED = 1
-    RGB_PREFILLED = 2
-    DEPTH = 3
-    NORMAL = 4
-    SEMANTICS = 5
-    PHYSICS = 6
-
-class ViewComponent:
-    ONE   = [View.RGB_FILLED]
-    TWO   = [View.RGB_FILLED, View.DEPTH]
-    FOUR  = [View.RGB_FILLED, View.DEPTH, View.NORMAL, View.SEMANTICS]
-    THREE = [View.RGB_FILLED, View.DEPTH, View.NORMAL]
-    def getComponents():
-        assert(UIMode.is_valid(UI_MODE))
-        if UI_MODE == UIMode.UI_ONE:
-            return ViewComponent.ONE
-        if UI_MODE == UIMode.UI_TWO:
-            return ViewComponent.TWO
-        if UI_MODE == UIMode.UI_THREE:
-            return ViewComponent.THREE
-        if UI_MODE == UIMode.UI_FOUR:
-            return ViewComponent.FOUR
-        if UI_MODE == UIMode.UI_FIVE:
-            return ViewComponent.FIVE
-        if UI_MODE == UIMode.UI_SIX:
-            return ViewComponent.SIX
-        if UI_MODE == UIMode.UI_NONE:
-            return None
 
 ## Render window settings
 HIGH_RES_MONITOR = False

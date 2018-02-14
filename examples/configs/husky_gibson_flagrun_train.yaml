@@ -1,0 +1,29 @@
+envname: HuskyGibsonFlagRunEnv
+model_id: 11HB6XZSh1Q
+target_orn: [0, 0, 0]
+target_pos: [-0.203, -1.74, 1.8]
+initial_orn: [0, 0, 3.14]
+initial_pos: [-2, 3.5, 0.4]
+fov: 1.57
+use_filler: true
+display_ui: true
+show_dignostic: false
+ui_num: 2
+ui_components: [RGB_FILLED, DEPTH]
+random:
+  random_initial_pose : false
+  random_target_pose : false
+  random_init_x_range: [-0.1, 0.1]
+  random_init_y_range: [-0.1, 0.1]
+  random_init_z_range: [-0.1, 0.1]
+  random_init_rot_range: [-0.1, 0.1]
+
+output: [nonviz_sensor, rgb_filled, depth]
+resolution: 128
+
+speed:
+  timestep: 0.01
+  frameskip: 1
+
+mode: gui #gui|headless
+verbose: false

@@ -20,7 +20,7 @@ Current:
 '''
 
 
-from gibson.envs.env_modalities import CameraRobotEnv, SensorRobotEnv
+from gibson.envs.env_modalities import CameraRobotEnv, BaseRobotEnv
 from gibson.envs.env_bases import *
 from gibson.core.physics.drivers.minitaur import Minitaur
 import os, inspect

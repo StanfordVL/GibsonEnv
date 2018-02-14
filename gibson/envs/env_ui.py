@@ -9,23 +9,41 @@ from datetime import datetime
 from PIL import Image
 import scipy.misc
 from gibson.core.render.profiler import Profiler
-from gibson import configs
-from gibson.configs import *
+from enum import Enum
+import cv2
+import socket
+import sys
+import zmq
+import pickle
+
+class View(Enum):
+    EMPTY = 0
+    RGB_FILLED = 1
+    RGB_PREFILLED = 2
+    DEPTH = 3
+    NORMAL = 4
+    SEMANTICS = 5
+    PHYSICS = 6
+
 
 class SimpleUI():
     '''Static UI'''
-    RECORD_ROOT = "/home/zhiyang/Desktop/gibson/recordings"
-
-    def __init__(self, width_col, height_col, windowsz):
+    def __init__(self, width_col, height_col, windowsz, env = None):
+        self.env = env
         self.width  = width_col * windowsz
         self.height = height_col * windowsz
         self.windowsz = windowsz
         self.screen = pygame.display.set_mode([self.width, self.height], 0, 32)
-        self.screen_arr = np.zeros([self.width, self.height, 3])
+        self.screen_arr = np.zeros([self.width, self.height, 3]).astype(np.uint8)
         self.screen_arr.fill(255)
         self.is_recording = False
-        self.components = ViewComponent.getComponents()
+        self.components = [View[item] for item in self.env.config["ui_components"]]
         self._add_all_images()
+        self.record_root = None
+        self.port = 6666
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.PUB)
+        self.socket.bind("tcp://*:%s" % self.port)
 
     def _add_all_images(self):
         for index, component in enumerate(self.components):
@@ -38,7 +56,7 @@ class SimpleUI():
         for index, component in enumerate(self.components):
             if tag == component:
                 self._add_image(
-                    np.swapaxes(view, 0, 1), 
+                    np.swapaxes(view, 0, 1),
                     self.POS[index][0],
                     self.POS[index][1])
                 return
@@ -52,7 +70,7 @@ class SimpleUI():
         self.refresh()
 
     def refresh(self):
-        if configs.ENABLE_UI_RECORDING:
+        if "enable_ui_recording" in self.env.config:
             cmd=cv2.waitKey(5)%256
             if cmd == ord('r'):
                 self.start_record()
@@ -66,6 +84,15 @@ class SimpleUI():
         #with Profiler("Refreshing"):
         pygame.display.flip()
         surfarray.blit_array(self.screen, self.screen_arr)
+        #print(self.screen_arr.shape)
+        screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1,0,2), cv2.COLOR_BGR2RGB)
+        screen = pickle.dumps(cv2.imencode('.jpg', screen_to_dump), protocol=0)
+        #from IPython import embed; embed()
+        
+        self.socket.send(b"ui" + screen)
+
+
+
         #surf = pygame.surfarray.make_surface(self.screen_arr)
         #self.screen.blit(surf, (0, 0))
         #pygame.display.update()
@@ -101,23 +128,23 @@ class OneViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Center,
     '''
-    def __init__(self, windowsz=256):
+    def __init__(self, windowsz=256, env = None):
         self.POS = [
             (0, 0)                 # One
         ]
-        SimpleUI.__init__(self, 1, 1, windowsz)
+        SimpleUI.__init__(self, 1, 1, windowsz, env)
 
 class TwoViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Left,
     Two: Right
     '''
-    def __init__(self, windowsz=256):
+    def __init__(self, windowsz=256, env = None):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0)           # Two
         ]
-        SimpleUI.__init__(self, 2, 1, windowsz)
+        SimpleUI.__init__(self, 2, 1, windowsz, env)
 
 class ThreeViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -125,13 +152,13 @@ class ThreeViewUI(SimpleUI):
     Two:    center
     Three:  right
     '''
-    def __init__(self, windowsz=256):
+    def __init__(self, windowsz=256, env = None):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0),          # Two
             (windowsz * 2, 0)       # Three
         ]
-        SimpleUI.__init__(self, 3, 1, windowsz)
+        SimpleUI.__init__(self, 3, 1, windowsz, env)
 
 class FourViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -140,14 +167,14 @@ class FourViewUI(SimpleUI):
     Three:  bottom left
     Four:   bottom right
     '''
-    def __init__(self, windowsz=256):
+    def __init__(self, windowsz=256, env = None):
         self.POS = [
             (0, 0),                 # One
             (0, windowsz),          # Two
             (windowsz, 0),          # Three
             (windowsz, windowsz)    # Four
         ]
-        SimpleUI.__init__(self, 2, 2, windowsz)
+        SimpleUI.__init__(self, 2, 2, windowsz, env)
 
 
 def main6():

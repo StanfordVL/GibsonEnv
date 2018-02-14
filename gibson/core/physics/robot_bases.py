@@ -8,7 +8,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
 import pybullet_data
-
+from gibson import assets
 
 class BaseRobot:
     """
@@ -16,7 +16,7 @@ class BaseRobot:
     Handles object loading
     """
 
-    def __init__(self, model_file, robot_name, scale = 1):
+    def __init__(self, model_file, robot_name, scale = 1, env = None):
         self.parts = None
         self.jdict = None
         self.ordered_joints = None
@@ -25,9 +25,10 @@ class BaseRobot:
         self.robot_ids = None
         self.model_file = model_file
         self.robot_name = robot_name
-        self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+        self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), "models")
         self.scale = scale
         self._load_model()
+        self.env = env
 
     def addToScene(self, bodies):
         if self.parts is not None:
@@ -46,12 +47,18 @@ class BaseRobot:
             ordered_joints = []
 
         dump = 0
+        #from IPython import embed; embed()
+
+
         for i in range(len(bodies)):
             if p.getNumJoints(bodies[i]) == 0:
                 part_name, robot_name = p.getBodyInfo(bodies[i], 0)
                 robot_name = robot_name.decode("utf8")
                 part_name = part_name.decode("utf8")
                 parts[part_name] = BodyPart(part_name, bodies, i, -1, self.scale, model_type=self.model_type)
+                #if part_name == self.robot_name:
+                #    self.robot_body = parts[part_name]
+
             for j in range(p.getNumJoints(bodies[i])):
                 p.setJointMotorControl2(bodies[i],j,p.POSITION_CONTROL,positionGain=0.1,velocityGain=0.1,force=0)
                 ## TODO (hzyjerry): the following is diabled due to pybullet update

@@ -470,7 +470,7 @@ void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * dep
         
         cudaMemset(d_img2, 0, input_mem_size * sizeof(int));  
         cudaMemset(d_3dpoint, 0, input_mem_size * sizeof(float) * 4);
-        cudaMemset(d_3dpoint_after, 0, input_mem_size * sizeof(float) * 4);
+        cudaMemset(d_3dpoint_after, 0, input_mem_size * sizeof(float) * 3);
 
         to3d_point<<< dimGrid, dimBlock >>>(d_depth, d_3dpoint);
         transform<<< dimGrid, dimBlock >>>(d_3dpoint_after, d_3dpoint, d_pose);

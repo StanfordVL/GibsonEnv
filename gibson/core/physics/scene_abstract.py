@@ -8,10 +8,11 @@ import gym
 class Scene:
     "A base class for single- and multiplayer scenes"
 
-    def __init__(self, gravity, timestep, frame_skip):
+    def __init__(self, gravity, timestep, frame_skip, env):
         #self.np_random, seed = gym.utils.seeding.np_random(None)
         self.timestep = timestep
         self.frame_skip = frame_skip
+        self.env = env
 
         self.dt = self.timestep * self.frame_skip
         self.cpp_world = World(gravity, timestep, frame_skip)

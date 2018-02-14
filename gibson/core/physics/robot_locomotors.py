@@ -5,7 +5,6 @@ import os
 import gym, gym.spaces
 from transforms3d.euler import euler2quat
 import transforms3d.quaternions as quat
-import gibson.configs as configs
 import sys
 
 OBSERVATION_EPS = 0.01
@@ -32,30 +31,21 @@ class WalkerBase(BaseRobot):
         target_pos,
         sensor_dim=None,
         scale = 1, 
-        resolution="NORMAL",
-        mode="RGBD"
+        resolution=512,
+        env = None
     ):
-        BaseRobot.__init__(self, filename, robot_name, scale)
+        BaseRobot.__init__(self, filename, robot_name, scale, env)
 
         self.resolution = resolution
         self.obs_dim = None
-        if resolution == "SMALL":
-            self.obs_dim = [64, 64, 4]
-        elif resolution == "XSMALL":
-            self.obs_dim = [32, 32, 4]
-        elif resolution == "MID":
-            self.obs_dim = [128, 128, 4]
-        elif resolution == "LARGE":
-            self.obs_dim = [512, 512, 4]
-        elif resolution == "XLARGE":
-            self.obs_dim = [1024, 1024, 4]
-        else:
-            self.obs_dim = [256, 256, 4]
+        print("resolution", self.resolution)
+        self.obs_dim = [self.resolution, self.resolution, 0]
 
-        if mode=="RGB":
-            self.obs_dim[2] = 3
-        elif mode=="DEPTH":
-            self.obs_dim[2] = 1
+        if "rgb_filled" in self.env.config["output"]:
+            self.obs_dim[2] += 3
+        if "depth" in self.env.config["output"]:
+            self.obs_dim[2] += 1
+
         assert type(sensor_dim) == int, "Sensor dimension must be int, got {}".format(type(sensor_dim))
         assert type(action_dim) == int, "Action dimension must be int, got {}".format(type(action_dim))
 
@@ -89,6 +79,9 @@ class WalkerBase(BaseRobot):
 
     def get_position(self):
         return self.robot_body.current_position()
+
+    def get_scaled_position(self):
+        return self.robot_body.current_position() / self.mjcf_scaling
 
     def get_orientation(self):
         return self.robot_body.current_orientation()
@@ -172,11 +165,16 @@ class WalkerBase(BaseRobot):
         if debugmode:
             print("Robot more", more)
 
-        if not configs.USE_SENSOR_OUTPUT:
-            j.fill(0)
+        #if not 'sensor' in self.env.config["output"]:
+        #    j.fill(0)
 
-        if not configs.USE_GPS_OUTPUT:
+        #if not 'gps' in self.env.config["output"]:
+        #    more.fill(0)
+
+        if not 'nonvis_sensor' in self.env.config["output"]:
+            j.fill(0)
             more.fill(0)
+
         return np.clip( np.concatenate([more] + [j] + [self.feet_contact]), -5, +5)
 
     def calc_potential(self):
@@ -264,12 +262,12 @@ class HalfCheetah(WalkerBase):
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
 
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD", power=2.5):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, mode="RGBD", power=2.5, env = None):
         ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
         ## pybullet doesn't yet support downscaling of MJCF objects
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.25
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=power, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, mode=mode)
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=power, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, env=env)
         self.is_discrete = is_discrete
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
@@ -322,7 +320,7 @@ class Ant(WalkerBase):
         self.robot_body.reset_position(self.initial_pos)
         #print("Initial position", self.initial_pos)
 
-        self.reset_base_position(configs.RANDOM_INITIAL_POSE, delta_pos = 0.25)
+        self.reset_base_position(self.env.config["random"]["random_initial_pose"], delta_pos = 0.25)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
@@ -354,12 +352,12 @@ class Ant(WalkerBase):
 
 
 class AntClimber(Ant):
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGBD"):
+    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, env = None):
         Ant.__init__(self, initial_pos, initial_orn, 
             is_discrete=is_discrete, 
             target_pos=target_pos, 
             resolution=resolution, 
-            mode=mode, power=5)
+            env=env, power=5)
         self.eye_offset_orn = euler2quat(np.pi/4, 0, np.pi/2, axes='sxyz')  ## looking 45 degs down
         
     def robot_specific_reset(self):
@@ -423,10 +421,10 @@ class AntClimber(Ant):
         #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
 
         #while True:
-        new_pos = [ pos[0] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_X[0], high=configs.RANDOM_INITIAL_RANGE_X[1]),
-                    pos[1] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_Y[0], high=configs.RANDOM_INITIAL_RANGE_Y[1]),
-                    pos[2] + self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_Z[0], high=configs.RANDOM_INITIAL_RANGE_Z[1])]
-        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=configs.RANDOM_INITIAL_RANGE_DEG[0], high=configs.RANDOM_INITIAL_RANGE_DEG[1])), orn)
+        new_pos = [ pos[0] + self.np_random.uniform(low=self.env.config["random_init_x_range"][0], high=self.env.config["random_init_x_range"][1]),
+                    pos[1] + self.np_random.uniform(low=self.env.config["random_init_y_range"][0], high=self.env.config["random_init_y_range"][1]),
+                    pos[2] + self.np_random.uniform(low=self.env.config["random_init_z_range"][0], high=self.env.config["random_init_z_range"][1])]
+        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=self.env.config["random_init_rot_range"][0], high=self.env.config["random_init_rot_range"][1])), orn)
         self.robot_body.reset_orientation(new_orn)
         self.robot_body.reset_position(new_pos)
 
@@ -439,11 +437,11 @@ class Humanoid(WalkerBase):
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
 
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL"):
+    def __init__(self, initial_pos, initial_orn, is_discrete = True, target_pos=[1, 0, 0], resolution=512, env = None):
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.6
         self.is_discrete = is_discrete
-        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = self.mjcf_scaling, target_pos=target_pos, resolution=resolution)
+        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = self.mjcf_scaling, target_pos=target_pos, resolution=resolution, env = env)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
         #self.eye_offset_orn = euler2quat(0, 0, 0, axes='sxyz')
@@ -511,7 +509,7 @@ class Humanoid(WalkerBase):
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
         self.robot_body.reset_position(self.initial_pos)
 
-        self.reset_base_position(configs.RANDOM_INITIAL_POSE)
+        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
 
 
 
@@ -541,11 +539,11 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
 
 
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGB"):
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, env = None):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, mode=mode)
+        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, env = env)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
@@ -609,7 +607,7 @@ class Husky(WalkerBase):
         self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
         self.robot_body.reset_position(self.initial_pos)
 
-        self.reset_base_position(configs.RANDOM_INITIAL_POSE)
+        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
 
 
     def alive_bonus(self, z, pitch):
@@ -642,32 +640,65 @@ class HuskyClimber(Husky):
             for k in self.jdict.keys():
                 print("Power coef", self.jdict[k].power_coef)
 
-class HuskyHighCamera(Husky):
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution="NORMAL", mode="RGB"):
+
+class Quadrotor(WalkerBase):
+
+    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, env=None):
         self.model_type = "URDF"
         self.is_discrete = is_discrete
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "husky_high.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, mode=mode)
+        WalkerBase.__init__(self, "quadrotor.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale=0.6,
+                            target_pos=target_pos, resolution=resolution, env=env)
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
         self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
-        if self.is_discrete:
-            self.action_space = gym.spaces.Discrete(5)
-        ## specific offset for husky.urdf
-        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
-            self.torque = 0.1
-            self.action_list = [[self.torque/4, self.torque/4, self.torque/4, self.torque/4],
-                                #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
-                                [-self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9, -self.torque * 0.9],
-                                [self.torque, -self.torque, self.torque, -self.torque],
-                                [-self.torque, self.torque, -self.torque, self.torque],
-                                [0, 0, 0, 0]]
 
+
+
+        if self.is_discrete:
+            self.action_space = gym.spaces.Discrete(7)
+
+            self.action_list = [[1,0,0,0,0,0],
+                                [-1,0,0,0,0,0],
+                                [0,1,0,0,0,0],
+                                [0,-1,0,0,0,0],
+                                [0,0,1,0,0,0],
+                                [0,0,-1,0,0,0],
+                                [0,0,0,0,0,0]
+                                ]
             self.setup_keys_to_action()
         else:
-            action_high = 0.02 * np.ones([4])
+            action_high = 0.02 * np.ones([6])
             self.action_space = gym.spaces.Box(-action_high, action_high)
 
-        ## specific offset for husky.urdf
-        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
-    
+        self.foot_list = []
+    def apply_action(self, action):
+        if self.is_discrete:
+            realaction = self.action_list[action]
+        else:
+            realaction = action
+
+        p.setGravity(0, 0, 0)
+        p.resetBaseVelocity(self.robot_ids[0], realaction[:3], realaction[3:])
+
+    def robot_specific_reset(self):
+        WalkerBase.robot_specific_reset(self)
+        roll = self.initial_orn[0]
+        pitch = self.initial_orn[1]
+        yaw = self.initial_orn[2]
+        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
+        self.robot_body.reset_position(self.initial_pos)
+
+        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
+
+
+    def setup_keys_to_action(self):
+        self.keys_to_action = {
+            (ord('s'),): 0,  ## backward
+            (ord('w'),): 1,  ## forward
+            (ord('d'),): 2,  ## turn right
+            (ord('a'),): 3,  ## turn left
+            (ord('z'),): 4,  ## turn left
+            (ord('x'),): 5,  ## turn left
+            (): 6
+        }

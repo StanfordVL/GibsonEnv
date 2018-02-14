@@ -13,13 +13,11 @@ import os
 import json
 import numpy as np
 from transforms3d import euler, quaternions
-from gibson import configs
 from gibson.core.physics.physics_object import PhysicsObject
 from gibson.core.render.profiler import Profiler
-from gibson.configs import *
 import gym, gym.spaces, gym.utils, gym.utils.seeding
 import sys
-
+import yaml
 
 class BaseEnv(gym.Env):
     """
@@ -36,16 +34,20 @@ class BaseEnv(gym.Env):
         'video.frames_per_second': 60
         }
 
-    def __init__(self, scene_type):
+    def __init__(self, config, scene_type):
         ## Properties already instantiated from SensorEnv/CameraEnv
         #   @self.human
         #   @self.robot
-        
-        if configs.DISPLAY_UI:
+
+        if self.config is None:
+            self.config = self.parse_config(config)
+
+
+        if self.config["display_ui"]:
             #self.physicsClientId = p.connect(p.DIRECT)
             self.physicsClientId = p.connect(p.GUI)
             p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-        elif (self.human):
+        elif (self.gui):
             self.physicsClientId = p.connect(p.GUI)
         else:
             self.physicsClientId = p.connect(p.DIRECT)
@@ -57,9 +59,16 @@ class BaseEnv(gym.Env):
         self._cam_pitch = -30
         self.scene_type = scene_type
         self.scene = None
+
     
     def _close(self):
         p.disconnect()
+
+
+    def parse_config(self, config):
+        with open(config, 'r') as f:
+            config_data = yaml.load(f)
+        return config_data
         
     def create_scene(self):
         if self.scene is not None:
@@ -73,10 +82,10 @@ class BaseEnv(gym.Env):
         self.robot.scene = self.scene
     
     def create_single_player_building_scene(self):
-        return SinglePlayerBuildingScene(self.robot, model_id=self.model_id, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        return SinglePlayerBuildingScene(self.robot, model_id=self.model_id, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip, env=self)
         
     def create_single_player_stadium_scene(self):
-        return SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip)
+        return SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip, env=self)
 
 
     def configure(self, args):
