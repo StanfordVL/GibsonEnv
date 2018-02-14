@@ -1,10 +1,18 @@
 # Gibson Environment for Training Real World AI
 You shouldn't play video games all day, so shouldn't your AI. In this project we build a virtual environment that offers real world experience. You can think of it like [The Matrix](https://www.youtube.com/watch?v=3Ep_rnYweaI).
 
-## Note
+### Note
 This is a 0.1.0 beta release, bug reports are welcome. 
 
-### Installation
+Table of contents
+=================
+
+   * [Installation](#installation)
+   * [Quick Start](#quick-start)
+   * [Environment Configuration](#environment-configuration)
+
+Installation
+=================
 
 The minimal system requirements are the following:
 
@@ -80,19 +88,44 @@ pip install -e baselines
 Uninstall gibson is easy, if you installed with docker, just run `docker images -a | grep "gibson" | awk '{print $3}' | xargs docker rmi` to clean up the image. If you installed from source, uninstall with `pip uninstall gibson`
 
 
-## Demo
+Quick Start
+=================
 
 After getting into the docker container, you can run a few demos. You might need to run `xhost +local:root` to enable display. If you installed from source, you can run those directly. 
 
 ```bash
 python examples/demo/play_husky_sensor.py ### Use ASWD to control a car to navigate around gates
-
 python examples/demo/play_husky_camera.py ### Use ASWD to control a car to navigate around gates, with camera output
-
-python examples/train/train_husky_navigate_ppo2.py --resolution NORMAL ### Use PPO2 to train a car to navigate down the hall way in gates based on visual input
-
-###More to come!
-
+python examples/train/train_husky_navigate_ppo2.py ### Use PPO2 to train a car to navigate down the hall way in gates based on visual input
 ```
 
+More examples can be found in `examples/demo` and `examples/train` folder.
 
+Environment Configuration
+=================
+Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained as below (take navigation environment for example):
+
+```
+envname: AntClimbEnv # Environment name, make sure it is the same as the class name of the environment
+model_id: sRj553CTHiw # Scene id
+target_orn: [0, 0, 3.14] # target orientation for navigating, the reference frame is world frame
+target_pos: [-7, 2.6, -1.5] # target position for navigating, the reference frame is world frame
+initial_orn: [0, 0, 3.14] # initial orientation for navigating
+initial_pos: [-7, 2.6, 0.5] # initial position for navigating
+fov: 1.57 # field of view for the camera
+use_filler: true # use neural network filler or not, it is recommended to leave this argument true
+display_ui: true # show pygame ui or not, if in a production environment (training), you need to turn this off
+show_dignostic: true # show dignostics overlaying on the RGB image
+ui_num: 2 # how many ui components to show
+ui_components: [RGB_FILLED, DEPTH] # which are the ui components, choose from [RGB_FILLED, DEPTH, NORMAL, SEMANTICS, RGB_PREFILLED]
+
+output: [nonviz_sensor, rgb_filled, depth] # output of the environment to the robot
+resolution: 512 # resolution of rgb/depth image
+
+speed:
+  timestep: 0.01 # timestep of simulation in seconds
+  frameskip: 1 # how many frames to run simulation for one action
+
+mode: gui # gui|headless, if in a production environment (training), you need to turn this to headless
+verbose: false # show dignostics in terminal
+```
