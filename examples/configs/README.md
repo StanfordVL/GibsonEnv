@@ -4,7 +4,7 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 
 ```
 envname: AntClimbEnv # Environment name, make sure it is the same as the class name of the environment
-model_id: sRj553CTHiw # Scene id
+model_id: space7 # Scene id
 target_orn: [0, 0, 3.14] # target orientation for navigating, the reference frame is world frame
 target_pos: [-7, 2.6, -1.5] # target position for navigating, the reference frame is world frame
 initial_orn: [0, 0, 3.14] # initial orientation for navigating

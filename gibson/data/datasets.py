@@ -126,9 +126,6 @@ class ViewDataSet3D(data.Dataset):
                 self.scenes, self.meta, self.select, num_scenes, num_train = pickle.load(fp)
                 print("Total %d scenes %d train %d test" % (num_scenes, num_train, num_scenes - num_train))
 
-    def get_model_obj(self):
-        obj_files = os.path.join(self.root, MODEL_ID, 'modeldata', 'out_z_up.obj')
-        return obj_files
 
     def get_scene_info(self, index):
         scene = self.scenes[index]
