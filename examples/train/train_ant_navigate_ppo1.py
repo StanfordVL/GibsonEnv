@@ -8,7 +8,7 @@ import gym, logging
 from mpi4py import MPI
 from gibson.envs.ant_env import AntNavigateEnv
 from baselines.common import set_global_seeds
-from gibson.utils import pposgd_sensor
+from gibson.utils import pposgd_sensor, pposgd_simple
 from gibson.utils import cnn_policy, mlp_policy
 import baselines.common.tf_util as U
 import datetime
@@ -33,13 +33,15 @@ def train(num_timesteps, seed):
 
     env = AntNavigateEnv(is_discrete=False, config = config_file)
     
-    def mlp_policy_fn(name, sensor_space, ac_space):
-        return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
+    def policy_fn(name, ob_space, ac_space):
+        #return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
+        return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess, kind='small')
+
 
     env.seed(workerseed)
     gym.logger.setLevel(logging.WARN)
 
-    pposgd_sensor.learn(env, mlp_policy_fn,
+    pposgd_simple.learn(env, policy_fn,
         max_timesteps=int(num_timesteps * 1.1 * 5),
         timesteps_per_actorbatch=6000,
         clip_param=0.2, entcoeff=0.00,
