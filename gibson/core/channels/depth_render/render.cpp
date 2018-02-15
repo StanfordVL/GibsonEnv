@@ -254,7 +254,7 @@ int main( int argc, char * argv[] )
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
 
-    std::string name_obj = model_path + "/out_res.obj";
+    std::string name_obj = model_path + "/mesh.obj";
     if (smooth > 0) {
         name_obj = model_path + "/out_smoothed.obj";
         GPU_NUM = -1;
@@ -265,7 +265,7 @@ int main( int argc, char * argv[] )
         GPU_NUM = -2;
     }
 
-    std::string name_loc   = model_path + "/" + "sweep_locations.csv";
+    std::string name_loc   = model_path + "/" + "camera_poses.csv";
 
 
     glfwSetErrorCallback(error_callback);

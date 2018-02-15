@@ -18,7 +18,7 @@ class BuildingScene(Scene):
         # if self.zero_at_running_strip_start_line:
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         
-        filename = os.path.join(get_model_path(model_id), "out_z_up.obj")
+        filename = os.path.join(get_model_path(model_id), "mesh_z_up.obj")
         #filename = os.path.join(get_model_path(model_id), "3d", "blender.obj")
         #textureID = p.loadTexture(os.path.join(get_model_path(model_id), "3d", "rgb.mtl"))
 

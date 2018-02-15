@@ -72,7 +72,7 @@ class ViewDataSet3D(data.Dataset):
         if overwrite_fofn or not os.path.isfile(self.fofn):
             self.scenes = sorted([d for d in (os.listdir(self.root)) if
                                   os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(
-                                      os.path.join(self.root, d, 'sweep_locations.csv')) and os.path.isdir(
+                                      os.path.join(self.root, d, 'camera_poses.csv')) and os.path.isdir(
                                       os.path.join(self.root, d, 'pano'))])
 
             num_scenes = len(self.scenes)
@@ -88,7 +88,7 @@ class ViewDataSet3D(data.Dataset):
                 last = len(self.scenes)
 
             for scene in self.scenes[:last]:
-                posefile = os.path.join(self.root, scene, 'sweep_locations.csv')
+                posefile = os.path.join(self.root, scene, 'camera_poses.csv')
                 with open(posefile) as f:
                     for line in f:
                         l = line.strip().split(',')
