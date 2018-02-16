@@ -132,6 +132,11 @@ python examples/train/train_ant_navigate_ppo1.py ### Use PPO2 to train an ant to
 Running this command you will start training an ant to navigate in gates and go down the corridor. You will see some RL related statistics in terminal after each episode.
 
 
+When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
+
+![web_ui](misc/web_ui.png)
+
+
 More examples can be found in `examples/demo` and `examples/train` folder.
 
 
@@ -152,6 +157,10 @@ obs, rew, env_done, info = env.step(action)
 ```
 `obs` gives the observation of the robot. `rew` is the defined reward. `env_done` marks the end of one episode, for example, when the robot dies. 
 `info` gives some additional information of this step, sometimes we use this to pass additional non-visual sensor values.
+
+We mostly followed [OpenAI gym](https://github.com/openai/gym) convention when designing the interface of RL algorithms and the environment. In order to help users start with the environment quicker, we
+provide some examples at [examples/train](examples/train). The RL algorithms that we use are from [openAI baselines](https://github.com/openai/baselines) with some adaptation to work with hybrid visual and non-visual sensory data.
+In particular, we used [PPO](https://github.com/openai/baselines/tree/master/baselines/ppo1) and a speed optimized version of [PPO](https://github.com/openai/baselines/tree/master/baselines/ppo2).
 
 
 Environment Configuration
