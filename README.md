@@ -108,12 +108,14 @@ After getting into the docker container, you can run a few demos. You might need
 python examples/demo/play_husky_sensor.py ### Use ASWD to control a car to navigate around gates
 ```
 ![husky_nonviz](misc/husky_nonviz.png)
+
 You are able to use ASWD to control a car to navigate around gates. You will not see camera output. 
 
 ```bash
 python examples/demo/play_husky_camera.py ### Use ASWD to control a car to navigate around gates, with camera output
 ```
 ![husky_nonviz](misc/husky_camera.png)
+
 You are able to use ASWD to control a car to navigate around gates. You will also be able to see camera output. 
 
 ```bash
@@ -129,7 +131,14 @@ python examples/train/train_ant_navigate_ppo1.py ### Use PPO2 to train an ant to
 ```
 
 ![ant_train](misc/ant_train.png)
+
 Running this command you will start training an ant to navigate in gates and go down the corridor. You will see some RL related statistics in terminal after each episode.
+
+
+When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
+
+
+![web_ui](misc/web_ui.png)
 
 
 More examples can be found in `examples/demo` and `examples/train` folder.
@@ -153,7 +162,34 @@ obs, rew, env_done, info = env.step(action)
 `obs` gives the observation of the robot. `rew` is the defined reward. `env_done` marks the end of one episode, for example, when the robot dies. 
 `info` gives some additional information of this step, sometimes we use this to pass additional non-visual sensor values.
 
+We mostly followed [OpenAI gym](https://github.com/openai/gym) convention when designing the interface of RL algorithms and the environment. In order to help users start with the environment quicker, we
+provide some examples at [examples/train](examples/train). The RL algorithms that we use are from [openAI baselines](https://github.com/openai/baselines) with some adaptation to work with hybrid visual and non-visual sensory data.
+In particular, we used [PPO](https://github.com/openai/baselines/tree/master/baselines/ppo1) and a speed optimized version of [PPO](https://github.com/openai/baselines/tree/master/baselines/ppo2).
+
 
 Environment Configuration
 =================
-Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained [here](examples/configs/README.md).
+Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained below:
+
+| Argument name        | Example value           | Explanation  |
+|:-------------:|:-------------:| :-----|
+| envname      | AntClimbEnv | Environment name, make sure it is the same as the class name of the environment |
+| model_id      | space7      |   Scene id, in beta release, choose from space1-space8 |
+| target_orn | [0, 0, 3.14]      |   Eulerian angle target orientation for navigating, the reference frame is world frame |
+|target_pos | [-7, 2.6, -1.5] | target position for navigating, the reference frame is world frame |
+|initial_orn | [0, 0, 3.14] | initial orientation for navigating |
+|initial_pos | [-7, 2.6, 0.5] | initial position for navigating |
+|fov | 1.57  | field of view for the camera, in rad |
+| use_filler | true  | use neural network filler or not, it is recommended to leave this argument true |
+|display_ui | true  | show pygame ui or not, if in a production environment (training), you need to turn this off |
+|show_dignostic | true  | show dignostics overlaying on the RGB image |
+|ui_num |2  | how many ui components to show |
+| ui_components | [RGB_FILLED, DEPTH]  | which are the ui components, choose from [RGB_FILLED, DEPTH, NORMAL, SEMANTICS, RGB_PREFILLED] |
+|output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot |
+|resolution | 512 | resolution of rgb/depth image |
+|speed : timestep | 0.01 | timestep of simulation in seconds |
+|speed : frameskip | 1 | how many frames to run simulation for one action |
+|mode | gui  | gui or headless, if in a production environment (training), you need to turn this to headless |
+|verbose |false  | show dignostics in terminal |
+
+
