@@ -346,14 +346,14 @@ class PCRenderer:
             if self._require_normal:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
             if self._require_semantics:
-                semantic_arr = np.frombuffer(semt_msg, dtype=np.float32).reshape((n, n, 3))
+                semantic_arr = np.frombuffer(semt_msg, dtype=np.uint32).reshape((n, n, 3))
         else:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
             smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
             if self._require_normal:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
             if self._require_semantics:
-                semantic_arr = np.frombuffer(semt_msg, dtype=np.float32).reshape((n, n, 3))
+                semantic_arr = np.frombuffer(semt_msg, dtype=np.uint32).reshape((n, n, 3))
 
         debugmode = 0
         if debugmode and self._require_normal:

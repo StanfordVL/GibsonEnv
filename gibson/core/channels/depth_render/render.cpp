@@ -130,6 +130,7 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
 
   glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
 
+  /*
   int strange_count = 0;
 
   for (int i = 0; i < nSize - 50; i++) {
@@ -138,6 +139,7 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
  }
 
   cout << filename << " " << "read least input " << least << " most input " <<  most << " strange count " << strange_count << endl;
+  */
 
   //Now the file creation
   //FILE *filePtr = fopen(filename.c_str(), "wb");
@@ -476,10 +478,14 @@ int main( int argc, char * argv[] )
     std::vector<glm::vec2> uvs;
     std::vector<glm::vec3> normals;
     std::vector<TextureObj> TextObj;
-    uint num_layers;
+    unsigned int num_layers;
 
     GLuint gArrayTexture(0);
     if ( semantic > 0) {
+        // Prevent clamping
+        glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE);
+        glClampColorARB(GL_CLAMP_READ_COLOR_ARB, GL_FALSE);
+        glClampColorARB(GL_CLAMP_FRAGMENT_COLOR_ARB, GL_FALSE);
         // Do Y
         // Read the .obj file
         bool res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
@@ -504,7 +510,8 @@ int main( int argc, char * argv[] )
         //Create storage for the texture. (100 layers of 1x1 texels)
         glTexStorage3D( GL_TEXTURE_2D_ARRAY,
                       1,                    //No mipmaps as textures are 1x1
-                      GL_RGB8,              //Internal format
+                      GL_RGB,              //Internal format
+                      //GL_RGB32UI,
                       1, 1,                 //width,height
                       num_layers                   //Number of layers
                     );
@@ -512,16 +519,21 @@ int main( int argc, char * argv[] )
         for( unsigned int i(0); i!=num_layers;++i)
         {
             //Choose a random color for the i-essim image
+            //GLuint color[3] = {(unsigned int)rand()%255, (unsigned int)rand()%255, (unsigned int)rand()%255};
             GLubyte color[3] = {rand()%255,rand()%255,rand()%255};
 
-            //printf("Create one layer %d\n", TextObj.size());
+            //GLubyte color[3] = {rand()%255,rand()%255,rand()%255};
+            //GLubyte color[3] = {100, 100, 100};
+            //printf("Color %d %d %d", color[0], color[1], color[2]);
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,
                              0,                     //Mipmap number
                              0,0,i,                 //xoffset, yoffset, zoffset
                              1,1,1,                 //width, height, depth
+                             //GL_RGB32UI,
                              GL_RGB,                //format
                              GL_UNSIGNED_BYTE,      //type
+                             //GL_UNSIGNED_INT,
                              color);                //pointer to data
         }
 
@@ -534,7 +546,7 @@ int main( int argc, char * argv[] )
     }
 
         // Load the texture
-    GLuint Texture = loadDDS("uvmap.DDS");
+    //GLuint Texture = loadDDS("uvmap.DDS");
 
     // Get a handle for our "myTextureSampler" uniform
     GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
@@ -554,7 +566,7 @@ int main( int argc, char * argv[] )
         indexVBO_MTL(mtl_vertices, mtl_uvs, mtl_normals, indices, indexed_vertices, indexed_uvs, indexed_normals, indexed_semantics);
         //indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
         printf("Finished indexing %d vbo mtl \n", indexed_semantics.size());
-        for (uint q = 0; q < 100000; q+= 10000) {
+        for (unsigned int q = 0; q < 100000; q+= 10000) {
             printf("Indexing semantics %d: %d\n", q, indexed_semantics[q].x);
         }
     } else {
@@ -616,14 +628,24 @@ int main( int argc, char * argv[] )
     glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
     // Give an empty image to OpenGL ( the last "0" means "empty" )
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0);
-
+    if (semantic > 0) {
+      //printf("Before tex image 2d\n");
+      //glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, windowWidth, windowHeight, 0,GL_RGB, GL_UNSIGNED_INT, 0);
+      glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0);
+      //printf("After tex image 2d\n");
+    } else {
+      glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0);  
+    }
+    
     // Poor filtering
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+    if (semantic > 0)
+      printf("Before depth buffer\n");
+    
     // The depth buffer
     GLuint depthrenderbuffer;
     glGenRenderbuffers(1, &depthrenderbuffer);
@@ -633,6 +655,7 @@ int main( int argc, char * argv[] )
 
     //// Alternative : Depth texture. Slower, but you can sample it later in your shader
     // ER: Duplicate this six times
+    
     GLuint depthTexture;
     glGenTextures(1, &depthTexture);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -641,6 +664,7 @@ int main( int argc, char * argv[] )
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
 
     // Set "renderedTexture" as our colour attachement #0
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
@@ -648,7 +672,9 @@ int main( int argc, char * argv[] )
     //// Depth texture alternative :
     // ER: Duplicate this six times
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
-
+    if (semantic > 0)
+      printf("After depth buffer\n");
+    
 
     // ---------------------------------
     // Texture array
@@ -702,12 +728,21 @@ int main( int argc, char * argv[] )
     // Set the list of draw buffers.
     // GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     // Pipeline: makes sure that output from 1st pass goes to 2nd pass
+    if (semantic > 0)
+        printf("Before drawing buffer\n");
     GLenum DrawBuffers[2] = {GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT};
+    //GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(2, DrawBuffers); // "1" is the size of DrawBuffers
-
+    //glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+    if (semantic > 0)
+        printf("After drawing buffer\n");
+      
     // Always check that our framebuffer is ok
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        return false;
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+      if (semantic > 0)
+        printf("Frame buffer is bad\n");
+      return false;
+    }
 
 
     // The fullscreen quad's FBO
@@ -719,6 +754,9 @@ int main( int argc, char * argv[] )
          1.0f, -1.0f, 0.0f,
          1.0f,  1.0f, 0.0f,
     };
+    if (semantic > 0)
+      printf("Before creating Zmq\n");
+    
 
     /*
     GLuint quad_vertexbuffer;
@@ -754,10 +792,14 @@ int main( int argc, char * argv[] )
     cudaSetDevice(cudaDevice);
     cudaGLSetGLDevice(cudaDevice);
     cudaGraphicsResource* resource;
+    if (semantic > 0)
+      printf("Before check cuda\n");
     checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
     std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
     int pose_idx = 0;
     zmq::message_t request;
+    if (semantic > 0)
+      printf("After check cuda\n");
 
     //socket.recv (&request);
     // std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
@@ -779,7 +821,7 @@ int main( int argc, char * argv[] )
 
     //reordering.reshape(dims);
 
-    std::vector<uint> cubeMapCoordToPanoCoord;
+    std::vector<unsigned int> cubeMapCoordToPanoCoord;
     for(size_t ycoord = 0; ycoord < panoHeight; ycoord++){
         for(size_t xcoord = 0; xcoord < panoWidth; xcoord++){
             size_t ind = 0;//reordering[ycoord][xcoord][0];
@@ -793,7 +835,7 @@ int main( int argc, char * argv[] )
         }
     }
 
-    uint *d_cubeMapCoordToPanoCoord = copyToGPU(&(cubeMapCoordToPanoCoord[0]), cubeMapCoordToPanoCoord.size());
+    unsigned int *d_cubeMapCoordToPanoCoord = copyToGPU(&(cubeMapCoordToPanoCoord[0]), cubeMapCoordToPanoCoord.size());
     //zmq::message_t reply0 (sizeof(float));
     //socket.send(reply0);
 
@@ -1084,6 +1126,7 @@ int main( int argc, char * argv[] )
                 //glBindTexture(GL_TEXTURE_2D, Texture);
                 if (semantic > 0) {
                     glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
+                    // Uniform variable: max_layer
                     glUniform1i(num_layers, 3);
                 }
                 // Set our "myTextureSampler" sampler to use Texture Unit 0
@@ -1158,44 +1201,54 @@ int main( int argc, char * argv[] )
 
                 int message_sz;
                 int dim;
-                if (normal > 0 || semantic > 0) {
+                if (normal > 0) {
                     dim = 3;
+                    message_sz = windowWidth*windowHeight*sizeof(float)*dim;
+                } else if (semantic > 0) {
+                    dim = 3;
+                    message_sz = windowWidth*windowHeight*sizeof(unsigned int)*dim;
                 } else {
                     dim = 1;
+                    message_sz = windowWidth*windowHeight*sizeof(float)*dim;
                 }
-
-                message_sz = windowWidth*windowHeight*sizeof(float)*dim;
 
                 zmq::message_t reply (message_sz);
-                float * reply_data_handle = (float*)reply.data();
 
-                if (normal > 0 || semantic > 0) {
-                    glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, message_sz, reply_data_handle);
-                } else {
-                    glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
-                }
-
-                //std::cout << "Render time: " << t.elapsed() << std::endl;
-
-
-                float tmp;
-
-                int offset;
-                for (int i = 0; i < windowHeight/2; i++) {
+                if (semantic > 0) {
+                  // For semantics, we need to confine reply data values to unsigned integer
+                  float textureReadout[windowWidth*windowHeight*dim];
+                  glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, message_sz, textureReadout);
+                  unsigned int * reply_data_handle = (unsigned int*)reply.data();
+                  float tmp_float;
+                  int offset;
+                  for (int i = 0; i < windowHeight; i++) {
                     for (int j = 0; j < windowWidth; j++) {
-                         for (int k = 0; k < dim; k++) {
-                            offset = k;
-                            tmp = reply_data_handle[offset + (i * windowWidth + j) * dim];
-                            reply_data_handle[offset + (i * windowWidth + j) * dim] = reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim];
-                            reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = tmp;
-                        }
+                      for (int k = 0; k < dim; k++) {
+                        offset = k;
+                        tmp_float = textureReadout[offset + (i * windowWidth + j) * dim];
+                        reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = static_cast<unsigned int>(tmp_float * 255.0);
+                      }
                     }
+                  }
+                } else {
+                  float * reply_data_handle = (float*)reply.data();
+                  glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
+                  float tmp_float;
+                  int offset;
+                  // Revert the image from upside-down
+                  for (int i = 0; i < windowHeight/2; i++) {
+                    for (int j = 0; j < windowWidth; j++) {
+                      for (int k = 0; k < dim; k++) {
+                        offset = k;
+                        float * reply_data_handle = (float*)reply.data();
+                        tmp_float = reply_data_handle[offset + (i * windowWidth + j) * dim];
+                        reply_data_handle[offset + (i * windowWidth + j) * dim] = reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim];
+                        reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = tmp_float;
+                      }
+                    }
+                  }
                 }
                 socket.send (reply);
-
-                //free(dataBuffer);
-                //free(dataBuffer_c);
-
         }
 
 
@@ -1211,7 +1264,7 @@ int main( int argc, char * argv[] )
     glDeleteBuffers(1, &normalbuffer);
     glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
-    glDeleteTextures(1, &Texture);
+    //glDeleteTextures(1, &Texture);
 
     glDeleteFramebuffers(1, &FramebufferName);
     glDeleteTextures(1, &renderedTexture);

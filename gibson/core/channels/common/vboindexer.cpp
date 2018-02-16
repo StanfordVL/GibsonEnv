@@ -161,8 +161,8 @@ void indexVBO_MTL(
         std::vector<glm::vec3> group_vertices = mtl_vertices[j];
         std::vector<glm::vec2> group_uvs = mtl_uvs[j];
         std::vector<glm::vec3> group_normals = mtl_normals[j];
-        float semantic_layer = (float) j;
-        
+        float semantic_layer = (float) 0;
+
         uint group_size = group_vertices.size();
         if (group_uvs.size() < group_size)
             group_size = group_uvs.size();
@@ -175,6 +175,8 @@ void indexVBO_MTL(
             semantic_uv.x = semantic_layer;
             semantic_uv.y = 0;
 
+            // Disable vertex indexing
+            found = false;
             if ( found ) {
                 out_indices.push_back( index );
             } else {
