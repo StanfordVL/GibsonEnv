@@ -159,7 +159,7 @@ Environment Configuration
 Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained below:
 
 | Argument name        | Example value           | Explanation  |
-| ------------- |:-------------:| -----:|
+|:-------------:|:-------------:| :-----|
 | envname      | AntClimbEnv | Environment name, make sure it is the same as the class name of the environment |
 | model_id      | space7      |   Scene id, in beta release, choose from space1-space8 |
 | target_orn | [0, 0, 3.14]      |   Eulerian angle target orientation for navigating, the reference frame is world frame |
@@ -174,8 +174,8 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 | ui_components | [RGB_FILLED, DEPTH]  | which are the ui components, choose from [RGB_FILLED, DEPTH, NORMAL, SEMANTICS, RGB_PREFILLED] |
 |output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot |
 |resolution | 512 | resolution of rgb/depth image |
-|speed -> timestep | 0.01 | timestep of simulation in seconds |
-|speed -> frameskip | 1 | how many frames to run simulation for one action |
+|speed : timestep | 0.01 | timestep of simulation in seconds |
+|speed : frameskip | 1 | how many frames to run simulation for one action |
 |mode | gui  | gui or headless, if in a production environment (training), you need to turn this to headless |
 |verbose |false  | show dignostics in terminal |
 
