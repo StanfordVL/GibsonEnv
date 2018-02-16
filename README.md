@@ -108,12 +108,14 @@ After getting into the docker container, you can run a few demos. You might need
 python examples/demo/play_husky_sensor.py ### Use ASWD to control a car to navigate around gates
 ```
 ![husky_nonviz](misc/husky_nonviz.png)
+
 You are able to use ASWD to control a car to navigate around gates. You will not see camera output. 
 
 ```bash
 python examples/demo/play_husky_camera.py ### Use ASWD to control a car to navigate around gates, with camera output
 ```
 ![husky_nonviz](misc/husky_camera.png)
+
 You are able to use ASWD to control a car to navigate around gates. You will also be able to see camera output. 
 
 ```bash
@@ -129,10 +131,12 @@ python examples/train/train_ant_navigate_ppo1.py ### Use PPO2 to train an ant to
 ```
 
 ![ant_train](misc/ant_train.png)
+
 Running this command you will start training an ant to navigate in gates and go down the corridor. You will see some RL related statistics in terminal after each episode.
 
 
 When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
+
 
 ![web_ui](misc/web_ui.png)
 
