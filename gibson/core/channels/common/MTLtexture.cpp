@@ -466,7 +466,7 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText, st
               //printf("material name to generate image: %s\n", tempText.name.c_str());  //debug
 
               // Generate an image of solid texture and bind it to texture
-              tempText.textureID = solidColorTexture(parsed_mtl_file[i].Ka);
+              tempText.textureID = solidColorTexture(parsed_mtl_file[i].Ka, i);
               objText.push_back(tempText);
           }
         }

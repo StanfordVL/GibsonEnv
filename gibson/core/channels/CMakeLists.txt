@@ -144,6 +144,10 @@ cuda_add_executable(depth_render
     common/MTLobjloader.hpp
     common/objloader.cpp
     common/objloader.hpp
+    common/ply.cpp
+    common/ply.h
+    common/plyloader.cpp
+    common/plyloader.h
     common/vboindexer.cpp
     common/vboindexer.hpp
     common/text2D.hpp
@@ -184,6 +188,10 @@ add_executable(demo
     common/MTLobjloader.hpp
     common/objloader.cpp
     common/objloader.hpp
+    common/ply.cpp
+    common/ply.h
+    common/plyloader.cpp
+    common/plyloader.h
     common/vboindexer.cpp
     common/vboindexer.hpp
     common/text2D.hpp

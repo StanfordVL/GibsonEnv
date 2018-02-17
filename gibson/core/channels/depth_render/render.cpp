@@ -43,6 +43,7 @@ using namespace std;
 
 #include <common/MTLtexture.hpp>
 #include <common/MTLobjloader.hpp>
+#include <common/plyloader.h>
 
 #include <zmq.hpp>
 
@@ -486,6 +487,14 @@ int main( int argc, char * argv[] )
         bool MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);
         if (MTL_loaded == false) { printf("Was not able to load the semantic.mtl file\n"); exit(-1); }
         else { printf("Semantic.mtl file was loaded with success.\n"); }
+
+        std::string plyPath = "/root/mount/gibson/gibson/data/dataset/17DRP5sb8fy/17DRP5sb8fy.ply";
+        int * nelems;
+        char *** elem_names;
+        bool PLYloaded = false;
+        PLYloaded = loadPLYfile(plyPath, nelems, elem_names);
+        if (PLYloaded == false) { printf("Was not able to load the .ply file\n"); exit(-1); }
+        else { printf("PLY file was loaded with success.\n"); }
     }
 
         // Load the texture
