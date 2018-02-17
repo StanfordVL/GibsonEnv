@@ -7,11 +7,11 @@ os.sys.path.insert(0, parentdir)
 
 import gym, logging
 from mpi4py import MPI
-from gibson.envs.husky_env import HuskyFetchEnv
+from gibson.envs.husky_env import HuskyGibsonFlagRunEnv
 from baselines.common import set_global_seeds
-import pposgd_simple
+import pposgd_fuse
 import baselines.common.tf_util as U
-import cnn_policy, mlp_policy
+import fuse_policy
 import utils
 import datetime
 from baselines import logger
@@ -44,29 +44,33 @@ def train(num_timesteps, seed):
     workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
 
-    env = HuskyFetchEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count,
-                           use_filler=not args.disable_filler)
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
+                               'husky_gibson_flagrun_train.yaml')
+    print(config_file)
+
+
+    env = HuskyGibsonFlagRunEnv(config = config_file, human=args.human, is_discrete=True, gpu_count=args.gpu_count)
 
     print(env.sensor_space)
 
-    def policy_fn(name, ob_space, ac_space):
-        return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size = 64, num_hid_layers = 1)
+    def policy_fn(name, ob_space, sensor_space, ac_space):
+        return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space = sensor_space, ac_space=ac_space, save_per_acts=10000, hid_size=64, num_hid_layers=2, session=sess)
 
     #env = bench.Monitor(env, logger.get_dir() and
     #                    osp.join(logger.get_dir(), str(rank)))
     #env.seed(workerseed)
     gym.logger.setLevel(logging.WARN)
 
-    pposgd_simple.learn(env, policy_fn,
+
+    pposgd_fuse.learn(env, policy_fn,
                         max_timesteps=int(num_timesteps * 1.1),
                         timesteps_per_actorbatch=2048,
                         clip_param=0.2, entcoeff=0.01,
                         optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
                         gamma=0.99, lam=0.95,
                         schedule='linear',
-                        sensor=True,
                         save_name=args.save_name,
-                        save_per_acts=100,
+                        save_per_acts=50,
                         reload_name=args.reload_name
                         )
 
@@ -90,14 +94,14 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--mode', type=str, default="SENSOR")
+    parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
     parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
     parser.add_argument('--reload_name', type=str, default=None)
-    parser.add_argument('--save_name', type=str, default="flagrun")
+    parser.add_argument('--save_name', type=str, default="flagrun_RGBD2")
     args = parser.parse_args()
 
     #assert (args.mode != "SENSOR"), "Currently PPO does not support SENSOR mode"

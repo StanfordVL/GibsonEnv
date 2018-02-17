@@ -5,7 +5,9 @@ import sys
 import gym
 from PIL import Image
 from gibson.core.render.profiler import Profiler
-from gibson.envs.husky_env import HuskyNavigateEnv, HuskyClimbEnv, HuskyFlagRunEnv, HuskyFetchEnv, HuskyFetchKernelizedRewardEnv, HuskyGoallessRunEnv
+from gibson.envs.husky_env import *
+from gibson.envs.ant_env import *
+from gibson.envs.humanoid_env import *
 import pybullet as p
 
 class RandomAgent(object):
@@ -23,9 +25,10 @@ class RandomAgent(object):
                 action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
         return action
 
-def testEnv(Env):
+def testEnv(Env, config="test.yaml", frame_total=10):
     print("Currently testing", Env)
-    env = Env(human=True, timestep=1.0/(4 * 22), frame_skip=4, is_discrete = False, mode='RGBD', resolution="NORMAL")
+    config = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'examples', 'configs', config)
+    env = Env(config, human=True, is_discrete = False)
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
     frame = 0
@@ -38,14 +41,19 @@ def testEnv(Env):
         obs, r, done, meta = env.step(a)
         score += r
         frame += 1
-        if not done and frame < 10: continue
+        if not done and frame < frame_total: continue
         env.close()
         return
     
-if __name__ == '__main__':   
+if __name__ == '__main__':
+    '''
+    testEnv(HumanoidGibsonFlagRunEnv)
+    testEnv(HumanoidNavigateEnv)
     testEnv(HuskyNavigateEnv)
-    testEnv(HuskyClimbEnv)
-    testEnv(HuskyFlagRunEnv)
-    testEnv(HuskyFetchEnv)
-    testEnv(HuskyFetchKernelizedRewardEnv)
-    testEnv(HuskyGoallessRunEnv)
+    testEnv(HuskyGibsonFlagRunEnv)
+    testEnv(AntClimbEnv)
+    testEnv(AntFlagRunEnv)
+    testEnv(AntGibsonFlagRunEnv)
+    testEnv(AntNavigateEnv)
+    '''
+    testEnv(HuskyNavigateEnv, "test_semantics.yaml", 100)

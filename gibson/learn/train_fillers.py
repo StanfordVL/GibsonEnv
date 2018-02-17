@@ -29,21 +29,26 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
-def crop(source, source_depth, target):
+def crop(source, source_depth, target, zoom = 1, patchsize = 256):
     bs = source.size(0)
-    source_cropped = Variable(torch.zeros(4 * bs, 3, 256, 256)).cuda()
-    source_depth_cropped = Variable(torch.zeros(4 * bs, 2, 256, 256)).cuda()
-    target_cropped = Variable(torch.zeros(4 * bs, 3, 256, 256)).cuda()
+    if zoom > 1:
+        source = F.avg_pool2d(source, zoom, zoom)
+        source_depth = F.avg_pool2d(source_depth, zoom, zoom)
+        target = F.avg_pool2d(target, zoom, zoom)
 
+    source_cropped = Variable(torch.zeros(4 * bs, 3, patchsize, patchsize)).cuda()
+    source_depth_cropped = Variable(torch.zeros(4 * bs, 2, patchsize, patchsize)).cuda()
+    target_cropped = Variable(torch.zeros(4 * bs, 3, patchsize, patchsize)).cuda()
+    p = patchsize//2
     for i in range(bs):
         for j in range(4):
             idx = i * 4 + j
-            blurry_margin = 1024 // 8
-            centerx = np.random.randint(blurry_margin + 128, 1024 - blurry_margin - 128)
-            centery = np.random.randint(128, 1024 * 2 - 128)
-            source_cropped[idx] = source[i, :, centerx - 128:centerx + 128, centery - 128:centery + 128]
-            source_depth_cropped[idx] = source_depth[i, :, centerx - 128:centerx + 128, centery - 128:centery + 128]
-            target_cropped[idx] = target[i, :, centerx - 128:centerx + 128, centery - 128:centery + 128]
+            blurry_margin = 1024 // 8 // zoom
+            centerx = np.random.randint(blurry_margin + p, 1024//zoom - blurry_margin - p)
+            centery = np.random.randint(p, 1024//zoom * 2 - p)
+            source_cropped[idx] = source[i, :, centerx - p:centerx + p, centery - p:centery + p]
+            source_depth_cropped[idx] = source_depth[i, :, centerx - p:centerx + p, centery - p:centery + p]
+            target_cropped[idx] = target[i, :, centerx - p:centerx + p, centery - p:centery + p]
 
     return source_cropped, source_depth_cropped, target_cropped
 
@@ -68,8 +73,10 @@ def main():
     parser.add_argument('--unfiller', action='store_true', help='debug mode')
     parser.add_argument('--joint', action='store_true', help='debug mode')
     parser.add_argument('--use_depth', action='store_true', default=False, help='debug mode')
+    parser.add_argument('--zoom', type=int, default=1, help='debug mode')
+    parser.add_argument('--patchsize', type=int, default=256, help='debug mode')
 
-    mean = torch.from_numpy(np.array([0.57441127, 0.54226291, 0.50356019]).astype(np.float32))
+    mean = torch.from_numpy(np.array([0.57441127, 0.54226291, 0.50356019]).astype(np.float32)).clone()
     opt = parser.parse_args()
     print(opt)
     writer = SummaryWriter(opt.outf + '/runs/' + datetime.now().strftime('%B%d  %H:%M:%S'))
@@ -77,6 +84,9 @@ def main():
         os.makedirs(opt.outf)
     except OSError:
         pass
+
+    zoom = opt.zoom
+    patchsize = opt.patchsize
 
     tf = transforms.Compose([
         transforms.ToTensor(),
@@ -148,11 +158,11 @@ def main():
     for param in p.parameters():
         param.requires_grad = False
 
-    imgnet_mean = torch.from_numpy(np.array([0.485, 0.456, 0.406]).astype(np.float32))
-    imgnet_std = torch.from_numpy(np.array([0.229, 0.224, 0.225]).astype(np.float32))
+    imgnet_mean = torch.from_numpy(np.array([0.485, 0.456, 0.406]).astype(np.float32)).clone()
+    imgnet_std = torch.from_numpy(np.array([0.229, 0.224, 0.225]).astype(np.float32)).clone()
 
-    imgnet_mean_img = Variable(imgnet_mean.view(1, 3, 1, 1).repeat(opt.batchsize * 4, 1, 256, 256)).cuda()
-    imgnet_std_img = Variable(imgnet_std.view(1, 3, 1, 1).repeat(opt.batchsize * 4, 1, 256, 256)).cuda()
+    imgnet_mean_img = Variable(imgnet_mean.view(1, 3, 1, 1).repeat(opt.batchsize * 4, 1, patchsize, patchsize)).cuda()
+    imgnet_std_img = Variable(imgnet_std.view(1, 3, 1, 1).repeat(opt.batchsize * 4, 1, patchsize, patchsize)).cuda()
 
     test_loader_enum = enumerate(dataloader_test)
     for epoch in range(current_epoch, opt.nepoch):
@@ -174,7 +184,7 @@ def main():
             img.data.copy_(source)
             maskv.data.copy_(source_depth)
             img_original.data.copy_(target)
-            imgc, maskvc, img_originalc = crop(img, maskv, img_original)
+            imgc, maskvc, img_originalc = crop(img, maskv, img_original, zoom, patchsize)
             # from IPython import embed; embed()
             recon = comp(imgc, maskvc)
 
@@ -185,20 +195,20 @@ def main():
             elif opt.loss == 'perceptual':
                 loss = l2(p(recon), p(img_originalc).detach()) + opt.l1 * l2(recon, img_originalc)
             elif opt.loss == 'color_stable':
-                loss = l2(p(recon.view(recon.size(0) * 3, 1, 256, 256).repeat(1, 3, 1, 1)),
-                          p(img_originalc.view(img_originalc.size(0) * 3, 1, 256, 256).repeat(1, 3, 1, 1)).detach())
+                loss = l2(p(recon.view(recon.size(0) * 3, 1, patchsize, patchsize).repeat(1, 3, 1, 1)),
+                          p(img_originalc.view(img_originalc.size(0) * 3, 1, patchsize, patchsize).repeat(1, 3, 1, 1)).detach())
             elif opt.loss == 'color_correction':
                 recon_percept = p((recon - imgnet_mean_img) / imgnet_std_img)
                 org_percept = p((img_originalc - imgnet_mean_img) / (imgnet_std_img)).detach()
                 loss = l2(recon_percept, org_percept)
                 for scale in [32]:
-                    img_originalc_patch = img_originalc.view(opt.batchsize * 4, 3, 256 / scale, scale, 256 / scale,
+                    img_originalc_patch = img_originalc.view(opt.batchsize * 4, 3, patchsize // scale, scale, patchsize // scale,
                                                              scale).transpose(4, 3).contiguous().view(opt.batchsize * 4,
-                                                                                                      3, 256 / scale,
-                                                                                                      256 / scale, -1)
-                    recon_patch = recon.view(opt.batchsize * 4, 3, 256 / scale, scale, 256 / scale, scale).transpose(4,
+                                                                                                      3, patchsize // scale,
+                                                                                                      patchsize // scale, -1)
+                    recon_patch = recon.view(opt.batchsize * 4, 3, patchsize // scale, scale, patchsize // scale, scale).transpose(4,
                                                                                                                      3).contiguous().view(
-                        opt.batchsize * 4, 3, 256 / scale, 256 / scale, -1)
+                        opt.batchsize * 4, 3, patchsize // scale, patchsize // scale, -1)
                     img_originalc_patch_mean = img_originalc_patch.mean(dim=-1)
                     recon_patch_mean = recon_patch.mean(dim=-1)
                     # recon_patch_cov = []
@@ -239,11 +249,11 @@ def main():
                     loss2 += 0.2 * l2(recon2_percept, org_percept)
 
                 for scale in [32]:
-                    img_originalc_patch = recon.detach().view(opt.batchsize * 4, 3, 256 / scale, scale, 256 / scale,
+                    img_originalc_patch = recon.detach().view(opt.batchsize * 4, 3, patchsize / scale, scale, patchsize / scale,
                                                               scale).transpose(4, 3).contiguous().view(
-                        opt.batchsize * 4, 3, 256 / scale, 256 / scale, -1)
-                    recon2_patch = recon2.view(opt.batchsize * 4, 3, 256 / scale, scale, 256 / scale, scale).transpose(
-                        4, 3).contiguous().view(opt.batchsize * 4, 3, 256 / scale, 256 / scale, -1)
+                        opt.batchsize * 4, 3, patchsize / scale, patchsize / scale, -1)
+                    recon2_patch = recon2.view(opt.batchsize * 4, 3, patchsize / scale, scale, patchsize / scale, scale).transpose(
+                        4, 3).contiguous().view(opt.batchsize * 4, 3, patchsize / scale, patchsize / scale, -1)
                     img_originalc_patch_mean = img_originalc_patch.mean(dim=-1)
                     recon2_patch_mean = recon2_patch.mean(dim=-1)
                     recon2_patch_cov = []
@@ -292,7 +302,7 @@ def main():
 
             if i % 200 == 0:
 
-                test_i, test_data = test_loader_enum.next()
+                test_i, test_data = next(test_loader_enum)
                 if test_i > len(dataloader_test) - 5:
                     test_loader_enum = enumerate(dataloader_test)
 
@@ -309,7 +319,7 @@ def main():
                 img.data.copy_(source)
                 maskv.data.copy_(source_depth)
                 img_original.data.copy_(target)
-                imgc, maskvc, img_originalc = crop(img, maskv, img_original)
+                imgc, maskvc, img_originalc = crop(img, maskv, img_original, zoom, patchsize)
                 comp.eval()
                 recon = comp(imgc, maskvc)
                 comp.train()

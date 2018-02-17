@@ -55,6 +55,7 @@ comparison/
 0.monitor.csv
 
 cvpr/
+gibson/cpp-household
 
 *.idea*
 
@@ -67,3 +68,5 @@ examples/scripts/plot*
 
 #models
 nav_models
+
+gibson/assets

@@ -4,15 +4,14 @@ parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
 import pybullet_data
 
-from gibson import configs
 from gibson.data.datasets import get_model_path
 from gibson.core.physics.scene_abstract import Scene
 import pybullet as p
 
 
 class BuildingScene(Scene):
-    def __init__(self, robot, model_id, gravity, timestep, frame_skip):
-        Scene.__init__(self, gravity, timestep, frame_skip)   
+    def __init__(self, robot, model_id, gravity, timestep, frame_skip, env = None):
+        Scene.__init__(self, gravity, timestep, frame_skip, env)
 
         # contains cpp_world.clean_everything()
         # stadium_pose = cpp_household.Pose()
@@ -59,8 +58,8 @@ class BuildingScene(Scene):
         self.ground_plane_mjcf = p.loadMJCF(planeName)
         #print(self.ground_plane_mjcf)
 
-        if model_id in configs.OFFSET_GROUND.keys():
-            z_offset = configs.OFFSET_GROUND[model_id]
+        if "z_offset" in self.env.config:
+            z_offset = self.env.config["z_offset"]
         else:
             z_offset = -0.5
 
@@ -81,8 +80,8 @@ class BuildingScene(Scene):
 
 class SinglePlayerBuildingScene(BuildingScene):
     multiplayer = False
-    def __init__(self, robot, model_id, gravity, timestep, frame_skip):
-        BuildingScene.__init__(self, robot, model_id, gravity, timestep, frame_skip)
+    def __init__(self, robot, model_id, gravity, timestep, frame_skip, env = None):
+        BuildingScene.__init__(self, robot, model_id, gravity, timestep, frame_skip, env)
 
 
 

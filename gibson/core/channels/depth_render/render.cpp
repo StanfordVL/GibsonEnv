@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <cstdlib>  //rand
 #include <X11/Xlib.h>
 #include "boost/multi_array.hpp"
 #include "boost/timer.hpp"
@@ -67,7 +68,7 @@ size_t panoWidth = 2048;
 size_t panoHeight = 1024;
 int cudaDevice = -1;
 
-float camera_fov = 90.0f;
+//float camera_fov = 90.0f;
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
@@ -136,9 +137,6 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
       if (dataBuffer[i] < least) least = dataBuffer[i];
       if (dataBuffer[i] > most) most = dataBuffer[i];
  }
-
-  //least = least * 5000 *  65536.0f / 128.0f;
-  //most = most * 5000 * 65536.0f / 128.0f;
 
   cout << filename << " " << "read least input " << least << " most input " <<  most << " strange count " << strange_count << endl;
 
@@ -247,6 +245,7 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Height", 'h', "Render window height", false, 256);
     cmdp.add<int>("Smooth", 's', "Whether render depth only", false, 0);
     cmdp.add<int>("Normal", 'n', "Whether render surface normal", false, 0);
+    cmdp.add<float>("fov", 'f', "field of view", false, 90.0);
     cmdp.add<int>("Semantic", 't', "Whether render semantics", false, 0);
     cmdp.add<int>("RGBfromMesh", 'm', "Whether render RGB directly from Mesh", false, 0);
 
@@ -259,26 +258,36 @@ int main( int argc, char * argv[] )
     int semantic = cmdp.get<int>("Semantic");
     int rgbMesh = cmdp.get<int>("RGBfromMesh");
 
+    float camera_fov = cmdp.get<float>("fov");
+
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
+
+    //printf("current semantics %d \n", semantic);
 
     std::string obj_path = model_path + "/modeldata/";
     std::string name_obj = obj_path + "out_res.obj";
     if (smooth > 0) {
         name_obj = obj_path + "out_smoothed.obj";
         GPU_NUM = -1;
+        //printf("mode: smooth %d\n", GPU_NUM);
     }
 
     // if rendering normals
     if (normal > 0) {
         name_obj = obj_path + "rgb.obj";
         GPU_NUM = -2;
+        //printf("mode: normal %d\n", GPU_NUM);
+
     }
 
     // if rendering semantics
     if (semantic > 0) {
+        //name_obj = obj_path + "rgb.obj";
         name_obj = obj_path + "semantic.obj";
-        GPU_NUM = -2;
+        GPU_NUM = -3;
+        //printf("mode: semantics %d\n", GPU_NUM);
+
     }
 
     // if rendering RGB from Mesh
@@ -435,7 +444,6 @@ int main( int argc, char * argv[] )
 
     glDisable(GL_CULL_FACE);
 
-
     GLuint VertexArrayID;     // VAO
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -446,6 +454,8 @@ int main( int argc, char * argv[] )
         programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./MistShadingRTT.fragmentshader" );
     } else if (normal >0 && semantic == 0) {
         programID = LoadShaders( "./NormalShadingRTT.vertexshader", "./NormalShadingRTT.fragmentshader" );
+    } else if (normal == 0 && semantic > 0) {
+        programID = LoadShaders( "./SemanticsShadingRTT.vertexshader", "./SemanticsShadingRTT.fragmentshader" );
     } else {
         printf("NEED TO ADJUST THE SHADERS!");
         programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./MistShadingRTT.fragmentshader" );
@@ -456,38 +466,38 @@ int main( int argc, char * argv[] )
     GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
     GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 
-    if (semantic == 0) {
-        //Do X
-        // Load the texture
-        //GLuint Texture = loadDDS("uvmap.DDS");
 
-        // Read our .obj file
-        //std::vector<glm::vec3> vertices;
-        //std::vector<glm::vec2> uvs;
-        //std::vector<glm::vec3> normals;
+    std::vector<std::vector<glm::vec3>> mtl_vertices;
+    std::vector<std::vector<glm::vec2>> mtl_uvs;
+    std::vector<std::vector<glm::vec3>> mtl_normals;
+    std::vector<std::string> material_name;
+    std::string mtllib;
 
-        //bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
-    }
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals;
+    std::vector<TextureObj> TextObj;
+    uint num_layers;
+
+    GLuint gArrayTexture(0);
     if ( semantic > 0) {
-        //Do Y
+        // Do Y
         // Read the .obj file
-        std::vector<std::vector<glm::vec3>> vertices;
-        std::vector<std::vector<glm::vec2>> uvs;
-        std::vector<std::vector<glm::vec3>> normals;
-        std::vector<std::string> material_name;
-        std::string mtllib;
-
-        bool res = loadOBJ_MTL(name_obj.c_str(), vertices, uvs, normals, material_name, mtllib);
+        bool res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
+        res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
         if (res == false) { printf("Was not able to load the semantic.obj file.\n"); exit(-1); }
         else { printf("Semantic.obj file was loaded with success.\n"); }
 
         // Load the textures
         std::string mtl_path = obj_path + mtllib;
-        std::vector<TextureObj> TextObj;
+
+
         bool MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);
         if (MTL_loaded == false) { printf("Was not able to load the semantic.mtl file\n"); exit(-1); }
         else { printf("Semantic.mtl file was loaded with success.\n"); }
 
+        /*
+        //test for laoding the ply Matterport3D semantic files - under testing
         std::string plyPath = "/root/mount/gibson/gibson/data/dataset/17DRP5sb8fy/17DRP5sb8fy.ply";
         int * nelems;
         char *** elem_names;
@@ -495,6 +505,44 @@ int main( int argc, char * argv[] )
         PLYloaded = loadPLYfile(plyPath, nelems, elem_names);
         if (PLYloaded == false) { printf("Was not able to load the .ply file\n"); exit(-1); }
         else { printf("PLY file was loaded with success.\n"); }
+        */
+        
+        num_layers = TextObj.size();
+        //Generate an array texture
+        glGenTextures( 1, &gArrayTexture );
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
+
+        //Create storage for the texture. (100 layers of 1x1 texels)
+        glTexStorage3D( GL_TEXTURE_2D_ARRAY,
+                      1,                    //No mipmaps as textures are 1x1
+                      GL_RGB8,              //Internal format
+                      1, 1,                 //width,height
+                      num_layers                   //Number of layers
+                    );
+
+        for( unsigned int i(0); i!=num_layers;++i)
+        {
+            //Choose a random color for the i-essim image
+            GLubyte color[3] = {rand()%255,rand()%255,rand()%255};
+
+            //printf("Create one layer %d\n", TextObj.size());
+            //Specify i-essim image
+            glTexSubImage3D( GL_TEXTURE_2D_ARRAY,
+                             0,                     //Mipmap number
+                             0,0,i,                 //xoffset, yoffset, zoffset
+                             1,1,1,                 //width, height, depth
+                             GL_RGB,                //format
+                             GL_UNSIGNED_BYTE,      //type
+                             color);                //pointer to data
+        }
+
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    } else {
+        bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
     }
 
         // Load the texture
@@ -504,23 +552,26 @@ int main( int argc, char * argv[] )
     GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
     // Read our .obj file
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::vec2> uvs;
-    std::vector<glm::vec3> normals;
-
-    bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
-
     // Note: use unsigned int because of too many indices
     //std::vector<short unsigned int> short_indices;
     //bool res = loadAssImp(name_ply.c_str(), short_indices, vertices, uvs, normals);
 
     std::vector<unsigned int> indices;
-
     std::vector<glm::vec3> indexed_vertices;
     std::vector<glm::vec2> indexed_uvs;
     std::vector<glm::vec3> indexed_normals;
-    indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+    std::vector<glm::vec2> indexed_semantics;
 
+    if (semantic > 0) {
+        indexVBO_MTL(mtl_vertices, mtl_uvs, mtl_normals, indices, indexed_vertices, indexed_uvs, indexed_normals, indexed_semantics);
+        //indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+        printf("Finished indexing %d vbo mtl \n", indexed_semantics.size());
+        for (uint q = 0; q < 100000; q+= 10000) {
+            printf("Indexing semantics %d: %d\n", q, indexed_semantics[q].x);
+        }
+    } else {
+        indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+    }
 
 
     // Load it into a VBO
@@ -539,6 +590,13 @@ int main( int argc, char * argv[] )
     glGenBuffers(1, &normalbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
     glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
+
+    if (semantic > 0) {
+        GLuint semanticlayerbuffer;
+        glGenBuffers(1, &semanticlayerbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, semanticlayerbuffer);
+        glBufferData(GL_ARRAY_BUFFER, indexed_semantics.size() * sizeof(glm::vec2), &indexed_semantics[0], GL_STATIC_DRAW);
+    }
 
     // Generate a buffer for the indices as well
     GLuint elementbuffer;
@@ -604,6 +662,55 @@ int main( int argc, char * argv[] )
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
 
 
+    // ---------------------------------
+    // Texture array
+    // ---------------------------------
+    /*
+    if (semantic > 0) {
+        GLuint texture = 0;
+
+        GLsizei width = 100;
+        GLsizei height = 100;
+        GLsizei layerCount = mtl_vertices.size();
+        GLsizei mipLevelCount = 1;
+
+        // Read you texels here. In the current example, we have 2*2*2 = 8 texels, with each texel being 4 GLubytes.
+        GLubyte texels[32] =
+        {
+             // Texels for first image.
+             0,   0,   0,   255,
+             255, 0,   0,   255,
+             0,   255, 0,   255,
+             0,   0,   255, 255,
+             // Texels for second image.
+             255, 255, 255, 255,
+             255, 255,   0, 255,
+             0,   255, 255, 255,
+             255, 0,   255, 255,
+        };
+
+        glGenTextures(1,&texture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY,texture);
+        // Allocate the storage.
+        glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, GL_RGBA8, width, height, layerCount);
+        // Upload pixel data.
+        // The first 0 refers to the mipmap level (level 0, since there's only 1)
+        // The following 2 zeroes refers to the x and y offsets in case you only want to specify a subrectangle.
+        // The final 0 refers to the layer index offset (we start from index 0 and have 2 levels).
+        // Altogether you can specify a 3D box subset of the overall texture, but only one mip level at a time.
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, width, height, layerCount, GL_RGBA, GL_UNSIGNED_BYTE, texels);
+
+        // Always set reasonable texture parameters
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+
+
+    }
+    */
+    //----------------------------------------------------
+
     // Set the list of draw buffers.
     // GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     // Pipeline: makes sure that output from 1st pass goes to 2nd pass
@@ -625,26 +732,28 @@ int main( int argc, char * argv[] )
          1.0f,  1.0f, 0.0f,
     };
 
+    /*
     GLuint quad_vertexbuffer;
     glGenBuffers(1, &quad_vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
-
+    */
     // Create and compile our GLSL program from the shaders
-    GLuint quad_programID = LoadShaders( "./Passthrough.vertexshader", "./WobblyTexture.fragmentshader" );
+    /*GLuint quad_programID = LoadShaders( "./Passthrough.vertexshader", "./WobblyTexture.fragmentshader" );
     GLuint texID = glGetUniformLocation(quad_programID, "renderedTexture");
     GLuint timeID = glGetUniformLocation(quad_programID, "time");
+    */
 
-       //double lastTime = glfwGetTime();
-    double lastTime = 0;
-    int nbFrames = 0;
-    bool screenshot = false;
-
+    //double lastTime = glfwGetTime();
+    //double lastTime = 0;
+    //int nbFrames = 0;
+    //bool screenshot = false;
     int i = 0;
 
 
     zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
+    //printf("Socket connecting to %d\n", (GPU_NUM + 5555));
     std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
     socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
     cudaGetDevice( &cudaDevice );
@@ -704,12 +813,11 @@ int main( int argc, char * argv[] )
     cudaMemset(cubeMapGpuBuffer, 0, windowHeight * windowWidth * 6 * sizeof(float));
 
     do{
-
-
         //std::cout << "Realenv Channel Renderer: waiting for pose" << std::endl;
 
         //  Wait for next request from client
         socket.recv (&request);
+
         boost::timer t;
 
         std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
@@ -720,12 +828,12 @@ int main( int argc, char * argv[] )
         // double currentTime = glfwGetTime();
         double currentTime = 0;
 
-        nbFrames++;
+        /*nbFrames++;
         if ( currentTime - lastTime >= 1.0 ){
             printf("%f ms/frame %d fps\n", 1000.0/double(nbFrames), nbFrames);
             nbFrames = 0;
             lastTime += 1.0;
-        }
+        }*/
 
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
         glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
@@ -800,9 +908,11 @@ int main( int argc, char * argv[] )
 
                 // Bind our texture in Texture Unit 0
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, Texture);
+                //glBindTexture(GL_TEXTURE_2D, Texture);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
                 // Set our "myTextureSampler" sampler to use Texture Unit 0
                 glUniform1i(TextureID, 0);
+
 
                 // 1rst attribute buffer : vertices
                 glEnableVertexAttribArray(0);
@@ -983,7 +1093,11 @@ int main( int argc, char * argv[] )
 
                 // Bind our texture in Texture Unit 0
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, Texture);
+                //glBindTexture(GL_TEXTURE_2D, Texture);
+                if (semantic > 0) {
+                    glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
+                    glUniform1i(num_layers, 3);
+                }
                 // Set our "myTextureSampler" sampler to use Texture Unit 0
                 glUniform1i(TextureID, 0);
 
@@ -1023,6 +1137,21 @@ int main( int argc, char * argv[] )
                     (void*)0                          // array buffer offset
                 );
 
+                if (semantic > 0) {
+                    GLuint semanticlayerbuffer;
+                    // 3rd attribute buffer : semantics
+                    glEnableVertexAttribArray(3);
+                    glBindBuffer(GL_ARRAY_BUFFER, semanticlayerbuffer);
+                    glVertexAttribPointer(
+                        3,                                // attribute
+                        1,                                // size
+                        GL_FLOAT,                         // type
+                        GL_FALSE,                         // normalized?
+                        0,                                // stride
+                        (void*)0                          // array buffer offset
+                    );
+                }
+
                 // Index buffer
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
@@ -1041,7 +1170,7 @@ int main( int argc, char * argv[] )
 
                 int message_sz;
                 int dim;
-                if (normal > 0) {
+                if (normal > 0 || semantic > 0) {
                     dim = 3;
                 } else {
                     dim = 1;
@@ -1052,7 +1181,7 @@ int main( int argc, char * argv[] )
                 zmq::message_t reply (message_sz);
                 float * reply_data_handle = (float*)reply.data();
 
-                if (normal > 0) {
+                if (normal > 0 || semantic > 0) {
                     glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, message_sz, reply_data_handle);
                 } else {
                     glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
@@ -1098,8 +1227,9 @@ int main( int argc, char * argv[] )
 
     glDeleteFramebuffers(1, &FramebufferName);
     glDeleteTextures(1, &renderedTexture);
+    glDeleteTextures(1, &gArrayTexture);
     glDeleteRenderbuffers(1, &depthrenderbuffer);
-    glDeleteBuffers(1, &quad_vertexbuffer);
+    //glDeleteBuffers(1, &quad_vertexbuffer);
     glDeleteVertexArrays(1, &VertexArrayID);
 
 
