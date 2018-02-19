@@ -128,14 +128,6 @@ void indexVBO(
             out_normals .push_back( in_normals[i]);
             unsigned int newindex = (unsigned int)out_vertices.size() - 1;
             out_indices .push_back( newindex );
-            //printf("%f %f %f\n", in_vertices[i].x, in_vertices[i].y, in_vertices[i].z);
-            /*
-            if (i % 3 != 2)
-                printf("%lu ", in_vertices[i]);
-            else
-                printf("%lu\n", in_vertices[i]);
-            */
-            // printf("not found %lu\n", i);
             VertexToOutIndex[ packed ] = newindex;
         }
     }
@@ -157,22 +149,23 @@ void indexVBO_MTL(
     std::map<PackedVertex,unsigned int> VertexToOutIndex;
 
     // In group j
-    for (unsigned int j=0; j<mtl_vertices.size(); j++ ) {
+    for (int j=0; j<mtl_vertices.size(); j++ ) {
         std::vector<glm::vec3> group_vertices = mtl_vertices[j];
         std::vector<glm::vec2> group_uvs = mtl_uvs[j];
         std::vector<glm::vec3> group_normals = mtl_normals[j];
-        float semantic_layer = (float) 0;
+        //float semantic_layer = (float) 0;
+        //float semantic_layer = (float) j;
 
         uint group_size = group_vertices.size();
         if (group_uvs.size() < group_size)
             group_size = group_uvs.size();
 
-        for (unsigned int i=0; i<group_size; i++ ) {
+        for (int i=0; i<group_size; i++ ) {
             PackedVertex packed = {group_vertices[i], group_uvs[i], group_normals[i]};
             unsigned int index;
             bool found = getSimilarVertexIndex_fast( packed, VertexToOutIndex, index);
             glm::vec2 semantic_uv;
-            semantic_uv.x = semantic_layer;
+            semantic_uv.x = (float)j;//semantic_layer;
             semantic_uv.y = 0;
 
             // Disable vertex indexing

@@ -46,7 +46,8 @@ bool loadOBJ_MTL(
     }
 
     unsigned int v_count = 0;
-    unsigned int mtl_count = -1;
+    unsigned int mtl_count = 0;
+    std::string last_mtl_name;
 
     while( 1 ){
 
@@ -96,12 +97,14 @@ bool loadOBJ_MTL(
             ss >> tempmat2;
             //printf("material name: %s, length: %i\n", tempmat2.c_str(), tempmat2.length());
             out_material_name.push_back(tempmat2.c_str());
-            vertexIndices.push_back(temp_vertexIndices);
-            uvIndices.push_back(temp_uvIndices);
-            normalIndices.push_back(temp_normalIndices);
-            temp_vertexIndices.clear();
-            temp_uvIndices.clear();
-            temp_normalIndices.clear();
+            if (mtl_count > 0) {
+                vertexIndices.push_back(temp_vertexIndices);
+                uvIndices.push_back(temp_uvIndices);
+                normalIndices.push_back(temp_normalIndices);
+                temp_vertexIndices.clear();
+                temp_uvIndices.clear();
+                temp_normalIndices.clear();
+            } 
             mtl_count ++;
         }
         // face
@@ -149,12 +152,26 @@ bool loadOBJ_MTL(
         }
     }
 
+    vertexIndices.push_back(temp_vertexIndices);
+    uvIndices.push_back(temp_uvIndices);
+    normalIndices.push_back(temp_normalIndices);
+    temp_vertexIndices.clear();
+    temp_uvIndices.clear();
+    temp_normalIndices.clear();
 
     // For each vertex of each triangle
     for( unsigned int i=0; i<vertexIndices.size(); i++ ){
         std::vector<glm::vec3> temp_out_vertices;
         std::vector<glm::vec2> temp_out_uvs;
         std::vector<glm::vec3> temp_out_normals;
+
+        //printf("Vertex group %d size %d\n", i + 1, vertexIndices.size());
+        std::string mat_name = out_material_name[i];
+        /*if (mat_name == "wall_65_hallway_7_1") {
+            for (unsigned int j = 0; j < vertexIndices[i].size(); j++) {
+                printf("%s %d\n", mat_name.c_str(), vertexIndices[i][j]);
+            }
+        }*/
         for ( unsigned int j=0; j<vertexIndices[i].size(); j++) {
             // Get the indices of its attributes
             unsigned int vertexIndex = vertexIndices[i][j];
@@ -192,6 +209,7 @@ bool loadOBJ_MTL(
 
     // construct the temp_normals vector here, using vertex positions and face vertex indices
     // TODO: this is not well-tested yet
+    
     if ( out_normals.size() == 0 ) {
         for ( unsigned int i=0; i<out_vertices.size(); i++ ){
             std::vector<glm::vec3> temp_out_normals;
@@ -229,6 +247,7 @@ bool loadOBJ_MTL(
             }
         }
     }
+    
 
     // TODO: (hzyjerry) this is a dummy place holder
     if ( out_uvs.size() == 0 ) {

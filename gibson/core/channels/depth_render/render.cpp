@@ -130,34 +130,6 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
 
   glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
 
-  /*
-  int strange_count = 0;
-
-  for (int i = 0; i < nSize - 50; i++) {
-      if (dataBuffer[i] < least) least = dataBuffer[i];
-      if (dataBuffer[i] > most) most = dataBuffer[i];
- }
-
-  cout << filename << " " << "read least input " << least << " most input " <<  most << " strange count " << strange_count << endl;
-  */
-
-  //Now the file creation
-  //FILE *filePtr = fopen(filename.c_str(), "wb");
-  //if (!filePtr) return false;
-
-   /*
-  unsigned char TGAheader[12]={0,0,2,0,0,0,0,0,0,0,0,0};
-  unsigned char header[6] = { w%256,w/256,
-                   h%256,h/256,
-                   24,0};
-  // We write the headers
-  fwrite(TGAheader,    sizeof(unsigned char),    12,    filePtr);
-  fwrite(header,    sizeof(unsigned char),    6,    filePtr);
-  // And finally our image data
-  //fwrite(dataBuffer,    sizeof(GLushort),    nSize,    filePtr);
-  fwrite(dataBuffer,    sizeof(unsigned short),    nSize,    filePtr);
-  */
-  //fclose(filePtr);
 
   // Convert little endian (default) to big endian
   for (int i = 0; i < nSize * 2 / 2; i++) {
@@ -170,11 +142,6 @@ bool save_screenshot(string filename, int w, int h, GLuint renderedTexture)
   std::vector<unsigned char> png;
 
   unsigned error = lodepng::encode(filename, (unsigned char*)dataBuffer, w, h, LCT_RGB, 16);
-  //if(!error) lodepng::save_file(png, filename.c_str());
-
-  //lodepng::lodepng_encode24(unsigned char** out, size_t* outsize,
-  //                      const unsigned char* image, unsigned w, unsigned h);
-
   free(dataBuffer);
 
   return true;
@@ -260,26 +227,20 @@ int main( int argc, char * argv[] )
     int rgbMesh = cmdp.get<int>("RGBfromMesh");
 
     float camera_fov = cmdp.get<float>("fov");
-
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
-
-    //printf("current semantics %d \n", semantic);
 
     std::string obj_path = model_path + "/modeldata/";
     std::string name_obj = obj_path + "out_res.obj";
     if (smooth > 0) {
         name_obj = obj_path + "out_smoothed.obj";
         GPU_NUM = -1;
-        //printf("mode: smooth %d\n", GPU_NUM);
     }
 
     // if rendering normals
     if (normal > 0) {
         name_obj = obj_path + "rgb.obj";
         GPU_NUM = -2;
-        //printf("mode: normal %d\n", GPU_NUM);
-
     }
 
     // if rendering semantics
@@ -287,8 +248,6 @@ int main( int argc, char * argv[] )
         //name_obj = obj_path + "rgb.obj";
         name_obj = obj_path + "semantic.obj";
         GPU_NUM = -3;
-        //printf("mode: semantics %d\n", GPU_NUM);
-
     }
 
     // if rendering RGB from Mesh
@@ -345,11 +304,7 @@ int main( int argc, char * argv[] )
     GLXContext openGLContext = glXCreateContextAttribsARB( display, fbConfigs[0], 0, True, context_attribs);
 
 
-
-
     // Initialise GLFW
-
-
     int pbufferAttribs[] = {
         GLX_PBUFFER_WIDTH,  32,
         GLX_PBUFFER_HEIGHT, 32,
@@ -430,7 +385,8 @@ int main( int argc, char * argv[] )
 
 
     // Dark blue background
-    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    //glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 
     // Enable depth test
@@ -483,11 +439,15 @@ int main( int argc, char * argv[] )
     GLuint gArrayTexture(0);
     if ( semantic > 0) {
         // Prevent clamping
+        /*
         glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE);
         glClampColorARB(GL_CLAMP_READ_COLOR_ARB, GL_FALSE);
         glClampColorARB(GL_CLAMP_FRAGMENT_COLOR_ARB, GL_FALSE);
+        */
         // Do Y
         // Read the .obj file
+        glShadeModel(GL_FLAT);
+
         bool res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
         res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
         if (res == false) { printf("Was not able to load the semantic.obj file.\n"); exit(-1); }
@@ -510,30 +470,26 @@ int main( int argc, char * argv[] )
         //Create storage for the texture. (100 layers of 1x1 texels)
         glTexStorage3D( GL_TEXTURE_2D_ARRAY,
                       1,                    //No mipmaps as textures are 1x1
-                      GL_RGB,              //Internal format
-                      //GL_RGB32UI,
+                      GL_RGB8,              //Internal format
                       1, 1,                 //width,height
-                      num_layers                   //Number of layers
+                      num_layers            //Number of layers
                     );
 
+        int layer_count = 0;
         for( unsigned int i(0); i!=num_layers;++i)
         {
             //Choose a random color for the i-essim image
-            //GLuint color[3] = {(unsigned int)rand()%255, (unsigned int)rand()%255, (unsigned int)rand()%255};
-            GLubyte color[3] = {rand()%255,rand()%255,rand()%255};
-
-            //GLubyte color[3] = {rand()%255,rand()%255,rand()%255};
-            //GLubyte color[3] = {100, 100, 100};
-            //printf("Color %d %d %d", color[0], color[1], color[2]);
+            GLubyte color[3] = {(unsigned char) (rand()%255),
+                                (unsigned char) (rand()%255),
+                                (unsigned char) (rand()%255)};
+            
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,
                              0,                     //Mipmap number
                              0,0,i,                 //xoffset, yoffset, zoffset
                              1,1,1,                 //width, height, depth
-                             //GL_RGB32UI,
                              GL_RGB,                //format
                              GL_UNSIGNED_BYTE,      //type
-                             //GL_UNSIGNED_INT,
                              color);                //pointer to data
         }
 
@@ -545,17 +501,11 @@ int main( int argc, char * argv[] )
         bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
     }
 
-        // Load the texture
-    //GLuint Texture = loadDDS("uvmap.DDS");
-
     // Get a handle for our "myTextureSampler" uniform
     GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
     // Read our .obj file
     // Note: use unsigned int because of too many indices
-    //std::vector<short unsigned int> short_indices;
-    //bool res = loadAssImp(name_ply.c_str(), short_indices, vertices, uvs, normals);
-
     std::vector<unsigned int> indices;
     std::vector<glm::vec3> indexed_vertices;
     std::vector<glm::vec2> indexed_uvs;
@@ -564,18 +514,13 @@ int main( int argc, char * argv[] )
 
     if (semantic > 0) {
         indexVBO_MTL(mtl_vertices, mtl_uvs, mtl_normals, indices, indexed_vertices, indexed_uvs, indexed_normals, indexed_semantics);
-        //indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
-        printf("Finished indexing %d vbo mtl \n", indexed_semantics.size());
-        for (unsigned int q = 0; q < 100000; q+= 10000) {
-            printf("Indexing semantics %d: %d\n", q, indexed_semantics[q].x);
-        }
+        printf("Finished indexing %U vbo mtl \n", indexed_semantics.size());
     } else {
         indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
     }
 
 
     // Load it into a VBO
-
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -591,8 +536,8 @@ int main( int argc, char * argv[] )
     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
     glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
 
+    GLuint semanticlayerbuffer;
     if (semantic > 0) {
-        GLuint semanticlayerbuffer;
         glGenBuffers(1, &semanticlayerbuffer);
         glBindBuffer(GL_ARRAY_BUFFER, semanticlayerbuffer);
         glBufferData(GL_ARRAY_BUFFER, indexed_semantics.size() * sizeof(glm::vec2), &indexed_semantics[0], GL_STATIC_DRAW);
@@ -629,10 +574,7 @@ int main( int argc, char * argv[] )
 
     // Give an empty image to OpenGL ( the last "0" means "empty" )
     if (semantic > 0) {
-      //printf("Before tex image 2d\n");
-      //glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, windowWidth, windowHeight, 0,GL_RGB, GL_UNSIGNED_INT, 0);
       glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0);
-      //printf("After tex image 2d\n");
     } else {
       glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0);  
     }
@@ -643,9 +585,6 @@ int main( int argc, char * argv[] )
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    if (semantic > 0)
-      printf("Before depth buffer\n");
-    
     // The depth buffer
     GLuint depthrenderbuffer;
     glGenRenderbuffers(1, &depthrenderbuffer);
@@ -653,133 +592,22 @@ int main( int argc, char * argv[] )
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, windowWidth, windowHeight);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
-    //// Alternative : Depth texture. Slower, but you can sample it later in your shader
-    // ER: Duplicate this six times
-    
-    GLuint depthTexture;
-    glGenTextures(1, &depthTexture);
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT16, windowWidth, windowHeight, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    
-
     // Set "renderedTexture" as our colour attachement #0
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
 
-    //// Depth texture alternative :
-    // ER: Duplicate this six times
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
-    if (semantic > 0)
-      printf("After depth buffer\n");
-    
-
-    // ---------------------------------
-    // Texture array
-    // ---------------------------------
-    /*
-    if (semantic > 0) {
-        GLuint texture = 0;
-
-        GLsizei width = 100;
-        GLsizei height = 100;
-        GLsizei layerCount = mtl_vertices.size();
-        GLsizei mipLevelCount = 1;
-
-        // Read you texels here. In the current example, we have 2*2*2 = 8 texels, with each texel being 4 GLubytes.
-        GLubyte texels[32] = 
-        {
-             // Texels for first image.
-             0,   0,   0,   255,
-             255, 0,   0,   255,
-             0,   255, 0,   255,
-             0,   0,   255, 255,
-             // Texels for second image.
-             255, 255, 255, 255,
-             255, 255,   0, 255,
-             0,   255, 255, 255,
-             255, 0,   255, 255,
-        };
-
-        glGenTextures(1,&texture);
-        glBindTexture(GL_TEXTURE_2D_ARRAY,texture);
-        // Allocate the storage.
-        glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, GL_RGBA8, width, height, layerCount);
-        // Upload pixel data.
-        // The first 0 refers to the mipmap level (level 0, since there's only 1)
-        // The following 2 zeroes refers to the x and y offsets in case you only want to specify a subrectangle.
-        // The final 0 refers to the layer index offset (we start from index 0 and have 2 levels).
-        // Altogether you can specify a 3D box subset of the overall texture, but only one mip level at a time.
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, width, height, layerCount, GL_RGBA, GL_UNSIGNED_BYTE, texels);
-
-        // Always set reasonable texture parameters
-        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-
-
-    }
-    */
-    //----------------------------------------------------
-
-    // Set the list of draw buffers.
-    // GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-    // Pipeline: makes sure that output from 1st pass goes to 2nd pass
-    if (semantic > 0)
-        printf("Before drawing buffer\n");
     GLenum DrawBuffers[2] = {GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT};
     //GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(2, DrawBuffers); // "1" is the size of DrawBuffers
-    //glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-    if (semantic > 0)
-        printf("After drawing buffer\n");
       
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      if (semantic > 0)
-        printf("Frame buffer is bad\n");
+      printf("Failed to properly draw buffers. Check your openGL frame buffer settings\n");
       return false;
     }
 
 
-    // The fullscreen quad's FBO
-    static const GLfloat g_quad_vertex_buffer_data[] = {
-        -1.0f, -1.0f, 0.0f,
-         1.0f, -1.0f, 0.0f,
-        -1.0f,  1.0f, 0.0f,
-        -1.0f,  1.0f, 0.0f,
-         1.0f, -1.0f, 0.0f,
-         1.0f,  1.0f, 0.0f,
-    };
-    if (semantic > 0)
-      printf("Before creating Zmq\n");
-    
-
-    /*
-    GLuint quad_vertexbuffer;
-    glGenBuffers(1, &quad_vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
-    */
-    // Create and compile our GLSL program from the shaders
-    /*GLuint quad_programID = LoadShaders( "./Passthrough.vertexshader", "./WobblyTexture.fragmentshader" );
-    GLuint texID = glGetUniformLocation(quad_programID, "renderedTexture");
-    GLuint timeID = glGetUniformLocation(quad_programID, "time");
-    */
-
-    //double lastTime = glfwGetTime();
-    //double lastTime = 0;
-    //int nbFrames = 0;
-    //bool screenshot = false;
-    int i = 0;
-
-
     zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
-    //printf("Socket connecting to %d\n", (GPU_NUM + 5555));
     std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
     socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
     cudaGetDevice( &cudaDevice );
@@ -792,41 +620,18 @@ int main( int argc, char * argv[] )
     cudaSetDevice(cudaDevice);
     cudaGLSetGLDevice(cudaDevice);
     cudaGraphicsResource* resource;
-    if (semantic > 0)
-      printf("Before check cuda\n");
     checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
+    
     std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
     int pose_idx = 0;
     zmq::message_t request;
-    if (semantic > 0)
-      printf("After check cuda\n");
-
-    //socket.recv (&request);
-    // std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
-    // std::vector<size_t> new_idxs = str_to_vec(request_str);
-    //size_t img_size = request.size();
-    //size_t img_size = 1024 * 2048 * 3;
-    //typedef boost::multi_array<uint, 3> array_type;
-    //const int ndims=3;
-    //boost::multi_array<uint, 3> reordering{boost::extents[img_size / sizeof(uint)][1][1]};
-    // boost::array<array_type::size_type,ndims> orig_dims = {{img_size / sizeof(uint),1,1}};
-    //boost::array<array_type::index,ndims> dims = {{1024, 2048, 3}};
-
-    // multi_array reordering(orig_dims);
-
-    //for (int i = 0; i < (img_size / sizeof(uint)) ; i++) {
-        //reordering[i][0][0] = ((uint*)request.data())[i];
-    //    reordering[i][0][0] = 0;
-    //}
-
-    //reordering.reshape(dims);
 
     std::vector<unsigned int> cubeMapCoordToPanoCoord;
     for(size_t ycoord = 0; ycoord < panoHeight; ycoord++){
         for(size_t xcoord = 0; xcoord < panoWidth; xcoord++){
-            size_t ind = 0;//reordering[ycoord][xcoord][0];
-            size_t corrx = 0;//reordering[ycoord][xcoord][1];
-            size_t corry = 0;//reordering[ycoord][xcoord][2];
+            size_t ind = 0;   //reordering[ycoord][xcoord][0];
+            size_t corrx = 0; //reordering[ycoord][xcoord][1];
+            size_t corry = 0; //reordering[ycoord][xcoord][2];
 
             cubeMapCoordToPanoCoord.push_back(
                 ind * windowWidth * windowHeight +
@@ -836,14 +641,11 @@ int main( int argc, char * argv[] )
     }
 
     unsigned int *d_cubeMapCoordToPanoCoord = copyToGPU(&(cubeMapCoordToPanoCoord[0]), cubeMapCoordToPanoCoord.size());
-    //zmq::message_t reply0 (sizeof(float));
-    //socket.send(reply0);
 
     float *cubeMapGpuBuffer = allocateBufferOnGPU(windowHeight * windowWidth * 6);
     cudaMemset(cubeMapGpuBuffer, 0, windowHeight * windowWidth * 6 * sizeof(float));
 
     do{
-        //std::cout << "Realenv Channel Renderer: waiting for pose" << std::endl;
 
         //  Wait for next request from client
         socket.recv (&request);
@@ -851,47 +653,194 @@ int main( int argc, char * argv[] )
         boost::timer t;
 
         std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
-
         glm::mat4 viewMat = str_to_mat(request_str);
 
         // Measure speed
-        // double currentTime = glfwGetTime();
-        double currentTime = 0;
-
-        /*nbFrames++;
-        if ( currentTime - lastTime >= 1.0 ){
-            printf("%f ms/frame %d fps\n", 1000.0/double(nbFrames), nbFrames);
-            nbFrames = 0;
-            lastTime += 1.0;
-        }*/
-
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
         glViewport(0,0,windowWidth,windowHeight); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
         int nSize = windowWidth*windowHeight*3*6;
-        //int nByte = nSize*sizeof(unsigned short);
         int nByte = nSize*sizeof(float);
+        
+        // --------------------------------------------------------------
+        // ---------- RENDERING IN PANORAMA MODE ------------------------
+        // ---------- Render to our framebuffer -------------------------
+        // --------------------------------------------------------------
+        
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // create buffer, 3 channels per Pixel
-        //float* dataBuffer = (float*)malloc(nByte);
-        // First let's create our buffer, 3 channels per Pixel
-        //float* dataBuffer = (float*)malloc(nByte);
-        //char* dataBuffer = (char*)malloc(nSize*sizeof(char));
+        // Use our shader
+        glUseProgram(programID);
 
-        //float * dataBuffer_c = (float * ) malloc(windowWidth*windowHeight * sizeof(float));
-        //if (!dataBuffer) return false;
-        //if (!dataBuffer_c) return false;
+        // Compute the MVP matrix from keyboard and mouse input
+        float fov = glm::radians(camera_fov);
+        glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
+        glm::mat4 ViewMatrix =  getView(viewMat, 2);
+        glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
 
-        bool pano = False;
+        glm::mat4 ModelMatrix = glm::mat4(1.0);
 
-        if (pano)
-        {
+        glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
+        // Send our transformation to the currently bound shader,
+        // in the "MVP" uniform
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+        glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+        glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+
+        glm::vec3 lightPos = glm::vec3(4,4,4);
+        glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+
+        // Bind our texture in Texture Unit 0
+        glActiveTexture(GL_TEXTURE0);
+        if (semantic > 0) {
+            glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
+            // Uniform variable: max_layer
+            glUniform1i(num_layers, 3);
+        }
+        // Set our "myTextureSampler" sampler to use Texture Unit 0
+        glUniform1i(TextureID, 0);
+
+        // 1rst attribute buffer : vertices
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(
+            0,                  // attribute
+            3,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+        );
+
+        // 2nd attribute buffer : UVs
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+        glVertexAttribPointer(
+            1,                                // attribute
+            2,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            0,                                // stride
+            (void*)0                          // array buffer offset
+        );
+
+        // 3rd attribute buffer : normals
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+        glVertexAttribPointer(
+            2,                                // attribute
+            3,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            0,                                // stride
+            (void*)0                          // array buffer offset
+        );
+
+        if (semantic > 0) {
+            // 3rd attribute buffer : semantics
+            glEnableVertexAttribArray(3);
+            glBindBuffer(GL_ARRAY_BUFFER, semanticlayerbuffer);
+            glVertexAttribPointer(
+                3,                                // attribute
+                2,                                // size
+                GL_FLOAT,                         // type
+                GL_FALSE,                         // normalized?
+                0,                                // stride
+                (void*)0                          // array buffer offset
+            );
+        }
+
+        // Index buffer
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
+        // Draw the triangles !
+        glDrawElements(
+            GL_TRIANGLES,      // mode
+            indices.size(),    // count
+            GL_UNSIGNED_INT,   // type
+            (void*)0           // element array buffer offset
+        );
+
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
 
 
+        int message_sz;
+        int dim;
+        if (normal > 0) {
+            dim = 3;
+            message_sz = windowWidth*windowHeight*sizeof(float)*dim;
+        } else if (semantic > 0) {
+            dim = 3;
+            message_sz = windowWidth*windowHeight*sizeof(unsigned int)*dim;
+        } else {
+            dim = 1;
+            message_sz = windowWidth*windowHeight*sizeof(float)*dim;
+        }
+
+        zmq::message_t reply (message_sz);
+
+        if (semantic > 0) {
+          // For semantics, we need to confine reply data values to unsigned integer
+          float textureReadout[windowWidth*windowHeight*dim];
+          int float_message_sz = windowWidth*windowHeight*sizeof(float)*dim;
+          glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, float_message_sz, textureReadout);
+          unsigned int * reply_data_handle = (unsigned int*)reply.data();
+          float tmp_float;
+          int offset;
+          int pixel_count = 0;
+          for (int i = 0; i < windowHeight; i++) {
+            for (int j = 0; j < windowWidth; j++) {
+              for (int k = 0; k < dim; k++) {
+                offset = k;
+                tmp_float = textureReadout[offset + (i * windowWidth + j) * dim];  
+                reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = static_cast<unsigned int>(tmp_float);
+              }
+              /*
+              if (pixel_count % 10000 == 0) {
+                printf("Image pixel unsigned int %u %u %u\n", reply_data_handle[0 + ((windowHeight - 1 -i) * windowWidth + j) * dim], reply_data_handle[1 + ((windowHeight - 1 -i) * windowWidth + j) * dim], reply_data_handle[2 + ((windowHeight - 1 -i) * windowWidth + j) * dim]);
+                printf("Image pixel float %f %f %f\n", textureReadout[0 + (i * windowWidth + j) * dim], textureReadout[1 + (i * windowWidth + j) * dim], textureReadout[2 + (i * windowWidth + j) * dim]);
+              }
+              */
+              pixel_count += 1;
+            }
+          }
+        } else {
+          float * reply_data_handle = (float*)reply.data();
+          glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
+          float tmp_float;
+          int offset;
+          // Revert the image from upside-down
+          for (int i = 0; i < windowHeight/2; i++) {
+            for (int j = 0; j < windowWidth; j++) {
+              for (int k = 0; k < dim; k++) {
+                offset = k;
+                float * reply_data_handle = (float*)reply.data();
+                tmp_float = reply_data_handle[offset + (i * windowWidth + j) * dim];
+                reply_data_handle[offset + (i * windowWidth + j) * dim] = reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim];
+                reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = tmp_float;
+              }
+            }
+          }
+        }
+        socket.send (reply);
+
+
+        //bool pano = False;
+
+        //if (pano)
+        //{
+          /* 
+            // ==============================================================
+            // ========== RENDERING IN PANORAMA MODE=========================
+            // ========== CURRENTLY DISABLED ================================
+            // ==============================================================
             for (int k = 0; k < 6; k ++ )
             {
                 // Render to our framebuffer
-
                 // Clear the screen
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -899,32 +848,14 @@ int main( int argc, char * argv[] )
                 glUseProgram(programID);
 
                 // Compute the MVP matrix from keyboard and mouse input
-                //computeMatricesFromInputs();
-                //computeMatricesFromFile(name_loc);
                 float fov = glm::radians(camera_fov);
                 glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
                 glm::mat4 ViewMatrix =  getView(viewMat, k);
-                //glm::mat4 ViewMatrix = getViewMatrix();
                 glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
-                // printf("View (pose) matrix for skybox %d\n", k);
-                // for (int i = 0; i < 4; ++i) {
-                //     printf("\t %f %f %f %f\n", viewMatPose[0][i], viewMatPose[1][i], viewMatPose[2][i], viewMatPose[3][i]);
-                //     //printf("\t %f %f %f %f\n", ViewMatrix[0][i], ViewMatrix[1][i], ViewMatrix[2][i], ViewMatrix[3][i]);
-                // }
-
                 glm::mat4 ModelMatrix = glm::mat4(1.0);
 
                 pose_idx ++;
 
-                //glm::mat4 tempMat = getViewMatrix();
-                //debug_mat(tempMat, "csv");
-
-                // glm::mat4 revertZ = glm::mat4();
-                // revertZ[2][2] = -1;
-                // glm::quat rotateZ_N90 = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(-90.0f)));
-                // glm::quat rotateX_90 = glm::quat(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f));
-
-                //glm::mat4 MVP = ProjectionMatrix * ViewMatrix * revertZ * ModelMatrix;
                 glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
                 // Send our transformation to the currently bound shader,
@@ -995,76 +926,7 @@ int main( int argc, char * argv[] )
                 glDisableVertexAttribArray(1);
                 glDisableVertexAttribArray(2);
 
-                /*
-                // Render to the screen
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                // Render on the whole framebuffer, complete from the lower left corner to the upper right
-                glViewport(0,0,windowWidth,windowHeight);
 
-                // Clear the screen
-                glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                // Use our shader
-                glUseProgram(quad_programID);
-
-                // Bind our texture in Texture Unit 0
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, renderedTexture);
-                //glBindTexture(GL_TEXTURE_2D, depthTexture);
-                // Set our "renderedTexture" sampler to use Texture Unit 0
-                glUniform1i(texID, 0);
-
-                glUniform1f(timeID, (float)(glfwGetTime()*10.0f) );
-
-                // 1rst attribute buffer : vertices
-                glEnableVertexAttribArray(0);
-                glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
-                glVertexAttribPointer(
-                    0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-                    3,                  // size
-                    GL_FLOAT,           // type
-                    GL_FALSE,           // normalized?
-                    0,                  // stride
-                    (void*)0            // array buffer offset
-                );
-
-                // Draw the triangles !
-                glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
-
-                glDisableVertexAttribArray(0);
-                */
-
-                /*
-                if (false) {
-                    char buffer[100];
-                    //printf("before: %s\n", buffer);
-                    sprintf(buffer, "/home/jerry/Pictures/%s_mist.png", filename);
-                    //printf("after: %s\n", buffer);
-                    //printf("file name is %s\n", filename);
-                    //printf("saving screenshot to %s\n", buffer);
-                    save_screenshot(buffer, windowWidth, windowHeight, renderedTexture);
-                }
-                */
-
-                // Swap buffers
-                //glfwSwapBuffers(window);
-                //glfwPollEvents();
-
-
-                // Let's fetch them from the backbuffer
-                // We request the pixels in GL_BGR format, thanks to Berzeger for the tip
-
-                //glReadPixels((GLint)0, (GLint)0,
-                //    (GLint)windowWidth, (GLint)windowHeight,
-                //     GL_BGR, GL_UNSIGNED_SHORT, dataBuffer);
-                //glReadPixels((GLint)0, (GLint)0,
-                //    (GLint)windowWidth, (GLint)windowHeight,
-                //     GL_BGR, GL_FLOAT, dataBuffer);
-
-                //glGetTextureImage(renderedTexture, 0, GL_RGB, GL_UNSIGNED_SHORT, nSize*sizeof(unsigned short), dataBuffer);
-                // float* loc = dataBuffer + windowWidth*windowHeight * k;
-                // glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT,
-                    // (nSize/3)*sizeof(float), loc);
 
                 // Map the OpenGL texture buffer to CUDA memory space
                 checkCudaErrors(cudaGraphicsMapResources(1, &resource));
@@ -1083,199 +945,28 @@ int main( int argc, char * argv[] )
             zmq::message_t reply (panoWidth*panoHeight*sizeof(float));
             projectCubeMapToEquirectangular((float*)reply.data(), cubeMapGpuBuffer, d_cubeMapCoordToPanoCoord, cubeMapCoordToPanoCoord.size(), (size_t) nSize/3);
 
-            //std::cout << "Render time: " << t.elapsed() << std::endl;
             socket.send (reply);
-
-            //free(dataBuffer);
-            //free(dataBuffer_c);
-        }
-        else {
-        //Pinhole mode
-
-            // Render to our framebuffer
-
-                // Clear the screen
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                // Use our shader
-                glUseProgram(programID);
-
-                // Compute the MVP matrix from keyboard and mouse input
-                //computeMatricesFromInputs();
-                //computeMatricesFromFile(name_loc);
-                float fov = glm::radians(camera_fov);
-                glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
-                glm::mat4 ViewMatrix =  getView(viewMat, 2);
-                glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
-
-                glm::mat4 ModelMatrix = glm::mat4(1.0);
-
-                glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
-
-                // Send our transformation to the currently bound shader,
-                // in the "MVP" uniform
-                glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-                glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-                glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
-
-                glm::vec3 lightPos = glm::vec3(4,4,4);
-                glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
-
-                // Bind our texture in Texture Unit 0
-                glActiveTexture(GL_TEXTURE0);
-                //glBindTexture(GL_TEXTURE_2D, Texture);
-                if (semantic > 0) {
-                    glBindTexture(GL_TEXTURE_2D_ARRAY, gArrayTexture);
-                    // Uniform variable: max_layer
-                    glUniform1i(num_layers, 3);
-                }
-                // Set our "myTextureSampler" sampler to use Texture Unit 0
-                glUniform1i(TextureID, 0);
-
-                // 1rst attribute buffer : vertices
-                glEnableVertexAttribArray(0);
-                glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-                glVertexAttribPointer(
-                    0,                  // attribute
-                    3,                  // size
-                    GL_FLOAT,           // type
-                    GL_FALSE,           // normalized?
-                    0,                  // stride
-                    (void*)0            // array buffer offset
-                );
-
-                // 2nd attribute buffer : UVs
-                glEnableVertexAttribArray(1);
-                glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-                glVertexAttribPointer(
-                    1,                                // attribute
-                    2,                                // size
-                    GL_FLOAT,                         // type
-                    GL_FALSE,                         // normalized?
-                    0,                                // stride
-                    (void*)0                          // array buffer offset
-                );
-
-                // 3rd attribute buffer : normals
-                glEnableVertexAttribArray(2);
-                glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-                glVertexAttribPointer(
-                    2,                                // attribute
-                    3,                                // size
-                    GL_FLOAT,                         // type
-                    GL_FALSE,                         // normalized?
-                    0,                                // stride
-                    (void*)0                          // array buffer offset
-                );
-
-                if (semantic > 0) {
-                    GLuint semanticlayerbuffer;
-                    // 3rd attribute buffer : semantics
-                    glEnableVertexAttribArray(3);
-                    glBindBuffer(GL_ARRAY_BUFFER, semanticlayerbuffer);
-                    glVertexAttribPointer(
-                        3,                                // attribute
-                        1,                                // size
-                        GL_FLOAT,                         // type
-                        GL_FALSE,                         // normalized?
-                        0,                                // stride
-                        (void*)0                          // array buffer offset
-                    );
-                }
-
-                // Index buffer
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-
-                // Draw the triangles !
-                glDrawElements(
-                    GL_TRIANGLES,      // mode
-                    indices.size(),    // count
-                    GL_UNSIGNED_INT,   // type
-                    (void*)0           // element array buffer offset
-                );
-
-                glDisableVertexAttribArray(0);
-                glDisableVertexAttribArray(1);
-                glDisableVertexAttribArray(2);
-
-
-                int message_sz;
-                int dim;
-                if (normal > 0) {
-                    dim = 3;
-                    message_sz = windowWidth*windowHeight*sizeof(float)*dim;
-                } else if (semantic > 0) {
-                    dim = 3;
-                    message_sz = windowWidth*windowHeight*sizeof(unsigned int)*dim;
-                } else {
-                    dim = 1;
-                    message_sz = windowWidth*windowHeight*sizeof(float)*dim;
-                }
-
-                zmq::message_t reply (message_sz);
-
-                if (semantic > 0) {
-                  // For semantics, we need to confine reply data values to unsigned integer
-                  float textureReadout[windowWidth*windowHeight*dim];
-                  glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, message_sz, textureReadout);
-                  unsigned int * reply_data_handle = (unsigned int*)reply.data();
-                  float tmp_float;
-                  int offset;
-                  for (int i = 0; i < windowHeight; i++) {
-                    for (int j = 0; j < windowWidth; j++) {
-                      for (int k = 0; k < dim; k++) {
-                        offset = k;
-                        tmp_float = textureReadout[offset + (i * windowWidth + j) * dim];
-                        reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = static_cast<unsigned int>(tmp_float * 255.0);
-                      }
-                    }
-                  }
-                } else {
-                  float * reply_data_handle = (float*)reply.data();
-                  glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
-                  float tmp_float;
-                  int offset;
-                  // Revert the image from upside-down
-                  for (int i = 0; i < windowHeight/2; i++) {
-                    for (int j = 0; j < windowWidth; j++) {
-                      for (int k = 0; k < dim; k++) {
-                        offset = k;
-                        float * reply_data_handle = (float*)reply.data();
-                        tmp_float = reply_data_handle[offset + (i * windowWidth + j) * dim];
-                        reply_data_handle[offset + (i * windowWidth + j) * dim] = reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim];
-                        reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = tmp_float;
-                      }
-                    }
-                  }
-                }
-                socket.send (reply);
-        }
-
-
-
+            */
+        //}
+        //else {
+        //}
     } while (true);
-    // Check if the ESC key was pressed or the window was closed
-    //while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-    //       glfwWindowShouldClose(window) == 0 );
-
+    
     // Cleanup VBO and shader
     glDeleteBuffers(1, &vertexbuffer);
     glDeleteBuffers(1, &uvbuffer);
     glDeleteBuffers(1, &normalbuffer);
+    if (semantic > 0) {
+      glDeleteBuffers(1, &semanticlayerbuffer);
+    }
     glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
-    //glDeleteTextures(1, &Texture);
-
+    
     glDeleteFramebuffers(1, &FramebufferName);
     glDeleteTextures(1, &renderedTexture);
-    glDeleteTextures(1, &gArrayTexture);
     glDeleteRenderbuffers(1, &depthrenderbuffer);
-    //glDeleteBuffers(1, &quad_vertexbuffer);
+    glDeleteTextures(1, &gArrayTexture);
     glDeleteVertexArrays(1, &VertexArrayID);
-
-
-    // Close OpenGL window and terminate GLFW
-    //glfwTerminate();
 
     return 0;
 }
