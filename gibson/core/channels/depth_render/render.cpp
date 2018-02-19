@@ -514,7 +514,6 @@ int main( int argc, char * argv[] )
 
     if (semantic > 0) {
         indexVBO_MTL(mtl_vertices, mtl_uvs, mtl_normals, indices, indexed_vertices, indexed_uvs, indexed_normals, indexed_semantics);
-        printf("Finished indexing %U vbo mtl \n", indexed_semantics.size());
     } else {
         indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
     }
