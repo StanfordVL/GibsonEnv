@@ -8,8 +8,8 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
-    output_file = os.path.join(opt.datapath, opt.model, 'modeldata', 'out_res.obj')
-    input_file = os.path.join(opt.datapath, opt.model, 'modeldata', 'out_z_up.obj')
+    output_file = os.path.join(opt.datapath, opt.model, 'out_res.obj')
+    input_file = os.path.join(opt.datapath, opt.model, 'out_z_up.obj')
 
     f_original = open(input_file)
     f_inverted = open(output_file, 'w+')
