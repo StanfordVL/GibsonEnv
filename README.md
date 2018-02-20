@@ -34,7 +34,7 @@ Download data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4Yb
 
 Quick installation
 -----
-
+There are two ways of installing gibson, the first (recommended) method is to use our docker image. 
 
 We use docker to distribute our software, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
 
@@ -59,6 +59,7 @@ docker pull xf1280/gibson:0.1
 
 Building from source
 -----
+If you don't want to use our docker image, you can also install gibson locally. This will require some dependencies to be installed. 
 
 First, make sure you have Nvidia driver and CUDA installed. If you install from source, CUDA 9 is not necessary, as that is for nvidia-docker 2.0. Then, let's install some dependencies:
 
@@ -78,7 +79,7 @@ pip install tensorflow==1.3
 ```
 Clone the repository, download data and build
 ```bash
-git clone -b dev https://github.com/fxia22/gibson.git 
+git clone https://github.com/StanfordVL/gibson_beta.git 
 cd gibson
 #download data from google drive
 ./build.sh decompress_data ### decompress data 
