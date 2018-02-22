@@ -1,5 +1,5 @@
-# Gibson Environment for Training Real World AI
-You shouldn't play video games all day, so shouldn't your AI. In this project we build a virtual environment that offers real world experience. You can think of it like [The Matrix](https://www.youtube.com/watch?v=3Ep_rnYweaI).
+# Gibson Environment for Training Real-World Active Perceptual Agents
+You shouldn't play video games all day, so shouldn't your AI. In this project, we build a virtual environment that offers real world experience for learnign perception. See [the website](http://gibson.vision/) for more information.
 
 ![gibson](misc/ui.gif)
 
@@ -21,20 +21,22 @@ Table of contents
 Installation
 =================
 
-The minimal system requirements are the following:
+The minimum system requirements are the following:
 
 - Ubuntu 16.04
 - Nvidia GPU with VRAM > 6.0GB
 - Nvidia driver >= 384
 - CUDA >= 9.0, CuDNN >= v7
-
+<!-- @fei: separate requirements by choice of installaion method. -->
 #### Download data
 
-Download data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0) and put `assets.tar.gz` it in `gibson/assets` folder.
+First download environment assets data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file it in.
+<!-- @fei: defined that gibson/assets is the home folder the user wishes to put the environment in. Check. -->
 
-Quick installation
+There are two ways of installing gibson, A. using our docker image (recommended), and B. building from srouce. 
+
+A. Quick installation (docker)
 -----
-There are two ways of installing gibson, the first (recommended) method is to use our docker image. 
 
 We use docker to distribute our software, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
 
@@ -45,7 +47,7 @@ Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your ins
 ```bash
 git clone -b dev https://github.com/fxia22/gibson.git 
 cd gibson
-#download data file from https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0 and put it into gibson/assets folder
+#as mentioned above, download assets data file and put it into gibson/assets folder
 ./build.sh decompress_data ### Download data outside docker, in case docker images need to be rebuilt
 docker build . -t gibson
 ```
@@ -57,7 +59,7 @@ If the installation is successful, you should be able to run `docker run --runti
 docker pull xf1280/gibson:0.1
 ```
 
-Building from source
+B. Building from source
 -----
 If you don't want to use our docker image, you can also install gibson locally. This will require some dependencies to be installed. 
 
@@ -81,7 +83,7 @@ Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/gibson_beta.git 
 cd gibson
-#download data from google drive
+#as mentioned above, download assets data file and put it into gibson/assets folder
 ./build.sh decompress_data ### decompress data 
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
@@ -97,45 +99,50 @@ pip install -e baselines
 Uninstalling
 ----
 
-Uninstall gibson is easy, if you installed with docker, just run `docker images -a | grep "gibson" | awk '{print $3}' | xargs docker rmi` to clean up the image. If you installed from source, uninstall with `pip uninstall gibson`
+Uninstall gibson is easy. If you installed with docker, just run `docker images -a | grep "gibson" | awk '{print $3}' | xargs docker rmi` to clean up the image. If you installed from source, uninstall with `pip uninstall gibson`
 
 
 Quick Start
 =================
 
 After getting into the docker container, you can run a few demos. You might need to run `xhost +local:root` to enable display. If you installed from source, you can run those directly. 
+<!-- @fei: explain what "getting into the docker container" means, for newbies. -->
+<!-- @fei: What does "you can run those directly" mean? -->
 
 ```bash
-python examples/demo/play_husky_sensor.py ### Use ASWD to control a car to navigate around gates
+python examples/demo/play_husky_sensor.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building
 ```
 ![husky_nonviz](misc/husky_nonviz.png)
 
-You are able to use ASWD to control a car to navigate around gates. You will not see camera output. 
+You will be able to use ASWD keys on your keyboard to control a car to navigate around Gates building. A camera output will not be shown in this particular demo. 
 
 ```bash
-python examples/demo/play_husky_camera.py ### Use ASWD to control a car to navigate around gates, with camera output
+python examples/demo/play_husky_camera.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building, while RGB and depth camera outputs are also shown.
 ```
 ![husky_nonviz](misc/husky_camera.png)
 
-You are able to use ASWD to control a car to navigate around gates. You will also be able to see camera output. 
+You will able to use ASWD keys on your keyboard to control a car to navigate around Gates building. You will also be able to see the RGB and depth camera outputs. 
 
 ```bash
-python examples/train/train_husky_navigate_ppo2.py ### Use PPO2 to train a car to navigate down the hall way in gates based on visual input
+python examples/train/train_husky_navigate_ppo2.py ### Use PPO2 to train a car to navigate down the hall way in Gates building, using visual input from the camera.
 ```
 
 ![husky_train](misc/husky_train.png)
-Running this command you will start training a husky robot to navigate in gates and go down the corridor. You will see some RL related statistics in terminal after each episode.
+By running this command you will start training a husky robot to navigate in Gates building and go down the corridor. You will see some RL related statistics in the terminal after each episode.
+<!-- @fei: is this using RGB or depth too? text is unclear. -->
 
 
 ```bash
-python examples/train/train_ant_navigate_ppo1.py ### Use PPO2 to train an ant to navigate down the hall way in gates based on visual input
+python examples/train/train_ant_navigate_ppo1.py ### Use PPO2 to train an ant to navigate down the hall way in Gates building, using visual input from the camera.
 ```
 
 ![ant_train](misc/ant_train.png)
+By running this command you will start training an ant to navigate in Gates building and go down the corridor. You will see some RL related statistics in the terminal after each episode.
+<!-- @fei: is this using RGB or depth too? text is unclear. -->
 
-Running this command you will start training an ant to navigate in gates and go down the corridor. You will see some RL related statistics in terminal after each episode.
 
-
+Web User Interface
+----
 When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
 
 
@@ -143,11 +150,12 @@ When running Gibson, you can start a web user interface with `python gibson/util
 
 
 More examples can be found in `examples/demo` and `examples/train` folder.
+<!-- @fei: we should at least list what other demos and train setups they'll find there. -->
 
 
 Coding Your RL Agent
 ====
-You can code your RL agent following our convention. The interface with our environment is very simple.
+You can code your RL agent following our convention. The interface with our environment is very simple (see some examples in the end of this section).
 
 First, you can create an environment by creating an instance of classes in `gibson/core/envs` folder. 
 
@@ -161,7 +169,7 @@ Then do one step of the simulation with `env.step`. And reset with `env.reset()`
 obs, rew, env_done, info = env.step(action)
 ```
 `obs` gives the observation of the robot. `rew` is the defined reward. `env_done` marks the end of one episode, for example, when the robot dies. 
-`info` gives some additional information of this step, sometimes we use this to pass additional non-visual sensor values.
+`info` gives some additional information of this step; sometimes we use this to pass additional non-visual sensor values.
 
 We mostly followed [OpenAI gym](https://github.com/openai/gym) convention when designing the interface of RL algorithms and the environment. In order to help users start with the environment quicker, we
 provide some examples at [examples/train](examples/train). The RL algorithms that we use are from [openAI baselines](https://github.com/openai/baselines) with some adaptation to work with hybrid visual and non-visual sensory data.
