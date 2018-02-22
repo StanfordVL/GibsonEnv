@@ -1,5 +1,5 @@
-# Gibson Environment for Training Real-World Active Perceptual Agents
-You shouldn't play video games all day, so shouldn't your AI. In this project, we build a virtual environment that offers real world experience for learnign perception. See [the website](http://gibson.vision/) for more information.
+# Gibson Environment for Training Agents with Real-World Perception 
+You shouldn't play video games all day, so shouldn't your AI. In this project, we build a virtual environment that offers real world experience for learnign perception. See [Gibson Environments website](http://gibson.vision/) for more information.
 
 ![gibson](misc/ui.gif)
 
@@ -189,7 +189,7 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |initial_orn | [0, 0, 3.14] | initial orientation for navigating |
 |initial_pos | [-7, 2.6, 0.5] | initial position for navigating |
 |fov | 1.57  | field of view for the camera, in rad |
-| use_filler | true  | use neural network filler or not, it is recommended to leave this argument true |
+| use_filler | true  | use neural network filler or not. It is recommended to leave this argument true. See [Gibson Environments website](http://gibson.vision/) for more information. |
 |display_ui | true  | show pygame ui or not, if in a production environment (training), you need to turn this off |
 |show_dignostic | true  | show dignostics overlaying on the RGB image |
 |ui_num |2  | how many ui components to show |
@@ -200,5 +200,16 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |speed : frameskip | 1 | how many frames to run simulation for one action |
 |mode | gui  | gui or headless, if in a production environment (training), you need to turn this to headless |
 |verbose |false  | show dignostics in terminal |
+
+<!-- @fei: in general, for the arguments that have a limited set of valid values, it's customary to list the feasible values (e.g. [false,true],[gui,headless], etc). The list can be made either in the explanation column or a new column.-->
+<!-- @fei: for orientations/angles and distances/positions, we should define the values are in radian/degree and metric.-->
+<!-- @fei: for non-naviational tasks, what should the navigation argument values be? e.g. target location-->
+<!-- @fei: fdisplay_ui needs a couple of more sentences to properly define it.-->
+<!-- @fei: in fshow_dignostic, define "dignostics" what will be shown.-->
+<!-- @fei: ui_components is unclear. What components are these and how is this related to the components defined in ui_components? -->
+<!-- @fei: "output" is important. Needs description and proper listing of valid values.  What components are these and how is this related to the components defined in ui_components? -->
+<!-- @fei: "resolution". list valid values-->
+<!-- @fei: "timestep" and "frameskip". if you remember, we had decided to clarify this with an example for newbies.-->
+<!-- @fei: "mode". We need to define what each of "gui" and "headless" exactly do. We should expect people to find them by trial and error-->
 
 
