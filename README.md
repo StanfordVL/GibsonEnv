@@ -12,7 +12,6 @@ Please see [Gibson environments website](http://gibson.vision/) for more technic
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
 
 
-
 ### Note
 This is a 0.1.0 beta release, bug reports are appreciated. 
 
