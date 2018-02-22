@@ -32,21 +32,30 @@ Table of contents
 Installation
 =================
 
+#### Installation Method
+
+There are two ways to instal gibson, A. using our docker image (recommended) and B. building from srouce. 
+
+#### System requirements
+
 The minimum system requirements are the following:
 
+For docker installation (A): 
 - Ubuntu 16.04
 - Nvidia GPU with VRAM > 6.0GB
 - Nvidia driver >= 384
 - CUDA >= 9.0, CuDNN >= v7
-<!-- @fei: separate requirements by choice of installaion method. -->
+
+For building from the source(B):
+- Ubuntu >= 14.04
+- Nvidia GPU with VRAM > 6.0GB
+- Nvidia driver >= 375
+- CUDA >= 8.0, CuDNN >= v5
+
 #### Download data
 
-First, download environment assets data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file it in.
-<!-- @fei: defined that gibson/assets is the home folder the user wishes to put the environment in. Check. -->
+First, download environment assets data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file it in. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
 
-#### Installation Method
-
-There are two ways to instal gibson, A. using our docker image (recommended) and B. building from srouce. 
 
 A. Quick installation (docker)
 -----
@@ -55,6 +64,7 @@ We use docker to distribute our software, you need to install [docker](https://d
 
 Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
 
+You can either 1. build your own docker image or 2. pull from our docker image. 1 is recommended because you have the freedom to include more or less enviroments into your docker image. For 2, we include a fixed number of 8 environments (space1-space8).
 
 1. Build your own docker image (recommended)
 ```bash
@@ -71,7 +81,6 @@ If the installation is successful, you should be able to run `docker run --runti
 ```bash
 docker pull xf1280/gibson:0.1
 ```
-<!-- @fei: shoudln't 2 come first because it's easier? Unless it's not recommended. -->
 
 B. Building from source
 -----
@@ -119,9 +128,10 @@ Uninstall gibson is easy. If you installed with docker, just run `docker images 
 Quick Start
 =================
 
-After getting into the docker container, you can run a few demos. You might need to run `xhost +local:root` to enable display. If you installed from source, you can run those directly. 
-<!-- @fei: explain what "getting into the docker container" means, for newbies. -->
-<!-- @fei: What does "you can run those directly" mean? -->
+First run `xhost +local:root` on your host machine to enable display. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson`, you will get an interactive shell. Now you can run a few demos. 
+
+If you installed from source, you can run those directly using the following commands without using docker. 
+
 
 ```bash
 python examples/demo/play_husky_sensor.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building
@@ -142,8 +152,7 @@ python examples/train/train_husky_navigate_ppo2.py ### Use PPO2 to train a car t
 ```
 
 ![husky_train](misc/husky_train.png)
-By running this command you will start training a husky robot to navigate in Gates building and go down the corridor. You will see some RL related statistics in the terminal after each episode.
-<!-- @fei: is this using RGB or depth too? text is unclear. -->
+By running this command you will start training a husky robot  to navigate in Gates building and go down the corridor with RGBD input. You will see some RL related statistics in the terminal after each episode.
 
 
 ```bash
@@ -151,8 +160,7 @@ python examples/train/train_ant_navigate_ppo1.py ### Use PPO2 to train an ant to
 ```
 
 ![ant_train](misc/ant_train.png)
-By running this command you will start training an ant to navigate in Gates building and go down the corridor. You will see some RL related statistics in the terminal after each episode.
-<!-- @fei: is this using RGB or depth too? text is unclear. -->
+By running this command you will start training an ant to navigate in Gates building and go down the corridor with RGBD input. You will see some RL related statistics in the terminal after each episode.
 
 
 Web User Interface
