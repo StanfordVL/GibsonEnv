@@ -1,5 +1,5 @@
 # Gibson Environment for Training Active Agents with Real-World Perception 
-You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment that offers real world experience for learnign perception. 
+You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment that offers real world experience for learning perception. 
 
 <img src=misc/ui.gif width="600">
  
@@ -156,7 +156,7 @@ By running this command you will start training a husky robot  to navigate in Ga
 
 
 ```bash
-python examples/train/train_ant_navigate_ppo1.py ### Use PPO2 to train an ant to navigate down the hall way in Gates building, using visual input from the camera.
+python examples/train/train_ant_navigate_ppo1.py ### Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera.
 ```
 
 ![ant_train](misc/ant_train.png)
@@ -171,8 +171,25 @@ When running Gibson, you can start a web user interface with `python gibson/util
 ![web_ui](misc/web_ui.png)
 
 
-More examples can be found in `examples/demo` and `examples/train` folder.
-<!-- @fei: we should at least list what other demos and train setups they'll find there. -->
+More examples can be found in `examples/demo` and `examples/train` folder. A short introduction for each demo is shown below.
+
+| Example        | Explanation          |
+|:-------------: |:-------------| 
+|`demo/play_ant_camera.py`|Use 1234567890qwertyui keys on your keyboard to control an ant to navigate around Gates building, while RGB and depth camera outputs are also shown. |
+|`demo/play_ant_nonviz.py`| Use 1234567890qwertyui keys on your keyboard to control an ant to navigate around Gates building.|
+|`demo/play_drone_camera.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building, while RGB and depth camera outputs are also shown.|
+|`demo/play_drone_nonviz.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building|
+|`demo/play_humanoid_camera.py`| Use 1234567890qwertyui keys on your keyboard to control a humanoid to navigate around Gates building. Just kidding, controlling humaniod with keyboard is too difficult, you can only watch it fall. Press R to reset. RGB and depth camera outputs are also shown. |
+|`demo/play_humanoid_nonviz.py`| Watch a humanoid fall. Press R to reset.|
+|`demo/play_husky_camera.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building, while RGB and depth camera outputs are also shown.|
+|`demo/play_husky_nonviz.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building|
+|`train/train_husky_navigate_ppo2.py`|   Use PPO2 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
+|`train/train_husky_navigate_ppo1.py`|   Use PPO1 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
+|`train/train_ant_navigate_ppo1.py`| Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera. |
+|`train/train_ant_climb_ppo1.py`| Use PPO1 to train an ant to climb down the stairs in Gates building, using visual input from the camera.  |
+|`train_ant_gibson_flagrun_ppo1.py`| Use PPO1 to train an ant to chase a target (a red cube) in Gates building. Everytime the ant gets to target(or time out), the target will change position.|
+|`train_husky_gibson_flagrun_ppo1.py`|Use PPO1 to train a car to chase a target (a red cube) in Gates building. Everytime the car gets to target(or time out), the target will change position. |
+
 
 
 Coding Your RL Agent
@@ -212,18 +229,16 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |initial_pos | [-7, 2.6, 0.5] | initial position (in meter) for navigating, the reference frame is world frame|
 |fov | 1.57  | field of view for the camera, in radian |
 | use_filler | true/false  | use neural network filler or not. It is recommended to leave this argument true. See [Gibson Environment website](http://gibson.vision/) for more information. |
-|display_ui | true/false  | show pygame ui or not, if in a production environment (training), you need to turn this off |
+|display_ui | true/false  | Gibson has two ways of showing visual output, either in multiple windows, or aggregate them into a single pygame window. This argument determiens whether to show pygame ui or not, if in a production environment (training), you need to turn this off |
 |show_dignostic | true/false  | show dignostics(including fps, robot position and orientation, accumulated rewards) overlaying on the RGB image |
-|ui_num |2  | how many ui components to show |
+|ui_num |2  | how many ui components to show, this should be length of ui_components. |
 | ui_components | [RGB_FILLED, DEPTH]  | which are the ui components, choose from [RGB_FILLED, DEPTH, NORMAL, SEMANTICS, RGB_PREFILLED] |
 |output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot, choose from  [nonviz_sensor, rgb_filled, depth]. These values are independent of `ui_components`, as `ui_components` determines what to show and `output` determines what the robot receives. |
 |resolution | 512 | choose from [128, 256, 512] resolution of rgb/depth image |
-|speed : timestep | 0.01 | timestep of simulation in seconds |
-|speed : frameskip | 1 | how many frames to run simulation for one action |
+|initial_orn | [0, 0, 3.14] | initial orientation (in radian) for navigating, the reference frame is world frame |
+|speed : timestep | 0.01 | timestep of simulation in seconds. For example, if timestep=0.01 and the simulation is running at 100fps, it will be real time, if timestep=0.1 and the simulation is running at 100fps, it will be 10x real time|
+|speed : frameskip | 1 | How many frames to run simulation for one action. For tasks that does not require high frequency control, you can set frameskip to larger value to gain further speed up. |
 |mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
 |verbose |true/false  | show dignostics in terminal |
 
-<!-- @fei: fdisplay_ui needs a couple of more sentences to properly define it.-->
-<!-- @fei: ui_components is unclear. What components are these and how is this related to the components defined in ui_components? -->
-<!-- @fei: "timestep" and "frameskip". if you remember, we had decided to clarify this with an example for newbies.-->
 
