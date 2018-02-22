@@ -3,11 +3,14 @@ You shouldn't play video games all day, so shouldn't your AI! We built a virtual
 
 <img src=misc/ui.gif width="600">
  
-**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in simulation which consequently casts a question on transferring to real-world. The primary characteristics of Gibson environments are I) being from the real-world and reflecting its semantic complexity through virtualizing real spaces, II) having a baked-in mechanism for transferring to real-world (Goggles function), and III) embodiment of the agent and making it subject to constraints of space and physics via integrating a physics engine ([Bulletphysics](http://bulletphysics.org/wordpress/)).
+**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in simulation which consequently casts a question on transferring to real-world. The primary characteristics of Gibson environments are:   
+**I.** being from the real-world and reflecting its semantic complexity through virtualizing real spaces,  
+**II.** having a baked-in mechanism for transferring to real-world (Goggles function), and  
+**III.** embodiment of the agent and making it subject to constraints of space and physics via integrating a physics engine ([Bulletphysics](http://bulletphysics.org/wordpress/)).  
 
-**Gibson**: The environment is named after James J. Gibson, the author of "Ecological Approach to Visual Perception", 1979. “We must perceive in order to move, but we must also move in order to perceive” – JJ Gibson
+**Naming**: Gibson environment is named after James J. Gibson, the author of "Ecological Approach to Visual Perception", 1979. “We must perceive in order to move, but we must also move in order to perceive” – JJ Gibson
 
-Please see [Gibson environments website](http://gibson.vision/) for more technical details. This repository is intended for distribution of the environments and installation/running instructions.
+Please see [Gibson environments website](http://gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
 
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
 
