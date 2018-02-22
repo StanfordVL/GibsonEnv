@@ -222,5 +222,3 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 <!-- @fei: "resolution". list valid values-->
 <!-- @fei: "timestep" and "frameskip". if you remember, we had decided to clarify this with an example for newbies.-->
 <!-- @fei: "mode". We need to define what each of "gui" and "headless" exactly do. We should expect people to find them by trial and error-->
-
-
