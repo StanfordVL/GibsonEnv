@@ -46,6 +46,7 @@ using namespace std;
 
 #include <common/MTLobjloader.hpp>
 #include <common/MTLtexture.hpp>
+#include <common/JSONtexture.hpp>
 #include <common/MTLplyloader.hpp>
 #include <zmq.hpp>
 
@@ -455,18 +456,25 @@ int main( int argc, char * argv[] )
 
         //bool res = loadPLYfile(name_obj)
         std::cout << "Loading ply file\n";
-        bool res = loadPLY(name_ply.c_str(), vertices, uvs, normals);
-        
-        //bool res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
+        bool res;
+        if (ply > 0) {
+            res = loadPLY(name_ply.c_str(), vertices, uvs, normals);
+        } else {
+            res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
+        }
         //res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
         if (res == false) { printf("Was not able to load the semantic.obj file.\n"); exit(-1); }
         else { printf("Semantic.obj file was loaded with success.\n"); }
 
         // Load the textures
         std::string mtl_path = obj_path + mtllib;
-        
-        
-        bool MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);
+        bool MTL_loaded;
+        if (ply > 0) {
+            mtl_path = obj_path;
+            MTL_loaded = loadJSONtextures(mtl_path, TextObj, material_name);
+        } else {
+            MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);    
+        }
         if (MTL_loaded == false) { printf("Was not able to load the semantic.mtl file\n"); exit(-1); }
         else { printf("Semantic.mtl file was loaded with success.\n"); }
 

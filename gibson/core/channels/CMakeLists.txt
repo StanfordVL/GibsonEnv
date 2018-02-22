@@ -141,6 +141,7 @@ cuda_add_executable(depth_render
     common/controls.hpp
     common/MTLtexture.cpp
     common/MTLtexture.hpp
+    common/JSONtexture.hpp
     common/texture.cpp
     common/texture.hpp
     common/MTLobjloader.cpp
@@ -155,6 +156,7 @@ cuda_add_executable(depth_render
     common/vboindexer.hpp
     common/text2D.hpp
     common/text2D.cpp
+    common/picojson.h
     common/cmdline.h
 
     external/lodepng/lodepng.h
