@@ -3,9 +3,11 @@
 #include <stdlib.h>
 #include <vector>
 #include <string>
+#include <fstream>
 #include <iostream>
 #include <cstdlib>  //rand
 #include <X11/Xlib.h>
+#include <chrono>
 #include "boost/multi_array.hpp"
 #include "boost/timer.hpp"
 
@@ -42,9 +44,9 @@ using namespace std;
 #include "common/cmdline.h"
 #include <common/render_cuda_f.h>
 
-#include <common/MTLtexture.hpp>
 #include <common/MTLobjloader.hpp>
-
+#include <common/MTLtexture.hpp>
+#include <common/MTLplyloader.hpp>
 #include <zmq.hpp>
 
 #ifndef _WIN32
@@ -59,7 +61,6 @@ using namespace std;
 #endif
 
 
-
 // We would expect width and height to be 1024 and 768
 int windowWidth = 256;
 int windowHeight = 256;
@@ -68,7 +69,6 @@ size_t panoHeight = 1024;
 int cudaDevice = -1;
 
 //float camera_fov = 90.0f;
-
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
 static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
@@ -83,6 +83,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
       if (abort) exit(code);
    }
 }
+
 
 glm::vec3 GetOGLPos(int x, int y)
 {
@@ -225,6 +226,7 @@ int main( int argc, char * argv[] )
     int normal = cmdp.get<int>("Normal");
     int semantic = cmdp.get<int>("Semantic");
     int rgbMesh = cmdp.get<int>("RGBfromMesh");
+    int ply;
 
     float camera_fov = cmdp.get<float>("fov");
     windowHeight = cmdp.get<int>("Height");
@@ -232,6 +234,8 @@ int main( int argc, char * argv[] )
 
     std::string obj_path = model_path + "/modeldata/";
     std::string name_obj = obj_path + "out_res.obj";
+    std::string name_ply = obj_path + "out_res.ply";
+
     if (smooth > 0) {
         name_obj = obj_path + "out_smoothed.obj";
         GPU_NUM = -1;
@@ -247,6 +251,7 @@ int main( int argc, char * argv[] )
     if (semantic > 0) {
         //name_obj = obj_path + "rgb.obj";
         name_obj = obj_path + "semantic.obj";
+        ply = 1;
         GPU_NUM = -3;
     }
 
@@ -448,8 +453,12 @@ int main( int argc, char * argv[] )
         // Read the .obj file
         glShadeModel(GL_FLAT);
 
-        bool res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
-        res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
+        //bool res = loadPLYfile(name_obj)
+        std::cout << "Loading ply file\n";
+        bool res = loadPLY(name_ply.c_str(), vertices, uvs, normals);
+        
+        //bool res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
+        //res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
         if (res == false) { printf("Was not able to load the semantic.obj file.\n"); exit(-1); }
         else { printf("Semantic.obj file was loaded with success.\n"); }
 

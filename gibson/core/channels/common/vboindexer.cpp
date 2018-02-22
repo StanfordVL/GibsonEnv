@@ -4,7 +4,6 @@
 #include <glm/glm.hpp>
 
 #include "vboindexer.hpp"
-
 #include <string.h> // for memcmp
 
 
@@ -184,7 +183,59 @@ void indexVBO_MTL(
             }
         }
     }
+}
 
+
+// TODO: Inplement index_SEM from load MTL
+void indexVBO_PLY(
+    std::vector<std::vector<glm::vec3>> & mtl_vertices,
+    std::vector<std::vector<glm::vec2>> & mtl_uvs,
+    std::vector<std::vector<glm::vec3>> & mtl_normals,
+
+    std::vector<unsigned int> & out_indices,
+    std::vector<glm::vec3> & out_vertices,
+    std::vector<glm::vec2> & out_uvs,
+    std::vector<glm::vec3> & out_normals,
+    std::vector<glm::vec2> & out_semantics
+) {
+    std::map<PackedVertex,unsigned int> VertexToOutIndex;
+
+    // In group j
+    for (int j=0; j<mtl_vertices.size(); j++ ) {
+        std::vector<glm::vec3> group_vertices = mtl_vertices[j];
+        std::vector<glm::vec2> group_uvs = mtl_uvs[j];
+        std::vector<glm::vec3> group_normals = mtl_normals[j];
+        //float semantic_layer = (float) 0;
+        //float semantic_layer = (float) j;
+
+        uint group_size = group_vertices.size();
+        if (group_uvs.size() < group_size)
+            group_size = group_uvs.size();
+
+        for (int i=0; i<group_size; i++ ) {
+            PackedVertex packed = {group_vertices[i], group_uvs[i], group_normals[i]};
+            unsigned int index;
+            bool found = getSimilarVertexIndex_fast( packed, VertexToOutIndex, index);
+            glm::vec2 semantic_uv;
+            semantic_uv.x = (float)j;//semantic_layer;
+            semantic_uv.y = 0;
+
+            // Disable vertex indexing
+            found = false;
+            if ( found ) {
+                out_indices.push_back( index );
+            } else {
+                out_vertices .push_back( group_vertices[i]);
+                out_uvs      .push_back( group_uvs[i]);
+                out_normals  .push_back( group_normals[i]);
+                out_semantics.push_back( semantic_uv);
+                unsigned int newindex = (unsigned int)out_vertices.size() - 1;
+                out_indices  .push_back( newindex);
+
+                VertexToOutIndex [ packed ] = newindex;
+            }
+        }
+    }
 }
 
 
