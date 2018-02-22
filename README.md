@@ -205,32 +205,25 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 | Argument name        | Example value           | Explanation  |
 |:-------------:|:-------------:| :-----|
 | envname      | AntClimbEnv | Environment name, make sure it is the same as the class name of the environment |
-| model_id      | space7      |   Scene id, in beta release, choose from space1-space8 |
-| target_orn | [0, 0, 3.14]      |   Eulerian angle target orientation for navigating, the reference frame is world frame |
-|target_pos | [-7, 2.6, -1.5] | target position for navigating, the reference frame is world frame |
-|initial_orn | [0, 0, 3.14] | initial orientation for navigating |
-|initial_pos | [-7, 2.6, 0.5] | initial position for navigating |
-|fov | 1.57  | field of view for the camera, in rad |
-| use_filler | true  | use neural network filler or not. It is recommended to leave this argument true. See [Gibson Environment website](http://gibson.vision/) for more information. |
-|display_ui | true  | show pygame ui or not, if in a production environment (training), you need to turn this off |
-|show_dignostic | true  | show dignostics overlaying on the RGB image |
+| model_id      | space1-space8      |   Scene id, in beta release, choose from space1-space8 |
+| target_orn | [0, 0, 3.14]      |   Eulerian angle (in radian) target orientation for navigating, the reference frame is world frame. For non-navigation tasks, this parameter is ignored. |
+|target_pos | [-7, 2.6, -1.5] | target position (in meter) for navigating, the reference frame is world frame. For non-navigation tasks, this parameter is ignored. |
+|initial_orn | [0, 0, 3.14] | initial orientation (in radian) for navigating, the reference frame is world frame |
+|initial_pos | [-7, 2.6, 0.5] | initial position (in meter) for navigating, the reference frame is world frame|
+|fov | 1.57  | field of view for the camera, in radian |
+| use_filler | true/false  | use neural network filler or not. It is recommended to leave this argument true. See [Gibson Environment website](http://gibson.vision/) for more information. |
+|display_ui | true/false  | show pygame ui or not, if in a production environment (training), you need to turn this off |
+|show_dignostic | true/false  | show dignostics(including fps, robot position and orientation, accumulated rewards) overlaying on the RGB image |
 |ui_num |2  | how many ui components to show |
 | ui_components | [RGB_FILLED, DEPTH]  | which are the ui components, choose from [RGB_FILLED, DEPTH, NORMAL, SEMANTICS, RGB_PREFILLED] |
-|output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot |
-|resolution | 512 | resolution of rgb/depth image |
+|output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot, choose from  [nonviz_sensor, rgb_filled, depth]. These values are independent of `ui_components`, as `ui_components` determines what to show and `output` determines what the robot receives. |
+|resolution | 512 | choose from [128, 256, 512] resolution of rgb/depth image |
 |speed : timestep | 0.01 | timestep of simulation in seconds |
 |speed : frameskip | 1 | how many frames to run simulation for one action |
-|mode | gui  | gui or headless, if in a production environment (training), you need to turn this to headless |
-|verbose |false  | show dignostics in terminal |
+|mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
+|verbose |true/false  | show dignostics in terminal |
 
-<!-- @fei: in general, for the arguments that have a limited set of valid values, it's customary to list the feasible values (e.g. [false,true],[gui,headless], etc). The list can be made either in the explanation column or a new column.-->
-<!-- @fei: for orientations/angles and distances/positions, we should define the values are in radian/degree and metric.-->
-<!-- @fei: for non-naviational tasks, what should the navigation argument values be? e.g. target location-->
 <!-- @fei: fdisplay_ui needs a couple of more sentences to properly define it.-->
-<!-- @fei: in fshow_dignostic, define "dignostics" what will be shown.-->
 <!-- @fei: ui_components is unclear. What components are these and how is this related to the components defined in ui_components? -->
-<!-- @fei: "output" is important. Needs description and proper listing of valid values.  What components are these and how is this related to the components defined in ui_components? -->
-<!-- @fei: "resolution". list valid values-->
 <!-- @fei: "timestep" and "frameskip". if you remember, we had decided to clarify this with an example for newbies.-->
-<!-- @fei: "mode". We need to define what each of "gui" and "headless" exactly do. We should expect people to find them by trial and error-->
 
