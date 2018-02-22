@@ -1,16 +1,16 @@
-# Gibson Environment for Training Agents with Real-World Perception 
+# Gibson Environment for Training Active Agents with Real-World Perception 
 You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment that offers real world experience for learnign perception. 
 
 <img src=misc/ui.gif width="600">
  
-**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in simulation which consequently casts a question on transferring to real-world. The primary characteristics of Gibson environments are:   
+**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in simulation which consequently casts a question on transferring to real-world. The primary characteristics of Gibson environment are:   
 **I.** being from the real-world and reflecting its semantic complexity through virtualizing real spaces,  
 **II.** having a baked-in mechanism for transferring to real-world (Goggles function), and  
 **III.** embodiment of the agent and making it subject to constraints of space and physics via integrating a physics engine ([Bulletphysics](http://bulletphysics.org/wordpress/)).  
 
 **Naming**: Gibson environment is named after James J. Gibson, the author of "Ecological Approach to Visual Perception", 1979. “We must perceive in order to move, but we must also move in order to perceive” – JJ Gibson
 
-Please see [Gibson environments website](http://gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
+Please see [Gibson environment website](http://gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
 
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
 
@@ -203,7 +203,7 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |initial_orn | [0, 0, 3.14] | initial orientation for navigating |
 |initial_pos | [-7, 2.6, 0.5] | initial position for navigating |
 |fov | 1.57  | field of view for the camera, in rad |
-| use_filler | true  | use neural network filler or not. It is recommended to leave this argument true. See [Gibson Environments website](http://gibson.vision/) for more information. |
+| use_filler | true  | use neural network filler or not. It is recommended to leave this argument true. See [Gibson Environment website](http://gibson.vision/) for more information. |
 |display_ui | true  | show pygame ui or not, if in a production environment (training), you need to turn this off |
 |show_dignostic | true  | show dignostics overlaying on the RGB image |
 |ui_num |2  | how many ui components to show |
