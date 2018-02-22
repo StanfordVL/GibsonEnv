@@ -1,11 +1,19 @@
 # Gibson Environment for Training Agents with Real-World Perception 
-You shouldn't play video games all day, so shouldn't your AI. In this project, we build a virtual environment that offers real world experience for learnign perception. See [Gibson Environments website](http://gibson.vision/) for more information.
+You shouldn't play video games all day, so shouldn't your AI. We built a virtual environment that offers real world experience for learnign perception. 
 
+<img src=misc/ui.gif" width="600">
 ![gibson](misc/ui.gif)
+
+**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in simulation which consequently casts a question on transferring to real-world. The primary characteristics of Gibson environments are I) being from the real-world and reflecting its semantic complexity through virtualizing real spaces, II) having a baked-in mechanism for transferring to real-world (Goggles function), and III) embodiment of the agent and making it subject to constraints of space and physics via integrating a physics engine ([Bulletphysics](http://bulletphysics.org/wordpress/)).
+
+**Gibson**: The environment is named after James J. Gibson, the author of Ecological Approach to Visual Perception , 1979. “We must perceive in order to move, but we must also move in order to perceive” – JJ Gibson
+
+Please see [Gibson Environments website](http://gibson.vision/) for more technical details. This repository is intended for installation and running instructions of the environment.
+
 
 
 ### Note
-This is a 0.1.0 beta release, bug reports are welcome. 
+This is a 0.1.0 beta release, bug reports are appreciated. 
 
 Table of contents
 =================
@@ -30,10 +38,12 @@ The minimum system requirements are the following:
 <!-- @fei: separate requirements by choice of installaion method. -->
 #### Download data
 
-First download environment assets data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file it in.
+First, download environment assets data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file it in.
 <!-- @fei: defined that gibson/assets is the home folder the user wishes to put the environment in. Check. -->
 
-There are two ways of installing gibson, A. using our docker image (recommended), and B. building from srouce. 
+#### Installation Method
+
+There are two ways to instal gibson, A. using our docker image (recommended) and B. building from srouce. 
 
 A. Quick installation (docker)
 -----
@@ -58,6 +68,7 @@ If the installation is successful, you should be able to run `docker run --runti
 ```bash
 docker pull xf1280/gibson:0.1
 ```
+<!-- @fei: shoudln't 2 come first because it's easier? Unless it's not recommended. -->
 
 B. Building from source
 -----
