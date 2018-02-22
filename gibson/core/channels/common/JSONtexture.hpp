@@ -12,7 +12,7 @@ bool loadJSONtextures (std::string jsonpath, std::vector<TextureObj> & objText, 
         throw std::runtime_error("failed to open " + fsegs_json);
 
     std::vector<int> segid_list;
-    std::vector<int> segid_to_index;
+    std::vector<std::vector<int>> segid_to_index;
     std::vector<int> index_to_group_id;
     std::vector<int> index_to_group_label;
 
@@ -66,10 +66,10 @@ bool loadJSONtextures (std::string jsonpath, std::vector<TextureObj> & objText, 
 					max_segid = val;
 			}
 
-			for (unsigned int i = 0; i < max_segid; i++)
-				segid_to_index.push_back(0);
+			for (unsigned int i = 0; i < max_segid + 1; i++)
+				segid_to_index.push_back(std::vector<int>());
 			for (unsigned int i = 0; i < segid_list.size(); i++) {
-				segid_to_index[segid_list[i]] = i;
+				segid_to_index[segid_list[i]].push_back(i);
 			}
 
 	    delete[] buffer;
@@ -127,6 +127,7 @@ bool loadJSONtextures (std::string jsonpath, std::vector<TextureObj> & objText, 
       	picojson::object obj_it = it->get<picojson::object>();
       	int group_id = stoi(obj_it["id"].to_str());
       	int group_label = stoi(obj_it["label_index"].to_str());
+      	
       	picojson::value seg_val = obj_it["segments"];
       	picojson::array seg_arr_i;
       	if (seg_val.is<picojson::array>()) {
@@ -135,8 +136,14 @@ bool loadJSONtextures (std::string jsonpath, std::vector<TextureObj> & objText, 
 						int segid = (stoi(seg_arr_i[i].to_str()));
 						//if (group_id == 171)
 							//std::cout << "\t sub index " << i << " " << index << " size " << seg_arr_i.size() << " group id size " << index_to_group_id.size() << " group label size " << index_to_group_label.size() << std::endl;
-						index_to_group_id[segid_to_index[segid]] = group_id;
-		    		index_to_group_label[segid_to_index[segid]] = group_label;
+						//if (group_id == 1) {
+						//	std::cout << "\t sub index " << i << "/" << seg_arr_i.size() << " segid " << segid << " original index " << segid_to_index[segid] << std::endl;
+						//}
+						for (unsigned int j = 0; j < segid_to_index[segid].size(); j++) {
+							int index = segid_to_index[segid][j];
+							index_to_group_id[index] 		= group_id;
+		    			index_to_group_label[index] = group_label;
+						}
 		    	}
 				}
       }
@@ -144,7 +151,8 @@ bool loadJSONtextures (std::string jsonpath, std::vector<TextureObj> & objText, 
 	    delete[] buffer;
 	  }
 
-	  std::cout << "index to group id " << index_to_group_id[0] << " label " << index_to_group_label[0] << std::endl;
-	  std::cout << "index to group id " << index_to_group_id[1] << " label " << index_to_group_label[1] << std::endl;
+	  //std::cout << "index to group id " << index_to_group_id[0] << " label " << index_to_group_label[0] << std::endl;
+	  //std::cout << "index to group id " << index_to_group_id[1] << " label " << index_to_group_label[1] << std::endl;
+	  //std::cout << "index to group id " << index_to_group_id[6] << " label " << index_to_group_label[6] << std::endl;
     return true;
 }
