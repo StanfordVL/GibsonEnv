@@ -1,12 +1,12 @@
 envname: AntNavigateEnv
-model_id: sRj553CTHiw
+model_id: space7
 target_orn: [0, 0, 1.57]
 target_pos: [-14.3, 45.07, 0.5]
 initial_orn: [0, 0, 4.71]
 initial_pos: [-14.3, 5, 1.2]
 fov: 1.57
 use_filler: true
-display_ui: false
+display_ui: true
 show_dignostic: true
 ui_num: 2
 ui_components: [RGB_FILLED, DEPTH]
@@ -25,3 +25,6 @@ resolution: 512
 speed:
   timestep: 0.01
   frameskip: 1
+
+mode: gui #gui|headless
+verbose: false

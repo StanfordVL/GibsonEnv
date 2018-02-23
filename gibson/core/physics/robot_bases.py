@@ -47,12 +47,18 @@ class BaseRobot:
             ordered_joints = []
 
         dump = 0
+        #from IPython import embed; embed()
+
+
         for i in range(len(bodies)):
             if p.getNumJoints(bodies[i]) == 0:
                 part_name, robot_name = p.getBodyInfo(bodies[i], 0)
                 robot_name = robot_name.decode("utf8")
                 part_name = part_name.decode("utf8")
                 parts[part_name] = BodyPart(part_name, bodies, i, -1, self.scale, model_type=self.model_type)
+                #if part_name == self.robot_name:
+                #    self.robot_body = parts[part_name]
+
             for j in range(p.getNumJoints(bodies[i])):
                 p.setJointMotorControl2(bodies[i],j,p.POSITION_CONTROL,positionGain=0.1,velocityGain=0.1,force=0)
                 ## TODO (hzyjerry): the following is diabled due to pybullet update

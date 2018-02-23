@@ -232,36 +232,32 @@ int main( int argc, char * argv[] )
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
 
-    std::string obj_path = model_path + "/modeldata/";
-    std::string name_obj = obj_path + "out_res.obj";
-    std::string name_ply = obj_path + "out_res.ply";
-
+    std::string name_obj = model_path + "/mesh.obj";
     if (smooth > 0) {
-        name_obj = obj_path + "out_smoothed.obj";
+        name_obj = model_path + "/out_smoothed.obj";
         GPU_NUM = -1;
     }
 
     // if rendering normals
     if (normal > 0) {
-        name_obj = obj_path + "rgb.obj";
+        name_obj = model_path + "/rgb.obj";
         GPU_NUM = -2;
     }
 
     // if rendering semantics
     if (semantic > 0) {
-        //name_obj = obj_path + "rgb.obj";
-        name_obj = obj_path + "semantic.obj";
+        name_obj = model_path + "/semantic.obj";
         ply = 1;
         GPU_NUM = -3;
     }
 
     // if rendering RGB from Mesh
     if (rgbMesh > 0) {
-        name_obj = obj_path + "rgb.obj";
+        name_obj = model_path + "/rgb.obj";
         GPU_NUM = -2;
     }
 
-    std::string name_loc   = model_path + "/" + "sweep_locations.csv";
+    std::string name_loc   = model_path + "/" + "camera_poses.csv";
 
 
     glfwSetErrorCallback(error_callback);
@@ -459,8 +455,7 @@ int main( int argc, char * argv[] )
         bool res;
         int num_vertices;
         if (ply > 0) {
-            //res = loadPLY(obj_path.c_str(), vertices, uvs, normals);
-            res = loadPLY_MTL(obj_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, material_id, mtllib, num_vertices);
+            res = loadPLY_MTL(model_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, material_id, mtllib, num_vertices);
             printf("From ply loaded total of %d vertices\n", num_vertices);
         } else {
             res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
@@ -470,10 +465,10 @@ int main( int argc, char * argv[] )
         else { printf("Semantic.obj file was loaded with success.\n"); }
 
         // Load the textures
-        std::string mtl_path = obj_path + mtllib;
+        std::string mtl_path = model_path + mtllib;
         bool MTL_loaded;
         if (ply > 0) {
-            mtl_path = obj_path;
+            mtl_path = model_path;
             // TODO: load actual mtl file for ply json
             // MTL_loaded = true;
             MTL_loaded = loadPLYtextures(TextObj, material_name, material_id);

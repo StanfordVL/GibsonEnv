@@ -48,7 +48,7 @@ bool loadPLY(
 ){
 
     std::string path_name = path;
-    path_name = path_name + "out_res.ply";
+    path_name = path_name + "/semantic.ply";
     
     std::ifstream ss(path_name, std::ios::binary);
     if (ss.fail())
@@ -195,7 +195,7 @@ bool loadJSONtextures (
     std::vector<std::vector<int>> & out_face_indices
 ) {
     std::string imagePath;
-    std::string fsegs_json = jsonpath + "out_res.fsegs.json";
+    std::string fsegs_json = jsonpath + "/semantic.fsegs.json";
     std::ifstream ss(fsegs_json, std::ios::binary);
     if (ss.fail())
         throw std::runtime_error("failed to open " + fsegs_json);
@@ -266,7 +266,7 @@ bool loadJSONtextures (
 
     printf("Finished loading indexes: %d\n", segid_list.size());
 
-    std::string ssegs_json = jsonpath + "out_res.semseg.json";
+    std::string ssegs_json = jsonpath + "/semantic.semseg.json";
     std::ifstream sg(ssegs_json, std::ios::binary);
     if (sg.fail())
         throw std::runtime_error("failed to open " + ssegs_json);

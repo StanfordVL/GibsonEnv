@@ -9,5 +9,5 @@ print(config_file)
 
 
 if __name__ == '__main__':
-    env = AntNavigateEnv(human=True, is_discrete = True, config=config_file)
+    env = AntNavigateEnv(is_discrete = True, config=config_file)
     play(env, zoom=4, fps=int( 1.0/(timestep * frame_skip)))

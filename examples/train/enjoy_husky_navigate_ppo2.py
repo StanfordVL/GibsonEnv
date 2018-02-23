@@ -8,16 +8,15 @@ import gym, logging
 from mpi4py import MPI
 from gibson.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
-import pposgd_simple
 import baselines.common.tf_util as U
-from fuse_policy2 import CnnPolicy, MlpPolicy
+from gibson.utils.fuse_policy2 import CnnPolicy, MlpPolicy
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
-import utils
+from gibson.utils import utils
 import datetime
 from baselines import logger
 #from baselines.ppo2 import ppo2
-import ppo2
-from monitor import Monitor
+from gibson.utils import ppo2
+from gibson.utils.monitor import Monitor
 import os.path as osp
 import tensorflow as tf
 import random
@@ -42,8 +41,10 @@ def train(num_timesteps, seed):
     set_global_seeds(workerseed)
 
     use_filler = not args.disable_filler
-    
-    raw_env = HuskyNavigateEnv(human=args.human, is_discrete=True, mode=args.mode, gpu_count=args.gpu_count, use_filler=use_filler, resolution=args.resolution)
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
+                               'husky_navigate_train.yaml')
+    print(config_file)
+    raw_env = HuskyNavigateEnv(is_discrete=True, gpu_count=args.gpu_count, config = config_file)
 
     env = Monitor(raw_env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))
@@ -93,7 +94,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--human', action='store_true', default=False)
     parser.add_argument('--gpu_count', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")

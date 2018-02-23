@@ -93,7 +93,10 @@ def hist_match3(source, template):
 
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
-    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=1, human=True, render_mode="RGBD", use_filler=True, gpu_count=0, windowsz=256, env=None):
+    def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=None, \
+                 gui=True,  use_filler=True, gpu_count=0, windowsz=256, env = None):
+
+        self.env = env
         self.roll, self.pitch, self.yaw = 0, 0, 0
         self.quat = [1, 0, 0, 0]
         self.x, self.y, self.z = 0, 0, 0
@@ -178,7 +181,7 @@ class PCRenderer:
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
-        if human and not self.env.config["display_ui"]: #configs.DISPLAY_UI:
+        if gui and not self.env.config["display_ui"]: #configs.DISPLAY_UI:
             self.renderToScreenSetup()
 
 

@@ -47,7 +47,7 @@ class BaseEnv(gym.Env):
             #self.physicsClientId = p.connect(p.DIRECT)
             self.physicsClientId = p.connect(p.GUI)
             p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-        elif (self.human):
+        elif (self.gui):
             self.physicsClientId = p.connect(p.GUI)
         else:
             self.physicsClientId = p.connect(p.DIRECT)

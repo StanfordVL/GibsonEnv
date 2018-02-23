@@ -42,7 +42,6 @@ class BaseRobotEnv(BaseEnv):
     def __init__(self, config, scene_type="building", gpu_count=0):
         BaseEnv.__init__(self, config, scene_type)
         ## The following properties are already instantiated inside xxx_env.py:
-        #   @self.human
         #   @self.timestep
         #   @self.frame_skip
 
@@ -64,7 +63,7 @@ class BaseRobotEnv(BaseEnv):
             train = False,
             overwrite_fofn=True, env = self)
         self.ground_ids = None
-        if self.human:
+        if self.gui:
             assert(self.tracking_camera is not None)
         self.gpu_count = gpu_count
         self.nframe = 0
@@ -180,7 +179,7 @@ class BaseRobotEnv(BaseEnv):
         if debugmode:
             print("Eps frame {} reward {}".format(self.nframe, self.reward))
             print("position", self.robot.get_position())
-        if self.human:
+        if self.gui:
             pos = self.robot.get_scaled_position()
             orn = self.robot.get_orientation()
             pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
@@ -268,10 +267,9 @@ class CameraRobotEnv(BaseRobotEnv):
     """
     def __init__(self, config, gpu_count, scene_type, use_filler=True):
         ## The following properties are already instantiated inside xxx_env.py:
-        #   @self.human
         #   @self.timestep
         #   @self.frame_skip
-        if self.human:
+        if self.gui:
             #self.screen = pygame.display.set_mode([612, 512], 0, 32)
             self.screen_arr = np.zeros([612, 512, 3])
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
@@ -424,7 +422,7 @@ class CameraRobotEnv(BaseRobotEnv):
                 self.render_to_UI()
                 self.save_frame += 1
 
-        elif self.human:
+        elif self.gui:
             # Speed bottleneck 2, 116fps
             self.r_camera_rgb.renderToScreen()
 
@@ -554,7 +552,8 @@ class CameraRobotEnv(BaseRobotEnv):
             #source_semantics.append(target_semantics)
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self._use_filler,  gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
+        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics,
+                              gui=self.gui, use_filler=self._use_filler,  gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
 
 
 
