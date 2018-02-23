@@ -141,7 +141,6 @@ cuda_add_executable(depth_render
     common/controls.hpp
     common/MTLtexture.cpp
     common/MTLtexture.hpp
-    common/JSONtexture.hpp
     common/texture.cpp
     common/texture.hpp
     common/MTLobjloader.cpp

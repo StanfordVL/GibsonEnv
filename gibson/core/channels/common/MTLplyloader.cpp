@@ -10,7 +10,6 @@
 #include <cstring>
 #include <sstream>
 
-
 #include <glm/glm.hpp>
 //using namespace glm;
 using namespace std;
@@ -19,7 +18,12 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> timepoint;
 #include "common/tinyply.h"
 using namespace tinyply;
 
-#include "MTLplyloader.hpp"
+#include "common/picojson.h"
+#include "common/MTLplyloader.hpp"
+
+struct float3 { float x, y, z; };
+struct float2 {int u, v;};
+struct int3 {int a, b, c;};
 
 
 inline double difference_millis(timepoint start, timepoint end)
@@ -34,19 +38,17 @@ inline std::chrono::time_point<std::chrono::high_resolution_clock> now()
     return c.now();
 }
 
-struct float3 { float x, y, z; };
-struct float2 {int u, v;};
-struct int3 {int a, b, c;};
-
-
 bool loadPLY(
     const char * path,
     std::vector<glm::vec3> & out_vertices,
     std::vector<glm::vec2> & out_uvs,
-    std::vector<glm::vec3> & out_normals
+    std::vector<glm::vec3> & out_normals,
+    std::vector<int3> & out_faces,
+    int & num_vertices
 ){
 
     std::string path_name = path;
+    path_name = path_name + "out_res.ply";
     
     std::ifstream ss(path_name, std::ios::binary);
     if (ss.fail())
@@ -96,35 +98,61 @@ bool loadPLY(
 
     // Good place to put a breakpoint!
     std::cout << "Parsing took " << difference_millis(before, after) << " ms: " << std::endl;
-    if (vertices) std::cout << "\tRead " << vertices->count << " total vertices "<< std::endl;
-    if (normals) std::cout << "\tRead " << normals->count << " total vertex normals " << std::endl;
-    if (colors) std::cout << "\tRead " << colors->count << " total vertex colors "<< std::endl;
-    if (uvs) std::cout << "\tRead " << uvs->count << " total vertex uvs" << std::endl;
-    if (faces) std::cout << "\tRead " << faces->count << " total faces (triangles) " << std::endl;
-    if (texcoords) std::cout << "\tRead " << texcoords->count << " total texcoords " << std::endl;
+    if (vertices)   std::cout << "\tRead " << vertices->count << " total vertices "<< std::endl;
+    if (normals)    std::cout << "\tRead " << normals->count << " total vertex normals " << std::endl;
+    if (colors)     std::cout << "\tRead " << colors->count << " total vertex colors "<< std::endl;
+    if (uvs)        std::cout << "\tRead " << uvs->count << " total vertex uvs" << std::endl;
+    if (faces)      std::cout << "\tRead " << faces->count << " total faces (triangles) " << std::endl;
+    if (texcoords)  std::cout << "\tRead " << texcoords->count << " total texcoords " << std::endl;
 
-    std::vector<float3> v_vertices(vertices->count);
-    std::vector<float3> v_normals(normals->count);
-    std::vector<float2> v_uvs(uvs->count);
-    std::vector<int3>   v_faces(faces->count);
+    num_vertices = vertices->count;
+    std::vector<float3> v_vertices;
+    std::vector<int3>   v_faces;
+    std::vector<float3> v_normals;
+    std::vector<float2> v_uvs;
+
+    v_vertices  = std::vector<float3>(vertices->count);
+    v_faces     =  std::vector<int3>(faces->count);
+    if (normals) v_normals = std::vector<float3>(normals->count);
+    if (uvs)     v_uvs     = std::vector<float2>(uvs->count);
     
     // Example: type 'conversion' to your own native types - Option A
-    const size_t numVerticesBytes = vertices->buffer.size_bytes();
-    const size_t numNormalBytes = normals->buffer.size_bytes();
-    const size_t numTextureBytes = uvs->buffer.size_bytes();
-    const size_t numFaceBytes = faces->buffer.size_bytes();
-
+    size_t numVerticesBytes;
+    size_t numNormalBytes;
+    size_t numFaceBytes;
+    size_t numTextureBytes;
+    numVerticesBytes = vertices->buffer.size_bytes();
+    numNormalBytes = normals->buffer.size_bytes();
+    if (normals) numFaceBytes = faces->buffer.size_bytes();
+    if (uvs)     numTextureBytes = uvs->buffer.size_bytes();
+    
     std::memcpy(v_vertices.data(), vertices->buffer.get(), numVerticesBytes);
-    std::memcpy(v_normals.data(), normals->buffer.get(), numNormalBytes);
-    std::memcpy(v_uvs.data(), uvs->buffer.get(), numTextureBytes);
     std::memcpy(v_faces.data(), faces->buffer.get(), numFaceBytes);
-
-    printf("Vertices bytes %d normal bytes %d texture bytes %d face bytes %d\n", numVerticesBytes, numNormalBytes, numTextureBytes, numFaceBytes);
+    if (normals) std::memcpy(v_normals.data(), normals->buffer.get(), numNormalBytes);
+    if (uvs) std::memcpy(v_uvs.data(), uvs->buffer.get(), numTextureBytes);
+    
     float3 temp_vertice;
     float3 temp_normal;
     float2 temp_uv;
     int3 face_i;
 
+
+    for (unsigned int i = 0; i < faces->count; i++)
+        out_faces.push_back(v_faces[i]);
+
+    for (unsigned int i = 0; i < vertices->count; i++) {
+        temp_vertice = v_vertices[i];
+        out_vertices.push_back(glm::vec3(temp_vertice.x, temp_vertice.y, temp_vertice.z));
+        if (normals) {
+            temp_normal  = v_normals[i];
+            out_normals.push_back(glm::vec3(temp_normal.x, temp_normal.y, temp_normal.z));
+        }
+        if (uvs) {
+            temp_uv      = v_uvs[i];
+            out_uvs.push_back(glm::vec2(temp_uv.u, temp_uv.v));
+        }
+    }
+    /*
     for (unsigned int i = 0; i < faces->count; i++) {
         face_i = v_faces[i];
         //printf("Face coordinates %d/%d (%d %d %d)/%d \n", i, faces->count, face_i.a - 1, face_i.b - 1, face_i.c - 1, vertices->count);
@@ -152,115 +180,237 @@ bool loadPLY(
         out_uvs.push_back(glm::vec2(temp_uv.u, temp_uv.v));
         //printf("Vertex c (%f %f %f) normal (%f %f %f) uv (%f %f)\n", temp_vertice.x, temp_vertice.y, temp_vertice.z, temp_normal.x, temp_normal.y, temp_normal.z, temp_uv.u, temp_uv.v);
     }
+    */
 
     return true;
 
 }
 
 
-/*
+/* main function to parse JSON files, load or generate texture iamges and generate openGL texture IDs */
+bool loadJSONtextures (
+    std::string jsonpath, 
+    std::vector<std::string> & out_material_name, 
+    std::vector<std::vector<int>> & out_face_indices) {
+    
+    std::string imagePath;
+    std::string fsegs_json = jsonpath + "out_res.fsegs.json";
+        std::ifstream ss(fsegs_json, std::ios::binary);
+    if (ss.fail())
+        throw std::runtime_error("failed to open " + fsegs_json);
+
+    std::vector<int> segid_list;
+    std::vector<std::vector<int>> segid_to_index;
+    std::vector<int> index_to_group_id;
+    std::vector<std::string> index_to_group_label;
+
+    int max_segid = -1;
+
+    if (ss) {
+        // get length of file:
+        ss.seekg (0, ss.end);
+        int length = ss.tellg();
+        ss.seekg (0, ss.beg);
+
+        char * buffer = new char [length];
+        std::cout << "Reading " << length << " characters... ";
+        ss.read (buffer,length);
+        if (ss)
+            std::cout << "all characters read successfully." << std::endl;
+        else
+            std::cout << "error: only " << ss.gcount() << " could be read" << std::endl;
+        ss.close();
+
+        // ...buffer contains the entire file...
+        picojson::value v;
+        std::string err;
+        const char* json_end = picojson::parse(v, buffer, buffer + strlen(buffer), &err);
+        if (! err.empty())
+          std::cerr << err << std::endl;
+
+        // check if the type of the value is "object"
+        if (! v.is<picojson::object>()) {
+            std::cerr << "JSON is not an object" << std::endl;
+            exit(2);
+        }
+
+        // obtain a const reference to the map, and print the contents
+        picojson::array value_arr;
+        const picojson::value::object& obj = v.get<picojson::object>();
+        for (picojson::value::object::const_iterator i = obj.begin();
+             i != obj.end();
+             ++i) {
+            if (i-> first == "segIndices" && i->second.is<picojson::array>()) {
+                value_arr = i->second.get<picojson::array>();
+            }
+        }
+
+        for (unsigned int i = 0; i < value_arr.size(); i++) {
+            int val = (stoi(value_arr[i].to_str()));
+            segid_list.push_back(val);
+            index_to_group_id.push_back(0);
+            index_to_group_label.push_back("");
+            if (val > max_segid)
+                max_segid = val;
+        }
+
+        for (unsigned int i = 0; i < max_segid + 1; i++)
+            segid_to_index.push_back(std::vector<int>());
+        for (unsigned int i = 0; i < segid_list.size(); i++) {
+            segid_to_index[segid_list[i]].push_back(i);
+        }
+
+        delete[] buffer;
+    }
+
+    printf("Finished loading indexes: %d\n", segid_list.size());
+
+    std::string ssegs_json = jsonpath + "out_res.semseg.json";
+    std::ifstream sg(ssegs_json, std::ios::binary);
+    if (sg.fail())
+        throw std::runtime_error("failed to open " + ssegs_json);
+
+    std::vector<std::vector<int>> seg_groups;
+    if (sg) {
+        // get length of file:
+        sg.seekg (0, sg.end);
+        int length = sg.tellg();
+        sg.seekg (0, sg.beg);
+
+        char * buffer = new char [length];
+        std::cout << "Reading " << length << " characters... ";
+        sg.read (buffer,length);
+        if (sg)
+          std::cout << "all characters read successfully." << std::endl;
+        else
+          std::cout << "error: only " << sg.gcount() << " could be read" << std::endl;
+        sg.close();
+
+        // ...buffer contains the entire file...
+        picojson::value v;
+        std::string err;
+        const char* json_end = picojson::parse(v, buffer, buffer + strlen(buffer), &err);
+        if (! err.empty())
+          std::cerr << err << std::endl;
+
+        // check if the type of the value is "object"
+        if (! v.is<picojson::object>()) {
+          std::cerr << "JSON is not an object" << std::endl;
+          exit(2);
+        }
+
+        // obtain a const reference to the map, and print the contents
+        picojson::array segment_arr;
+        const picojson::value::object& obj = v.get<picojson::object>();
+        for (picojson::value::object::const_iterator i = obj.begin();
+             i != obj.end();
+             ++i) {
+            if (i-> first == "segGroups" && i->second.is<picojson::array>()) {
+                segment_arr = i->second.get<picojson::array>();
+            }
+        }
+
+        picojson::array::iterator it;
+        for (it = segment_arr.begin(); it != segment_arr.end(); it++) {
+            picojson::object obj_it = it->get<picojson::object>();
+            int group_id = stoi(obj_it["id"].to_str());
+            std::string group_label = obj_it["label_index"].to_str();
+            // Output to texture name
+            out_material_name.push_back(group_label);
+            std::vector<int> segment_index;
+
+            picojson::value seg_val = obj_it["segments"];
+            picojson::array seg_arr_i;
+            if (seg_val.is<picojson::array>()) {
+                seg_arr_i = seg_val.get<picojson::array>();
+                for (unsigned int i = 0; i < seg_arr_i.size(); i++) {
+                    int segid = (stoi(seg_arr_i[i].to_str()));
+                    for (unsigned int j = 0; j < segid_to_index[segid].size(); j++) {
+                        int index = segid_to_index[segid][j];
+                        index_to_group_id[index]    = group_id;
+                        index_to_group_label[index] = group_label;
+
+                        segment_index.push_back(index);
+                    }
+                }
+            }
+            // Output the associated vertex indices for this texture name
+            out_face_indices.push_back(segment_index);
+        }
+        delete[] buffer;
+    }
+
+      /*
+      for (unsigned int i = 0; i < index_to_group_id.size(); i++) {
+        TextureObj tempText;
+        tempText.name         = std::to_string(index_to_group_label[i]);
+        tempText.textureID    = index_to_group_id[i];
+        objText.push_back(tempText);
+      }
+      */
+
+    return true;
+}
+
+
 bool loadPLY_MTL(
     const char * path,
     std::vector<std::vector<glm::vec3>> & out_vertices,
     std::vector<std::vector<glm::vec2>> & out_uvs,
     std::vector<std::vector<glm::vec3>> & out_normals,
     std::vector<std::string> & out_material_name,
-    std::string & out_mtllib
+    std::string & out_mtllib,
+    int & num_vertices
 ){
     printf("Loading OBJ file %s...\n", path);
 
+    std::vector<glm::vec3> all_vertices;
+    std::vector<glm::vec2> all_uvs;
+    std::vector<glm::vec3> all_normals;
+    std::vector<int3> all_faces;
 
-    std::ifstream ss(path, std::ios::binary);
-    if (ss.fail())
-    {
-        throw std::runtime_error("failed to open " + name_ply);
+    std::vector<std::string> material_name;
+    std::vector<std::vector<int>> face_indices;
+    loadPLY(path, all_vertices, all_uvs, all_normals, all_faces, num_vertices);
+    loadJSONtextures(path, material_name, face_indices);
+
+    bool has_uvs = all_uvs.size() > 0;
+    bool has_normals = all_normals.size() > 0;
+
+    std::cout << "Loaded many faces " << all_faces.size() << std::endl;
+    if (! all_faces.size() == face_indices.size()) {
+        std::cerr << "Your ply object file (" << all_faces.size() << ") does not match with JSON file (" << face_indices.size() << ")." << std::endl;
+        exit(2);
     }
 
-    PlyFile file;
-    file.parse_header(ss);
-    for (auto c : file.get_comments()) std::cout << "Comment: " << c << std::endl;
-    for (auto e : file.get_elements())
-    {
-        std::cout << "element - " << e.name << " (" << e.size << ")" << std::endl;
-        for (auto p : e.properties)
-        {
-            std::cout << "\tproperty - " << p.name << " (" << tinyply::PropertyTable[p.propertyType].str << ")" << std::endl;
+    for (unsigned int i = 0; i < material_name.size(); i++) {
+        out_material_name.push_back(material_name[i]);
+        std::vector<int> faces = face_indices[i];
+
+        std::vector<glm::vec3> curr_vertices;
+        std::vector<glm::vec2> curr_uvs;
+        std::vector<glm::vec3> curr_normals;
+        for (unsigned int j = 0; j < faces.size(); j++) {
+            int face_index = faces[j];
+            int3 curr_face = all_faces[face_index];
+            curr_vertices.push_back(all_vertices[curr_face.a]);
+            curr_vertices.push_back(all_vertices[curr_face.b]);
+            curr_vertices.push_back(all_vertices[curr_face.c]);
+            if (has_uvs) {
+                curr_uvs.push_back(all_uvs[curr_face.a]);
+                curr_uvs.push_back(all_uvs[curr_face.b]);
+                curr_uvs.push_back(all_uvs[curr_face.c]);
+            }
+            if (has_normals) {
+                curr_normals.push_back(all_normals[curr_face.a]);
+                curr_normals.push_back(all_normals[curr_face.b]);
+                curr_normals.push_back(all_normals[curr_face.c]);
+            }
         }
+        out_vertices.push_back(curr_vertices);
+        if (has_uvs) out_uvs.push_back(curr_uvs);
+        if (has_normals) out_normals.push_back(curr_normals);
     }
-    // Tinyply 2.0 treats incoming data as untyped byte buffers. It's now
-    // up to users to treat this data as they wish. See below for examples.
-    std::shared_ptr<PlyData> vertices, normals, colors, faces, texcoords;
 
-    // The header information can be used to programmatically extract properties on elements
-    // known to exist in the file header prior to reading the data. For brevity of this sample, properties 
-    // like vertex position are hard-coded: 
-    try { vertices = file.request_properties_from_element("vertex", { "x", "y", "z" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
-
-    try { normals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
-
-    try { colors = file.request_properties_from_element("vertex", { "red", "green", "blue", "alpha" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
-
-    try { faces = file.request_properties_from_element("face", { "vertex_indices" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
-
-    try { texcoords = file.request_properties_from_element("face", { "texcoord" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
-
-    timepoint before = now();
-    file.read(ss);
-    timepoint after = now();
-
-    // Good place to put a breakpoint!
-    std::cout << "Parsing took " << difference_millis(before, after) << " ms: " << std::endl;
-    if (vertices) std::cout << "\tRead " << vertices->count << " total vertices "<< std::endl;
-    if (normals) std::cout << "\tRead " << normals->count << " total vertex normals " << std::endl;
-    if (colors) std::cout << "\tRead " << colors->count << " total vertex colors "<< std::endl;
-    if (faces) std::cout << "\tRead " << faces->count << " total faces (triangles) " << std::endl;
-    if (texcoords) std::cout << "\tRead " << texcoords->count << " total texcoords " << std::endl;
-
-    // Example: type 'conversion' to your own native types - Option A
-    struct float3 { float x, y, z; };
-    struct int2 {int u, v;};
-    struct int4 {int n, a, b, c;};
-
-    std::vector<float3> v_vertices(vertices->count);
-    std::memcpy(v_vertices.data(), vertices->buffer.get(), vertices->buffer.size_bytes());
-
-    std::vector<float3> v_normals(normals->count);
-    std::memcpy(v_normals.data(), normals->buffer.get(), normals->buffer.size_bytes());
-
-    std::vector<int2> v_textures(texcoords->count);
-    std::memcpy(v_textures.data(), texcoords->buffer.get(), texcoords->buffer.size_bytes());
-
-    std::vector<int4> v_faces(faces->count);
-    std::memcpy(v_faces.data(), texcoords->buffer.get(), texcoords->buffer.size_bytes());
-
-
-    std::vector<std::vector<unsigned int>> vertexIndices, uvIndices, normalIndices;
-    std::vector<glm::vec3> temp_vertices;
-    std::vector<glm::vec2> temp_uvs;
-    std::vector<glm::vec3> temp_normals;
-
-    std::vector<unsigned int> temp_vertexIndices;
-    std::vector<unsigned int> temp_uvIndices;
-    std::vector<unsigned int> temp_normalIndices;
-
-
-
-    
-    vertexIndices.push_back(temp_vertexIndices);
-    uvIndices.push_back(temp_uvIndices);
-    normalIndices.push_back(temp_normalIndices);
-    temp_vertexIndices.clear();
-    temp_uvIndices.clear();
-    temp_normalIndices.clear();
-
-    
-    
-    printf("%s: size of temp vertices %lu, vertex indices %lu out vertices %lu\n", path, temp_vertices.size(), vertexIndices.size(), out_vertices.size());
     return true;
 }
-*/

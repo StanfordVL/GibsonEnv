@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
-
+#include <GL/glew.h>
+#include <GL/glut.h>
+#include <GL/glx.h>
 
 
 struct Vector3

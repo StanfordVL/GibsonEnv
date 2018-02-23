@@ -2,8 +2,9 @@
 #include <FreeImagePlus.h>
 #include <GL/glew.h>
 #include <glfw3.h>
-#include "MTLtexture.hpp"
+#include "common/MTLtexture.hpp"
 #include <algorithm>
+
 
 /* parse MTL file */
 bool parseMTL(std::string mtlpath, std::vector<Material> & out_material){

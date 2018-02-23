@@ -45,9 +45,8 @@ using namespace std;
 #include <common/render_cuda_f.h>
 
 #include <common/MTLobjloader.hpp>
-#include <common/MTLtexture.hpp>
-#include <common/JSONtexture.hpp>
 #include <common/MTLplyloader.hpp>
+#include <common/MTLtexture.hpp>
 #include <zmq.hpp>
 
 #ifndef _WIN32
@@ -457,8 +456,13 @@ int main( int argc, char * argv[] )
         //bool res = loadPLYfile(name_obj)
         std::cout << "Loading ply file\n";
         bool res;
+        int num_vertices;
         if (ply > 0) {
-            res = loadPLY(name_ply.c_str(), vertices, uvs, normals);
+            //res = loadPLY(obj_path.c_str(), vertices, uvs, normals);
+            res = loadPLY_MTL(obj_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib, num_vertices);
+            printf("From ply loaded total of %d vertices\n", num_vertices);
+            for (unsigned int i = 0; i < mtl_vertices.size();i++)
+                printf("ply vertices group %d %d/%d\n",i, mtl_vertices[i].size(), num_vertices);
         } else {
             res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
         }
@@ -471,7 +475,9 @@ int main( int argc, char * argv[] )
         bool MTL_loaded;
         if (ply > 0) {
             mtl_path = obj_path;
-            MTL_loaded = loadJSONtextures(mtl_path, TextObj, material_name);
+            // TODO: load actual mtl file for ply json
+            MTL_loaded = true;
+            //MTL_loaded = loadJSONtextures(mtl_path, TextObj, material_name);
         } else {
             MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);    
         }
@@ -531,6 +537,7 @@ int main( int argc, char * argv[] )
 
     if (semantic > 0) {
         indexVBO_MTL(mtl_vertices, mtl_uvs, mtl_normals, indices, indexed_vertices, indexed_uvs, indexed_normals, indexed_semantics);
+        std::cout << "Finished indexing vertices v " << indexed_vertices.size() << " uvs " << indexed_uvs.size() << " normals " << indexed_normals.size() << " semantics " << indexed_semantics.size() << std::endl;
     } else {
         indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
     }
@@ -544,13 +551,15 @@ int main( int argc, char * argv[] )
 
     GLuint uvbuffer;
     glGenBuffers(1, &uvbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
-
+    if (! ply > 0) {
+        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+        if (indexed_uvs.size() > 0) glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);    
+    }
+    
     GLuint normalbuffer;
     glGenBuffers(1, &normalbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
+    if (indexed_normals.size() > 0) glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
 
     GLuint semanticlayerbuffer;
     if (semantic > 0) {
@@ -661,6 +670,7 @@ int main( int argc, char * argv[] )
     float *cubeMapGpuBuffer = allocateBufferOnGPU(windowHeight * windowWidth * 6);
     cudaMemset(cubeMapGpuBuffer, 0, windowHeight * windowWidth * 6 * sizeof(float));
 
+    std::cout << "waiting for loop" << std::endl;
     do{
 
         //  Wait for next request from client
@@ -718,6 +728,8 @@ int main( int argc, char * argv[] )
         // Set our "myTextureSampler" sampler to use Texture Unit 0
         glUniform1i(TextureID, 0);
 
+
+        std::cout << "Loop: binding buffers" << std::endl;
         // 1rst attribute buffer : vertices
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -731,16 +743,18 @@ int main( int argc, char * argv[] )
         );
 
         // 2nd attribute buffer : UVs
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-        glVertexAttribPointer(
-            1,                                // attribute
-            2,                                // size
-            GL_FLOAT,                         // type
-            GL_FALSE,                         // normalized?
-            0,                                // stride
-            (void*)0                          // array buffer offset
-        );
+        if (! ply > 0) {
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+            glVertexAttribPointer(
+                1,                                // attribute
+                2,                                // size
+                GL_FLOAT,                         // type
+                GL_FALSE,                         // normalized?
+                0,                                // stride
+                (void*)0                          // array buffer offset
+            );
+        }
 
         // 3rd attribute buffer : normals
         glEnableVertexAttribArray(2);
@@ -970,11 +984,9 @@ int main( int argc, char * argv[] )
     
     // Cleanup VBO and shader
     glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &uvbuffer);
+    if (!ply > 0) glDeleteBuffers(1, &uvbuffer);
     glDeleteBuffers(1, &normalbuffer);
-    if (semantic > 0) {
-      glDeleteBuffers(1, &semanticlayerbuffer);
-    }
+    if (semantic > 0) glDeleteBuffers(1, &semanticlayerbuffer);
     glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
     

@@ -2,7 +2,7 @@
 #include <map>
 #include <stdio.h>
 #include <glm/glm.hpp>
-
+#include <iostream>
 #include "vboindexer.hpp"
 #include <string.h> // for memcmp
 
@@ -148,37 +148,44 @@ void indexVBO_MTL(
     std::map<PackedVertex,unsigned int> VertexToOutIndex;
 
     // In group j
+    bool use_uvs = mtl_uvs.size() > 0;
+    bool use_normals = mtl_normals.size() > 0;
+    if (!((use_uvs && mtl_vertices.size() == mtl_vertices.size()) || 
+          (use_normals && mtl_normals.size() == mtl_normals.size()))) {
+        printf("VBO Indexer error: size missmatch. Vertex (%d) uvs (%d) normals (%d)\n", mtl_vertices.size(), mtl_uvs.size(), mtl_normals.size());
+    }
+    //std::cout << "Indexing VBO vertices size " << mtl_vertices.size() << std::endl;
+    std::vector<glm::vec3> group_vertices;
+    std::vector<glm::vec2> group_uvs;
+    std::vector<glm::vec3> group_normals;
+
     for (int j=0; j<mtl_vertices.size(); j++ ) {
         std::vector<glm::vec3> group_vertices = mtl_vertices[j];
-        std::vector<glm::vec2> group_uvs = mtl_uvs[j];
-        std::vector<glm::vec3> group_normals = mtl_normals[j];
-        //float semantic_layer = (float) 0;
-        //float semantic_layer = (float) j;
+        if (use_uvs) group_uvs = mtl_uvs[j];
+        if (use_normals) group_normals = mtl_normals[j];
 
-        uint group_size = group_vertices.size();
-        if (group_uvs.size() < group_size)
-            group_size = group_uvs.size();
-
-        for (int i=0; i<group_size; i++ ) {
-            PackedVertex packed = {group_vertices[i], group_uvs[i], group_normals[i]};
+        printf("Group (%d/%d) size vertex %d\n", j, mtl_vertices.size(), group_vertices.size());
+        for (int i=0; i<group_vertices.size(); i++ ) {
+            //printf("\t subgroup size %d/%d %d/%d\n", j, mtl_vertices.size(), i, group_vertices.size());
+            
+            PackedVertex packed = {group_vertices[i], glm::vec2(), glm::vec3()};
             unsigned int index;
             bool found = getSimilarVertexIndex_fast( packed, VertexToOutIndex, index);
             glm::vec2 semantic_uv;
-            semantic_uv.x = (float)j;//semantic_layer;
+            semantic_uv.x = (float)j;
             semantic_uv.y = 0;
 
-            // Disable vertex indexing
-            found = false;
+            //found = false;
             if ( found ) {
                 out_indices.push_back( index );
             } else {
-                out_vertices .push_back( group_vertices[i]);
-                out_uvs      .push_back( group_uvs[i]);
-                out_normals  .push_back( group_normals[i]);
+                // Disable vertex indexing
+                out_vertices.push_back( group_vertices[i]);
                 out_semantics.push_back( semantic_uv);
                 unsigned int newindex = (unsigned int)out_vertices.size() - 1;
-                out_indices  .push_back( newindex);
-
+                out_indices.push_back( newindex);
+                if (use_uvs) out_uvs.push_back( group_uvs[i]);
+                if (use_normals) out_normals.push_back( group_normals[i]);    
                 VertexToOutIndex [ packed ] = newindex;
             }
         }
