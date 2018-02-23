@@ -242,10 +242,11 @@ class ViewDataSet3D(data.Dataset):
             normal_imgs = [self.loader(item) for item in normal_img_paths]
             normal_target = self.loader(normal_target_path)
 
+            '''
             if self._require_semantics:
                 semantic_imgs = [self.loader(item) for item in semantic_img_paths]
                 semantic_target = self.loader(semantic_target_path)
-
+            '''
         org_img = imgs[0].copy()
 
         if not self.transform is None:
@@ -269,10 +270,11 @@ class ViewDataSet3D(data.Dataset):
             if not self.target_transform is None:
                 normal_target = self.target_transform(normal_target)
 
+            '''
             if not self.semantic_trans is None and self._require_semantics:
                 semantic_imgs = [self.semantic_trans(item) for item in semantic_imgs]
                 semantic_target = self.semantic_trans(semantic_target)
-
+            '''
         if not self.off_pc_render:
             img = np.array(org_img)
             h, w, _ = img.shape
@@ -296,9 +298,11 @@ class ViewDataSet3D(data.Dataset):
         if self.off_3d:
             return imgs, target, poses_relative
         elif self.off_pc_render:
-            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, semantic_imgs, semantic_target, poses_relative
+            #return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, semantic_imgs, semantic_target, poses_relative
+            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, poses_relative
         else:
-            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, semantic_imgs, semantic_target, poses_relative, render, target_depth
+            #return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, semantic_imgs, semantic_target, poses_relative, render, target_depth
+            return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, poses_relative, render, target_depth
 
     def __len__(self):
         return len(self.select)

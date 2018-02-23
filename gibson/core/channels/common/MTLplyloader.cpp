@@ -184,18 +184,19 @@ bool loadPLY(
 
     return true;
 
-}
+};
 
 
 /* main function to parse JSON files, load or generate texture iamges and generate openGL texture IDs */
 bool loadJSONtextures (
     std::string jsonpath, 
     std::vector<std::string> & out_material_name, 
-    std::vector<std::vector<int>> & out_face_indices) {
-    
+    std::vector<int> & out_material_id,
+    std::vector<std::vector<int>> & out_face_indices
+) {
     std::string imagePath;
     std::string fsegs_json = jsonpath + "out_res.fsegs.json";
-        std::ifstream ss(fsegs_json, std::ios::binary);
+    std::ifstream ss(fsegs_json, std::ios::binary);
     if (ss.fail())
         throw std::runtime_error("failed to open " + fsegs_json);
 
@@ -317,6 +318,7 @@ bool loadJSONtextures (
             std::string group_label = obj_it["label_index"].to_str();
             // Output to texture name
             out_material_name.push_back(group_label);
+            out_material_id.push_back(group_id);
             std::vector<int> segment_index;
 
             picojson::value seg_val = obj_it["segments"];
@@ -340,17 +342,8 @@ bool loadJSONtextures (
         delete[] buffer;
     }
 
-      /*
-      for (unsigned int i = 0; i < index_to_group_id.size(); i++) {
-        TextureObj tempText;
-        tempText.name         = std::to_string(index_to_group_label[i]);
-        tempText.textureID    = index_to_group_id[i];
-        objText.push_back(tempText);
-      }
-      */
-
     return true;
-}
+};
 
 
 bool loadPLY_MTL(
@@ -359,6 +352,7 @@ bool loadPLY_MTL(
     std::vector<std::vector<glm::vec2>> & out_uvs,
     std::vector<std::vector<glm::vec3>> & out_normals,
     std::vector<std::string> & out_material_name,
+    std::vector<int> & out_material_id,
     std::string & out_mtllib,
     int & num_vertices
 ){
@@ -370,9 +364,10 @@ bool loadPLY_MTL(
     std::vector<int3> all_faces;
 
     std::vector<std::string> material_name;
+    std::vector<int> material_id;
     std::vector<std::vector<int>> face_indices;
     loadPLY(path, all_vertices, all_uvs, all_normals, all_faces, num_vertices);
-    loadJSONtextures(path, material_name, face_indices);
+    loadJSONtextures(path, material_name, material_id, face_indices);
 
     bool has_uvs = all_uvs.size() > 0;
     bool has_normals = all_normals.size() > 0;
@@ -385,6 +380,7 @@ bool loadPLY_MTL(
 
     for (unsigned int i = 0; i < material_name.size(); i++) {
         out_material_name.push_back(material_name[i]);
+        out_material_id.push_back(material_id[i]);
         std::vector<int> faces = face_indices[i];
 
         std::vector<glm::vec3> curr_vertices;

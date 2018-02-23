@@ -532,9 +532,9 @@ class CameraRobotEnv(BaseRobotEnv):
         for k,v in tqdm((uuids)):
             data = self.dataset[v]
             target, target_depth = data[1], data[3]
-            target_semantics = data[7]
-            if self._require_semantics:
-                assert(target_semantics is not None)
+            #target_semantics = data[7]
+            #if self._require_semantics:
+            #    assert(target_semantics is not None)
             if self.scale_up !=1:
                 target = cv2.resize(
                     target,None,
@@ -551,11 +551,10 @@ class CameraRobotEnv(BaseRobotEnv):
             poses.append(pose)
             sources.append(target)
             source_depths.append(target_depth)
-            source_semantics.append(target_semantics)
+            #source_semantics.append(target_semantics)
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics,
-                              human=self.human, use_filler=self._use_filler,  gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
+        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, human=self.human, use_filler=self._use_filler,  gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
 
 
 

@@ -251,7 +251,7 @@ int main( int argc, char * argv[] )
     if (semantic > 0) {
         //name_obj = obj_path + "rgb.obj";
         name_obj = obj_path + "semantic.obj";
-        ply = 0;
+        ply = 1;
         GPU_NUM = -3;
     }
 
@@ -433,6 +433,7 @@ int main( int argc, char * argv[] )
     std::vector<std::vector<glm::vec2>> mtl_uvs;
     std::vector<std::vector<glm::vec3>> mtl_normals;
     std::vector<std::string> material_name;
+    std::vector<int> material_id;
     std::string mtllib;
 
     std::vector<glm::vec3> vertices;
@@ -459,10 +460,8 @@ int main( int argc, char * argv[] )
         int num_vertices;
         if (ply > 0) {
             //res = loadPLY(obj_path.c_str(), vertices, uvs, normals);
-            res = loadPLY_MTL(obj_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib, num_vertices);
+            res = loadPLY_MTL(obj_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, material_id, mtllib, num_vertices);
             printf("From ply loaded total of %d vertices\n", num_vertices);
-            for (unsigned int i = 0; i < mtl_vertices.size();i++)
-                printf("ply vertices group %d %d/%d\n",i, mtl_vertices[i].size(), num_vertices);
         } else {
             res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
         }
@@ -476,13 +475,13 @@ int main( int argc, char * argv[] )
         if (ply > 0) {
             mtl_path = obj_path;
             // TODO: load actual mtl file for ply json
-            MTL_loaded = true;
-            //MTL_loaded = loadJSONtextures(mtl_path, TextObj, material_name);
+            // MTL_loaded = true;
+            MTL_loaded = loadPLYtextures(TextObj, material_name, material_id);
         } else {
             MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);    
         }
-        if (MTL_loaded == false) { printf("Was not able to load the semantic.mtl file\n"); exit(-1); }
-        else { printf("Semantic.mtl file was loaded with success.\n"); }
+        if (MTL_loaded == false) { printf("Was not able to load textures\n"); exit(-1); }
+        else { printf("Texture file was loaded with success, total: %d\n", TextObj.size()); }
 
         num_layers = TextObj.size();
         //Generate an array texture
@@ -538,6 +537,9 @@ int main( int argc, char * argv[] )
     if (semantic > 0) {
         indexVBO_MTL(mtl_vertices, mtl_uvs, mtl_normals, indices, indexed_vertices, indexed_uvs, indexed_normals, indexed_semantics);
         std::cout << "Finished indexing vertices v " << indexed_vertices.size() << " uvs " << indexed_uvs.size() << " normals " << indexed_normals.size() << " semantics " << indexed_semantics.size() << std::endl;
+        std::cout << "Semantics ";
+        //for (unsigned int i = 250000; i < 260000; i++) printf("%u (%f)", i, indexed_semantics[i].x);
+        std::cout << std::endl;
     } else {
         indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
     }
@@ -551,7 +553,7 @@ int main( int argc, char * argv[] )
 
     GLuint uvbuffer;
     glGenBuffers(1, &uvbuffer);
-    if (! ply > 0) {
+    if (! ply > 0 && ! semantic > 0) {
         glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
         if (indexed_uvs.size() > 0) glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);    
     }
@@ -670,7 +672,6 @@ int main( int argc, char * argv[] )
     float *cubeMapGpuBuffer = allocateBufferOnGPU(windowHeight * windowWidth * 6);
     cudaMemset(cubeMapGpuBuffer, 0, windowHeight * windowWidth * 6 * sizeof(float));
 
-    std::cout << "waiting for loop" << std::endl;
     do{
 
         //  Wait for next request from client
@@ -743,7 +744,7 @@ int main( int argc, char * argv[] )
         );
 
         // 2nd attribute buffer : UVs
-        if (! ply > 0) {
+        if (! ply > 0 && ! semantic > 0) {
             glEnableVertexAttribArray(1);
             glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
             glVertexAttribPointer(
@@ -984,7 +985,7 @@ int main( int argc, char * argv[] )
     
     // Cleanup VBO and shader
     glDeleteBuffers(1, &vertexbuffer);
-    if (!ply > 0) glDeleteBuffers(1, &uvbuffer);
+    if (!ply > 0 && ! semantic > 0) glDeleteBuffers(1, &uvbuffer);
     glDeleteBuffers(1, &normalbuffer);
     if (semantic > 0) glDeleteBuffers(1, &semanticlayerbuffer);
     glDeleteBuffers(1, &elementbuffer);

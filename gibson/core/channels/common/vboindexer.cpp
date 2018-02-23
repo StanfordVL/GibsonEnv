@@ -154,17 +154,17 @@ void indexVBO_MTL(
           (use_normals && mtl_normals.size() == mtl_normals.size()))) {
         printf("VBO Indexer error: size missmatch. Vertex (%d) uvs (%d) normals (%d)\n", mtl_vertices.size(), mtl_uvs.size(), mtl_normals.size());
     }
-    //std::cout << "Indexing VBO vertices size " << mtl_vertices.size() << std::endl;
     std::vector<glm::vec3> group_vertices;
     std::vector<glm::vec2> group_uvs;
     std::vector<glm::vec3> group_normals;
 
+    printf("Indexing VBO total groups: %d\n", mtl_vertices.size());
     for (int j=0; j<mtl_vertices.size(); j++ ) {
-        std::vector<glm::vec3> group_vertices = mtl_vertices[j];
+        group_vertices = mtl_vertices[j];
         if (use_uvs) group_uvs = mtl_uvs[j];
         if (use_normals) group_normals = mtl_normals[j];
 
-        printf("Group (%d/%d) size vertex %d\n", j, mtl_vertices.size(), group_vertices.size());
+        //printf("Group (%d/%d) size vertex %d\n", j, mtl_vertices.size(), group_vertices.size());
         for (int i=0; i<group_vertices.size(); i++ ) {
             //printf("\t subgroup size %d/%d %d/%d\n", j, mtl_vertices.size(), i, group_vertices.size());
             

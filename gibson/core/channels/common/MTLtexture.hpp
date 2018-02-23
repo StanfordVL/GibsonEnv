@@ -203,4 +203,9 @@ GLuint solidColorTexture(Vector3 Ka, int Vrtx, GLenum minificationFilter = GL_LI
 /* main function to parse MTL files, load or generate texture iamges and generate openGL texture IDs */
 bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objtext, std::vector<std::string> OBJMaterial_name);
 
+
+bool loadPLYtextures(std::vector<TextureObj> & objText, 
+    std::vector<std::string> PLYmaterial_name,
+    std::vector<int> PLYmaterial_id);
+
 #endif

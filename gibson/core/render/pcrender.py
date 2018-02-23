@@ -472,7 +472,7 @@ class PCRenderer:
             self.imgs_topk = np.array([self.imgs[i] for i in k_views])
             self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
             self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
-            self.semantics_topk = np.array([self.semantics[i] for i in k_views])
+            #self.semantics_topk = np.array([self.semantics[i] for i in k_views])
             self.old_topk = set(k_views)
 
         self.show.fill(0)
