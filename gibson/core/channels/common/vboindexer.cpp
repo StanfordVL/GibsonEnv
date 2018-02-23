@@ -175,7 +175,7 @@ void indexVBO_MTL(
             semantic_uv.x = (float)j;
             semantic_uv.y = 0;
 
-            //found = false;
+            found = false;
             if ( found ) {
                 out_indices.push_back( index );
             } else {

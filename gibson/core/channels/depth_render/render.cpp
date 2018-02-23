@@ -251,7 +251,7 @@ int main( int argc, char * argv[] )
     if (semantic > 0) {
         //name_obj = obj_path + "rgb.obj";
         name_obj = obj_path + "semantic.obj";
-        ply = 1;
+        ply = 0;
         GPU_NUM = -3;
     }
 
