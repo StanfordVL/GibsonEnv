@@ -152,13 +152,13 @@ void indexVBO_MTL(
     bool use_normals = mtl_normals.size() > 0;
     if (!((use_uvs && mtl_vertices.size() == mtl_vertices.size()) || 
           (use_normals && mtl_normals.size() == mtl_normals.size()))) {
-        printf("VBO Indexer error: size missmatch. Vertex (%d) uvs (%d) normals (%d)\n", mtl_vertices.size(), mtl_uvs.size(), mtl_normals.size());
+        printf("VBO Indexer error: size missmatch. Vertex (%lu) uvs (%lu) normals (%lu)\n", mtl_vertices.size(), mtl_uvs.size(), mtl_normals.size());
     }
     std::vector<glm::vec3> group_vertices;
     std::vector<glm::vec2> group_uvs;
     std::vector<glm::vec3> group_normals;
 
-    printf("Indexing VBO total groups: %d\n", mtl_vertices.size());
+    printf("Indexing VBO total groups: %lu\n", mtl_vertices.size());
     for (int j=0; j<mtl_vertices.size(); j++ ) {
         group_vertices = mtl_vertices[j];
         if (use_uvs) group_uvs = mtl_uvs[j];

@@ -264,7 +264,7 @@ bool loadJSONtextures (
         delete[] buffer;
     }
 
-    printf("Finished loading indexes: %d\n", segid_list.size());
+    printf("Finished loading indexes: %lu\n", segid_list.size());
 
     std::string ssegs_json = jsonpath + "/semantic.semseg.json";
     std::ifstream sg(ssegs_json, std::ios::binary);

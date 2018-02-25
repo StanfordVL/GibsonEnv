@@ -1,6 +1,6 @@
 # CMake entry point
 cmake_minimum_required (VERSION 3.0)
-project (Tutorials)
+project (Gibson_Environment)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
@@ -157,6 +157,7 @@ cuda_add_executable(depth_render
     common/text2D.cpp
     common/picojson.h
     common/cmdline.h
+    common/semantic_color.hpp
 
     external/lodepng/lodepng.h
     external/lodepng/lodepng.cpp

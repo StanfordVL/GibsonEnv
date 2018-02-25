@@ -275,12 +275,13 @@ class CameraRobotEnv(BaseRobotEnv):
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
         #assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
         #    "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
-        #self.mode = mode
         self._use_filler = use_filler
-        #self._require_camera_input = mode in ["GREY", "RGB", "RGBD", "DEPTH"]
         self._require_camera_input = 'rgb_filled' in self.config["output"]
-        self._require_semantics = 'semantics' in self.config["output"]  # configs.View.SEMANTICS in configs.ViewComponent.getComponents()
-        self._require_normal = 'normal' in self.config["output"]  # configs.View.NORMAL in configs.ViewComponent.getComponents()
+        self._require_semantics = 'semantics' in self.config["output"]
+        if self._require_semantics:
+            self._semantic_code = self.config["semantic_source"] if "semantic_source" in self.config.keys() else 0
+            assert(self.config["semantic_source"] in [0, 1, 2])
+        self._require_normal = 'normal' in self.config["output"]  
 
         if self._require_camera_input:
             self.model_path = get_model_path(self.model_id)
@@ -583,13 +584,14 @@ class CameraRobotEnv(BaseRobotEnv):
         dr_path = os.path.join(os.path.dirname(os.path.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
+
         render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
-        render_semt  = "./depth_render --modelpath {} -t 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
+        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -w {} -h {}".format(self.model_path, self._semantic_code, self.windowsz, self.windowsz)
+        
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
-
         if self._require_normal:
             self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
         if self._require_semantics:

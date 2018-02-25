@@ -38,11 +38,12 @@ using namespace std;
 
 #include <common/shader.hpp>
 #include <common/texture.hpp>
-#include <common/controls.hpp>
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
-#include "common/cmdline.h"
+#include <common/cmdline.h>
 #include <common/render_cuda_f.h>
+#include <common/controls.hpp>
+#include <common/semantic_color.hpp>
 
 #include <common/MTLobjloader.hpp>
 #include <common/MTLplyloader.hpp>
@@ -199,10 +200,6 @@ void debug_mat(glm::mat4 mat, std::string name) {
 }
 
 
-void render_processing() {
-
-}
-
 
 int main( int argc, char * argv[] )
 {
@@ -216,6 +213,7 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Normal", 'n', "Whether render surface normal", false, 0);
     cmdp.add<float>("fov", 'f', "field of view", false, 90.0);
     cmdp.add<int>("Semantic", 't', "Whether render semantics", false, 0);
+    cmdp.add<int>("Semantic Source", 'r', "Semantic data source", false, 0);
     cmdp.add<int>("RGBfromMesh", 'm', "Whether render RGB directly from Mesh", false, 0);
 
     cmdp.parse_check(argc, argv);
@@ -225,6 +223,7 @@ int main( int argc, char * argv[] )
     int smooth = cmdp.get<int>("Smooth");
     int normal = cmdp.get<int>("Normal");
     int semantic = cmdp.get<int>("Semantic");
+    int semantic_src = cmdp.get<int>("Semantic Source");
     int rgbMesh = cmdp.get<int>("RGBfromMesh");
     int ply;
 
@@ -245,6 +244,11 @@ int main( int argc, char * argv[] )
     }
 
     // if rendering semantics
+    /* Semantic data source
+     *  0: random texture
+     *  1: Stanford 2D3DS
+     *  2: Matterport3D
+     */
     if (semantic > 0) {
         name_obj = model_path + "/semantic.obj";
         ply = 1;
@@ -440,14 +444,12 @@ int main( int argc, char * argv[] )
 
     GLuint gArrayTexture(0);
     if ( semantic > 0) {
-        // Prevent clamping
         /*
+        // Prevent clamping
         glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE);
         glClampColorARB(GL_CLAMP_READ_COLOR_ARB, GL_FALSE);
         glClampColorARB(GL_CLAMP_FRAGMENT_COLOR_ARB, GL_FALSE);
         */
-        // Do Y
-        // Read the .obj file
         glShadeModel(GL_FLAT);
 
         //bool res = loadPLYfile(name_obj)
@@ -476,7 +478,7 @@ int main( int argc, char * argv[] )
             MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);    
         }
         if (MTL_loaded == false) { printf("Was not able to load textures\n"); exit(-1); }
-        else { printf("Texture file was loaded with success, total: %d\n", TextObj.size()); }
+        else { printf("Texture file was loaded with success, total: %lu\n", TextObj.size()); }
 
         num_layers = TextObj.size();
         //Generate an array texture
@@ -495,10 +497,13 @@ int main( int argc, char * argv[] )
         int layer_count = 0;
         for( unsigned int i(0); i!=num_layers;++i)
         {
-            //Choose a random color for the i-essim image
-            GLubyte color[3] = {(unsigned char) (rand()%255),
-                                (unsigned char) (rand()%255),
-                                (unsigned char) (rand()%255)};
+            GLubyte color[3];
+            unsigned int id = (uint)TextObj[i].textureID;
+
+            if (semantic_src == 0) { color_coding_RAND(color);//Random texture
+            } else if (semantic_src == 1) { color_coding_2D3DS(color, id);   // Stanford 2D3DS
+            } else if (semantic_src == 2) { color_coding_MP3D(color, id ); // Matterport3D
+            } else {printf("Invalid code for semantic source.\n"); exit(-1); }
             
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,
@@ -535,10 +540,7 @@ int main( int argc, char * argv[] )
         std::cout << "Semantics ";
         //for (unsigned int i = 250000; i < 260000; i++) printf("%u (%f)", i, indexed_semantics[i].x);
         std::cout << std::endl;
-    } else {
-        indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
-    }
-
+    } else { indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals); }
 
     // Load it into a VBO
     GLuint vertexbuffer;
@@ -595,11 +597,8 @@ int main( int argc, char * argv[] )
     glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
     // Give an empty image to OpenGL ( the last "0" means "empty" )
-    if (semantic > 0) {
-      glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0);
-    } else {
-      glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0);  
-    }
+    if (semantic > 0) { glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0); } 
+    else { glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0); }
     
     // Poor filtering
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -725,7 +724,6 @@ int main( int argc, char * argv[] )
         glUniform1i(TextureID, 0);
 
 
-        std::cout << "Loop: binding buffers" << std::endl;
         // 1rst attribute buffer : vertices
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);

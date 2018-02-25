@@ -353,7 +353,9 @@ GLuint solidColorTexture(Vector3 Ka, int texLevel, GLenum minificationFilter, GL
         printf("You can't allocate the texture image.\n");
         exit(-1);
     }
-    unsigned char color[4] = {Ka.X*255, Ka.Y*255, Ka.Z*255, 255};
+    unsigned char color[4] = {static_cast<unsigned char>(((unsigned int)Ka.X >> 24)*255), 
+                              static_cast<unsigned char>(((unsigned int)Ka.Y >> 24)*255), 
+                              static_cast<unsigned char>(((unsigned int)Ka.Z >> 24)*255), 255};
     FreeImage_FillBackground(bitmap32, color);
     /*
     // Debug Image colorization
