@@ -186,7 +186,8 @@ Gibson can provide semantics from:
 For more detailed instructions, see [semantic instructions](gibson/utils/semantics.md).
 
 
-
+Starter Code
+----
 
 More examples can be found in `examples/demo` and `examples/train` folder. A short introduction for each demo is shown below.
 
