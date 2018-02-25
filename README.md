@@ -26,6 +26,8 @@ Table of contents
         * [Building from source](#building-from-source)
         * [Uninstalling](#uninstalling)
    * [Quick Start](#quick-start)
+   	*[Web User Interface](#web-user-interface)
+	*[Rendering Semantics](#rendering-semantics)
    * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
 
@@ -166,6 +168,19 @@ By running this command you will start training an ant to navigate in Gates buil
 Web User Interface
 ----
 When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
+
+
+Rendering Semantics
+----
+![ant_train](misc/semantics.png)
+Gibson can provide semantics from:
+
+
+0. Random semantics
+⋅⋅⋅Good for visualization purpose
+1. [Stanford 2D3Ds] (http://buildingparser.stanford.edu/)
+2. [Matterport 3D] (https://niessner.github.io/Matterport/)
+For more detailed instructions, see [semantic instructions](gibson/utils/semantics.md).
 
 
 ![web_ui](misc/web_ui.png)
