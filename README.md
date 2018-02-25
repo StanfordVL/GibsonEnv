@@ -181,8 +181,8 @@ Gibson can provide semantics from:
 
 0. Random semantics <br />
 Good for visualization purpose
-1. [Stanford 2D3Ds] (http://buildingparser.stanford.edu/)
-2. [Matterport 3D] (https://niessner.github.io/Matterport/)
+1. [Stanford 2D3Ds](http://buildingparser.stanford.edu/)
+2. [Matterport 3D](https://niessner.github.io/Matterport/)
 For more detailed instructions, see [semantic instructions](gibson/utils/semantics.md).
 
 

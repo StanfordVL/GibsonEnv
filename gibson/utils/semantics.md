@@ -2,12 +2,14 @@ Instruction for Using Gibson with Semantics
 ==========================
 
 Gibson can provide semantics from:
-0. Random semantics<br />
-Good for visualization purpose<br />
+
+
+0. Random semantics <br />
+Good for visualization purpose <br />
 In `config.yaml` set `semantic_source: 0`
-1. Stanford 2D3Ds<br />
+1. Stanford 2D3Ds <br />
 In `config.yaml` set `semantic_source: 1`
-2. Matterport 3D<br />
+2. Matterport 3D <br />
 In `config.yaml` set `semantic_source: 2`
 
 ## Instruction
