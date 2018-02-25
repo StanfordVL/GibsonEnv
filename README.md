@@ -138,14 +138,15 @@ If you installed from source, you can run those directly using the following com
 ```bash
 python examples/demo/play_husky_sensor.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building
 ```
-![husky_nonviz](misc/husky_nonviz.png)
+
+<img src=misc/husky_nonviz.png width="600">
 
 You will be able to use ASWD keys on your keyboard to control a car to navigate around Gates building. A camera output will not be shown in this particular demo. 
 
 ```bash
 python examples/demo/play_husky_camera.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building, while RGB and depth camera outputs are also shown.
 ```
-![husky_nonviz](misc/husky_camera.png)
+<img src=misc/husky_camera.png width="600">
 
 You will able to use ASWD keys on your keyboard to control a car to navigate around Gates building. You will also be able to see the RGB and depth camera outputs. 
 
@@ -153,7 +154,7 @@ You will able to use ASWD keys on your keyboard to control a car to navigate aro
 python examples/train/train_husky_navigate_ppo2.py ### Use PPO2 to train a car to navigate down the hall way in Gates building, using visual input from the camera.
 ```
 
-![husky_train](misc/husky_train.png)
+<img src=misc/husky_train.png width="800">
 By running this command you will start training a husky robot  to navigate in Gates building and go down the corridor with RGBD input. You will see some RL related statistics in the terminal after each episode.
 
 
@@ -161,7 +162,7 @@ By running this command you will start training a husky robot  to navigate in Ga
 python examples/train/train_ant_navigate_ppo1.py ### Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera.
 ```
 
-![ant_train](misc/ant_train.png)
+<img src=misc/ant_train.png width="800">
 By running this command you will start training an ant to navigate in Gates building and go down the corridor with RGBD input. You will see some RL related statistics in the terminal after each episode.
 
 
@@ -170,9 +171,11 @@ Web User Interface
 When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
 
 
+<img src=misc/web_ui.png width="600">
+
 Rendering Semantics
 ----
-![ant_train](misc/semantics.png)
+<img src=misc/semantics.png width="600">
 Gibson can provide semantics from:
 
 
@@ -183,7 +186,6 @@ Gibson can provide semantics from:
 For more detailed instructions, see [semantic instructions](gibson/utils/semantics.md).
 
 
-![web_ui](misc/web_ui.png)
 
 
 More examples can be found in `examples/demo` and `examples/train` folder. A short introduction for each demo is shown below.
