@@ -26,8 +26,8 @@ Table of contents
         * [Building from source](#building-from-source)
         * [Uninstalling](#uninstalling)
    * [Quick Start](#quick-start)
-   	* [Web User Interface](#web-user-interface)
-	* [Rendering Semantics](#rendering-semantics)
+        * [Web User Interface](#web-user-interface)
+        * [Rendering Semantics](#rendering-semantics)
    * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
 
