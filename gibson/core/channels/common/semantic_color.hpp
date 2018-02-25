@@ -33,7 +33,6 @@ void color_coding_2D3DS (GLubyte color[], unsigned int id) {
     color[0] = r;
     color[1] = g;
     color[2] = b;
-    printf("Coloring 2D3DS %u %c %c %c\n", id, r, g, b);
 };
 
 
@@ -44,7 +43,6 @@ void color_coding_MP3D (GLubyte color[], unsigned int id) {
     color[0] = r;
     color[1] = g;
     color[2] = b;
-    printf("Coloring MP3D %u %c %c %c\n", id, r, g, b);
 };
 
 #endif

@@ -30,4 +30,4 @@ speed:
 
 mode: gui #gui|headless
 verbose: false
-semantic_source: 2
+semantic_source: 0

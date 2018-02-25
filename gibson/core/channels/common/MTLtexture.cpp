@@ -492,12 +492,13 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText, st
 
 bool loadPLYtextures(
     std::vector<TextureObj> & objText, 
-    std::vector<std::string> PLYmaterial_name,
+    //std::vector<std::string> PLYmaterial_name,
     std::vector<int> PLYmaterial_id) {
 
-    for (uint i = 0; i < PLYmaterial_name.size(); i++) {
+    for (uint i = 0; i < PLYmaterial_id.size(); i++) {
         TextureObj tempText;
-        tempText.name = PLYmaterial_name[i];
+        //tempText.name = PLYmaterial_name[i];
+        tempText.name = "";
         // Load an image and bind it to a texture
         tempText.textureID = PLYmaterial_id[i];
         objText.push_back(tempText);

@@ -205,7 +205,7 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objtext, st
 
 
 bool loadPLYtextures(std::vector<TextureObj> & objText, 
-    std::vector<std::string> PLYmaterial_name,
+    //std::vector<std::string> PLYmaterial_name,
     std::vector<int> PLYmaterial_id);
 
 #endif

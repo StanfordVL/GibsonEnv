@@ -18,8 +18,10 @@ Instruction
 
 
 Then, enjoy!
+Note: semantic mesh model might take up to a minute to load and parse. If you observe the loading
+script taking longer than normal, please start an issue.
 Sample code:
-
+	python gibson/utils/test_env.py
 
 
 Data Format

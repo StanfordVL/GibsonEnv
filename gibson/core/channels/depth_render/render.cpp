@@ -457,7 +457,7 @@ int main( int argc, char * argv[] )
         bool res;
         int num_vertices;
         if (ply > 0) {
-            res = loadPLY_MTL(model_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, material_id, mtllib, num_vertices);
+            res = loadPLY_MTL(model_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_id, mtllib, num_vertices);
             printf("From ply loaded total of %d vertices\n", num_vertices);
         } else {
             res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
@@ -473,7 +473,7 @@ int main( int argc, char * argv[] )
             mtl_path = model_path;
             // TODO: load actual mtl file for ply json
             // MTL_loaded = true;
-            MTL_loaded = loadPLYtextures(TextObj, material_name, material_id);
+            MTL_loaded = loadPLYtextures(TextObj, material_id);
         } else {
             MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);    
         }

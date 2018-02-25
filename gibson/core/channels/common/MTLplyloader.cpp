@@ -58,6 +58,7 @@ bool loadPLY(
 
     PlyFile file;
     file.parse_header(ss);
+    /*
     for (auto c : file.get_comments()) std::cout << "Comment: " << c << std::endl;
     for (auto e : file.get_elements())
     {
@@ -67,8 +68,7 @@ bool loadPLY(
             std::cout << "\tproperty - " << p.name << " (" << tinyply::PropertyTable[p.propertyType].str << ")" << std::endl;
         }
     }
-    // Tinyply 2.0 treats incoming data as untyped byte buffers. It's now
-    // up to users to treat this data as they wish. See below for examples.
+    */
     std::shared_ptr<PlyData> vertices, normals, colors, uvs, faces, texcoords;
 
     // The header information can be used to programmatically extract properties on elements
@@ -190,8 +190,8 @@ bool loadPLY(
 /* main function to parse JSON files, load or generate texture iamges and generate openGL texture IDs */
 bool loadJSONtextures (
     std::string jsonpath, 
-    std::vector<std::string> & out_material_name, 
-    std::vector<int> & out_material_id,
+    std::vector<int> & out_label_id, 
+    std::vector<int> & out_segment_id,
     std::vector<std::vector<int>> & out_face_indices
 ) {
     std::string imagePath;
@@ -202,8 +202,8 @@ bool loadJSONtextures (
 
     std::vector<int> segid_list;
     std::vector<std::vector<int>> segid_to_index;
-    std::vector<int> index_to_group_id;
-    std::vector<std::string> index_to_group_label;
+    std::vector<int> index_to_segment_id;
+    std::vector<int> index_to_segment_label_id;
 
     int max_segid = -1;
 
@@ -249,8 +249,8 @@ bool loadJSONtextures (
         for (unsigned int i = 0; i < value_arr.size(); i++) {
             int val = (stoi(value_arr[i].to_str()));
             segid_list.push_back(val);
-            index_to_group_id.push_back(0);
-            index_to_group_label.push_back("");
+            index_to_segment_id.push_back(0);
+            index_to_segment_label_id.push_back(0);
             if (val > max_segid)
                 max_segid = val;
         }
@@ -314,12 +314,12 @@ bool loadJSONtextures (
         picojson::array::iterator it;
         for (it = segment_arr.begin(); it != segment_arr.end(); it++) {
             picojson::object obj_it = it->get<picojson::object>();
-            int group_id = stoi(obj_it["id"].to_str());
-            std::string group_label = obj_it["label_index"].to_str();
+            int segment_id = stoi(obj_it["id"].to_str());
+            int label_id = stoi(obj_it["label_index"].to_str());
             // Output to texture name
-            out_material_name.push_back(group_label);
-            out_material_id.push_back(group_id);
-            std::vector<int> segment_index;
+            out_label_id.push_back(label_id);
+            out_segment_id.push_back(segment_id);
+            std::vector<int> face_index;
 
             picojson::value seg_val = obj_it["segments"];
             picojson::array seg_arr_i;
@@ -329,15 +329,15 @@ bool loadJSONtextures (
                     int segid = (stoi(seg_arr_i[i].to_str()));
                     for (unsigned int j = 0; j < segid_to_index[segid].size(); j++) {
                         int index = segid_to_index[segid][j];
-                        index_to_group_id[index]    = group_id;
-                        index_to_group_label[index] = group_label;
+                        index_to_segment_id[index]    = segment_id;
+                        index_to_segment_label_id[index] = label_id;
 
-                        segment_index.push_back(index);
+                        face_index.push_back(index);
                     }
                 }
             }
             // Output the associated vertex indices for this texture name
-            out_face_indices.push_back(segment_index);
+            out_face_indices.push_back(face_index);
         }
         delete[] buffer;
     }
@@ -351,7 +351,7 @@ bool loadPLY_MTL(
     std::vector<std::vector<glm::vec3>> & out_vertices,
     std::vector<std::vector<glm::vec2>> & out_uvs,
     std::vector<std::vector<glm::vec3>> & out_normals,
-    std::vector<std::string> & out_material_name,
+    //std::vector<int> & out_material_name,
     std::vector<int> & out_material_id,
     std::string & out_mtllib,
     int & num_vertices
@@ -363,11 +363,11 @@ bool loadPLY_MTL(
     std::vector<glm::vec3> all_normals;
     std::vector<int3> all_faces;
 
-    std::vector<std::string> material_name;
-    std::vector<int> material_id;
-    std::vector<std::vector<int>> face_indices;
+    std::vector<int> label_index;                       // Actual id in Matterport3D
+    std::vector<int> segment_index; 
+    std::vector<std::vector<int>> face_indices;         // Auxiliary index
     loadPLY(path, all_vertices, all_uvs, all_normals, all_faces, num_vertices);
-    loadJSONtextures(path, material_name, material_id, face_indices);
+    loadJSONtextures(path, label_index, segment_index, face_indices);
 
     bool has_uvs = all_uvs.size() > 0;
     bool has_normals = all_normals.size() > 0;
@@ -378,9 +378,8 @@ bool loadPLY_MTL(
         exit(2);
     }
 
-    for (unsigned int i = 0; i < material_name.size(); i++) {
-        out_material_name.push_back(material_name[i]);
-        out_material_id.push_back(material_id[i]);
+    for (unsigned int i = 0; i < label_index.size(); i++) {
+        out_material_id.push_back(label_index[i]);
         std::vector<int> faces = face_indices[i];
 
         std::vector<glm::vec3> curr_vertices;
