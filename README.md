@@ -95,7 +95,7 @@ You can either 1. build your own docker image or 2. pull from our docker image. 
 
 1. Build your own docker image (recommended)
 ```bash
-git clone -b dev https://github.com/fxia22/gibson.git 
+git clone https://github.com/StanfordVL/GibsonEnv.git
 cd gibson
 #as mentioned above, download assets data file and put it into gibson/assets folder
 ./build.sh decompress_data ### Download data outside docker, in case docker images need to be rebuilt
@@ -131,7 +131,7 @@ pip install tensorflow==1.3
 ```
 Clone the repository, download data and build
 ```bash
-git clone https://github.com/StanfordVL/gibson_beta.git 
+git clone https://github.com/StanfordVL/GibsonEnv.git
 cd gibson
 #as mentioned above, download assets data file and put it into gibson/assets folder
 ./build.sh decompress_data ### decompress data 
