@@ -61,6 +61,17 @@ For building from the source(B):
 
 First, download environment assets data from [here](https://drive.google.com/open?id=1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file it in. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
 
+To download the file from the command line, run the following from the main directory of this repo:
+```bash
+filename="gibson/assets/assets.tar.gz"
+fileid="1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0"
+sudo apt-get install golang-go
+export GOPATH=$HOME/go
+go get github.com/ericchiang/pup
+query=`curl -c ./cookie.txt -s -L "https://drive.google.com/uc?export=download&id=${fileid}" | pup 'a#uc-download-link attr{href}' | sed -e 's/amp;//g'`
+curl -b ./cookie.txt -L -o ${filename} "https://drive.google.com${query}"
+```
+
 
 A. Quick installation (docker)
 -----
@@ -133,7 +144,7 @@ Uninstall gibson is easy. If you installed with docker, just run `docker images 
 Quick Start
 =================
 
-First run `xhost +local:root` on your host machine to enable display. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson`, you will get an interactive shell. Now you can run a few demos. 
+First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0.0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson`, you will get an interactive shell. Now you can run a few demos. 
 
 If you installed from source, you can run those directly using the following commands without using docker. 
 
