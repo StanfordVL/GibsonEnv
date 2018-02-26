@@ -181,9 +181,9 @@ Gibson can provide semantics from:
 
 0. Random semantics <br />
 Good for visualization purpose
-1. [Stanford 2D3Ds](http://buildingparser.stanford.edu/)
+1. [Stanford 2D3DS](http://buildingparser.stanford.edu/)
 2. [Matterport 3D](https://niessner.github.io/Matterport/)
-For more detailed instructions, see [semantic instructions](gibson/utils/semantics.md).
+For more detailed instructions, see [semantic instructions](gibson/utils/semantics.md). Not all models we provided have semantics information. In beta release, `17DRP5sb8fy` has Matterport 3D style semantic annotation and `space7` has Stanford 2D3DS style annotation. 
 
 
 Starter Code
