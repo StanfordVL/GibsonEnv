@@ -1,38 +1,60 @@
 Instruction for Using Gibson with Semantics
 ==========================
 
-<img src=misc/semantics.png width="600">
+## Dataset Agreement
+Gibson has incorporated models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/)/ If you choose to use these models for rendering semantics, we ask you to agree to and sign their respective agreements. See [here](https://niessner.github.io/Matterport/) for Matterport3D and [here](https://github.com/alexsax/2D-3D-Semantics) for Stanford 2D3DS.
 
-Gibson can provide pixel-wise frame-by-frame semantic masks when the model is semantically annotated. As of now we have incorporated models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/) for this purpose, and we refer you to the original dataset's reference for the list of their semantic classes and annotations. 
+In the light beta release, the space `17DRP5sb8fy` includes Matterport 3D style semantic annotation and `space7` includes Stanford 2D3DS style annotation. 
 
-## Dataset
-Gibson can provide semantics from:
+## Quickstart
 
-0. Random semantics <br />
-Assigns a arbitrary distinctive color to each object. Good for visualization purpose <br />
-In `config.yaml` set `semantic_source: 0`
-1. Stanford 2D3Ds <br />
-In `config.yaml` set `semantic_source: 1`
-2. Matterport 3D <br />
-In `config.yaml` set `semantic_source: 2`
+Inside config.yaml, fill in the following fields to render semantics (see `examples/configs/husky_navigate_semantics.yaml for sample use case`).
 
-## Instruction
-1. Acquire data<br />
-**Agreement**: If you choose to use the models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/)for rendering semantics, we ask you to agree to and sign their respective agreements. See [here](https://niessner.github.io/Matterport/) for Matterport3D and [here](https://github.com/alexsax/2D-3D-Semantics) for Stanford 2D3DS.
+```yaml
+...
+use_filler: true
+display_ui: true
+show_dignostic: true
+ui_num: 2                                       # Make sure match up with len(ui_components)
+ui_components: [RGB_FILLED, SEMANTICS]          # Make sure to include SEMANTICS
+output: [nonviz_sensor, rgb_filled, semantics]  # Make sure to include semantics
+...
+mode: gui
+semantic_source: 1                              # 1 for Stanford 2D3Ds, 2 for MP3D 
+semantic_color: 1                               # 1 for distinctive color, 2 for label index rgb code
+```
 
-2. Move model files to gibson/assets/dataset<br />
-Then, enjoy! Sample code:
+Sample code:
 ```bash
 python examples/demo/play_husky_semantics.py
 ```
 Note: semantic mesh model might take up to a minute to load and parse. If you observe the script takes longer than normal, likely it's because of OpenGL rendering issue. Please file an issue and we will help you with troubleshooting.
 
-## Data Format
-Default color coding is defined inside `gibson/core/channels/common/semantic_color.hpp`
-For both 2D3Ds and Matterport3D, the rgb color is encoded as:
+Configuration Argument
+
+| Argument name        | Example value           | Explanation  |
+|:-------------:|:-------------:| :-----|
+| semantic_source      | 1 | Using Stanford 2D3Ds for semantic source |
+| semantic_source      | 2 | Using Matterport3D for semantic source |
+| semantic_color       | 1 | Distinctive color coding scheme | 
+| semantic_color       | 2 | Semantic label color coding scheme |
+
+## Semantic Color Coding
+There are two ways for rendering rgb images in semantic mode, defined inside `gibson/core/channels/common/semantic_color.hpp`. They each have their tradeoffs. We would like you to be aware of what's being rendered, and what to expect.
+
+###  Distinctive Color Coding
+<img src=../../misc/semantics.png width="600">
+In Distinctive Color Coding Scheme, Gibson assigns each semantic instance with its distinctive color. These colors are arbitrarily chosen, but preserves through different trials. 
+
+Note that this mode renders intuitive colorful semantic images, but the rgb values do not enable easy semantic lookup.
+
+###  Semantic Label Color Coding
+For both Stanford 2D3Ds and Matterport3D assigns semantic label to each object instance. These integer labels usually have their model specific mapping, specified by Stanford 2D3Ds and Matterport3D dataset. Instead of enforcing another layer of indirection, Gibson directly renders these semantic labels as rgb.
 ``` cpp
 b = ( segment_id ) % 256;
 g = ( segment_id >> 8 ) % 256;
 r = ( segment_id >> 16 ) % 256;
 color = {r, g, b}
 ```
+
+Note that this mode is good for direct semantic look up based on rgb image, but the image itself usually looks dark to human eyes.
