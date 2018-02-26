@@ -23,14 +23,16 @@ Table of contents
 =================
 
    * [Installation](#installation)
-        * [Quick Installation (docker)](#quick-installation)
-        * [Building from source](#building-from-source)
+        * [Quick Installation (docker)](#a-quick-installation-docker)
+        * [Building from source](#b-building-from-source)
         * [Uninstalling](#uninstalling)
    * [Quick Start](#quick-start)
         * [Web User Interface](#web-user-interface)
         * [Rendering Semantics](#rendering-semantics)
    * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
+   * [Goggles: transferring the agent to real-world](#goggles-transferring-the-agent-to-real-world)
+
 
 Installation
 =================
