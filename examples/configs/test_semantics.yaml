@@ -1,5 +1,5 @@
 envname: TestEnv
-model_id: test
+model_id: space7
 target_orn: [0, 0, 1.57]
 target_pos: [-14.3, 45.07, 0.5]
 #initial_orn: [0, 0, 4.71]
@@ -22,7 +22,7 @@ random:
   random_target_range: 0.1
 
 output: [nonviz_sensor, rgb_filled, semantics]
-resolution: 512
+resolution: 256
 
 speed:
   timestep: 0.01
@@ -30,4 +30,5 @@ speed:
 
 mode: gui #gui|headless
 verbose: false
-semantic_source: 0
+semantic_source: 1 # 2D3DS
+semantic_color: 2  # random

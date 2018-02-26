@@ -20,7 +20,7 @@ random:
   random_target_range: 0.1
 
 output: [nonviz_sensor, rgb_filled, semantics]
-resolution: 256
+resolution: 512
 
 speed:
   timestep: 0.01
@@ -28,4 +28,5 @@ speed:
 
 mode: gui #gui|headless
 verbose: false
-semantic_source: 0
+semantic_source: 2 # Matterport 3D
+semantic_color: 1  # Random

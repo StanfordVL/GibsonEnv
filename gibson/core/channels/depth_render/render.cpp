@@ -213,7 +213,8 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Normal", 'n', "Whether render surface normal", false, 0);
     cmdp.add<float>("fov", 'f', "field of view", false, 90.0);
     cmdp.add<int>("Semantic", 't', "Whether render semantics", false, 0);
-    cmdp.add<int>("Semantic Source", 'r', "Semantic data source", false, 0);
+    cmdp.add<int>("Semantic Source", 'r', "Semantic data source", false, 1);
+    cmdp.add<int>("Semantic Color", 'c', "Semantic rendering color scheme", false, 1);
 
     cmdp.parse_check(argc, argv);
 
@@ -223,6 +224,7 @@ int main( int argc, char * argv[] )
     int normal = cmdp.get<int>("Normal");
     int semantic = cmdp.get<int>("Semantic");
     int semantic_src = cmdp.get<int>("Semantic Source");
+    int semantic_clr = cmdp.get<int>("Semantic Color");
     int ply;
 
     float camera_fov = cmdp.get<float>("fov");
@@ -249,7 +251,8 @@ int main( int argc, char * argv[] )
      */
     if (semantic > 0) {
         name_obj = model_path + "/semantic.obj";
-        ply = 1;
+        if (semantic_src == 1) ply = 0;
+        if (semantic_src == 2) ply = 1;
         GPU_NUM = -3;
     }
 
@@ -436,6 +439,8 @@ int main( int argc, char * argv[] )
 
     GLuint gArrayTexture(0);
     if ( semantic > 0) {
+        /* initialize random seed: */
+        srand (0);
         /*
         // Prevent clamping
         glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE);
@@ -459,7 +464,7 @@ int main( int argc, char * argv[] )
         else { printf("Semantic.obj file was loaded with success.\n"); }
 
         // Load the textures
-        std::string mtl_path = model_path + mtllib;
+        std::string mtl_path = model_path + "/" + mtllib;
         bool MTL_loaded;
         if (ply > 0) {
             mtl_path = model_path;
@@ -492,10 +497,13 @@ int main( int argc, char * argv[] )
             GLubyte color[3];
             unsigned int id = (uint)TextObj[i].textureID;
 
-            if (semantic_src == 0) { color_coding_RAND(color);//Random texture
-            } else if (semantic_src == 1) { color_coding_2D3DS(color, id);   // Stanford 2D3DS
-            } else if (semantic_src == 2) { color_coding_MP3D(color, id ); // Matterport3D
-            } else {printf("Invalid code for semantic source.\n"); exit(-1); }
+            if (semantic_clr == 1) 
+                color_coding_RAND(color); // Instance-by-Instance Color Coding
+            else {
+                if (semantic_src == 1) { color_coding_2D3DS(color, id);}   // Stanford 2D3DS
+                else if (semantic_src == 2) { color_coding_MP3D(color, id );} // Matterport3D
+                else {printf("Invalid code for semantic source.\n"); exit(-1); }
+            }   
             
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,
