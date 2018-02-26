@@ -15,7 +15,7 @@ class PostInstallCommand(install):
 '''
 
 setup(name='gibson',
-    version='0.0.1',
+    version='0.1.0',
     description='Real Environment Developed by Stanford University',
     url='https://github.com/fxia22/realenv',
     author='Stanford University',
