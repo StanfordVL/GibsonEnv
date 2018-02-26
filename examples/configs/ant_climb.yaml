@@ -1,5 +1,5 @@
 envname: AntClimbEnv
-model_id: sRj553CTHiw
+model_id: space7
 target_orn: [0, 0, 3.14]
 target_pos: [-7, 2.6, -1.5]
 initial_orn: [0, 0, 3.14]

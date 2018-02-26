@@ -1,12 +1,15 @@
 # CMake entry point
 cmake_minimum_required (VERSION 3.0)
-project (Tutorials)
+project (Gibson_Environment)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
+MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CMAKE_BINARY_DIR} )
+MESSAGE( STATUS "CMAKE_SOURCE_DIR:         " ${CMAKE_SOURCE_DIR} )
 
-# ------ Cuda 
+
+# ------ Cuda
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 link_directories(${CUDA_LIBRARY_DIRS})
@@ -15,9 +18,7 @@ link_directories(${CUDA_LIBRARY_DIRS})
 # set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${CUDA_ARCH} -Xcompiler -fPIC -shared -o)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} " --Wno-deprecated-gpu-targets -std=c++11")
 
-if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
-    message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
-endif()
+
 if( CMAKE_SOURCE_DIR MATCHES " " )
     message( "Your Source Directory contains spaces. If you experience problems when compiling, this can be the cause." )
 endif()
@@ -60,10 +61,10 @@ endif()
 find_package(ASSIMP REQUIRED)
 if(ASSIMP_FOUND)
     include_directories(${ASSIMP_INCLUDE_DIR})
-endif() 
+endif()
 
 
-# Compile external dependencies 
+# Compile external dependencies
 add_subdirectory (external)
 
 # On Visual 2005 and above, this module can set the debug working directory
@@ -86,7 +87,6 @@ include_directories(
 
 set(ALL_LIBS
     ${OPENGL_LIBRARY}
-    ${freeimage}
     ${GLEW_LIBRARY}
     GLEW_1130
     ${GLUT_LIBRARY}
@@ -112,15 +112,25 @@ cuda_add_executable(depth_render
     common/shader.hpp
     common/controls.cpp
     common/controls.hpp
+    common/MTLtexture.cpp
+    common/MTLtexture.hpp
     common/texture.cpp
     common/texture.hpp
+    common/MTLobjloader.cpp
+    common/MTLobjloader.hpp
+    common/MTLplyloader.cpp
+    common/MTLplyloader.hpp
     common/objloader.cpp
     common/objloader.hpp
+    common/tinyply.cpp
+    common/tinyply.h
     common/vboindexer.cpp
     common/vboindexer.hpp
     common/text2D.hpp
     common/text2D.cpp
+    common/picojson.h
     common/cmdline.h
+    common/semantic_color.hpp
 
     external/lodepng/lodepng.h
     external/lodepng/lodepng.cpp
@@ -141,44 +151,6 @@ target_link_libraries(depth_render
 set_target_properties(depth_render PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
 
 
-
-add_executable(demo
-    depth_render/demo.cpp
-    common/shader.cpp
-    common/shader.hpp
-    common/controls.cpp
-    common/controls.hpp
-    common/texture.cpp
-    common/texture.hpp
-    common/objloader.cpp
-    common/objloader.hpp
-    common/vboindexer.cpp
-    common/vboindexer.hpp
-    common/text2D.hpp
-    common/text2D.cpp
-    common/cmdline.h
-
-    external/lodepng/lodepng.h
-    external/lodepng/lodepng.cpp
-
-    depth_render/StandardShadingRTT.vertexshader
-    depth_render/MistShadingRTT.fragmentshader
-    depth_render/NormalShadingRTT.fragmentshader
-    depth_render/Passthrough.vertexshader
-    depth_render/WobblyTexture.fragmentshader
-)
-
-target_link_libraries(demo
-    ${ALL_LIBS}
-    ${GLUT_LIBRARY}
-    ${ZeroMQ_LIBRARY}
-    ${GLEW_LIBRARIES}
-)
-
-# Xcode and Visual working directories
-set_target_properties(demo PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
-
-
 SOURCE_GROUP(common REGULAR_EXPRESSION ".*/common/.*" )
 SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
 
@@ -187,4 +159,3 @@ add_custom_command(
    TARGET depth_render POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/depth_render${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
-

@@ -8,7 +8,7 @@
 #include "objloader.hpp"
 
 // Very, VERY simple OBJ loader.
-// Here is a short list of features a real function would provide : 
+// Here is a short list of features a real function would provide :
 // - Binary files. Reading a model should be just a few memcpy's away, not parsing a file at runtime. In short : OBJ is not very great.
 // - Animations & bones (includes bones weights)
 // - Multiple UVs
@@ -29,7 +29,6 @@ bool loadOBJ(
     std::vector<glm::vec3> temp_vertices;
     std::vector<glm::vec2> temp_uvs;
     std::vector<glm::vec3> temp_normals;
-
 
     FILE * file = fopen(path, "r");
     if( file == NULL ){
@@ -160,8 +159,8 @@ bool loadOBJ(
         for ( unsigned int i=0; i<vertexIndices.size(); i++ ){
             // make sure vertices are arranged in right hand order
             unsigned int v1 = i;
-            unsigned int v2 = v1; // ((v1+1)%3==0) ? (v1-2) : (v1+1);
-            unsigned int v3 = v1; //((v2+1)%3==0) ? (v2-2) : (v2+1);
+            unsigned int v2 = ((v1+1)%3==0) ? (v1-2) : (v1+1);
+            unsigned int v3 = ((v2+1)%3==0) ? (v2-2) : (v2+1);
 
             glm::vec3 edge1 = out_vertices[v2] - out_vertices[v1];
             glm::vec3 edge2 = out_vertices[v3] - out_vertices[v2];
@@ -170,7 +169,6 @@ bool loadOBJ(
             unsigned int vertexIndex = vertexIndices[i];
             glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
             out_normals[vertexIndex-1] += normal / float(vertexFaces[vertexIndex-1]);
-            //printf("%f %f %f\n", normal[0], normal[1], normal[2]);
         }
     }
 

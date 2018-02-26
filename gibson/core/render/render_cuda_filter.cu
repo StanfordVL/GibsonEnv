@@ -26,7 +26,7 @@ const int BLOCK_ROWS = 8;
 
 #endif
 
-const bool pano = false;
+//const bool pano = false;
 
 __global__ void copy_mem(unsigned char *source, unsigned char *render)
 {
@@ -229,7 +229,7 @@ __global__ void get_average(unsigned char * img, int * nz, int * average, int sc
  int x = blockIdx.x * TILE_DIM + threadIdx.x;
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
   int width = gridDim.x * TILE_DIM;
-  int h = width /2;
+  //int h = width /2;
   
   for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
   {
@@ -259,7 +259,7 @@ __global__ void fill_with_average(unsigned char *img, int * nz, int * average, i
  int x = blockIdx.x * TILE_DIM + threadIdx.x;
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
   int width = gridDim.x * TILE_DIM;
-  int h = width /2;
+  //int h = width /2;
   
   for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
   {
