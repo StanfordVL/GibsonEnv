@@ -69,8 +69,10 @@ For building from the source(B):
 
 #### Download data
 
-First, download environment assets data from [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file in it. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
-
+First, our environment assets data are available [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
+<!-- 
+Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file in it.
+-->
 <!--
 To download the file from the command line, run the following from the main directory of this repo:
 ```bash
