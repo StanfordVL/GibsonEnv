@@ -1,0 +1,30 @@
+#version 330 core
+
+// Interpolated values from the vertex shaders
+in vec3 Position_worldspace;
+in vec3 Normal_cameraspace;
+in vec3 EyeDirection_cameraspace;
+in vec3 LightDirection_cameraspace;
+//flat in vec2 Semantics;
+flat in vec3 color;
+//flat in int semantic_layer;
+
+
+// Ouput data
+layout(location = 0) out vec3 out_color;
+
+// Values that stay constant for the whole mesh.
+uniform sampler2DArray myTextureSampler;
+uniform mat4 MV;
+uniform vec3 LightPosition_worldspace;
+uniform int max_layer;
+
+void main(){
+    
+    //int layer = Semantics.x;    
+    
+    vec3 n = normalize( Normal_cameraspace );
+    // Direction of the light (from the fragment to the light)
+    
+    out_color = color;
+}
