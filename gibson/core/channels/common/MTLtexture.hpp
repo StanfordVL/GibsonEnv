@@ -194,11 +194,11 @@ bool parseMTL(std::string mtlpath, std::vector<Material> & out_material);
 /* Method to load an image into a texture using the freeimageplus library. */
 /* Returns the texture ID or dies trying */
 /* code from: https://r3dux.org/2014/10/how-to-load-an-opengl-texture-using-the-freeimage-library-or-freeimageplus-technically/ */
-GLuint loadTextureImages(std::string texturePathString, int Vrtx, GLenum minificationFilter = GL_LINEAR, GLenum magnificationFilter = GL_LINEAR);
+//GLuint loadTextureImages(std::string texturePathString, int Vrtx, GLenum minificationFilter = GL_LINEAR, GLenum magnificationFilter = GL_LINEAR);
 
 /* Generate images of solid color and assign them to textures */
 /* For mtl files with no associated maps (textureimages) */
-GLuint solidColorTexture(Vector3 Ka, int Vrtx, GLenum minificationFilter = GL_LINEAR, GLenum magnificationFilter = GL_LINEAR);
+//GLuint solidColorTexture(Vector3 Ka, int Vrtx, GLenum minificationFilter = GL_LINEAR, GLenum magnificationFilter = GL_LINEAR);
 
 /* main function to parse MTL files, load or generate texture iamges and generate openGL texture IDs */
 bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objtext, std::vector<std::string> OBJMaterial_name);

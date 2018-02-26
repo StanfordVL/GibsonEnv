@@ -9,29 +9,6 @@ MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CMAKE_BINARY_DIR} )
 MESSAGE( STATUS "CMAKE_SOURCE_DIR:         " ${CMAKE_SOURCE_DIR} )
 
 
-# find freeimageplus
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-SET(FREEIMAGEPLUS_FIND_REQUIRED TRUE)
-SET(FREEIMAGEPLUS_FIND_QUIETLY FALSE)
-find_package(FreeImagePlus)
-if (FREEIMAGEPLUS_FOUND)
-    include_directories(${FREEIMAGEPLUS_INCLUDE_DIR})
-    link_libraries(${FREEIMAGEPLUS_LIBRARY})
-    message(${FREEIMAGEPLUS_LIBRARY})
-else()
-    message("FREEIMAGEPLUS NOT FOUND")
-endif()
-
-SET(FREEIMAGE_FIND_REQUIRED TRUE)
-SET(FREEIMAGE_FIND_QUIETLY FALSE)
-find_package(FreeImage)
-if (FREEIMAGE_FOUND)
-    include_directories(${FREEIMAGE_INCLUDE_DIRS})
-    link_libraries(${FREEIMAGE_LIBRARY})
-    message(${FREEIMAGE_LIBRARY})
-else()
-    message("FREEIMAGE_FOUND NOT FOUND")
-endif()
 # ------ Cuda
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
@@ -99,8 +76,6 @@ add_subdirectory (external)
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
-    ${FREEIMAGEPLUS_INCLUDE_DIR}
-    ${FREEIMAGE_INCLUDE_DIRS}
     #${GLFW3_INCLUDE_DIR}/GLFW
     external/glfw-3.1.2/include/GLFW
     external/lodepng/
@@ -112,8 +87,6 @@ include_directories(
 
 set(ALL_LIBS
     ${OPENGL_LIBRARY}
-    ${FREEIMAGEPLUS_LIBRARY}
-    ${FREEIMAGE_LIBRARY}
     ${GLEW_LIBRARY}
     GLEW_1130
     ${GLUT_LIBRARY}

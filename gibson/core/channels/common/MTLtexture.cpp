@@ -1,5 +1,5 @@
 #include <fstream>
-#include <FreeImagePlus.h>
+//#include <FreeImagePlus.h>
 #include <GL/glew.h>
 #include <glfw3.h>
 #include "common/MTLtexture.hpp"
@@ -174,6 +174,7 @@ bool parseMTL(std::string mtlpath, std::vector<Material> & out_material){
 /* Returns the texture ID or dies trying */
 /* code from: https://r3dux.org/2014/10/how-to-load-an-opengl-texture-using-the-freeimage-library-or-freeimageplus-technically/ */
 /* Vrtx variable is only used when saving the images (debugging) */
+/*
 GLuint loadTextureImages(std::string texturePathString, int Vrtx, GLenum minificationFilter, GLenum magnificationFilter)
 {
 
@@ -252,13 +253,13 @@ GLuint loadTextureImages(std::string texturePathString, int Vrtx, GLenum minific
     int imageWidth  = FreeImage_GetWidth(bitmap32);
     int imageHeight = FreeImage_GetHeight(bitmap32);
     //printf("Image: %s is of size: %i x %i.\n", texturePath, imageWidth, imageHeight);  //debug
-    /*
+    
     // Debug Image colorization
     std::string path = "/root/mount/gibson/FreeImageTexture_" + std::to_string(Vrtx) + ".png";
     if (FreeImage_Save( FIF_PNG ,  bitmap32 , path.c_str() , 0 )) {
       printf("Saved image succesfully!\n");
     }
-    */
+    
 
     // Get a pointer to the texture data as an array of unsigned bytes.
     // Note: At this point bitmap32 ALWAYS holds a 32-bit colour version of our image - so we get our data from that.
@@ -340,12 +341,12 @@ GLuint loadTextureImages(std::string texturePathString, int Vrtx, GLenum minific
     // Finally, return the texture ID
     return tempTextureID;
 }
-
+*/
 
 /* Generate images of solid color and assign them to textures */
 /* For mtl files with no associated maps (textureimages) */
 /* Vrtx variable is only used when saving the images (debugging) */
-GLuint solidColorTexture(Vector3 Ka, int texLevel, GLenum minificationFilter, GLenum magnificationFilter) {
+/*GLuint solidColorTexture(Vector3 Ka, int texLevel, GLenum minificationFilter, GLenum magnificationFilter) {
     int imageWidth = 100;
     int imageHeight = 100;
     FIBITMAP* bitmap32 = FreeImage_Allocate(imageWidth, imageHeight, 32);
@@ -357,18 +358,18 @@ GLuint solidColorTexture(Vector3 Ka, int texLevel, GLenum minificationFilter, GL
                               static_cast<unsigned char>(((unsigned int)Ka.Y >> 24)*255), 
                               static_cast<unsigned char>(((unsigned int)Ka.Z >> 24)*255), 255};
     FreeImage_FillBackground(bitmap32, color);
-    /*
+    
     // Debug Image colorization
     std::string path = "/root/mount/gibson/FreeImageTexture_" + std::to_string(Vrtx) + ".png";
     if (FreeImage_Save( FIF_PNG ,  bitmap32 , path.c_str() , 0 )) {
       printf("Saved image succesfully!\n");
     }
-    */
+    
 
     // Assign texture to OpenGL
     GLubyte* textureData = FreeImage_GetBits(bitmap32);
 
-    /*
+    
     // Generate a texture ID and bind to it
     GLuint tempTextureID;
     glGenTextures(1, &tempTextureID);
@@ -400,11 +401,11 @@ GLuint solidColorTexture(Vector3 Ka, int texLevel, GLenum minificationFilter, GL
     {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
-    */
+    
 
     //return tempTextureID;
     return 0;
-}
+}*/
 
 #include <sstream>
 /* main function to parse MTL files, load or generate texture iamges and generate openGL texture IDs */
@@ -419,7 +420,7 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText, st
     // Note: Flag is whether we should load ONLY local (built-in) libraries, so
     // false means 'no, use external libraries also', and 'true' means - use built
     // in libs only, so it's like using the library as a static version of itself.
-    FreeImage_Initialise(true);
+    //FreeImage_Initialise(true);
     std::string imagePath;
     // load texture images only if they exist, or assign standard color
     for ( unsigned int i = 0; i < parsed_mtl_file.size(); i++) {
@@ -459,7 +460,8 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText, st
               TextureObj tempText;
               tempText.name = parsed_mtl_file[i].name;
               // Load an image and bind it to a texture
-              tempText.textureID = loadTextureImages(texturePath, i);
+              // TODO (hzyjerry): 2D3DS mtl image problem
+              tempText.textureID = i;//loadTextureImages(texturePath, i);
               objText.push_back(tempText);
           }
           if (parsed_mtl_file[i].map_Ka.empty() || parsed_mtl_file[i].map_Kd.empty() || parsed_mtl_file[i].map_Ks.empty()) {
@@ -471,7 +473,8 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText, st
               //printf("material name to generate image: %s\n", tempText.name.c_str());  //debug
 
               // Generate an image of solid texture and bind it to texture
-              tempText.textureID = solidColorTexture(parsed_mtl_file[i].Ka, i);
+              // TODO (hzyjerry): 2D3DS mtl image problem
+              tempText.textureID = i; //solidColorTexture(parsed_mtl_file[i].Ka, i);
               objText.push_back(tempText);
           }
         }
