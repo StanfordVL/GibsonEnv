@@ -61,6 +61,7 @@ For building from the source(B):
 
 First, download environment assets data from [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file it in. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
 
+<!--
 To download the file from the command line, run the following from the main directory of this repo:
 ```bash
 filename="gibson/assets/assets.tar.gz"
@@ -71,7 +72,7 @@ go get github.com/ericchiang/pup
 query=`curl -c ./cookie.txt -s -L "https://drive.google.com/uc?export=download&id=${fileid}" | pup 'a#uc-download-link attr{href}' | sed -e 's/amp;//g'`
 curl -b ./cookie.txt -L -o ${filename} "https://drive.google.com${query}"
 ```
-
+-->
 
 A. Quick installation (docker)
 -----
