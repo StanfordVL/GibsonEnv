@@ -214,7 +214,6 @@ int main( int argc, char * argv[] )
     cmdp.add<float>("fov", 'f', "field of view", false, 90.0);
     cmdp.add<int>("Semantic", 't', "Whether render semantics", false, 0);
     cmdp.add<int>("Semantic Source", 'r', "Semantic data source", false, 0);
-    cmdp.add<int>("RGBfromMesh", 'm', "Whether render RGB directly from Mesh", false, 0);
 
     cmdp.parse_check(argc, argv);
 
@@ -224,7 +223,6 @@ int main( int argc, char * argv[] )
     int normal = cmdp.get<int>("Normal");
     int semantic = cmdp.get<int>("Semantic");
     int semantic_src = cmdp.get<int>("Semantic Source");
-    int rgbMesh = cmdp.get<int>("RGBfromMesh");
     int ply;
 
     float camera_fov = cmdp.get<float>("fov");
@@ -239,7 +237,7 @@ int main( int argc, char * argv[] )
 
     // if rendering normals
     if (normal > 0) {
-        name_obj = model_path + "/rgb.obj";
+        //name_obj = model_path + "/rgb.obj";
         GPU_NUM = -2;
     }
 
@@ -253,12 +251,6 @@ int main( int argc, char * argv[] )
         name_obj = model_path + "/semantic.obj";
         ply = 1;
         GPU_NUM = -3;
-    }
-
-    // if rendering RGB from Mesh
-    if (rgbMesh > 0) {
-        name_obj = model_path + "/rgb.obj";
-        GPU_NUM = -2;
     }
 
     std::string name_loc   = model_path + "/" + "camera_poses.csv";
@@ -834,7 +826,9 @@ int main( int argc, char * argv[] )
           }
         } else {
           float * reply_data_handle = (float*)reply.data();
-          glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle);
+          if (normal > 0) {
+            glGetTextureImage(renderedTexture, 0, GL_RGB, GL_FLOAT, message_sz, reply_data_handle);
+          } else { glGetTextureImage(renderedTexture, 0, GL_BLUE, GL_FLOAT, message_sz, reply_data_handle); }
           float tmp_float;
           int offset;
           // Revert the image from upside-down

@@ -159,8 +159,8 @@ bool loadOBJ(
         for ( unsigned int i=0; i<vertexIndices.size(); i++ ){
             // make sure vertices are arranged in right hand order
             unsigned int v1 = i;
-            unsigned int v2 = v1; // ((v1+1)%3==0) ? (v1-2) : (v1+1);
-            unsigned int v3 = v1; //((v2+1)%3==0) ? (v2-2) : (v2+1);
+            unsigned int v2 = ((v1+1)%3==0) ? (v1-2) : (v1+1);
+            unsigned int v3 = ((v2+1)%3==0) ? (v2-2) : (v2+1);
 
             glm::vec3 edge1 = out_vertices[v2] - out_vertices[v1];
             glm::vec3 edge2 = out_vertices[v3] - out_vertices[v2];
@@ -169,7 +169,6 @@ bool loadOBJ(
             unsigned int vertexIndex = vertexIndices[i];
             glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
             out_normals[vertexIndex-1] += normal / float(vertexFaces[vertexIndex-1]);
-            //printf("%f %f %f\n", normal[0], normal[1], normal[2]);
         }
     }
 
