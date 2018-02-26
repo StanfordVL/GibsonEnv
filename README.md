@@ -69,8 +69,10 @@ For building from the source(B):
 
 #### Download data
 
-First, download environment assets data from [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file in it. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
-
+First, our environment assets data are available [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
+<!-- 
+Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file in it.
+-->
 <!--
 To download the file from the command line, run the following from the main directory of this repo:
 ```bash
@@ -97,9 +99,10 @@ You can either 1. build your own docker image or 2. pull from our docker image. 
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd gibson
-#as mentioned above, download assets data file and put it into gibson/assets folder
-./build.sh decompress_data ### Download data outside docker, in case docker images need to be rebuilt
-docker build . -t gibson
+wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson 
+./build.sh decompress_data
+### the commands above downloads assets data file and decpmpress it into gibson/assets folder
+docker build . -t gibson ### finish building inside docker
 ```
 If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson` to create a container.
 
@@ -133,8 +136,9 @@ Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd gibson
-#as mentioned above, download assets data file and put it into gibson/assets folder
+wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson
 ./build.sh decompress_data ### decompress data 
+#the commands above downloads assets data file and decpmpress it into gibson/assets folder
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
 ```
@@ -161,7 +165,7 @@ If you installed from source, you can run those directly using the following com
 
 
 ```bash
-python examples/demo/play_husky_sensor.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building
+python examples/demo/play_husky_nonviz.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building
 ```
 
 <img src=misc/husky_nonviz.png width="600">
