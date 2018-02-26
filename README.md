@@ -97,9 +97,10 @@ You can either 1. build your own docker image or 2. pull from our docker image. 
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd gibson
-#as mentioned above, download assets data file and put it into gibson/assets folder
-./build.sh decompress_data ### Download data outside docker, in case docker images need to be rebuilt
-docker build . -t gibson
+wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson 
+./build.sh decompress_data
+### the commands above downloads assets data file and decpmpress it into gibson/assets folder
+docker build . -t gibson ### finish building inside docker
 ```
 If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson` to create a container.
 
@@ -133,8 +134,9 @@ Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd gibson
-#as mentioned above, download assets data file and put it into gibson/assets folder
+wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson
 ./build.sh decompress_data ### decompress data 
+#the commands above downloads assets data file and decpmpress it into gibson/assets folder
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
 ```
