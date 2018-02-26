@@ -1,4 +1,4 @@
-Instruction for Using Gibson with Semantics
+Instruction for using Gibson with Semantics
 ==========================
 
 ## Dataset Agreement
@@ -43,10 +43,16 @@ Configuration Argument
 There are two ways for rendering rgb semantic maps in semantic mode, defined inside `gibson/core/channels/common/semantic_color.hpp`. Each is defined below:
 
 ###  Instance-by-Instance Color Coding
-<img src=../../misc/semantics.png width="600">
+
+<img src=../../misc/instance_colorcoding_semantics.png width="600">
+
 In Instance-by-Instance Color Coding Scheme, the environment assigns a random distinctive color to each semantic instance. These colors are arbitrarily chosen but are preserved through different trials. Note that this mode renders intuitive colorful semantic map frames, but the rgb values do not enable easy semantic class lookup.
 
+
 ###  Semantic Label Color Coding
+
+<img src=../../misc/semanticlabels_colorcoding_semantics.png width="600">
+
 In Semantic Label Color Coding, for both Stanford 2D3Ds and Matterport3D spaces, the environment assigns a semantic label to each object instance and renders the frame. These integer labels usually have their space specific mapping, specified by the original Stanford 2D3Ds and Matterport3D datasets. Instead of enforcing another layer of indirection, Gibson directly renders these semantic labels as rgb; therefore, the rendered frame can be directly consumed as the semantically labled pixel maps but the frame itself usually looks dark to human eyes. 
 
 ``` cpp
