@@ -281,6 +281,8 @@ class CameraRobotEnv(BaseRobotEnv):
         if self._require_semantics:
             self._semantic_code = self.config["semantic_source"] if "semantic_source" in self.config.keys() else 0
             assert(self.config["semantic_source"] in [0, 1, 2])
+        else:
+            self._semantic_code = 0
         self._require_normal = 'normal' in self.config["output"]  
 
         if self._require_camera_input:
