@@ -10,15 +10,24 @@ You shouldn't play video games all day, so shouldn't your AI! We built a virtual
 **II.** having a baked-in mechanism for transferring to real-world (Goggles function), and  
 **III.** embodiment of the agent and making it subject to constraints of space and physics via integrating a physics engine ([Bulletphysics](http://bulletphysics.org/wordpress/)).  
 
-**Naming**: Gibson environment is named after James J. Gibson, the author of "Ecological Approach to Visual Perception", 1979. “We must perceive in order to move, but we must also move in order to perceive” – JJ Gibson
+**Naming**: Gibson environment is named after *James J. Gibson*, the author of "Ecological Approach to Visual Perception", 1979. “We must perceive in order to move, but we must also move in order to perceive” – JJ Gibson
 
-Please see [Gibson environment website](http://gibson.vision/) (http://env.gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
+Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
+
+#### Paper
+**["Embodied Real-World Active Perception"](http://gibson.vision/)**, in **CVPR 2018**.
+
 
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
 
 
-### Note
-**This is a 0.1.0 beta release, bug reports are very appreciated. **
+
+Beta
+=================
+**This is a 0.1.0 beta release, bug reports and suggestions for improvement are appreciated.** 
+
+**Dataset**: To make the beta release lighter for the users, we are including a small subset (9) of the spaces in it. 
+The full dataset includes hundreds of spaces which will be made available if we dont get a major bug report during the brief beta release. 
 
 Table of contents
 =================
@@ -60,7 +69,7 @@ For building from the source(B):
 
 #### Download data
 
-First, download environment assets data from [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file it in. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
+First, download environment assets data from [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file in it. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
 
 <!--
 To download the file from the command line, run the following from the main directory of this repo:
