@@ -1,9 +1,10 @@
-# Gibson Environment for Training Active Agents with Real-World Perception 
+# Gibson Environment for Active Agents with Real-World Perception 
 You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment that offers real world experience for learning perception. 
 
 <img src=misc/ui.gif width="600">
  
-**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in simulation which consequently casts a question on transferring to real-world. The primary characteristics of Gibson environment are:   
+**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in simulation which consequently casts a question on transferring to real-world. The primary characteristics of Gibson environment are:  
+
 **I.** being from the real-world and reflecting its semantic complexity through virtualizing real spaces,  
 **II.** having a baked-in mechanism for transferring to real-world (Goggles function), and  
 **III.** embodiment of the agent and making it subject to constraints of space and physics via integrating a physics engine ([Bulletphysics](http://bulletphysics.org/wordpress/)).  
@@ -176,7 +177,8 @@ When running Gibson, you can start a web user interface with `python gibson/util
 Rendering Semantics
 ----
 <img src=misc/semantics.png width="600">
-Gibson can provide pixel-wise frame-by-frame semantic masks when the model is semantically annotated. As of now we have incorporated models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/) for this purpose, and we refer you to the original dataset's reference for the list of their semantic classes and annotations. 
+
+Gibson can provide pixel-wise frame-by-frame semantic masks when the model is semantically annotated. As of now we have incorporated models from [Matterport 3D](https://niessner.github.io/Matterport/) and [Matterport 3D](https://niessner.github.io/Matterport/) for this purpose, and we refer you to the original dataset's reference for the list of their semantic classes and annotations. 
 
 For detailed instructions of rendering semantics in Gibson, see [semantic instructions](gibson/utils/semantics.md). In the light beta release, the space `17DRP5sb8fy` includes Matterport 3D style semantic annotation and `space7` includes Stanford 2D3DS style annotation. 
 
