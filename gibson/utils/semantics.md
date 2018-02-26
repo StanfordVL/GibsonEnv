@@ -36,25 +36,22 @@ Configuration Argument
 |:-------------:|:-------------:| :-----|
 | semantic_source      | 1 | Using Stanford 2D3Ds for semantic source |
 | semantic_source      | 2 | Using Matterport3D for semantic source |
-| semantic_color       | 1 | Distinctive color coding scheme | 
+| semantic_color       | 1 | instance-by-instance color coding scheme | 
 | semantic_color       | 2 | Semantic label color coding scheme |
 
 ## Semantic Color Coding
-There are two ways for rendering rgb images in semantic mode, defined inside `gibson/core/channels/common/semantic_color.hpp`. They each have their tradeoffs. We would like you to be aware of what's being rendered, and what to expect.
+There are two ways for rendering rgb semantic maps in semantic mode, defined inside `gibson/core/channels/common/semantic_color.hpp`. Each is defined below:
 
-###  Distinctive Color Coding
+###  Instance-by-Instance Color Coding
 <img src=../../misc/semantics.png width="600">
-In Distinctive Color Coding Scheme, Gibson assigns each semantic instance with its distinctive color. These colors are arbitrarily chosen, but preserves through different trials. 
-
-Note that this mode renders intuitive colorful semantic images, but the rgb values do not enable easy semantic lookup.
+In Instance-by-Instance Color Coding Scheme, the environment assigns a random distinctive color to each semantic instance. These colors are arbitrarily chosen but are preserved through different trials. Note that this mode renders intuitive colorful semantic map frames, but the rgb values do not enable easy semantic class lookup.
 
 ###  Semantic Label Color Coding
-For both Stanford 2D3Ds and Matterport3D assigns semantic label to each object instance. These integer labels usually have their model specific mapping, specified by Stanford 2D3Ds and Matterport3D dataset. Instead of enforcing another layer of indirection, Gibson directly renders these semantic labels as rgb.
+In Semantic Label Color Coding, for both Stanford 2D3Ds and Matterport3D spaces, the environment assigns a semantic label to each object instance and renders the frame. These integer labels usually have their space specific mapping, specified by the original Stanford 2D3Ds and Matterport3D datasets. Instead of enforcing another layer of indirection, Gibson directly renders these semantic labels as rgb; therefore, the rendered frame can be directly consumed as the semantically labled pixel maps but the frame itself usually looks dark to human eyes. 
+
 ``` cpp
 b = ( segment_id ) % 256;
 g = ( segment_id >> 8 ) % 256;
 r = ( segment_id >> 16 ) % 256;
 color = {r, g, b}
 ```
-
-Note that this mode is good for direct semantic look up based on rgb image, but the image itself usually looks dark to human eyes.
