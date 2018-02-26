@@ -14,7 +14,7 @@ Inside config.yaml, fill in the following fields to render semantics (see `examp
 ...
 use_filler: true
 display_ui: true
-show_dignostic: true
+show_diagnostics: true
 ui_num: 2                                       # Make sure match up with len(ui_components)
 ui_components: [RGB_FILLED, SEMANTICS]          # Make sure to include SEMANTICS
 output: [nonviz_sensor, rgb_filled, semantics]  # Make sure to include semantics

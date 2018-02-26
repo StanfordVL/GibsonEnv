@@ -420,7 +420,7 @@ class CameraRobotEnv(BaseRobotEnv):
 
         # Add quantifications
         visuals = self.get_visuals(self.render_rgb, self.render_depth)
-        if self.config["show_dignostic"]:
+        if self.config["show_diagnostics"]:
             self.render_rgb = self.add_text(self.render_rgb)
 
 

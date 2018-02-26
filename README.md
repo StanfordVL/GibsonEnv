@@ -271,7 +271,7 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |fov | 1.57  | field of view for the camera, in radian |
 | use_filler | true/false  | use neural network filler or not. It is recommended to leave this argument true. See [Gibson Environment website](http://gibson.vision/) for more information. |
 |display_ui | true/false  | Gibson has two ways of showing visual output, either in multiple windows, or aggregate them into a single pygame window. This argument determiens whether to show pygame ui or not, if in a production environment (training), you need to turn this off |
-|show_dignostic | true/false  | show dignostics(including fps, robot position and orientation, accumulated rewards) overlaying on the RGB image |
+|show_diagnostics | true/false  | show dignostics(including fps, robot position and orientation, accumulated rewards) overlaying on the RGB image |
 |ui_num |2  | how many ui components to show, this should be length of ui_components. |
 | ui_components | [RGB_FILLED, DEPTH]  | which are the ui components, choose from [RGB_FILLED, DEPTH, NORMAL, SEMANTICS, RGB_PREFILLED] |
 |output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot, choose from  [nonviz_sensor, rgb_filled, depth]. These values are independent of `ui_components`, as `ui_components` determines what to show and `output` determines what the robot receives. |

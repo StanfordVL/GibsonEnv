@@ -9,7 +9,7 @@ initial_pos: [0.3, 5, 1.2]
 fov: 1.57
 use_filler: true
 display_ui: true
-show_dignostic: true
+show_diagnostics: true
 ui_num: 2
 ui_components: [RGB_FILLED, SEMANTICS]
 random:

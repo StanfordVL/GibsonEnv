@@ -12,7 +12,7 @@ initial_pos: [-7, 2.6, 0.5] # initial position for navigating
 fov: 1.57 # field of view for the camera
 use_filler: true # use neural network filler or not, it is recommended to leave this argument true
 display_ui: true # show pygame ui or not, if in a production environment (training), you need to turn this off
-show_dignostic: true # show dignostics overlaying on the RGB image
+show_diagnostics: true # show dignostics overlaying on the RGB image
 ui_num: 2 # how many ui components to show
 ui_components: [RGB_FILLED, DEPTH] # which are the ui components, choose from [RGB_FILLED, DEPTH, NORMAL, SEMANTICS, RGB_PREFILLED]
 
