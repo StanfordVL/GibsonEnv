@@ -165,7 +165,7 @@ If you installed from source, you can run those directly using the following com
 
 
 ```bash
-python examples/demo/play_husky_sensor.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building
+python examples/demo/play_husky_nonviz.py ### Use ASWD keys on your keyboard to control a car to navigate around Gates building
 ```
 
 <img src=misc/husky_nonviz.png width="600">
