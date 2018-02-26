@@ -1,0 +1,31 @@
+envname: HuskyNavigateEnv
+model_id: 17DRP5sb8fy
+target_orn: [0, 0, 1.57]
+target_pos: [-14.3, 45.57, 0.3]
+initial_orn: [0, 0, 1.37]
+initial_pos: [0.3, 4.5, 1.2]
+fov: 1.57
+use_filler: true
+display_ui: true
+show_dignostic: true
+ui_num: 2
+ui_components: [RGB_FILLED, SEMANTICS]
+random:
+  random_initial_pose : false
+  random_target_pose : false
+  random_init_x_range: [-0.1, 0.1]
+  random_init_y_range: [-0.1, 0.1]
+  random_init_z_range: [-0.1, 0.1]
+  random_init_rot_range: [-0.1, 0.1]
+  random_target_range: 0.1
+
+output: [nonviz_sensor, rgb_filled, semantics]
+resolution: 256
+
+speed:
+  timestep: 0.01
+  frameskip: 1
+
+mode: gui #gui|headless
+verbose: false
+semantic_source: 0

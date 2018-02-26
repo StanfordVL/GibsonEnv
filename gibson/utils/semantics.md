@@ -1,11 +1,15 @@
 Instruction for Using Gibson with Semantics
 ==========================
 
+<img src=misc/semantics.png width="600">
+
+Gibson can provide pixel-wise frame-by-frame semantic masks when the model is semantically annotated. As of now we have incorporated models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/) for this purpose, and we refer you to the original dataset's reference for the list of their semantic classes and annotations. 
+
+## Dataset
 Gibson can provide semantics from:
 
-
 0. Random semantics <br />
-Good for visualization purpose <br />
+Assigns a arbitrary distinctive color to each object. Good for visualization purpose <br />
 In `config.yaml` set `semantic_source: 0`
 1. Stanford 2D3Ds <br />
 In `config.yaml` set `semantic_source: 1`
@@ -13,25 +17,15 @@ In `config.yaml` set `semantic_source: 1`
 In `config.yaml` set `semantic_source: 2`
 
 ## Instruction
-1. Acquire data
+1. Acquire data<br />
+**Agreement**: If you choose to use the models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/)for rendering semantics, we ask you to agree to and sign their respective agreements. See [here](https://niessner.github.io/Matterport/) for Matterport3D and [here](https://github.com/alexsax/2D-3D-Semantics) for Stanford 2D3DS.
 
-Download [Stanford 2D3Ds dataset](https://github.com/alexsax/2D-3D-Semantics) or [Matterport 3D dataset](https://github.com/niessner/Matterport). 
-
-2. Set environment variables
-```bash
-GIBSON_SEMANTIC_DSET=/path/to/dataset
-```
-3. Execute dataascript
-```bash
-python gibson/utils/semantic_data.py
-```
-
+2. Move model files to gibson/assets/dataset<br />
 Then, enjoy! Sample code:
 ```bash
-python gibson/utils/test_env.py
+python examples/demo/play_husky_semantics.py
 ```
-Note: semantic mesh model might take up to a minute to load and parse. If you observe the loading
-script taking longer than normal, please start an issue.
+Note: semantic mesh model might take up to a minute to load and parse. If you observe the script takes longer than normal, likely it's because of OpenGL rendering issue. Please file an issue and we will help you with troubleshooting.
 
 ## Data Format
 Default color coding is defined inside `gibson/core/channels/common/semantic_color.hpp`
