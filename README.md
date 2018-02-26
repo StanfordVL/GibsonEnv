@@ -1,4 +1,5 @@
-# ``Gibson Environment`` for Embodied Active Agents with Real-World Perception 
+# GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception 
+
 You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment that offers real world experience for learning perception. 
 
 <img src=misc/ui.gif width="600">
