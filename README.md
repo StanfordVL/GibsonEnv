@@ -1,4 +1,4 @@
-# Gibson Environment for Active Agents with Real-World Perception 
+# Gibson Environment: Embodied Active Agents with Real-World Perception 
 You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment that offers real world experience for learning perception. 
 
 <img src=misc/ui.gif width="600">
@@ -11,7 +11,7 @@ You shouldn't play video games all day, so shouldn't your AI! We built a virtual
 
 **Naming**: Gibson environment is named after James J. Gibson, the author of "Ecological Approach to Visual Perception", 1979. “We must perceive in order to move, but we must also move in order to perceive” – JJ Gibson
 
-Please see [Gibson environment website](http://gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
+Please see [Gibson environment website](http://gibson.vision/) (http://env.gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
 
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
 
@@ -23,14 +23,16 @@ Table of contents
 =================
 
    * [Installation](#installation)
-        * [Quick Installation (docker)](#quick-installation)
-        * [Building from source](#building-from-source)
+        * [Quick Installation (docker)](#a-quick-installation-docker)
+        * [Building from source](#b-building-from-source)
         * [Uninstalling](#uninstalling)
    * [Quick Start](#quick-start)
         * [Web User Interface](#web-user-interface)
         * [Rendering Semantics](#rendering-semantics)
    * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
+   * [Goggles: transferring the agent to real-world](#goggles-transferring-the-agent-to-real-world)
+
 
 Installation
 =================
@@ -258,4 +260,13 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
 |verbose |true/false  | show dignostics in terminal |
 
+
+Goggles: transferring the agent to real-world
+=================
+Gibson includes a baked-in domain adaptation mechanism, named Goggles, for when an agent trained in Gibson is going to be deployed in real-world (i.e. operate based on images coming from an onboard camera). The mechanims is essentially a learned inverse function that alters the frames coming from a real camera to what they would look like if they were rendered via Gibson, and hence, disolve the domain gap. 
+
+<img src=http://gibson.vision/static/img/figure4.jpg width="400">
+
+
+**More details:** With all the imperfections in point cloud rendering, it has been proven difficult to get completely photo-realistic rendering with neural network fixes. The remaining issues make a domain gap between the synthesized and real images. Therefore, we formulate the rendering problem as forming a joint space ensuring a correspondence between rendered and real images, rather than trying to (unsuccessfuly) render images that are identical to real ones. This provides a deterministic pathway for traversing across these domains and hence undoing the gap. We add another network "u" for target image (I_t) and define the rendering loss to minimize the distance between f(I_s) and u(I_t), where "f" and "I_s" represent the filler neural network and point cloud rendering output, respectively (see the loss in above figure). We use the same network structure for f and u. The function u(I) is trained to alter the observation in real-world, I_t, to look like the corresponding I_s and consequently dissolve the gap. We named the u network goggles, as it resembles corrective lenses for the anget for deploymen in real world. Detailed formulation and discussion of the mechanism can be found in the paper. You can download the function u and apply it when you deploy your trained agent in real-world.
 

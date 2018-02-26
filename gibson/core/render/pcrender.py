@@ -167,8 +167,8 @@ class PCRenderer:
         comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
         comp = torch.nn.DataParallel(comp).cuda()
         #comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
-        ## TODO: temporary change
-        comp.load_state_dict(torch.load(os.path.join(assets_file_dir, 'compG_epoch4_3000.pth')))
+        comp.load_state_dict(
+        torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module
