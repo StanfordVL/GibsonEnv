@@ -262,7 +262,7 @@ In particular, we used [PPO](https://github.com/openai/baselines/tree/master/bas
 
 Environment Configuration
 =================
-Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained below:
+Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained below. For more informat specific to Bullet Physics engine, you can see the documentation [here](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit).
 
 | Argument name        | Example value           | Explanation  |
 |:-------------:|:-------------:| :-----|
@@ -281,8 +281,8 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot, choose from  [nonviz_sensor, rgb_filled, depth]. These values are independent of `ui_components`, as `ui_components` determines what to show and `output` determines what the robot receives. |
 |resolution | 512 | choose from [128, 256, 512] resolution of rgb/depth image |
 |initial_orn | [0, 0, 3.14] | initial orientation (in radian) for navigating, the reference frame is world frame |
-|speed : timestep | 0.01 | length of one simulation frame. For example, if timestep=0.01, frameskip=10 and the simulation is 100fps, it will be 10x real time. Note: setting timestep above 0.1 can cause instability to Bullet simulation.|
-|speed : frameskip | 1 | how many frames to run simulation for one action. For tasks that does not require high frequency control, you can set frameskip to larger value to gain further speed up. |
+|speed : timestep | 0.01 | length of one physics simulation step (as defined in [Bullet](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit)). For example, if timestep=0.01 sec, frameskip=10, and the simulation is running at 100fps, it will be 10x real time. Note: setting timestep above 0.1 can cause instability in current version of Bullet simulator since an object should not travel faster than its own radius within one timestep. See [Bullet guide](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit) under "discrete collision detection" for more info.|
+|speed : frameskip | 10 | how many timesteps to skip when rendering frames. See above row for an example. For tasks that does not require high frequency control, you can set frameskip to larger value to gain further speed up. |
 |mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
 |verbose |true/false  | show dignostics in terminal |
 
