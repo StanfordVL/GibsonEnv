@@ -45,6 +45,9 @@ class SimpleUI():
         self.socket = self.context.socket(zmq.PUB)
         self.socket.bind("tcp://*:%s" % self.port)
 
+    def _close(self):
+        self.context.destroy()
+
     def _add_all_images(self):
         for index, component in enumerate(self.components):
             img = np.zeros((self.windowsz, self.windowsz, 3))

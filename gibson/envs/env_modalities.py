@@ -273,10 +273,12 @@ class CameraRobotEnv(BaseRobotEnv):
             #self.screen = pygame.display.set_mode([612, 512], 0, 32)
             self.screen_arr = np.zeros([612, 512, 3])
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
-        #assert (mode in ["GREY", "RGB", "RGBD", "DEPTH", "SENSOR"]), \
-        #    "Environment mode must be RGB/RGBD/DEPTH/SENSOR"
         self._use_filler = use_filler
-        self._require_camera_input = 'rgb_filled' in self.config["output"]
+        self._require_camera_input = 'rgb_filled' in self.config["output"] or \
+                                     'rgb_prefilled' in self.config["output"] or \
+                                     'depth' in self.config["output"] or \
+                                     'normal' in self.config["output"] or \
+                                     'semantics' in self.config["output"]
         self._require_semantics = 'semantics' in self.config["output"]
         self._semantic_source = 1
         self._semantic_color = 1
@@ -287,7 +289,7 @@ class CameraRobotEnv(BaseRobotEnv):
             assert self.config["semantic_color"] in [1, 2], "semantic_source not valid"
             self._semantic_source = self.config["semantic_source"]
             self._semantic_color  = self.config["semantic_color"]
-        self._require_normal = 'normal' in self.config["output"]  
+        self._require_normal = 'normal' in self.config["output"]
 
         if self._require_camera_input:
             self.model_path = get_model_path(self.model_id)
@@ -327,7 +329,7 @@ class CameraRobotEnv(BaseRobotEnv):
             4: FourViewUI,
         }
 
-
+        assert(self.config["ui_num"] == len(self.config['ui_components']), "In configuration, ui_num is not equal to the number of ui components")
         if self.config["display_ui"]:
             self.UI = ui_map[self.config["ui_num"]](self.windowsz, self)
         '''
@@ -381,7 +383,7 @@ class CameraRobotEnv(BaseRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(eye_pos, all_dist, all_pos)
 
-        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         visuals = self.get_visuals(self.render_rgb, self.render_depth)
 
@@ -410,28 +412,29 @@ class CameraRobotEnv(BaseRobotEnv):
         all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
         top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
 
-        # Speed bottleneck
-        t = time.time()
+        with Profiler("Rendering visuals: "):
+            # Speed bottleneck
+            t = time.time()
 
-        self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_unfilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+            self.render_rgb, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
-        dt = time.time() - t
-        self.fps = 0.9 * self.fps + 0.1 * 1/dt
+            dt = time.time() - t
+            self.fps = 0.9 * self.fps + 0.1 * 1/dt
 
-        # Add quantifications
-        visuals = self.get_visuals(self.render_rgb, self.render_depth)
-        if self.config["show_diagnostics"]:
-            self.render_rgb = self.add_text(self.render_rgb)
+            # Add quantifications
+            visuals = self.get_visuals(self.render_rgb, self.render_depth)
+            if self.config["show_diagnostics"]:
+                self.render_rgb = self.add_text(self.render_rgb)
 
 
-        if self.config["display_ui"]:
-            with Profiler("Rendering visuals: render to visuals"):
+            if self.config["display_ui"]:
+                #with Profiler("Rendering visuals: render to visuals"):
                 self.render_to_UI()
                 self.save_frame += 1
 
-        elif self.gui:
-            # Speed bottleneck 2, 116fps
-            self.r_camera_rgb.renderToScreen()
+            elif self.gui:
+                # Speed bottleneck 2, 116fps
+                self.r_camera_rgb.renderToScreen()
 
 
 
@@ -450,6 +453,8 @@ class CameraRobotEnv(BaseRobotEnv):
     def render_component(self, tag):
         if tag == View.RGB_FILLED:
             return self.render_rgb
+        if tag == View.RGB_PREFILLED:
+            return self.render_prefilled
         if tag == View.DEPTH:
             scaled_depth = self.render_depth * DEPTH_SCALE_FACTOR
             return scaled_depth
@@ -486,6 +491,9 @@ class CameraRobotEnv(BaseRobotEnv):
             self.r_camera_norm.terminate()
         if self._require_semantics:
             self.r_camera_semt.terminate()
+
+        if self.config["display_ui"]:
+            self.UI._close()
 
     def get_key_pressed(self, relevant=None):
         pressed_keys = []
@@ -559,9 +567,13 @@ class CameraRobotEnv(BaseRobotEnv):
             #source_semantics.append(target_semantics)
 
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, semantics=source_semantics,
-                              gui=self.gui, use_filler=self._use_filler,  gpu_count=self.gpu_count, windowsz=self.windowsz, env = self)
-
+        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, 
+                                       semantics=source_semantics,
+                                       gui=self.gui, 
+                                       use_filler=self._use_filler,  
+                                       gpu_count=self.gpu_count, 
+                                       windowsz=self.windowsz, 
+                                       env = self)
 
 
     def setup_camera_multi(self):

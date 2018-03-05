@@ -344,6 +344,7 @@ class HuskyGibsonFlagRunEnv(CameraRobotEnv):
         if not np.isfinite(state).all():
             print("~INF~", state)
             done = True
+        print(len(self.robot.parts['top_bumper_link'].contact_list()), self.nframe, done)
         return done
 
     def _step(self, a):

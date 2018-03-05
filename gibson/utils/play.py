@@ -28,7 +28,7 @@ def display_arr(screen, arr, video_size, transpose):
     pyg_img = pygame.transform.scale(pyg_img, video_size)
     screen.blit(pyg_img, (0,0))
 
-def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=None):
+def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
     """Allows one to play the game using keyboard.
 
     To simply play the game use:
@@ -59,9 +59,6 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
     transpose: bool
         If True the output of observation is transposed.
         Defaults to true.
-    fps: int
-        Maximum number of steps of the environment to execute every second.
-        Defaults to 30.
     zoom: float
         Make screen edge this many times bigger
     callback: lambda or None
@@ -134,7 +131,6 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
                 record_num += 1
             #print(info['sensor'])
             print("Play mode: reward %f" % rew)
-            #time.sleep(1.0/fps)
         for p_key in pressed_keys:
             action = keys_to_action[(p_key, )]
             prev_obs = obs
@@ -144,7 +140,6 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
                 record_total += time.time() - start
                 record_num += 1
             print("Play mode: reward %f" % rew)
-            #time.sleep(1.0/fps)
         if callback is not None:
             callback(prev_obs, obs, action, rew, env_done, info)
         # process pygame events
@@ -170,7 +165,6 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
                 screen = pygame.display.set_mode(video_size)
                 print(video_size)
             '''
-        #time.sleep(1.0/fps)
 
 class PlayPlot(object):
     def __init__(self, callback, horizon_timesteps, plot_names):

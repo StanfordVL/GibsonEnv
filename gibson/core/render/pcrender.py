@@ -152,18 +152,11 @@ class PCRenderer:
         self.show_rgb        = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
         self.show_semantics  = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
 
-        #self.show_unfilled  = None
-        #if configs.MAKE_VIDEO or configs.HIST_MATCHING:
-        self.show_unfilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        self.show_prefilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
         self.surface_normal  = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
 
         self.semtimg_count = 0
 
-        #if configs.USE_SMALL_FILLER:
-        #    comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
-        #    comp = torch.nn.DataParallel(comp).cuda()
-        #    comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model.pth")))
-        #else:
         comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
         comp = torch.nn.DataParallel(comp).cuda()
         #comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
@@ -181,7 +174,7 @@ class PCRenderer:
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
-        if gui and not self.env.config["display_ui"]: #configs.DISPLAY_UI:
+        if gui and not self.env.config["display_ui"]:
             self.renderToScreenSetup()
 
 
@@ -314,7 +307,7 @@ class PCRenderer:
         return pos, quat_wxyz
 
 
-    def render(self, rgbs, depths, pose, model, poses, target_pose, show, show_unfilled=None, is_rgb=False):
+    def render(self, rgbs, depths, pose, model, poses, target_pose, show, show_prefilled=None, is_rgb=False):
         v_cam2world = target_pose
         p = (v_cam2world).dot(np.linalg.inv(pose))
         p = p.dot(np.linalg.inv(PCRenderer.ROTATION_CONST))
@@ -362,7 +355,6 @@ class PCRenderer:
         if debugmode and self._require_normal:
             print("Inside show3d: surface normal max", np.max(normal_arr), "mean", np.mean(normal_arr))
 
-        #print("mist", np.mean(opengl_arr), np.min(opengl_arr), np.max(opengl_arr))
         def _render_pc(opengl_arr, imgs_pc, show_pc):
             #with Profiler("Render pointcloud cuda", enable=ENABLE_PROFILING):
             poses_after = [
@@ -391,12 +383,10 @@ class PCRenderer:
         #with Profiler("Render: render point cloud"):
         ## Speed bottleneck
         _render_pc(opengl_arr, rgbs, show)
-        #if self._require_semantics:
-            #_render_pc(opengl_arr, self.semantics_topk, self.show_semantics)
-
-        #if configs.HIST_MATCHING and is_rgb:
-        #    show_unfilled[:, :, :] = show[:, :, :]
-
+        
+        # Store prefilled rgb
+        show_prefilled[:] = show
+        
         #with Profiler("Render: NN total time"):
         ## Speed bottleneck
         if self.use_filler and self.model and is_rgb and need_filler:
@@ -420,15 +410,11 @@ class PCRenderer:
         if self._require_semantics:
             self.show_semantics = semantic_arr
             print("Semantics array", np.max(semantic_arr), np.min(semantic_arr), np.mean(semantic_arr), semantic_arr.shape)
-            '''
-            if self.semtimg_count == 3:
-                scipy.misc.toimage(self.show_semantics, cmin=0.0, cmax=...).save(os.path.join(file_dir, "semt_render_" + str(self.semtimg_count) + '.jpg'))
-            self.semtimg_count = self.semtimg_count + 1
-            '''
+        
         #Histogram matching happens here
         #with Profiler("Render: hist matching"):
         #if configs.HIST_MATCHING and is_rgb:
-        #    template = (show_unfilled/255.0).astype(np.float32)
+        #    template = (show_prefilled/255.0).astype(np.float32)
         #    source = (show/255.0).astype(np.float32)
         #    source_matched = hist_match3(source, template)
         #    show[:] = (source_matched[:] * 255).astype(np.uint8)
@@ -480,13 +466,13 @@ class PCRenderer:
 
         self.show.fill(0)
 
-        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_unfilled, is_rgb=True)
+        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_prefilled, is_rgb=True)
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
         self.show_rgb = self.show
-        self.show_unfilled_rgb = self.show_unfilled
+        self.show_prefilled_rgb = self.show_prefilled
 
-        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_unfilled_rgb
+        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_prefilled_rgb
 
 
     def renderToScreen(self):
@@ -497,9 +483,9 @@ class PCRenderer:
             rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
             cv2.imshow('RGB cam',rgb)
 
-        def _render_rgb_unfilled(unfilled_rgb):
+        def _render_rgb_prefilled(prefilled_rgb):
             ## TODO: legacy MAKE_VIDEO
-            cv2.imshow('RGB prefilled', unfilled_rgb)
+            cv2.imshow('RGB prefilled', prefilled_rgb)
 
         def _render_semantics(semantics):
             if not self._require_semantics: return

@@ -25,9 +25,9 @@ class RandomAgent(object):
                 action[np.random.choice(action.shape[0], 1)] = np.random.randint(-1, 2)
         return action
 
-def testEnv(Env, config="test.yaml", frame_total=10):
+def testEnv(Env, config="test_filled.yaml", frame_total=10):
     print("Currently testing", Env)
-    config = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'examples', 'configs', config)
+    config = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'examples', 'configs', 'test', config)
     env = Env(config, is_discrete = False)
     obs = env.reset()
     agent = RandomAgent(env.action_space, is_discrete = False)
@@ -47,6 +47,7 @@ def testEnv(Env, config="test.yaml", frame_total=10):
     
 if __name__ == '__main__':
     '''
+    ## Deprecated, not up to date with .yaml configuration
     testEnv(HumanoidGibsonFlagRunEnv)
     testEnv(HumanoidNavigateEnv)
     testEnv(HuskyNavigateEnv)
@@ -56,4 +57,11 @@ if __name__ == '__main__':
     testEnv(AntGibsonFlagRunEnv)
     testEnv(AntNavigateEnv)
     '''
-    testEnv(HuskyNavigateEnv, "test_semantics.yaml", 100)
+
+    testEnv(HuskyNavigateEnv, "test_semantics.yaml", 10)
+    testEnv(HuskyNavigateEnv, "test_filled.yaml", 10)
+    testEnv(HuskyNavigateEnv, "test_prefilled.yaml", 10)
+    testEnv(HuskyNavigateEnv, "test_depth.yaml", 10)
+    testEnv(HuskyNavigateEnv, "test_normal.yaml", 10)
+    testEnv(HuskyNavigateEnv, "test_three.yaml", 10)
+    testEnv(HuskyNavigateEnv, "test_four.yaml", 10)

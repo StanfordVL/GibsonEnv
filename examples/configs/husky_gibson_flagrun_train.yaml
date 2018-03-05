@@ -22,8 +22,8 @@ output: [nonviz_sensor, rgb_filled, depth]
 resolution: 128
 
 speed:
-  timestep: 0.01
-  frameskip: 1
+  timestep: 0.001
+  frameskip: 10
 
 mode: gui #gui|headless
 verbose: false

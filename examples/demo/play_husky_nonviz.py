@@ -3,9 +3,6 @@ from gibson.utils.play import play
 import argparse
 import os
 
-timestep = 1.0/(1000.0)
-frame_skip = 1
-
 config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate_nonviz.yaml')
 print(config_file)
 
@@ -16,4 +13,4 @@ if __name__ == '__main__':
 
     env = HuskyNavigateEnv(is_discrete = True, config = args.config)
     print(env.config)
-    play(env, zoom=4, fps=int( 1.0/(timestep * frame_skip)))
+    play(env, zoom=4)
