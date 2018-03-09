@@ -44,7 +44,7 @@ def train(num_timesteps, seed):
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
                                'husky_navigate_train.yaml')
     print(config_file)
-    raw_env = HuskyNavigateEnv(is_discrete=True, gpu_count=args.gpu_count, config = config_file)
+    raw_env = HuskyNavigateEnv(gpu_count=args.gpu_count, config = config_file)
 
     env = Monitor(raw_env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))

@@ -42,7 +42,7 @@ def train(num_timesteps, seed):
                                'husky_navigate_train.yaml')
     print(config_file)
 
-    env = HuskyNavigateEnv(is_discrete=True, gpu_count=args.gpu_count, config = config_file)
+    env = HuskyNavigateEnv(gpu_count=args.gpu_count, config = config_file)
 
     policy = policy_fn("pi", env.observation_space, env.action_space) # Construct network for new policy
     def execute_policy(env):
