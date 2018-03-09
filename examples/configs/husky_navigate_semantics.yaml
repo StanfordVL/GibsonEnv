@@ -5,6 +5,8 @@ target_pos: [-14.3, 45.57, 0.3]
 initial_orn: [0, 0, 1.37]
 initial_pos: [0.3, 4.5, 1.2]
 fov: 1.57
+is_discrete: true
+
 use_filler: true
 display_ui: true
 show_diagnostics: true

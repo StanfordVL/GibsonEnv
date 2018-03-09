@@ -22,28 +22,26 @@ import yaml
 class BaseEnv(gym.Env):
     """
     Base class for loading environments in a Scene.
-    Handles scene loading, robot loading, pybullet client setting,
-        camera setting
+    Handles scene loading, starting physical simulation
 
     These environments create single-player scenes and behave like normal Gym environments.
     Multiplayer is not yet supported
     """
 
-    metadata = {
-        'render.modes': ['human', 'rgb_array'],
-        'video.frames_per_second': 60
-        }
-
-    def __init__(self, config, scene_type):
+    def __init__(self, config, scene_type, tracking_camera):
         ## Properties already instantiated from SensorEnv/CameraEnv
-        #   @self.human
         #   @self.robot
+        self.gui = config["mode"] == "gui"
+        self.model_id = config["model_id"]
+        self.timestep = config["speed"]["timestep"]
+        self.frame_skip = config["speed"]["frameskip"]
+        self.resolution = config["resolution"]
+        self.tracking_camera = tracking_camera
+        self.robot = None
+        target_orn, target_pos   = config["target_orn"], self.config["target_pos"]
+        initial_orn, initial_pos = config["initial_orn"], self.config["initial_pos"]
 
-        if self.config is None:
-            self.config = self.parse_config(config)
-
-
-        if self.config["display_ui"]:
+        if config["display_ui"]:
             #self.physicsClientId = p.connect(p.DIRECT)
             self.physicsClientId = p.connect(p.GUI)
             p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
@@ -59,11 +57,9 @@ class BaseEnv(gym.Env):
         self._cam_pitch = -30
         self.scene_type = scene_type
         self.scene = None
-
     
     def _close(self):
         p.disconnect()
-
 
     def parse_config(self, config):
         with open(config, 'r') as f:
@@ -83,7 +79,7 @@ class BaseEnv(gym.Env):
     
     def create_single_player_building_scene(self):
         return SinglePlayerBuildingScene(self.robot, model_id=self.model_id, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip, env=self)
-        
+
     def create_single_player_stadium_scene(self):
         return SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip, env=self)
 
@@ -96,12 +92,12 @@ class BaseEnv(gym.Env):
         return [seed]
 
     def _reset(self):
+        assert self.robot is not None, "Pleases introduce robot to environment before resetting."
         p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
         p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 0)
         p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
         p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-    
         #visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
         #                               meshScale=[0.3, 0.3, 0.3], rgbaColor=[1, 0, 0, 0.7])
         #physicsid = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=[0, 0, 2])
@@ -111,7 +107,6 @@ class BaseEnv(gym.Env):
         self.done = 0
         self.reward = 0
         dump = 0
-        ## TODO(hzyjerry): toggle for hard_reset: reload robot
         state = self.robot.reset()
         self.scene.episode_restart()
         return state
@@ -216,9 +211,6 @@ class BaseEnv(gym.Env):
 
         cmd = "xdotool search --name \"Bullet Physics\" set_window --name \"Robot's world\""
         os.system(cmd)
-
-    def HUD(self, state, a, done):
-        pass
 
 
 class Camera:

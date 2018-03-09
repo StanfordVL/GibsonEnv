@@ -7,16 +7,13 @@ import sys
 import pybullet as p
 from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
-#from gibson.envs.ant_env_history import *
-
-
 
 """Task specific classes for Ant Environment
 Each class specifies: 
     (1) Target position
     (2) Reward function
     (3) Done condition
-    (4) (Optional) Curriculum learning condition
+    (4) Reset function (e.g. curriculum learning)
 """
 
 tracking_camera = {
@@ -26,53 +23,22 @@ tracking_camera = {
     'pitch': -20
 }
 
-
 class AntNavigateEnv(CameraRobotEnv):
-    def __init__(
-            self, 
-            config,
-            is_discrete=False,
-            gpu_count=0):
-        
+    def __init__(self, config, gpu_count=0):
+
         self.config = self.parse_config(config)
-        self.gui = self.config["mode"] == "gui"
-
-        self.model_id = self.config["model_id"]
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.resolution = self.config["resolution"]
-        self.tracking_camera = tracking_camera
-        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
-        self.total_reward = 0
-        self.total_frame = 0
-        
-        CameraRobotEnv.__init__(
-            self,
-            config,
-            gpu_count,
-            scene_type="building", 
-            use_filler=self.config["use_filler"])
-
-        self.robot_introduce(Ant(
-            initial_pos, 
-            initial_orn, 
-            is_discrete=is_discrete, 
-            target_pos=target_pos,
-            resolution=self.resolution,
-            env = self))
-        self.scene_introduce()
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-    def calc_rewards_and_done(self, a, state):
-        ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
-        if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
-            self.robot.apply_action(a)
-            self.scene.global_step()       
-        done = self._termination(state)
-        rewards = self._rewards(a)
-        print("Frame %f reward %f" % (self.nframe, sum(self.rewards)))
-        return rewards, done
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
+
+        self.robot_introduce(Ant(self.config, env=self))
+        self.scene_introduce()
+        self.gui = self.config["mode"] == "gui"
+        self.total_reward = 0
+        self.total_frame = 0
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
     def _rewards(self, action=None, debugmode=False):
         a = action
@@ -116,22 +82,21 @@ class AntNavigateEnv(CameraRobotEnv):
             #feet_collision_cost
          ]
 
-    def _termination(self, state=None, debugmode=False):
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+    def _termination(self, debugmode=False):
+        height = self.robot.get_position()[2]
+        pitch = self.robot.get_rpy()[1]
+        alive = float(self.robot.alive_bonus(height, pitch))
+        
         done = self.nframe > 300
         #done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
         if (debugmode):
             print("alive=")
             print(alive)
         return done
 
     def _flag_reposition(self):
-        walk_target_x = self.robot.walk_target_x / self.robot.mjcf_scaling
-        walk_target_y = self.robot.walk_target_y / self.robot.mjcf_scaling
+        walk_target_x = self.robot.get_position()[0] / self.robot.mjcf_scaling
+        walk_target_y = self.robot.get_position()[1] / self.robot.mjcf_scaling
 
         self.flag = None
         if self.gui and not self.config["display_ui"]:
@@ -147,56 +112,21 @@ class AntNavigateEnv(CameraRobotEnv):
 
 
 class AntClimbEnv(CameraRobotEnv):
-
-
-    def __init__(
-            self,
-            config,
-            is_discrete=False,
-            gpu_count=0):
+    def __init__(self, config, gpu_count=0):
         self.config = self.parse_config(config)
-        self.delta_target = [self.config["random"]["random_target_range"], self.config["random"]["random_target_range"]]
-        self.gui = self.config["mode"] == "gui"
-        self.model_id = self.config["model_id"]
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.resolution = self.config["resolution"]
-        self.tracking_camera = tracking_camera
-        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
-        self.total_reward = 0
-        self.total_frame = 0
-        self.target_pos_gt = target_pos
-        self.visual_flagId = None
-
-        CameraRobotEnv.__init__(
-            self,
-            config,
-            gpu_count,
-            scene_type="building", 
-            use_filler=self.config["use_filler"])
-        self.robot_introduce(AntClimber(
-            initial_pos, initial_orn, 
-            is_discrete=is_discrete, 
-            target_pos=target_pos,
-            resolution=self.resolution,
-            env = self))
-        self.scene_introduce()
-
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-    def calc_rewards_and_done(self, a, state):
-        #time.sleep(0.1)
-        ### TODO (hzyjerry): this is directly taken from husky_env, needs to be tuned 
-        # dummy state if a is None
-        if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
-            self.robot.apply_action(a)
-            self.scene.global_step()
-       
-        done = self._termination(state)
-        rewards = self._rewards(a)
-        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
-        return rewards, done
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
+
+        self.robot_introduce(AntClimber(self.config, env=self))
+        self.scene_introduce()
+        self.gui = self.config["mode"] == "gui"
+        self.total_reward = 0
+        self.total_frame = 0
+        self.visual_flagId = None
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
     def _rewards(self, action=None, debugmode=False):
         a = action
@@ -237,7 +167,6 @@ class AntClimbEnv(CameraRobotEnv):
         rewards = [
             #alive,
             progress,
-            #close_to_goal,
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
@@ -249,12 +178,12 @@ class AntClimbEnv(CameraRobotEnv):
             print(rewards)
         return rewards
 
-    def _termination(self, state=None, debugmode=False):
-        alive = float(self.robot.alive_bonus(self.robot.body_rpy[0], self.robot.body_rpy[1]))  # state[0] is body height above ground (z - z initial), body_rpy[1] is pitch
-        done = self.nframe > 700 or alive < 0 or self.robot.body_xyz[2] < 0 or self.robot.is_close_to_goal()
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
+    def _termination(self, debugmode=False):
+        height = self.robot.get_position()[2]
+        pitch = self.robot.get_rpy()[1]
+        alive = float(self.robot.alive_bonus(height, pitch))
+        
+        done = self.nframe > 700 or alive < 0 or height < 0 or self.robot.dist_to_target() < 2
         return done
 
     ## TODO: refactor this function
@@ -267,18 +196,15 @@ class AntClimbEnv(CameraRobotEnv):
         else:
             delta_x = 0
             delta_y = 0
-        self.temp_target_x = (self.target_pos_gt[0] + delta_x)
-        self.temp_target_y = (self.target_pos_gt[1] + delta_y)
+        self.temp_target_x = (self.robot.get_target_position()[0] + delta_x)
+        self.temp_target_y = (self.robot.get_target_position()[1] + delta_y)
 
     def _flag_reposition(self):
         walk_target_x = self.temp_target_x
         walk_target_y = self.temp_target_y
-        walk_target_z = self.robot.walk_target_z
+        walk_target_z = self.robot.get_target_position()[1]
 
-        self.robot.walk_target_x = walk_target_x    # Change robot target accordingly
-        self.robot.walk_target_y = walk_target_y    # Important for stair climbing
-        self.robot.walk_target_z = walk_target_z
-
+        self.robot.set_target_position([walk_target_x, walk_target_y, walk_target_z])
         self.flag = None
         if not self.gui:
             return
@@ -318,36 +244,20 @@ class AntClimbEnv(CameraRobotEnv):
 class AntFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(
-            self, 
-            config,
-            is_discrete=False,
-            mode="RGBD",
-            gpu_count=0):
+    def __init__(self, config, gpu_count=0):
         self.config = self.parse_config(config)
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
+
+        self.robot_introduce(Ant(self.config, env=self))
+        self.scene_introduce()
         self.gui = self.config["mode"] == "gui"
-        self.model_id = self.config["model_id"]
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.resolution = self.config["resolution"]
-        self.tracking_camera = tracking_camera
-        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
         self.total_reward = 0
         self.total_frame = 0
         self.flag_timeout = 1
-
-        CameraRobotEnv.__init__(
-            self, 
-            config,
-            gpu_count,
-            scene_type="stadium", 
-            use_filler=False)
-        self.robot_introduce(Ant(
-            initial_pos, initial_orn, 
-            is_discrete=is_discrete,
-            env = self))
-        self.scene_introduce()
 
         if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
@@ -383,11 +293,6 @@ class AntFlagRunEnv(CameraRobotEnv):
         self.robot.walk_target_x = self.walk_target_x
         self.robot.walk_target_y = self.walk_target_y
 
-    def calc_rewards_and_done(self, a, state):
-        done = self._termination(state)
-        rewards = self._rewards(a)
-        return rewards, done
-
     def _rewards(self, action=None, debugmode=False):
         a = action
         potential_old = self.potential
@@ -419,16 +324,13 @@ class AntFlagRunEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _termination(self, state=None, debugmode=False):
+    def _termination(self, debugmode=False):
         head_touch_ground = 1
         if head_touch_ground == 0:
             alive_score = 0.1
         else:
             alive_score = -0.1
         done = head_touch_ground > 0 or self.nframe > 500
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
         return done
 
     def _step(self, a):
@@ -443,40 +345,23 @@ class AntFlagRunEnv(CameraRobotEnv):
 class AntGibsonFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(
-            self,
-            config, 
-            is_discrete=False,
-            gpu_count=0, 
-            scene_type="building"):
-
+    def __init__(self, config, gpu_count=0):
         self.config = self.parse_config(config)
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
+
+        self.robot_introduce(Ant(self.config, env=self))
+        self.scene_introduce()
         self.gui = self.config["mode"] == "gui"
-        self.model_id = self.config["model_id"]
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.resolution = self.config["resolution"]
-        self.tracking_camera = tracking_camera
-        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
         self.total_reward = 0
         self.total_frame = 0
 
         self.flag_timeout = 1
         self.visualid = -1
         self.lastid = None
-
-        CameraRobotEnv.__init__(
-            self,
-            config,
-            gpu_count,
-            scene_type="building")
-        self.robot_introduce(Ant(
-            is_discrete=is_discrete,
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            env=self))
-        self.scene_introduce()
 
         if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
@@ -499,7 +384,7 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
         #self.walk_target_x *= more_compact
         #self.walk_target_y *= more_compact
 
-        startx, starty, _ = self.robot.body_xyz
+        startx, starty, _ = self.robot.get_position()
 
 
         self.flag = None
@@ -517,17 +402,6 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
 
         self.robot.walk_target_x = ball_xyz[0]
         self.robot.walk_target_y = ball_xyz[1]
-
-    def calc_rewards_and_done(self, a, state):
-        done = self._termination(state)
-        rewards = self._rewards(a)
-
-        if self.lastid:
-            ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
-            self.robot.walk_target_x = ball_xyz[0]
-            self.robot.walk_target_y = ball_xyz[1]
-
-        return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
         a = action
@@ -562,12 +436,8 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _termination(self, state=None, debugmode=False):
-
+    def _termination(self, debugmode=False):
         done = self.nframe > 500
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
         return done
 
     def _step(self, a):

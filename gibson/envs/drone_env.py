@@ -29,54 +29,21 @@ tracking_camera_top = {
 class DroneNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
-    def __init__(
-            self,
-            config,
-            is_discrete=False,
-            gpu_count=0):
-
+    def __init__(self, config, gpu_count=0):
         self.config = self.parse_config(config)
+        print(self.config["envname"])
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
+
+        self.robot_introduce(Quadrotor(self.config, env=self))
+        self.scene_introduce()
         self.gui = self.config["mode"] == "gui"
-        self.model_id = self.config["model_id"]
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.resolution = self.config["resolution"]
-        self.tracking_camera = tracking_camera
-        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
         self.total_reward = 0
         self.total_frame = 0
-        
-        CameraRobotEnv.__init__(
-            self,
-            config,
-            gpu_count,
-            scene_type="building", 
-            use_filler=self.config["use_filler"])
-        self.robot_introduce(Quadrotor(
-            is_discrete=is_discrete,
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            target_pos=target_pos,
-            resolution=self.resolution,
-            env = self
-            ))
-        self.scene_introduce()
-
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-
-    def calc_rewards_and_done(self, a, state):
-        done = self._termination(state)
-        rewards = self._rewards(a)
-        debugmode = 0
-        if debugmode:
-            print("Frame %f reward %f" % (self.nframe, sum(rewards)))
-
-        self.total_reward = self.total_reward + sum(rewards)
-        self.total_frame = self.total_frame + 1
-        #print(self.total_frame, self.total_reward)
-        return rewards, done
 
     def add_text(self, img):
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -108,24 +75,17 @@ class DroneNavigateEnv(CameraRobotEnv):
                 self.robot.feet_contact[i] = 0.0
         # print(self.robot.feet_contact)
 
-        electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we 
-        electricity_cost  += self.stall_torque_cost * float(np.square(a).mean())
+        #electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we 
+        electricity_cost  = self.stall_torque_cost * float(np.square(a).mean())
 
 
         debugmode = 0
-
-        #alive = len(self.robot.parts['top_bumper_link'].contact_list())
-        #if alive == 0:
-        #    alive_score = 0.1
-        #else:
-        #    alive_score = -0.1
-
         wall_contact = [pt for pt in self.robot.parts['base_link'].contact_list() if pt[6][2] > 0.15]
         wall_collision_cost = self.wall_collision_cost * len(wall_contact)
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         close_to_goal = 0
-        if self.robot.is_close_to_goal():
+        if self.robot.dist_to_target() < 2:
             close_to_goal = 0.5
 
         obstacle_penalty = 0
@@ -159,13 +119,9 @@ class DroneNavigateEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _termination(self, state=None, debugmode=False):
+    def _termination(self, debugmode=False):
 
-        done = self.nframe > 250 or self.robot.body_xyz[2] < 0
-        #done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
+        done = self.nframe > 250 or self.robot.get_position()[2] < 0
         if done:
             print("Episode reset")
         return done
