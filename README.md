@@ -15,7 +15,7 @@ You shouldn't play video games all day, so shouldn't your AI! We built a virtual
 Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
 
 #### Paper
-**["Embodied Real-World Active Perception"](http://gibson.vision/)**, in **CVPR 2018, Spotlight**.
+**["Embodied Real-World Active Perception"](http://gibson.vision/)**, in **CVPR 2018 [Spotlight]**.
 
 
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
