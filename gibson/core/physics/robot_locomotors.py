@@ -10,24 +10,20 @@ import sys
 OBSERVATION_EPS = 0.01
 
 
-def quatWXYZ2quatXYZW(wxyz):
-    return np.concatenate((wxyz[1:], wxyz[:1]))
-
-def quatXYZW2quatWXYZ(wxyz):
-    return np.concatenate((wxyz[-1:], wxyz[:-1]))
-
-
 class WalkerBase(BaseRobot):
     """ Built on top of BaseRobot
     Handles action_dim, sensor_dim, scene
-      base_position, apply_action, calc_state
-      reward
+    base_position, apply_action, calc_state
+    reward
     """
+    eye_offset_orn = euler2quat(0, 0, 0)
+        
     def __init__(self, 
         filename,           # robot file name 
         robot_name,         # robot name
         action_dim,         # action dimension
         power,
+        initial_pos,
         target_pos,
         sensor_dim=None,
         scale = 1, 
@@ -38,7 +34,6 @@ class WalkerBase(BaseRobot):
 
         self.resolution = resolution
         self.obs_dim = None
-        print("resolution", self.resolution)
         self.obs_dim = [self.resolution, self.resolution, 0]
 
         if "rgb_filled" in self.env.config["output"]:
@@ -58,11 +53,9 @@ class WalkerBase(BaseRobot):
 
         self.power = power
         self.camera_x = 0
-        self.walk_target_x = target_pos[0]
-        self.walk_target_y = target_pos[1]
-        self.walk_target_z = target_pos[2]
+        self.target_pos = target_pos
+        self.initial_pos = initial_pos
         self.body_xyz=[0, 0, 0]
-        self.eye_offset_orn = euler2quat(0, 0, 0)
         self.action_dim = action_dim
         self.scale = scale
         self.angle_to_target = 0
@@ -78,43 +71,30 @@ class WalkerBase(BaseRobot):
         self.initial_z = None
 
     def get_position(self):
+        '''Get current robot position
+        '''
         return self.robot_body.current_position()
 
-    def get_scaled_position(self):
-        return self.robot_body.current_position() / self.mjcf_scaling
-
     def get_orientation(self):
+        '''Get current orientation
+        '''
         return self.robot_body.current_orientation()
 
-    def reset_base_position(self, enabled, delta_orn = np.pi/3, delta_pos = 0.2):
-        #print("Reset base enabled", enabled)
-        if not enabled:
-            return
-        pos = self.robot_body.current_position()
-        orn = self.robot_body.current_orientation()
-
-        #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
-
-        #while True:
-        new_pos = [ pos[0] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
-                    pos[1] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
-                    pos[2] + self.np_random.uniform(low=0, high=delta_pos)]
-        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_orn, high=delta_orn)), orn)
-        self.robot_body.reset_orientation(new_orn)
-        self.robot_body.reset_position(new_pos)
-            #if (len(p.getContactPoints(self.robot_body.bodyIndex)) == 0):
-            #    break
-            #print("collision", p.getContactPoints(self.robot_body.bodyIndex))
-        
+    def get_rpy(self):
+        return self.robot_body.bp_pose.rpy()
 
     def apply_action(self, a):
         for n, j in enumerate(self.ordered_joints):
             j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
 
+    def get_target_position(self):
+        return self.target_pos
+
+    def set_target_position(self, pos):
+        self.target_pos = pos
+
     def calc_state(self):
         j = np.array([j.current_relative_position() for j in self.ordered_joints], dtype=np.float32).flatten()
-        # even elements [0::2] position, scaled to -1..+1 between limits
-        # odd elements  [1::2] angular speed, scaled to show -1..+1
         self.joint_speeds = j[1::2]
         self.joints_at_limit = np.count_nonzero(np.abs(j[0::2]) > 0.99)
 
@@ -127,23 +107,23 @@ class WalkerBase(BaseRobot):
         if self.initial_z == None:
             self.initial_z = z
         r, p, yaw = self.body_rpy
-        self.walk_target_theta = np.arctan2(self.walk_target_y - self.body_xyz[1],
-                                            self.walk_target_x - self.body_xyz[0])
+        self.walk_target_theta = np.arctan2(self.target_pos[1] - self.body_xyz[1],
+                                            self.target_pos[0] - self.body_xyz[0])
         self.walk_target_dist = np.linalg.norm(
-            [self.walk_target_y - self.body_xyz[1], self.walk_target_x - self.body_xyz[0]])
+            [self.target_pos[1] - self.body_xyz[1], self.target_pos[0] - self.body_xyz[0]])
         self.walk_target_dist_xyz = np.linalg.norm(
-            [self.walk_target_z - self.body_xyz[2], self.walk_target_y - self.body_xyz[1], self.walk_target_x - self.body_xyz[0]])
+            [self.target_pos[2] - self.body_xyz[2], self.target_pos[0] - self.body_xyz[1], self.target_pos[0] - self.body_xyz[0]])
         angle_to_target = self.walk_target_theta - yaw
         self.angle_to_target = angle_to_target
 
-        self.walk_height_diff = np.abs(self.walk_target_z - self.body_xyz[2])
+        self.walk_height_diff = np.abs(self.target_pos[2] - self.body_xyz[2])
 
         self.dist_to_start = np.linalg.norm(np.array(self.body_xyz) - np.array(self.initial_pos))
 
         debugmode= 0
         if debugmode:
             print("Robot dsebug mode: walk_height_diff", self.walk_height_diff)
-            print("Robot dsebug mode: walk_target_z", self.walk_target_z)
+            print("Robot dsebug mode: walk_target_z", self.target_pos[2])
             print("Robot dsebug mode: body_xyz", self.body_xyz[2])
 
         rot_speed = np.array(
@@ -155,7 +135,7 @@ class WalkerBase(BaseRobot):
 
         debugmode=0
         if debugmode:
-            print("Robot state", self.walk_target_y - self.body_xyz[1], self.walk_target_x - self.body_xyz[0])
+            print("Robot state", self.target_pos[1] - self.body_xyz[1], self.target_pos[0] - self.body_xyz[0])
 
         more = np.array([ z-self.initial_z,
             np.sin(angle_to_target), np.cos(angle_to_target),
@@ -165,11 +145,6 @@ class WalkerBase(BaseRobot):
         if debugmode:
             print("Robot more", more)
 
-        #if not 'sensor' in self.env.config["output"]:
-        #    j.fill(0)
-
-        #if not 'gps' in self.env.config["output"]:
-        #    more.fill(0)
 
         if not 'nonvis_sensor' in self.env.config["output"]:
             j.fill(0)
@@ -183,7 +158,7 @@ class WalkerBase(BaseRobot):
         debugmode=0
         if (debugmode):
             print("calc_potential: self.walk_target_dist x y", self.walk_target_dist)
-            print("robot position", self.body_xyz, "target position", [self.walk_target_x, self.walk_target_y, self.walk_target_z])
+            print("robot position", self.body_xyz, "target position", [self.target_pos[0], self.target_pos[1], self.target_pos[2]])
 #            print("self.scene.dt")
 #            print(self.scene.dt)
 #            print("self.scene.frame_skip")
@@ -192,21 +167,29 @@ class WalkerBase(BaseRobot):
         return - self.walk_target_dist / self.scene.dt
 
 
-
     def calc_goalless_potential(self):
         return self.dist_to_start / self.scene.dt
 
+    def dist_to_target(self):
+        return np.linalg.norm(self.get_position() - self.get_target_position())
 
-    def is_close_to_goal(self):
+    def _is_close_to_goal(self):
         body_pose = self.robot_body.pose()
         parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
         self.body_xyz = (
         parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
-        dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y])
+        dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.target_pos[0], self.body_xyz[1] - self.target_pos[1]])
         #print("dist to goal", dist_to_goal)
         #print(self.body_xyz[0], self.walk_target_x, self.body_xyz[1], self.walk_target_y)
         #print(self.body_xyz)
         return dist_to_goal < 2
+
+    def _get_scaled_position(self):
+        '''Private method, please don't use this method outside
+        Used for downscaling MJCF models
+        '''
+        return self.robot_body.current_position() / self.mjcf_scaling
+
 
 class Hopper(WalkerBase):
     foot_list = ["foot"]
@@ -261,20 +244,20 @@ class HalfCheetah(WalkerBase):
 
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
-
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, mode="RGBD", power=2.5, env = None):
-        ## WORKAROUND (hzyjerry): scaling building instead of agent, this is because
-        ## pybullet doesn't yet support downscaling of MJCF objects
+    eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+        
+    def __init__(self, config, env=None):
+        self.config = config
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.25
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, sensor_dim=28, power=power, target_pos=target_pos, resolution=resolution, scale=self.mjcf_scaling, env=env)
-        self.is_discrete = is_discrete
-        self.initial_pos = initial_pos
-        self.initial_orn = initial_orn
-        self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
-        self.is_discrete = is_discrete
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, 
+                            sensor_dim=28, power=2.5, scale = self.mjcf_scaling, 
+                            initial_pos=config['initial_pos'],
+                            target_pos=config["target_pos"], 
+                            resolution=config["resolution"], 
+                            env = env)
         self.r_f = 0.1
-        if self.is_discrete:
+        if config["is_discrete"]:
             self.action_space = gym.spaces.Discrete(17)
             self.torque = 10
             ## Hip_1, Ankle_1, Hip_2, Ankle_2, Hip_3, Ankle_3, Hip_4, Ankle_4 
@@ -305,7 +288,7 @@ class Ant(WalkerBase):
             self.setup_keys_to_action()
 
     def apply_action(self, action):
-        if self.is_discrete:
+        if self.config["is_discrete"]:
             realaction = self.action_list[action]
         else:
             realaction = action
@@ -313,14 +296,6 @@ class Ant(WalkerBase):
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
-        roll  = self.initial_orn[0]
-        pitch = self.initial_orn[1]
-        yaw   = self.initial_orn[2]
-        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
-        self.robot_body.reset_position(self.initial_pos)
-        #print("Initial position", self.initial_pos)
-
-        self.reset_base_position(self.env.config["random"]["random_initial_pose"], delta_pos = 0.25)
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
@@ -352,13 +327,9 @@ class Ant(WalkerBase):
 
 
 class AntClimber(Ant):
-    def __init__(self, initial_pos, initial_orn, is_discrete=True, target_pos=[1, 0, 0], resolution=512, env = None):
-        Ant.__init__(self, initial_pos, initial_orn, 
-            is_discrete=is_discrete, 
-            target_pos=target_pos, 
-            resolution=resolution, 
-            env=env, power=5)
-        self.eye_offset_orn = euler2quat(np.pi/4, 0, np.pi/2, axes='sxyz')  ## looking 45 degs down
+    eye_offset_orn = euler2quat(np.pi/4, 0, np.pi/2, axes='sxyz')  ## looking 45 degs down
+    def __init__(self, config, env=None):
+        Ant.__init__(self, config, env=env)
         
     def robot_specific_reset(self):
         Ant.robot_specific_reset(self)
@@ -376,7 +347,6 @@ class AntClimber(Ant):
             for k in self.jdict.keys():
                 print("Power coef", self.jdict[k].power_coef)
 
-
     def calc_potential(self):
         #base_potential = Ant.calc_potential(self)
         #height_coeff   = 3
@@ -386,7 +356,6 @@ class AntClimber(Ant):
             print("Ant xyz potential", self.walk_target_dist_xyz)
         return - self.walk_target_dist_xyz / self.scene.dt
         
-
     def alive_bonus(self, roll, pitch):
         """Alive requires the ant's head to not touch the ground, it's roll
         and pitch cannot be too large"""
@@ -400,56 +369,36 @@ class AntClimber(Ant):
             print(alive)
         return +1 if alive else -1
 
-    def is_close_to_goal(self):
+    def _is_close_to_goal(self):
         body_pose = self.robot_body.pose()
         parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
         self.body_xyz = (parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
-        dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y, self.body_xyz[2] - self.walk_target_z])
+        dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.target_pos[0], self.body_xyz[1] - self.target_pos[1], self.body_xyz[2] - self.target_pos[2]])
         debugmode = 0
         if debugmode:
-            print(np.linalg.norm([self.body_xyz[0] - self.walk_target_x, self.body_xyz[1] - self.walk_target_y, self.body_xyz[2] - self.walk_target_z]), [self.body_xyz[0], self.body_xyz[1], self.body_xyz[2]], [self.walk_target_x, self.walk_target_y, self.walk_target_z])
+            print(np.linalg.norm([self.body_xyz[0] - self.target_pos[0], self.body_xyz[1] - self.target_pos[1], self.body_xyz[2] - self.target_pos[2]]), [self.body_xyz[0], self.body_xyz[1], self.body_xyz[2]], [self.target_pos[0], self.target_pos[1], self.target_pos[2]])
         return dist_to_goal < 0.5
-
-
-    def reset_base_position(self, enabled, delta_orn = np.pi/9, delta_pos = 0.2):
-        #print("Reset base enabled", enabled)
-        if not enabled:
-            return
-        pos = self.robot_body.current_position()
-        orn = self.robot_body.current_orientation()
-
-        #print("collision", len(p.getContactPoints(self.robot_body.bodyIndex)))
-
-        #while True:
-        new_pos = [ pos[0] + self.np_random.uniform(low=self.env.config["random_init_x_range"][0], high=self.env.config["random_init_x_range"][1]),
-                    pos[1] + self.np_random.uniform(low=self.env.config["random_init_y_range"][0], high=self.env.config["random_init_y_range"][1]),
-                    pos[2] + self.np_random.uniform(low=self.env.config["random_init_z_range"][0], high=self.env.config["random_init_z_range"][1])]
-        new_orn = quat.qmult(quat.axangle2quat([1, 0, 0], self.np_random.uniform(low=self.env.config["random_init_rot_range"][0], high=self.env.config["random_init_rot_range"][1])), orn)
-        self.robot_body.reset_orientation(new_orn)
-        self.robot_body.reset_position(new_pos)
-
-
-
 
 
 class Humanoid(WalkerBase):
     self_collision = True
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
-
-    def __init__(self, initial_pos, initial_orn, is_discrete = True, target_pos=[1, 0, 0], resolution=512, env = None):
+    #eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+    def __init__(self, config, env=None):
+        self.config = config
         self.model_type = "MJCF"
         self.mjcf_scaling = 0.6
-        self.is_discrete = is_discrete
-        WalkerBase.__init__(self, 'humanoid.xml', 'torso', action_dim=17, sensor_dim=44, power=0.41, scale = self.mjcf_scaling, target_pos=target_pos, resolution=resolution, env = env)
-        self.initial_pos = initial_pos
-        self.initial_orn = initial_orn
-        #self.eye_offset_orn = euler2quat(0, 0, 0, axes='sxyz')
+        WalkerBase.__init__(self, "humanoid.xml", "torso", action_dim=17, 
+                            sensor_dim=44, power=2.5, scale = self.mjcf_scaling, 
+                            initial_pos=config['initial_pos'],
+                            target_pos=config["target_pos"], 
+                            resolution=config["resolution"], 
+                            env = env)
         self.glass_id = None
+        self.is_discrete = config["is_discrete"]
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
-            ## specific offset for husky.urdf
-            #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
             self.torque = 0.1
             self.action_list = np.concatenate((np.ones((1, 17)), np.zeros((1, 17)))).tolist()
 
@@ -482,6 +431,7 @@ class Humanoid(WalkerBase):
         self.motor_names += ["left_shoulder1", "left_shoulder2", "left_elbow"]
         self.motor_power += [75, 75, 75]
         self.motors = [self.jdict[n] for n in self.motor_names]
+        '''
         if self.random_yaw:
             position = [0,0,0]
             orientation = [0,0,0]
@@ -502,16 +452,7 @@ class Humanoid(WalkerBase):
             # just face random direction, but stay straight otherwise
             self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
         self.initial_z = 0.8
-
-        roll  = self.initial_orn[0]
-        pitch = self.initial_orn[1]
-        yaw   = self.initial_orn[2]
-        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
-        self.robot_body.reset_position(self.initial_pos)
-
-        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
-
-
+        '''
 
     random_yaw = False
     random_lean = False
@@ -537,21 +478,23 @@ class Humanoid(WalkerBase):
 
 class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
+    mjcf_scaling = 1
+    model_type = "URDF"
+    eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
 
+    def __init__(self, config, env=None):
+        self.config = config
+        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, 
+                            sensor_dim=20, power=2.5, scale = 0.6, 
+                            initial_pos=config['initial_pos'],
+                            target_pos=config["target_pos"], 
+                            resolution=config["resolution"], 
+                            env = env)
+        self.is_discrete = config["is_discrete"]
 
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, env = None):
-        self.model_type = "URDF"
-        self.is_discrete = is_discrete
-        self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale = 0.6, target_pos=target_pos, resolution=resolution, env = env)
-        self.initial_pos = initial_pos
-        self.initial_orn = initial_orn
-        self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
-        if self.is_discrete:
-            self.action_space = gym.spaces.Discrete(5)
-
-        ## specific offset for husky.urdf
         #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
+        if self.is_discrete:
+            self.action_space = gym.spaces.Discrete(5)        
             self.torque = 0.1
             self.action_list = [[self.torque/2, self.torque/2, self.torque/2, self.torque/2],
                                 #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
@@ -564,11 +507,6 @@ class Husky(WalkerBase):
         else:
             action_high = 0.02 * np.ones([4])
             self.action_space = gym.spaces.Box(-action_high, action_high)
-
-
-        ## specific offset for husky.urdf
-        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
-    
         
     def apply_action(self, action):
         if self.is_discrete:
@@ -601,14 +539,6 @@ class Husky(WalkerBase):
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
-        roll  = self.initial_orn[0]
-        pitch = self.initial_orn[1]
-        yaw   = self.initial_orn[2]
-        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
-        self.robot_body.reset_position(self.initial_pos)
-
-        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
-
 
     def alive_bonus(self, z, pitch):
         return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
@@ -642,19 +572,18 @@ class HuskyClimber(Husky):
 
 
 class Quadrotor(WalkerBase):
-
-    def __init__(self, is_discrete, initial_pos, initial_orn, target_pos=[1, 0, 0], resolution=512, env=None):
+    eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
+    def __init__(self, config, env=None):
         self.model_type = "URDF"
-        self.is_discrete = is_discrete
         self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "quadrotor.urdf", "base_link", action_dim=4, sensor_dim=20, power=2.5, scale=0.6,
-                            target_pos=target_pos, resolution=resolution, env=env)
-        self.initial_pos = initial_pos
-        self.initial_orn = initial_orn
-        self.eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
-
-
-
+        self.config = config
+        self.is_discrete = config["is_discrete"]
+        WalkerBase.__init__(self, "quadrotor.urdf", "base_link", action_dim=4, 
+                            sensor_dim=20, power=2.5, scale = self.mjcf_scaling, 
+                            initial_pos=config['initial_pos'],
+                            target_pos=config["target_pos"], 
+                            resolution=config["resolution"], 
+                            env = env)
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(7)
 
@@ -683,14 +612,6 @@ class Quadrotor(WalkerBase):
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
-        roll = self.initial_orn[0]
-        pitch = self.initial_orn[1]
-        yaw = self.initial_orn[2]
-        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(roll, pitch, yaw)))
-        self.robot_body.reset_position(self.initial_pos)
-
-        self.reset_base_position(self.env.config["random"]["random_initial_pose"])
-
 
     def setup_keys_to_action(self):
         self.keys_to_action = {

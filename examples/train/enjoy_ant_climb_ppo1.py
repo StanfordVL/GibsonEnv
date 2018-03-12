@@ -34,7 +34,7 @@ def train(num_timesteps, seed):
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
                                'ant_climb.yaml')
 
-    env = AntClimbEnv(is_discrete=False, config=config_file)
+    env = AntClimbEnv(config=config_file)
     
     env = Monitor(env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))

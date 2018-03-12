@@ -9,13 +9,22 @@ parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
 import pybullet_data
 from gibson import assets
+from transforms3d.euler import euler2quat
+from transforms3d import quaternions
+
+
+def quatWXYZ2quatXYZW(wxyz):
+    return np.concatenate((wxyz[1:], wxyz[:1]))
+
+def quatXYZW2quatWXYZ(wxyz):
+    return np.concatenate((wxyz[-1:], wxyz[:-1]))
+
 
 class BaseRobot:
     """
     Base class for mujoco .xml/ROS urdf based agents.
     Handles object loading
     """
-
     def __init__(self, model_file, robot_name, scale = 1, env = None):
         self.parts = None
         self.jdict = None
@@ -28,6 +37,8 @@ class BaseRobot:
         self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), "models")
         self.scale = scale
         self._load_model()
+        self.eyes = self.parts["eyes"]
+        
         self.env = env
 
     def addToScene(self, bodies):
@@ -47,8 +58,6 @@ class BaseRobot:
             ordered_joints = []
 
         dump = 0
-        #from IPython import embed; embed()
-
 
         for i in range(len(bodies)):
             if p.getNumJoints(bodies[i]) == 0:
@@ -56,8 +65,6 @@ class BaseRobot:
                 robot_name = robot_name.decode("utf8")
                 part_name = part_name.decode("utf8")
                 parts[part_name] = BodyPart(part_name, bodies, i, -1, self.scale, model_type=self.model_type)
-                #if part_name == self.robot_name:
-                #    self.robot_body = parts[part_name]
 
             for j in range(p.getNumJoints(bodies[i])):
                 p.setJointMotorControl2(bodies[i],j,p.POSITION_CONTROL,positionGain=0.1,velocityGain=0.1,force=0)
@@ -79,7 +86,6 @@ class BaseRobot:
                     parts[self.robot_name] = BodyPart(self.robot_name, bodies, 0, -1, self.scale, model_type=self.model_type)
                     self.robot_body = parts[self.robot_name]
 
-                #print(joint_name)
                 if joint_name[:6] == "ignore":
                     Joint(joint_name, bodies, i, j, self.scale).disable_motor()
                     continue
@@ -102,26 +108,39 @@ class BaseRobot:
         if self.model_type == "URDF":
             self.robot_ids = (p.loadURDF(os.path.join(self.physics_model_dir, self.model_file), flags=p.URDF_USE_SELF_COLLISION+p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS, globalScaling = self.scale), )
         self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(self.robot_ids)
-        
-    def reset(self):
-        #if self.parts:
-        #    [p.removeBody(self.parts[p_name].bodyIndex) for p_name in self.parts]
-        #print(os.path.join(os.path.dirname(os.path.abspath(__file__)),"models", self.model_file))
-        ## Use self-collision
 
+    def reset(self):
         if self.robot_ids is None:
             self._load_model()
-            #print(self.ordered_joints)
-        #print("body before", self.robot_body)
-    
-        #print("body after", self.robot_body)
+        
+        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(*self.config["initial_orn"])))
+        self.robot_body.reset_position(self.config["initial_pos"])
+        self.reset_random_pos()
         self.robot_specific_reset()
-
-        ## reset returns robot sensor state
-        state = self.calc_state()  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
-        self.eyes = self.parts["eyes"]
+        
+        state = self.calc_state()
         return state
 
+    def reset_random_pos(self):
+        '''Add randomness to resetted initial position
+        '''
+        if not self.env.config["random"]["random_initial_pose"]:
+            return
+
+        pos = self.robot_body.current_position()
+        orn = self.robot_body.current_orientation()
+
+        new_pos = [ pos[0] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
+                    pos[1] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
+                    pos[2] + self.np_random.uniform(low=0, high=delta_pos)]
+        new_orn = quaternions.qmult(quaternions.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_orn, high=delta_orn)), orn)
+        self.robot_body.reset_orientation(new_orn)
+        self.robot_body.reset_position(new_pos)
+
+
+    def reset_new_pos(self, pos, orn):
+        self.robot_body.reset_orientation(orn)
+        self.robot_body.reset_position(pos)        
 
     def calc_potential(self):
         return 0
@@ -138,6 +157,7 @@ class Pose_Helper: # dummy class to comply to original interface
 
     def orientation(self):
         return self.body_part.current_orientation()
+
 
 class BodyPart:
     def __init__(self, body_name, bodies, bodyIndex, bodyPartIndex, scale, model_type):

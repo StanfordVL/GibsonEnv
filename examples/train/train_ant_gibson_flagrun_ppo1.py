@@ -31,7 +31,7 @@ def train(num_timesteps, seed):
                                'ant_gibson_flagrun.yaml')
     print(config_file)
 
-    env = AntGibsonFlagRunEnv(is_discrete=False, config = config_file)
+    env = AntGibsonFlagRunEnv(config = config_file)
     
     def mlp_policy_fn(name, sensor_space, ac_space):
         return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
@@ -61,7 +61,7 @@ def callback(lcl, glb):
 
 def main():
     '''
-    env = AntSensorEnv(human=True, is_discrete=False, enable_sensors=True)
+    env = AntSensorEnv(human=True, enable_sensors=True)
     model = deepq.models.mlp([64])
     act = deepq.learn(
         env,

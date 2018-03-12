@@ -31,7 +31,7 @@ def train(num_timesteps, seed):
                                'humanoid_navigate_nonviz.yaml')
     print(config_file)
 
-    env = HumanoidNavigateEnv(is_discrete=False, config = config_file)
+    env = HumanoidNavigateEnv(config = config_file)
     
     def mlp_policy_fn(name, sensor_space, ac_space):
         return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)

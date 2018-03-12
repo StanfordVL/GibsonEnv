@@ -54,8 +54,9 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor=False):
     t = 0
     ac = env.action_space.sample()  # not used, just so we have the datatype
     new = True  # marks if we're on first timestep of an episode
-    ob, ob_sensor = env.reset()
-
+    ob_all = env.reset()
+    ob_sensor = ob_all['nonviz_sensor']
+    ob = np.concatenate([ob_all['rgb_filled'], ob_all["depth"]], axis=2)
     cur_ep_ret = 0  # return in current episode
     cur_ep_len = 0  # len of current episode
     ep_rets = []  # returns of completed episodes in this segment
@@ -84,7 +85,7 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor=False):
         # before returning segment [0, T-1] so we get the correct
         # terminal value
         if t > 0 and t % horizon == 0:
-            yield {"ob": obs, "ob_sensor": obs_sensor, "rew": rews, "vpred": vpreds, "new": news,
+            yield {"ob": ob, "ob_sensor": obs_sensor, "rew": rews, "vpred": vpreds, "new": news,
                    "ac": acs, "prevac": prevacs, "nextvpred": vpred * (1 - new),
                    "ep_rets": ep_rets, "ep_lens": ep_lens}
             # Be careful!!! if you change the downstream algorithm to aggregate
@@ -102,10 +103,9 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor=False):
         prevacs[i] = prevac
 
         # with Profiler("environment step"):
-        ob, rew, new, meta = env.step(ac)
-        if meta:
-            if 'sensor' in meta:
-                ob_sensor = meta['sensor']
+        ob_all, rew, new, meta = env.step(ac)
+        ob_sensor = ob_all['nonviz_sensor']
+        ob = np.concatenate([ob_all['rgb_filled'], ob_all["depth"]], axis=2)
         rews[i] = rew
 
         cur_ep_ret += rew
@@ -115,7 +115,10 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor=False):
             ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
             cur_ep_len = 0
-            ob, ob_sensor = env.reset()
+            ob_all = env.reset()
+            ob_sensor = ob_all['nonviz_sensor']
+            ob = np.concatenate([ob_all['rgb_filled'], ob_all["depth"]], axis=2)
+
         t += 1
 
 

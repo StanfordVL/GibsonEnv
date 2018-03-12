@@ -54,7 +54,8 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     t = 0
     ac = env.action_space.sample() # not used, just so we have the datatype
     new = True # marks if we're on first timestep of an episode
-    ob_visual, ob = env.reset()
+    ob_all = env.reset()
+    ob = ob_all['nonviz_sensor']
 
     cur_ep_ret = 0 # return in current episode
     cur_ep_len = 0 # len of current episode
@@ -95,11 +96,9 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         prevacs[i] = prevac
 
         #with Profiler("environment step"):
-        ob_visual, rew, new, meta = env.step(ac)
-        assert('sensor' in meta)
-        assert(meta is not None)
-
-        ob = meta['sensor']
+        ob_all, rew, new, meta = env.step(ac)
+        
+        ob = ob_all['nonviz_sensor']
         rews[i] = rew
 
         cur_ep_ret += rew
@@ -110,7 +109,8 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             cur_ep_ret = 0
             cur_ep_len = 0
             #testing_result.append(env.test())
-            ob_visual, ob = env.reset()
+            ob_all = env.reset()
+            ob = ob_all['nonviz_sensor']
             #print(len(testing_result), np.sum(testing_result) / float(len(testing_result)))
         t += 1
 

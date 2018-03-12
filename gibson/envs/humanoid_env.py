@@ -32,51 +32,20 @@ tracking_camera_top = {
 class HumanoidNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
-    def __init__(
-            self,
-            config,
-            is_discrete=False,
-            use_filler=True,
-            gpu_count=0, 
-            resolution=512):
+    def __init__(self, config, gpu_count=0):
         self.config = self.parse_config(config)
-        self.gui = self.config["mode"] == "gui"
-        self.model_id = self.config["model_id"]
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.resolution = resolution
-        self.tracking_camera = tracking_camera
-        target_orn, target_pos = self.config["target_orn"], self.config["target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
+        print(self.config["envname"])
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
 
-        CameraRobotEnv.__init__(
-            self,
-            config,
-            gpu_count,
-            scene_type="building",
-            use_filler=self.config["use_filler"])
-
-
-        self.robot_introduce(Humanoid(
-            initial_pos,
-            initial_orn,
-            is_discrete=is_discrete,
-            target_pos=target_pos,
-            resolution=self.resolution,
-            env = self))
-
+        self.robot_introduce(Humanoid(self.config, env=self))
         self.scene_introduce()
 
+        self.gui = self.config["mode"] == "gui"
         self.total_reward = 0
         self.total_frame = 0
-
-    def calc_rewards_and_done(self, a, state):
-        done = self._termination(state)
-        rewards = self._rewards(a)
-        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
-        self.total_reward = self.total_reward + sum(rewards)
-        self.total_frame = self.total_frame + 1
-        return rewards, done
 
     def _rewards(self, action=None, debugmode=False):
         a = action
@@ -119,20 +88,18 @@ class HumanoidNavigateEnv(CameraRobotEnv):
             ]
         return rewards
 
-    def _termination(self, state=None, debugmode=False):
-        alive = float(self.robot.alive_bonus(state[0]+self.robot.initial_z, self.robot.body_rpy[1])) # state[0] is body height above ground, body_rpy[1] is pitch
+    def _termination(self, debugmode=False):
+        height = self.robot.get_position()[2]
+        pitch = self.robot.get_rpy()[1]
+        alive = float(self.robot.alive_bonus(height, pitch))
         done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
         if(debugmode):
             print("alive=")
             print(alive)
         return done
 
     def _flag_reposition(self):
-        walk_target_x = self.robot.walk_target_x
-        walk_target_y = self.robot.walk_target_y
+        walk_target_x, walk_target_y, _ = self.robot.get_target_position()
 
         self.flag = None
         if self.gui and not self.config["display_ui"]:
@@ -151,46 +118,24 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
 
-    def __init__(
-            self,
-            config,
-            is_discrete=False,
-            gpu_count=0,
-            scene_type="building",
-            ):
-
+    def __init__(self, config, gpu_count=0):
         self.config = self.parse_config(config)
+        print(self.config["envname"])
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
+
+        self.robot_introduce(Humanoid(self.config, env=self))
+        self.scene_introduce()
+
         self.gui = self.config["mode"] == "gui"
-        self.model_id = self.config["model_id"]
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.resolution = self.config["resolution"]
-        self.tracking_camera = tracking_camera
-        target_orn, target_pos = self.config["target_orn"], self.config["target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
         self.total_reward = 0
         self.total_frame = 0
 
         self.flag_timeout = 1
         self.visualid = -1
         self.lastid = None
-
-        CameraRobotEnv.__init__(
-            self,
-            config,
-            gpu_count,
-            scene_type="building")
-
-        self.robot_introduce(Humanoid(
-            initial_pos,
-            initial_orn,
-            is_discrete=is_discrete,
-            target_pos=target_pos,
-            resolution=self.resolution,
-            env = self))
-
-        self.scene_introduce()
-
         if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH,
                                                 fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
@@ -235,20 +180,6 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
         self.robot.walk_target_x = ball_xyz[0]
         self.robot.walk_target_y = ball_xyz[1]
 
-    def calc_rewards_and_done(self, a, state):
-        done = self._termination(state)
-        rewards = self._rewards(a)
-        print("Frame %f reward %f" % (self.nframe, sum(rewards)))
-        self.total_reward = self.total_reward + sum(rewards)
-        self.total_frame = self.total_frame + 1
-
-        if self.lastid:
-            ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
-            self.robot.walk_target_x = ball_xyz[0]
-            self.robot.walk_target_y = ball_xyz[1]
-
-        return rewards, done
-
     def _rewards(self, action=None, debugmode=False):
         a = action
         potential_old = self.potential
@@ -292,13 +223,11 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _termination(self, state=None, debugmode=False):
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+    def _termination(self, debugmode=False):
+        height = self.robot.get_position()[2]
+        alive = float(self.robot.alive_bonus(height, self.robot.get_rpy()[
+            1]))
         done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
         if (debugmode):
             print("alive=")
             print(alive)

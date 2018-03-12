@@ -252,7 +252,9 @@ Then do one step of the simulation with `env.step`. And reset with `env.reset()`
 ```python
 obs, rew, env_done, info = env.step(action)
 ```
-`obs` gives the observation of the robot. `rew` is the defined reward. `env_done` marks the end of one episode, for example, when the robot dies. 
+`obs` gives the observation of the robot. It is a dictionary with each component as a key value pair. Its keys are specified by user inside config file. E.g. `obs['nonviz_sensor']` is proprioceptive sensor data, `obs['rgb_filled']` is rgb camera data.
+
+`rew` is the defined reward. `env_done` marks the end of one episode, for example, when the robot dies. 
 `info` gives some additional information of this step; sometimes we use this to pass additional non-visual sensor values.
 
 We mostly followed [OpenAI gym](https://github.com/openai/gym) convention when designing the interface of RL algorithms and the environment. In order to help users start with the environment quicker, we
@@ -286,6 +288,21 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
 |verbose |true/false  | show dignostics in terminal |
 
+#### Making Your Customized Environment
+Gibson provides a set of methods for you to define your own environments. You can follow the existing environments inside `gibson/core/envs`.
+
+| Method name        | Usage           |
+|:------------------:|:---------------------------|
+| robot.render_observation(pose) | Render new observations based on pose, returns a dictionary. |
+| robot.get_observation() | Get observation at current pose. Needs to be called after robot.render_observation(pose). This does not induce extra computation. |
+| robot.get_position() | Get current robot position. |
+| robot.get_orientation() | Get current robot orientation. |
+| robot.eyes.get_position() | Get current robot perceptive camera position. |
+| robot.eyes.get_orientation() | Get current robot perceptive camera orientation. | 
+| robot.get_target_position() | Get robot target position. |
+| robot.apply_action(action) | Apply action to robot. |  
+| robot.reset_new_pose(pos, orn) | Reset the robot to any pose. |
+| robot.dist_to_target() | Get current distance from robot to target. |
 
 Goggles: transferring the agent to real-world
 =================

@@ -95,7 +95,9 @@ class Runner(object):
         self.obs_sensor = np.zeros((nenv,) + env.sensor_space.shape, dtype=model.train_model.X.dtype.name)
         print(self.obs.shape)
         print(self.obs_sensor.shape)
-        self.obs[:], self.obs_sensor[:] = env.reset()
+        obs_all = env.reset()
+        self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+        self.obs_sensor[:] = obs_all['nonviz_sensor'] 
         self.gamma = gamma
         self.lam = lam
         self.nsteps = nsteps
@@ -118,11 +120,15 @@ class Runner(object):
             mb_dones.append([self.dones])   
 
             if self.dones:
-                self.obs[:], self.obs_sensor[:] = self.env.reset()
+                obs_all = env.reset()
+                self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+                self.obs_sensor[:] = obs_all['nonviz_sensor'] 
                 rewards = 0
                 self.dones = False
             else:
-                self.obs[:], rewards, self.dones, infos = self.env.step(actions)
+                obs_all, rewards, self.dones, infos = self.env.step(actions)
+                self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+                self.obs_sensor[:] = obs_all['nonviz_sensor'] 
                 #print("PPO2", rewards, self.dones)
                 if 'sensor' in infos:
                     ob_sensor = infos['sensor']
