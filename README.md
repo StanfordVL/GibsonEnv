@@ -24,7 +24,7 @@ Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for 
 
 Beta
 =================
-**This is the <strike>0.1.0</strike> 0.2.0 beta release, bug reports and suggestions for improvement are appreciated.** [change log file.](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
+**This is the <strike>0.1.0</strike> 0.2.0 beta release, bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
 
 **Dataset**: To make the beta release lighter for the users, we are including a small subset (9) of the spaces in it. 
 The full dataset includes hundreds of spaces which will be made available if we dont get a major bug report during the brief beta release. 
