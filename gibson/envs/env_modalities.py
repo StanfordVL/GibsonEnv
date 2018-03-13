@@ -290,13 +290,6 @@ class CameraRobotEnv(BaseRobotEnv):
         if self._require_camera_input:
             self.model_path = get_model_path(self.model_id)
 
-        cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
-        self.robot_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
-        p.changeVisualShape(self.robot_mapId, -1, rgbaColor=[0, 0, 1, 0])
-
-        cube_id = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1])
-        self.target_mapId = p.createMultiBody(baseCollisionShapeIndex = cube_id, baseVisualShapeIndex = -1)
-        p.changeVisualShape(self.target_mapId, -1, rgbaColor=[1, 0, 0, 0])
         self.save_frame  = 0
         self.fps = 0
 
