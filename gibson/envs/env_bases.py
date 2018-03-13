@@ -98,10 +98,6 @@ class BaseEnv(gym.Env):
         p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
         p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-        #visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'),
-        #                               meshScale=[0.3, 0.3, 0.3], rgbaColor=[1, 0, 0, 0.7])
-        #physicsid = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=[0, 0, 2])
-        #keep code here for reference
 
         self.frame = 0
         self.done = 0

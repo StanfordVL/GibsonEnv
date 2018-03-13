@@ -368,7 +368,6 @@ class CameraRobotEnv(BaseRobotEnv):
                 self.r_camera_rgb.renderToScreen()
 
         robot_pos = self.robot.get_position()
-        p.resetBasePositionAndOrientation(self.robot_mapId, [robot_pos[0]  / self.robot.mjcf_scaling, robot_pos[1] / self.robot.mjcf_scaling, 6], [0, 0, 0, 1])
 
         debugmode = 0
         if debugmode:
