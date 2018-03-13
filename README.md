@@ -128,6 +128,9 @@ apt-get install libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev l
 Install required deep learning libraries: Using python3.5 is recommended. You can create a python3.5 environment first. 
 
 ```bash
+conda create -n py35 python=3.5 anaconda 
+source activate py35 # the rest of the steps needs to be performed in the conda environment
+conda install -c conda-forge opencv
 pip install http://download.pytorch.org/whl/cu90/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
 pip install torchvision
 pip install tensorflow==1.3
