@@ -19,6 +19,7 @@ MINOR adds and PATCH fixes. [Commit](https://github.com/StanfordVL/GibsonEnv/com
 - Intricacy in environment class inheritance. Now parent class does not assume child class attributes. 
 - Issue with rendering `rgb_prefilled`, `rgb_filled`. 
 - Resolved issue of agent being blocked by a 'transparent wall'.
+- Removed unnecessary logging.
 
 ## 0.1.0 - 2018-02-26
 Initial beta release.

@@ -338,7 +338,13 @@ class CameraRobotEnv(BaseRobotEnv):
         return img
 
     def _step(self, a):
+        t = time.time()
         base_obs, sensor_reward, done, sensor_meta = BaseRobotEnv._step(self, a)
+        dt = time.time() - t    
+        # Speed bottleneck
+        observations = base_obs
+        self.fps = 0.9 * self.fps + 0.1 * 1/dt
+
         pose = [sensor_meta['eye_pos'], sensor_meta['eye_quat']]
         sensor_meta.pop("eye_pos", None)
         sensor_meta.pop("eye_quat", None)
@@ -347,25 +353,16 @@ class CameraRobotEnv(BaseRobotEnv):
         if not self._require_camera_input or self.test_env:
             return base_obs, sensor_reward, done, sensor_meta
 
-        with Profiler("Rendering visuals: "):
-            # Speed bottleneck
-            t = time.time()
+        if self.config["show_diagnostics"]:
+            self.render_rgb_filled = self.add_text(self.render_rgb_filled)
 
-            observations = self.render_observations(pose)
+        if self.config["display_ui"]:
+            self.render_to_UI()
+            self.save_frame += 1
 
-            dt = time.time() - t
-            self.fps = 0.9 * self.fps + 0.1 * 1/dt
-
-            if self.config["show_diagnostics"]:
-                self.render_rgb_filled = self.add_text(self.render_rgb_filled)
-
-            if self.config["display_ui"]:
-                self.render_to_UI()
-                self.save_frame += 1
-
-            elif self.gui:
-                # Speed bottleneck 2, 116fps
-                self.r_camera_rgb.renderToScreen()
+        elif self.gui:
+            # Speed bottleneck 2, 116fps
+            self.r_camera_rgb.renderToScreen()
 
         robot_pos = self.robot.get_position()
 
