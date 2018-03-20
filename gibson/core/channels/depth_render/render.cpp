@@ -269,7 +269,7 @@ int main( int argc, char * argv[] )
         return -1;
     }
 
-    printf("opened this display, default %i\n", DefaultScreen(display));
+    // printf("opened this display, default %i\n", DefaultScreen(display));
 
     glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
     glXMakeContextCurrentARB   = (glXMakeContextCurrentARBProc)   glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent"      );
@@ -450,7 +450,7 @@ int main( int argc, char * argv[] )
         glShadeModel(GL_FLAT);
 
         //bool res = loadPLYfile(name_obj)
-        std::cout << "Loading ply file\n";
+        // std::cout << "Loading ply file\n";
         bool res;
         int num_vertices;
         if (ply > 0) {
@@ -629,7 +629,7 @@ int main( int argc, char * argv[] )
 
     zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
-    std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
+    // std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
     socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
     cudaGetDevice( &cudaDevice );
     int g_cuda_device = 0;
@@ -643,7 +643,7 @@ int main( int argc, char * argv[] )
     cudaGraphicsResource* resource;
     checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
     
-    std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
+    // std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
     int pose_idx = 0;
     zmq::message_t request;
 

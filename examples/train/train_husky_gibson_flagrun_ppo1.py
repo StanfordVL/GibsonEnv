@@ -49,7 +49,7 @@ def train(num_timesteps, seed):
     print(config_file)
 
 
-    env = HuskyGibsonFlagRunEnv(config = config_file,is_discrete=True, gpu_count=args.gpu_count)
+    env = HuskyGibsonFlagRunEnv(config = config_file, gpu_count=args.gpu_count)
 
     print(env.sensor_space)
 

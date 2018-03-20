@@ -1,17 +1,17 @@
 envname: TestEnv
-model_id: space7
+model_id: test
 target_orn: [0, 0, 1.57]
 target_pos: [-14.3, 45.07, 0.5]
-#initial_orn: [0, 0, 4.71]
-initial_orn: [0, 0, 3.21]
-#initial_pos: [-14.3, 5, 1.2]
-initial_pos: [0.3, 5, 1.2]
+initial_orn: [0, 0, 4.71]
+initial_pos: [-14.3, 5, 1.2]
 fov: 1.57
+is_discrete: true
+
 use_filler: true
 display_ui: true
 show_diagnostics: true
-ui_num: 2
-ui_components: [RGB_FILLED, SEMANTICS]
+ui_num: 1
+ui_components: [NORMAL]
 random:
   random_initial_pose : false
   random_target_pose : false
@@ -21,7 +21,7 @@ random:
   random_init_rot_range: [-0.1, 0.1]
   random_target_range: 0.1
 
-output: [nonviz_sensor, rgb_filled, semantics]
+output: [nonviz_sensor, normal]
 resolution: 256
 
 speed:

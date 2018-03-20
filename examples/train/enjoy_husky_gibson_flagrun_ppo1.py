@@ -36,7 +36,7 @@ def enjoy(num_timesteps, seed):
 
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
                                'husky_gibson_flagrun_train.yaml')
-    env = HuskyGibsonFlagRunEnv(is_discrete=True, gpu_count=0, config=config_file)
+    env = HuskyGibsonFlagRunEnv(gpu_count=0, config=config_file)
     #env = bench.Monitor(env, logger.get_dir() and
     #                    osp.join(logger.get_dir(), str(rank)))
 

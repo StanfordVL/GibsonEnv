@@ -15,7 +15,7 @@ You shouldn't play video games all day, so shouldn't your AI! We built a virtual
 Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
 
 #### Paper
-**["Embodied Real-World Active Perception"](http://gibson.vision/)**, in **CVPR 2018**.
+**["Embodied Real-World Active Perception"](http://gibson.vision/)**, in **CVPR 2018 [Spotlight]**.
 
 
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
@@ -24,7 +24,7 @@ Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for 
 
 Beta
 =================
-**This is a 0.1.0 beta release, bug reports and suggestions for improvement are appreciated.** 
+**This is the <strike>0.1.0</strike> 0.2.0 beta release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
 
 **Dataset**: To make the beta release lighter for the users, we are including a small subset (9) of the spaces in it. 
 The full dataset includes hundreds of spaces which will be made available if we dont get a major bug report during the brief beta release. 
@@ -128,6 +128,9 @@ apt-get install libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev l
 Install required deep learning libraries: Using python3.5 is recommended. You can create a python3.5 environment first. 
 
 ```bash
+conda create -n py35 python=3.5 anaconda 
+source activate py35 # the rest of the steps needs to be performed in the conda environment
+conda install -c conda-forge opencv
 pip install http://download.pytorch.org/whl/cu90/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
 pip install torchvision
 pip install tensorflow==1.3
@@ -252,7 +255,9 @@ Then do one step of the simulation with `env.step`. And reset with `env.reset()`
 ```python
 obs, rew, env_done, info = env.step(action)
 ```
-`obs` gives the observation of the robot. `rew` is the defined reward. `env_done` marks the end of one episode, for example, when the robot dies. 
+`obs` gives the observation of the robot. It is a dictionary with each component as a key value pair. Its keys are specified by user inside config file. E.g. `obs['nonviz_sensor']` is proprioceptive sensor data, `obs['rgb_filled']` is rgb camera data.
+
+`rew` is the defined reward. `env_done` marks the end of one episode, for example, when the robot dies. 
 `info` gives some additional information of this step; sometimes we use this to pass additional non-visual sensor values.
 
 We mostly followed [OpenAI gym](https://github.com/openai/gym) convention when designing the interface of RL algorithms and the environment. In order to help users start with the environment quicker, we
@@ -262,7 +267,7 @@ In particular, we used [PPO](https://github.com/openai/baselines/tree/master/bas
 
 Environment Configuration
 =================
-Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained below:
+Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained below. For more informat specific to Bullet Physics engine, you can see the documentation [here](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit).
 
 | Argument name        | Example value           | Explanation  |
 |:-------------:|:-------------:| :-----|
@@ -281,17 +286,32 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot, choose from  [nonviz_sensor, rgb_filled, depth]. These values are independent of `ui_components`, as `ui_components` determines what to show and `output` determines what the robot receives. |
 |resolution | 512 | choose from [128, 256, 512] resolution of rgb/depth image |
 |initial_orn | [0, 0, 3.14] | initial orientation (in radian) for navigating, the reference frame is world frame |
-|speed : timestep | 0.01 | timestep of simulation in seconds. For example, if timestep=0.01 and the simulation is running at 100fps, it will be real time, if timestep=0.1 and the simulation is running at 100fps, it will be 10x real time|
-|speed : frameskip | 1 | How many frames to run simulation for one action. For tasks that does not require high frequency control, you can set frameskip to larger value to gain further speed up. |
+|speed : timestep | 0.01 | length of one physics simulation step in seconds(as defined in [Bullet](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit)). For example, if timestep=0.01 sec, frameskip=10, and the environment is running at 100fps, it will be 10x real time. Note: setting timestep above 0.1 can cause instability in current version of Bullet simulator since an object should not travel faster than its own radius within one timestep. You can keep timestep at a low value but increase frameskip to siumate at a faster speed. See [Bullet guide](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit) under "discrete collision detection" for more info.|
+|speed : frameskip | 10 | how many timestep to skip when rendering frames. See above row for an example. For tasks that does not require high frequency control, you can set frameskip to larger value to gain further speed up. |
 |mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
 |verbose |true/false  | show dignostics in terminal |
 
+#### Making Your Customized Environment
+Gibson provides a set of methods for you to define your own environments. You can follow the existing environments inside `gibson/core/envs`.
+
+| Method name        | Usage           |
+|:------------------:|:---------------------------|
+| robot.render_observation(pose) | Render new observations based on pose, returns a dictionary. |
+| robot.get_observation() | Get observation at current pose. Needs to be called after robot.render_observation(pose). This does not induce extra computation. |
+| robot.get_position() | Get current robot position. |
+| robot.get_orientation() | Get current robot orientation. |
+| robot.eyes.get_position() | Get current robot perceptive camera position. |
+| robot.eyes.get_orientation() | Get current robot perceptive camera orientation. | 
+| robot.get_target_position() | Get robot target position. |
+| robot.apply_action(action) | Apply action to robot. |  
+| robot.reset_new_pose(pos, orn) | Reset the robot to any pose. |
+| robot.dist_to_target() | Get current distance from robot to target. |
 
 Goggles: transferring the agent to real-world
 =================
 Gibson includes a baked-in domain adaptation mechanism, named Goggles, for when an agent trained in Gibson is going to be deployed in real-world (i.e. operate based on images coming from an onboard camera). The mechanims is essentially a learned inverse function that alters the frames coming from a real camera to what they would look like if they were rendered via Gibson, and hence, disolve the domain gap. 
 
-<img src=http://gibson.vision/static/img/figure4.jpg width="600">
+<img src=http://gibson.vision/public/img/figure4.jpg width="600">
 
 
 **More details:** With all the imperfections in point cloud rendering, it has been proven difficult to get completely photo-realistic rendering with neural network fixes. The remaining issues make a domain gap between the synthesized and real images. Therefore, we formulate the rendering problem as forming a joint space ensuring a correspondence between rendered and real images, rather than trying to (unsuccessfuly) render images that are identical to real ones. This provides a deterministic pathway for traversing across these domains and hence undoing the gap. We add another network "u" for target image (I_t) and define the rendering loss to minimize the distance between f(I_s) and u(I_t), where "f" and "I_s" represent the filler neural network and point cloud rendering output, respectively (see the loss in above figure). We use the same network structure for f and u. The function u(I) is trained to alter the observation in real-world, I_t, to look like the corresponding I_s and consequently dissolve the gap. We named the u network goggles, as it resembles corrective lenses for the anget for deploymen in real world. Detailed formulation and discussion of the mechanism can be found in the paper. You can download the function u and apply it when you deploy your trained agent in real-world.

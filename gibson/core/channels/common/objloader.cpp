@@ -23,7 +23,7 @@ bool loadOBJ(
     std::vector<glm::vec2> & out_uvs,
     std::vector<glm::vec3> & out_normals
 ){
-    printf("Loading OBJ file %s...\n", path);
+    //printf("Loading OBJ file %s...\n", path);
 
     std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
     std::vector<glm::vec3> temp_vertices;
@@ -32,7 +32,7 @@ bool loadOBJ(
 
     FILE * file = fopen(path, "r");
     if( file == NULL ){
-        printf("Impossible to open the file ! Are you in the right path ? See Tutorial 1 for details\n");
+        printf("Impossible to open the file %s\n", path);
         getchar();
         return false;
     }
@@ -82,7 +82,7 @@ bool loadOBJ(
                 if (! f_2_format) {
                     matches = sscanf(stringBuffer, " %u %u %u\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
                     if (matches != 3){
-                        printf("File can't be read by our simple parser :-( Try exporting with other options\n");
+                        printf("File %s can't be read by our simple parser :-( Try exporting with other options\n", path);
                         fclose(file);
                         return false;
                     }
@@ -178,7 +178,7 @@ bool loadOBJ(
             out_uvs.push_back(glm::vec2(0.0));
         }
     }
-    printf("size of temp vertices %lu, vertex indices %lu out vertices %lu\n", temp_vertices.size(), vertexIndices.size(), out_vertices.size());
+    //printf("size of temp vertices %lu, vertex indices %lu out vertices %lu\n", temp_vertices.size(), vertexIndices.size(), out_vertices.size());
     fclose(file);
     return true;
 }

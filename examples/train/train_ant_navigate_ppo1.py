@@ -31,7 +31,7 @@ def train(num_timesteps, seed):
                                'ant_navigate.yaml')
     print(config_file)
 
-    env = AntNavigateEnv(is_discrete=False, config = config_file)
+    env = AntNavigateEnv(config = config_file)
     
     def policy_fn(name, ob_space, ac_space):
         #return mlp_policy.MlpPolicy(name=name, ob_space=sensor_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)

@@ -29,60 +29,23 @@ tracking_camera_top = {
 class HuskyNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
-    def __init__(
-            self,
-            config,
-            is_discrete=False,
-            gpu_count=0):
-
+    def __init__(self, config, gpu_count=0):
         self.config = self.parse_config(config)
-        self.gui = self.config["mode"] == "gui"
-        self.model_id = self.config["model_id"]
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.resolution = self.config["resolution"]
-        self.tracking_camera = tracking_camera
-        target_orn, target_pos   = self.config["target_orn"], self.config["target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config["initial_pos"]
-        self.total_reward = 0
-        self.total_frame = 0
-        
-        CameraRobotEnv.__init__(
-            self,
-            config,
-            gpu_count,
-            scene_type="building", 
-            use_filler=self.config["use_filler"])
-        self.robot_introduce(Husky(
-            #HuskyHighCamera(
-            is_discrete=is_discrete, 
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            target_pos=target_pos,
-            resolution=self.resolution,
-            env = self
-            ))
-        self.scene_introduce()
-
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
 
-    def calc_rewards_and_done(self, a, state):
-        done = self._termination(state)
-        rewards = self._rewards(a)
-        debugmode = 0
-        if debugmode:
-            print("Frame %f reward %f" % (self.nframe, sum(rewards)))
-
-        self.total_reward = self.total_reward + sum(rewards)
-        self.total_frame = self.total_frame + 1
-        #print(self.total_frame, self.total_reward)
-        return rewards, done
+        self.robot_introduce(Husky(self.config, env=self))
+        self.scene_introduce()
+        self.total_reward = 0
+        self.total_frame = 0
 
     def add_text(self, img):
         font = cv2.FONT_HERSHEY_SIMPLEX
-        x,y,z = self.robot.body_xyz
-        r,p,ya = self.robot.body_rpy
+        x,y,z = self.robot.get_position()
+        r,p,ya = self.robot.get_rpy()
         cv2.putText(img, 'x:{0:.4f} y:{1:.4f} z:{2:.4f}'.format(x,y,z), (10, 20), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
         cv2.putText(img, 'ro:{0:.4f} pth:{1:.4f} ya:{2:.4f}'.format(r,p,ya), (10, 40), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
         cv2.putText(img, 'potential:{0:.4f}'.format(self.potential), (10, 60), font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
@@ -118,19 +81,14 @@ class HuskyNavigateEnv(CameraRobotEnv):
         if debugmode:
             print("steering cost", steering_cost)
 
-        #alive = len(self.robot.parts['top_bumper_link'].contact_list())
-        #if alive == 0:
-        #    alive_score = 0.1
-        #else:
-        #    alive_score = -0.1
-
         wall_contact = [pt for pt in self.robot.parts['base_link'].contact_list() if pt[6][2] > 0.15]
         wall_collision_cost = self.wall_collision_cost * len(wall_contact)
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
-        close_to_goal = 0
-        if self.robot.is_close_to_goal():
-            close_to_goal = 0.5
+        close_to_target = 0
+
+        if self.robot.dist_to_target() < 2:
+            close_to_target = 0.5
 
         angle_cost = self.robot.angle_cost()
 
@@ -147,7 +105,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
             print("Wall contact points", len(wall_contact))
             print("Collision cost", wall_collision_cost)
             print("electricity_cost", electricity_cost)
-            print("close to goal", close_to_goal)
+            print("close to target", close_to_target)
             #print("progress")
             #print(progress)
             #print("electricity_cost")
@@ -161,7 +119,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
             #alive,
             progress,
             #wall_collision_cost,
-            close_to_goal,
+            close_to_target,
             steering_cost,
             angle_cost,
             obstacle_penalty
@@ -171,29 +129,25 @@ class HuskyNavigateEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _termination(self, state=None, debugmode=False):
-        alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[
-            1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+    def _termination(self, debugmode=False):
+        height = self.robot.get_position()[2]
+        pitch = self.robot.get_rpy()[1]
+        alive = float(self.robot.alive_bonus(height, pitch))
         
         alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
-        done = not alive or self.nframe > 250 or self.robot.body_xyz[2] < 0
-        #done = alive < 0
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
+        done = not alive or self.nframe > 250 or height < 0
         if done:
             print("Episode reset")
         return done
 
     def _flag_reposition(self):
-        walk_target_x = self.robot.walk_target_x
-        walk_target_y = self.robot.walk_target_y
+        target_pos = self.robot.target_pos
 
         self.flag = None
         if self.gui and not self.config["display_ui"]:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
-            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[walk_target_x, walk_target_y, 0.5])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[target_pos[0], target_pos[1], 0.5])
 
     def  _reset(self):
         self.total_frame = 0
@@ -203,53 +157,34 @@ class HuskyNavigateEnv(CameraRobotEnv):
         return obs
 
 
-
 class HuskyGibsonFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, config, is_discrete=False,
-                 gpu_count=0, scene_type="building"):
-
+    def __init__(self, config, gpu_count=0):
         self.config = self.parse_config(config)
-        target_orn, target_pos = self.config["target_orn"], self.config[
-            "target_pos"]
-        initial_orn, initial_pos = self.config["initial_orn"], self.config[
-            "initial_pos"]
+        print(self.config["envname"])
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
 
-        self.gui = self.config["mode"] == "gui"
-        self.timestep = self.config["speed"]["timestep"]
-        self.frame_skip = self.config["speed"]["frameskip"]
-        self.model_id = self.config["model_id"]
-        ## Mode initialized with mode=SENSOR
-        self.tracking_camera = tracking_camera
+        self.robot_introduce(Husky(self.config, env=self))
+        self.scene_introduce()
+
+        self.total_reward = 0
+        self.total_frame = 0
         self.flag_timeout = 1
         self.visualid = -1
         self.lastid = None
-        self.resolution = self.config["resolution"]
-        CameraRobotEnv.__init__(
-            self,
-            config,
-            gpu_count,
-            scene_type="building",
-            use_filler=self.config["use_filler"],
-            )
-        self.robot_introduce(Husky(
-            is_discrete,
-            initial_pos=initial_pos,
-            initial_orn=initial_orn,
-            target_pos=target_pos,
-            resolution=self.resolution,
-            env = self))
-        self.scene_introduce()
-
+        self.gui = self.config["mode"] == "gui"
+        
         if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2])
 
         self.lastid = None
         self.obstacle_dist = 100
-        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
-
+        
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
         return obs
@@ -266,7 +201,7 @@ class HuskyGibsonFlagRunEnv(CameraRobotEnv):
         #self.walk_target_x *= more_compact
         #self.walk_target_y *= more_compact
 
-        startx, starty, _ = self.robot.body_xyz
+        startx, starty, _ = self.robot.get_position()
 
 
         self.flag = None
@@ -284,15 +219,6 @@ class HuskyGibsonFlagRunEnv(CameraRobotEnv):
 
         self.robot.walk_target_x = ball_xyz[0]
         self.robot.walk_target_y = ball_xyz[1]
-
-    def calc_rewards_and_done(self, a, state):
-        if self.lastid:
-            ball_xyz, _ = p.getBasePositionAndOrientation(self.lastid)
-            self.robot.walk_target_x = ball_xyz[0]
-            self.robot.walk_target_y = ball_xyz[1]
-        done = self._termination(state)
-        rewards = self._rewards(a)
-        return rewards, done
 
     def _rewards(self, action = None, debugmode=False):
         a = action
@@ -335,15 +261,13 @@ class HuskyGibsonFlagRunEnv(CameraRobotEnv):
         ]
         return rewards
 
-    def _termination(self, state=None, debugmode=False):
+    def _termination(self, debugmode=False):
         alive = len(self.robot.parts['top_bumper_link'].contact_list())
         done = alive > 0 or self.nframe > 500
         if (debugmode):
             print("alive=")
             print(alive)
-        if not np.isfinite(state).all():
-            print("~INF~", state)
-            done = True
+        print(len(self.robot.parts['top_bumper_link'].contact_list()), self.nframe, done)
         return done
 
     def _step(self, a):
@@ -352,10 +276,15 @@ class HuskyGibsonFlagRunEnv(CameraRobotEnv):
             self._flag_reposition()
         self.flag_timeout -= 1
 
-        self.obstacle_dist = (np.mean(state[16:48,16:48,-1]))
+        if "depth" in self.config["output"]:
+            depth_obs = self.get_observations()["depth"]
+            x_start = int(self.windowsz/2-16)
+            x_end   = int(self.windowsz/2+16)
+            y_start = int(self.windowsz/2-16)
+            y_end   = int(self.windowsz/2+16)
+            self.obstacle_dist = (np.mean(depth_obs[x_start:x_end, y_start:y_end, -1]))
 
         return state, reward, done, meta
-
 
 
 

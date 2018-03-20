@@ -130,7 +130,7 @@ void indexVBO(
             VertexToOutIndex[ packed ] = newindex;
         }
     }
-    printf("Size of output vertex vector %lu\n", out_vertices.size());
+    // printf("Size of output vertex vector %lu\n", out_vertices.size());
 }
 
 // TODO: Inplement index_SEM from load MTL
