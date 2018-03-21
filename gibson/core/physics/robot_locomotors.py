@@ -146,7 +146,7 @@ class WalkerBase(BaseRobot):
             print("Robot more", more)
 
 
-        if not 'nonvis_sensor' in self.env.config["output"]:
+        if not 'nonviz_sensor' in self.env.config["output"]:
             j.fill(0)
             more.fill(0)
 
@@ -551,6 +551,12 @@ class Husky(WalkerBase):
             (ord('a'), ): 3, ## turn left
             (): 4
         }
+
+    def calc_state(self):
+        base_state = WalkerBase.calc_state(self)
+
+        global_speed = self.robot_body.speed()
+        return np.concatenate((base_state, np.array(global_speed)))
 
 
 class HuskyClimber(Husky):
