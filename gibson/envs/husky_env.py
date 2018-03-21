@@ -34,7 +34,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
         CameraRobotEnv.__init__(self, self.config, gpu_count, 
-                                scene_type="building",
+                                scene_type="stadium" if self.config["model_id"]=="stadium" else "building",
                                 tracking_camera=tracking_camera)
 
         self.robot_introduce(Husky(self.config, env=self))
@@ -137,8 +137,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
         done = not alive or self.nframe > 250 or height < 0
-        if done:
-            print("Episode reset")
+        #if done:
+        #    print("Episode reset")
         return done
 
     def _flag_reposition(self):
