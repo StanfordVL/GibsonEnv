@@ -171,7 +171,7 @@ class WalkerBase(BaseRobot):
         return self.dist_to_start / self.scene.dt
 
     def dist_to_target(self):
-        return np.linalg.norm(self.get_position() - self.get_target_position())
+        return np.linalg.norm(np.array(self.body_xyz) - np.array(self.get_target_position()))
 
     def _is_close_to_goal(self):
         body_pose = self.robot_body.pose()
