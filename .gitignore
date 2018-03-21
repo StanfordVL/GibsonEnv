@@ -68,3 +68,4 @@ examples/scripts/plot*
 nav_models
 
 gibson/assets
+*.pdf

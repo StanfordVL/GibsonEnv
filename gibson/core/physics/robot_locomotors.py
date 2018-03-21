@@ -555,8 +555,8 @@ class Husky(WalkerBase):
     def calc_state(self):
         base_state = WalkerBase.calc_state(self)
 
-        global_speed = self.robot_body.speed()
-        return np.concatenate((base_state, np.array(global_speed)))
+        angular_speed = self.robot_body.angular_speed()
+        return np.concatenate((base_state, np.array(angular_speed)))
 
 
 class HuskyClimber(Husky):
