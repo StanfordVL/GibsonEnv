@@ -383,10 +383,7 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
 
 
         self.flag = None
-        #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
         self.flag_timeout = 3000 / self.scene.frame_skip
-        #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
-        #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
         if self.lastid:
             p.removeBody(self.lastid)
 

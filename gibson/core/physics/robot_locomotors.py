@@ -3,7 +3,7 @@ import numpy as np
 import pybullet as p
 import os
 import gym, gym.spaces
-from transforms3d.euler import euler2quat
+from transforms3d.euler import euler2quat, euler2mat
 import transforms3d.quaternions as quat
 import sys
 
@@ -79,6 +79,20 @@ class WalkerBase(BaseRobot):
         '''Get current orientation
         '''
         return self.robot_body.current_orientation()
+
+    def set_position(self, pos):
+        self.robot_body.reset_position(pos)
+
+    def move_by(self, delta):
+        new_pos = np.array(delta) + self.robot_body.current_position()
+        self.robot_body.reset_position(new_pos)
+
+    def move_forward(self, forward=1.0):
+        orn = self.robot_body.current_orientation()
+        print(euler2mat(orn))
+        self.move_by(euler2mat(orn).dot(np.array(forward, 0, 0)))
+
+    def move_backward
 
     def get_rpy(self):
         return self.robot_body.bp_pose.rpy()

@@ -37,6 +37,7 @@ class MotorModel(object):
     self._viscous_damping = MOTOR_VISCOUS_DAMPING
     self._current_table = [0, 10, 20, 30, 40, 50, 60]
     self._torque_table = [0, 1, 1.9, 2.45, 3.0, 3.25, 3.5]
+    #self._torque_table = [0, 2, 3.8, 4.9, 6.0, 6.5, 7.0]
 
   def set_voltage(self, voltage):
     self._voltage = voltage
@@ -98,4 +99,5 @@ class MotorModel(object):
     actual_torque = np.interp(current_magnitude, self._current_table,
                               self._torque_table)
     actual_torque = np.multiply(current_sign, actual_torque)
+    #print("Actual torque", actual_torque)
     return actual_torque, observed_torque
