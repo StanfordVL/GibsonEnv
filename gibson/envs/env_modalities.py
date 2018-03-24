@@ -443,6 +443,7 @@ class CameraRobotEnv(BaseRobotEnv):
 
         self.render_nonviz_sensor = self.robot.calc_state()
 
+
         if self._require_camera_input:
             all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
             top_k = self.find_best_k_views(pose[0], all_dist, all_pos)

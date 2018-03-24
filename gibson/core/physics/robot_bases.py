@@ -191,8 +191,16 @@ class BodyPart:
         if self.bodyPartIndex == -1:
             (vx, vy, vz), _ = p.getBaseVelocity(self.bodies[self.bodyIndex])
         else:
-            (x,y,z), (a,b,c,d), _,_,_,_, (vx, vy, vz), (vr,vp,vy) = p.getLinkState(self.bodies[self.bodyIndex], self.bodyPartIndex, computeLinkVelocity=1)
+            (x,y,z), (a,b,c,d), _,_,_,_, (vx, vy, vz), (vr,vp,vyaw) = p.getLinkState(self.bodies[self.bodyIndex], self.bodyPartIndex, computeLinkVelocity=1)
         return np.array([vx, vy, vz])
+
+
+    def angular_speed(self):
+        if self.bodyPartIndex == -1:
+            _, (vr,vp,vyaw) = p.getBaseVelocity(self.bodies[self.bodyIndex])
+        else:
+            (x,y,z), (a,b,c,d), _,_,_,_, (vx, vy, vz), (vr,vp,vyaw) = p.getLinkState(self.bodies[self.bodyIndex], self.bodyPartIndex, computeLinkVelocity=1)
+        return np.array([vr, vp, vyaw])
 
     def current_position(self):
         return self.get_pose()[:3]

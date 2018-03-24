@@ -174,7 +174,7 @@ class WalkerBase(BaseRobot):
             print("Robot more", more)
 
 
-        if not 'nonvis_sensor' in self.env.config["output"]:
+        if not 'nonviz_sensor' in self.env.config["output"]:
             j.fill(0)
             more.fill(0)
 
@@ -199,7 +199,7 @@ class WalkerBase(BaseRobot):
         return self.dist_to_start / self.scene.dt
 
     def dist_to_target(self):
-        return np.linalg.norm(self.get_position() - self.get_target_position())
+        return np.linalg.norm(np.array(self.body_xyz) - np.array(self.get_target_position()))
 
     def _is_close_to_goal(self):
         body_pose = self.robot_body.pose()
@@ -579,6 +579,12 @@ class Husky(WalkerBase):
             (ord('a'), ): 3, ## turn left
             (): 4
         }
+
+    def calc_state(self):
+        base_state = WalkerBase.calc_state(self)
+
+        angular_speed = self.robot_body.angular_speed()
+        return np.concatenate((base_state, np.array(angular_speed)))
 
 
 class HuskyClimber(Husky):

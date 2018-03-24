@@ -34,7 +34,7 @@ class HuskyNavigateEnv(CameraRobotEnv):
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
         CameraRobotEnv.__init__(self, self.config, gpu_count, 
-                                scene_type="building",
+                                scene_type="stadium" if self.config["model_id"]=="stadium" else "building",
                                 tracking_camera=tracking_camera)
 
         self.robot_introduce(Husky(self.config, env=self))
@@ -137,8 +137,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
         alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
         done = not alive or self.nframe > 250 or height < 0
-        if done:
-            print("Episode reset")
+        #if done:
+        #    print("Episode reset")
         return done
 
     def _flag_reposition(self):
@@ -155,6 +155,61 @@ class HuskyNavigateEnv(CameraRobotEnv):
         obs = CameraRobotEnv._reset(self)
         self._flag_reposition()
         return obs
+
+
+
+class HuskyNavigateSpeedControlEnv(HuskyNavigateEnv):
+    """Specfy navigation reward
+    """
+    def __init__(self, config, gpu_count=0):
+        #assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+        HuskyNavigateEnv.__init__(self, config, gpu_count)
+        self.robot.keys_to_action = {
+            (ord('s'), ): [0.5,0], ## backward
+            (ord('w'), ): [-0.5,0], ## forward
+            (ord('d'), ): [0,-0.5], ## turn right
+            (ord('a'), ): [0,0.5], ## turn left
+            (): [0,0]
+        }
+
+        self.base_action_omage = np.array([-0.001, 0.001, -0.001, 0.001])
+        self.base_action_v = np.array([0.001, 0.001, 0.001, 0.001])
+        self.action_space = gym.spaces.Discrete(5)
+        #control_signal = -0.5
+        #control_signal_omega = 0.5
+        self.v = 0
+        self.omega = 0
+        self.kp = 100
+        self.ki = 0.1
+        self.kd = 25
+        self.ie = 0
+        self.de = 0
+        self.olde = 0
+        self.ie_omega = 0
+        self.de_omega = 0
+        self.olde_omage = 0
+
+
+    def step(self, action):
+        control_signal, control_signal_omega = action
+        self.e = control_signal - self.v
+        self.de = self.e - self.olde
+        self.ie += self.e
+        self.olde = self.e
+        pid_v = self.kp * self.e + self.ki * self.ie + self.kd * self.de
+
+        self.e_omega = control_signal_omega - self.omega
+        self.de_omega = self.e_omega - self.olde_omage
+        self.ie_omega += self.e_omega
+        pid_omega = self.kp * self.e_omega + self.ki * self.ie_omega + self.kd * self.de_omega
+
+        obs, rew, env_done, info = HuskyNavigateEnv.step(self,action=pid_v * self.base_action_v + pid_omega * self.base_action_omage)
+
+        self.v = obs["nonviz_sensor"][3]
+        self.omega = obs["nonviz_sensor"][-1]
+
+        return obs,rew,env_done,info
+
 
 
 class HuskyGibsonFlagRunEnv(CameraRobotEnv):
