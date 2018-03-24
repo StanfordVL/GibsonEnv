@@ -19,7 +19,9 @@ class BuildingScene(Scene):
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         
         filename = os.path.join(get_model_path(model_id), "mesh_z_up.obj")
-        
+        #filename = os.path.join(get_model_path(model_id), "3d", "blender.obj")
+        #textureID = p.loadTexture(os.path.join(get_model_path(model_id), "3d", "rgb.mtl"))
+
         if robot.model_type == "MJCF":
             MJCF_SCALING = robot.mjcf_scaling
             scaling = [1.0/MJCF_SCALING, 1.0/MJCF_SCALING, 0.6/MJCF_SCALING]
@@ -33,6 +35,7 @@ class BuildingScene(Scene):
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = textureID)
         p.changeDynamics(boundaryUid, -1, lateralFriction=0.5, spinningFriction=0.1, rollingFriction=0)
         #print(p.getDynamicsInfo(boundaryUid, -1))
+        #sys.exit()
         self.scene_obj_list = [boundaryUid]
         
 

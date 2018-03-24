@@ -148,8 +148,21 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
         pressed_keys = []
 
         for key in key_codes:
+            print(key)
             if key == ord('r'):
                 do_restart = True
+            if key == ord('j'):
+                env.robot.turn_left()
+                continue
+            if key == ord('l'):
+                env.robot.turn_right()
+                continue
+            if key == ord('i'):
+                env.robot.move_forward()
+                continue
+            if key == ord('k'):
+                env.robot.move_backward()
+                continue
             if key not in relevant_keys:
                 continue
             # test events, set key states
