@@ -10,7 +10,6 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import shutil
 import time
-import matplotlib.pyplot as plt
 
 cudnn.benchmark = True
 

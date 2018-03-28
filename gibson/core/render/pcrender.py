@@ -23,15 +23,19 @@ from multiprocessing import Process
 from gibson.data.datasets import ViewDataSet3D
 from gibson.learn.completion import CompletionNet
 import torch.nn as nn
-import scipy.misc
 
 import pdb
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 assets_file_dir = os.path.dirname(assets.__file__)
 
-cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
 coords  = np.load(os.path.join(assets_file_dir, 'coord.npy'))
+
+
+try:
+    cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
+except:
+    print("Error: cuda renderer is not loaded, rendering will not work")
 
 LINUX_OFFSET = {
     "x_delta": 10,

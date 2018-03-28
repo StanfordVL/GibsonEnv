@@ -7,7 +7,6 @@ import cv2
 import os
 from datetime import datetime
 from PIL import Image
-import scipy.misc
 from gibson.core.render.profiler import Profiler
 from enum import Enum
 import cv2
