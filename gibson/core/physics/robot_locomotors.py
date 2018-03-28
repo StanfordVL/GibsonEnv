@@ -3,7 +3,8 @@ import numpy as np
 import pybullet as p
 import os
 import gym, gym.spaces
-from transforms3d.euler import euler2quat
+from transforms3d.euler import euler2quat, euler2mat
+from transforms3d.quaternions import quat2mat, qmult
 import transforms3d.quaternions as quat
 import sys
 
@@ -81,6 +82,33 @@ class WalkerBase(BaseRobot):
         '''
         return self.robot_body.current_orientation()
 
+    def set_position(self, pos):
+        self.robot_body.reset_position(pos)
+
+    def move_by(self, delta):
+        new_pos = np.array(delta) + self._get_scaled_position()
+        self.robot_body.reset_position(new_pos)
+
+    def move_forward(self, forward=0.04):
+        x, y, z, w = self.robot_body.current_orientation()
+        print(quat2mat([w, x, y, z]).dot(np.array([-forward, 0, 0])))
+        self.move_by(quat2mat([w, x, y, z]).dot(np.array([-forward, 0, 0])))
+
+    def move_backward(self, backward=0.04):
+        x, y, z, w = self.robot_body.current_orientation()
+        print(quat2mat([w, x, y, z]).dot(np.array([backward, 0, 0])))
+        self.move_by(quat2mat([w, x, y, z]).dot(np.array([backward, 0, 0])))
+
+    def turn_left(self, delta=0.01):
+        orn = self.robot_body.current_orientation()
+        new_orn = qmult((euler2quat(-delta, 0, 0)), orn)
+        self.robot_body.reset_orientation(new_orn)
+
+    def turn_right(self, delta=0.01):
+        orn = self.robot_body.current_orientation()
+        new_orn = qmult((euler2quat(delta, 0, 0)), orn)
+        self.robot_body.reset_orientation(new_orn)
+        
     def get_rpy(self):
         return self.robot_body.bp_pose.rpy()
 

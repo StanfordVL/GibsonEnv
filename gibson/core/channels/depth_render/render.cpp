@@ -427,6 +427,7 @@ int main( int argc, char * argv[] )
     std::vector<std::vector<glm::vec3>> mtl_vertices;
     std::vector<std::vector<glm::vec2>> mtl_uvs;
     std::vector<std::vector<glm::vec3>> mtl_normals;
+    std::vector<glm::vec3> mtl_sem_centers;
     std::vector<std::string> material_name;
     std::vector<int> material_id;
     std::string mtllib;
@@ -441,20 +442,12 @@ int main( int argc, char * argv[] )
     if ( semantic > 0) {
         /* initialize random seed: */
         srand (0);
-        /*
-        // Prevent clamping
-        glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE);
-        glClampColorARB(GL_CLAMP_READ_COLOR_ARB, GL_FALSE);
-        glClampColorARB(GL_CLAMP_FRAGMENT_COLOR_ARB, GL_FALSE);
-        */
         glShadeModel(GL_FLAT);
 
-        //bool res = loadPLYfile(name_obj)
-        // std::cout << "Loading ply file\n";
         bool res;
         int num_vertices;
         if (ply > 0) {
-            res = loadPLY_MTL(model_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_id, mtllib, num_vertices);
+            res = loadPLY_MTL(model_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, mtl_sem_centers, material_id, mtllib, num_vertices);
             printf("From ply loaded total of %d vertices\n", num_vertices);
         } else {
             res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);

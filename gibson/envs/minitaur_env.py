@@ -32,7 +32,6 @@ from gym.utils import seeding
 import gibson
 import numpy as np
 import pybullet
-from gibson import configs
 
 MINITAUR_TIMESTEP  = 1.0/(4 * 22)
 MINITAUR_FRAMESKIP = 4
@@ -41,22 +40,12 @@ ACTION_EPS = 0.01
 
 
 tracking_camera = {
-    'yaw': 20,  # demo: living room, stairs
-    #'yaw'; 30,   # demo: kitchen
-    'z_offset': 0.5,
+    'yaw': 40,
+    'z_offset': 0.3,
     'distance': 1,
-    'pitch': -20
-    # 'pitch': -24  # demo: stairs
+    'pitch': -0
 }
 
-tracking_camera_top = {
-    'yaw': 20,  # demo: living room, stairs
-    #'yaw'; 30,   # demo: kitchen
-    'z_offset': 0.5,
-    'distance': 1,
-    'pitch': -20
-    # 'pitch': -24  # demo: stairs
-}
 
 class MinitaurNavigateEnv(CameraRobotEnv):
     """The gym environment for the minitaur.
@@ -66,42 +55,26 @@ class MinitaurNavigateEnv(CameraRobotEnv):
     space is the desired motor angle for each motor. The reward function is based
     on how far the minitaur walks in 1000 steps and penalizes the energy
     expenditure.
-
-    Attribute:
-        self.human
-        self.tracking_camera
-
-    Interface:
-        self.calc_rewards_and_done():   missing
     """
-    metadata = {
-        "render.modes": ["human", "rgb_array"],
-        "video.frames_per_second": 50
-    }
+    distance_weight = 1.0
+    energy_weight = 0.005
+    shake_weight = 0.0
+    drift_weight = 0.0
+    distance_limit = float("inf")
+    observation_noise_stdev = 0.0
+    action_bound = 1
+    env_randomizer = None
+    hard_reset = False
 
-    def __init__(self,
-                 distance_weight=1.0,
-                 energy_weight=0.005,
-                 shake_weight=0.0,
-                 drift_weight=0.0,
-                 distance_limit=float("inf"),
-                 observation_noise_stdev=0.0,
-                 leg_model_enabled=False,
-                 hard_reset=False,
-                 render=False,
-                 env_randomizer=None,
+    leg_model_enabled = True
+    num_bullet_solver_iterations = 300    
+    pd_control_enabled = True
+    accurate_motor_model_enabled = True
+    NUM_SUBSTEPS = 5     # PD control needs smaller time step for stability.
 
-                 ## Cambria specific
-                 human=True, 
-                 timestep=MINITAUR_TIMESTEP, 
-                 frame_skip=MINITAUR_FRAMESKIP, 
-                 is_discrete=False, 
-                 mode="RGBD", 
-                 use_filler=True, 
-                 gpu_count=0, 
-                 resolution="NORMAL"):
+
+    def __init__(self, config, gpu_count=0):
         """Initialize the minitaur gym environment.
-
         Args:
             distance_weight: The weight of the distance term in the reward.
             energy_weight: The weight of the energy term in the reward.
@@ -114,58 +87,49 @@ class MinitaurNavigateEnv(CameraRobotEnv):
             hard_reset: Whether to wipe the simulation and load everything when reset
                 is called. If set to false, reset just place the minitaur back to start
                 position and set its pose to initial configuration.
-            render: Whether to render the simulation.
             env_randomizer: An EnvRandomizer to randomize the physical properties
                 during reset().
         """
-        self._time_step = 0.01
-        self._observation = []
+    
+        self.config = self.parse_config(config)
+        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        #self._is_render = render
-        self._last_base_position = [0, 0, 0]
-        self._distance_weight = distance_weight
-        self._energy_weight = energy_weight
-        self._drift_weight = drift_weight
-        self._shake_weight = shake_weight
-        self._distance_limit = distance_limit
-        self._observation_noise_stdev = observation_noise_stdev
-        self._action_bound = 1
-        self._leg_model_enabled = leg_model_enabled
-        
-        self._env_randomizer = env_randomizer
-        self._time_step = timestep
+        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+                                scene_type="building",
+                                tracking_camera=tracking_camera)
 
-        target_orn, target_pos   = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][-1]
-        initial_orn, initial_pos = configs.TASK_POSE[configs.NAVIGATE_MODEL_ID]["navigate"][0]        
-        self.robot = Minitaur(time_step=self._time_step, 
-                              initial_pos=initial_pos,
-                              initial_orn=initial_orn)
-
-        if self._env_randomizer is not None:
-            self._env_randomizer.randomize_env(self)
-
-        self._last_base_position = [0, 0, 0]
-        self._objectives = []        
-        self.viewer = None
-        self._hard_reset = hard_reset  # This assignment need to be after reset()
-
-
-        self.human = human
-        self.model_id = configs.NAVIGATE_MODEL_ID
-        self.timestep = timestep
-        self.frame_skip = frame_skip
-        self.resolution = resolution
-        self.tracking_camera = tracking_camera
-
-        CameraRobotEnv.__init__(
-            self, 
-            mode, 
-            gpu_count, 
-            scene_type="building", 
-            use_filler=use_filler)
+        self.robot_introduce(Minitaur(self.config, env=self, 
+                                      pd_control_enabled=self.pd_control_enabled,
+                                      accurate_motor_model_enabled=self.accurate_motor_model_enabled))
+        self.scene_introduce()
+        self.gui = self.config["mode"] == "gui"
         self.total_reward = 0
         self.total_frame = 0
 
+        self.action_repeat = 1
+        ## Important: PD controller needs more accuracy
+        '''if self.pd_control_enabled or self.accurate_motor_model_enabled:
+            self.time_step = self.config["speed"]["timestep"]
+            self.time_step /= self.NUM_SUBSTEPS
+            self.num_bullet_solver_iterations /= self.NUM_SUBSTEPS
+            self.action_repeat *= self.NUM_SUBSTEPS
+            pybullet.setPhysicsEngineParameter(physicsClientId=self.physicsClientId,
+              numSolverIterations=int(self.num_bullet_solver_iterations))
+            pybullet.setTimeStep(self.time_step, physicsClientId=self.physicsClientId)
+        '''
+        pybullet.setPhysicsEngineParameter(physicsClientId=self.physicsClientId,
+              numSolverIterations=int(self.num_bullet_solver_iterations))
+        self._observation = []
+        self._last_base_position = [0, 0, 0]
+        self._action_bound = self.action_bound
+        
+        self._env_randomizer = self.env_randomizer        
+        if self._env_randomizer is not None:
+            self._env_randomizer.randomize_env(self)
+
+        self._objectives = []        
+        self.viewer = None
+        self.Amax = [0] * 8
 
     def set_env_randomizer(self, env_randomizer):
         self._env_randomizer = env_randomizer
@@ -189,10 +153,10 @@ class MinitaurNavigateEnv(CameraRobotEnv):
 
 
     def _transform_action_to_motor_command(self, action):
-        if self._leg_model_enabled:
-            for i, action_component in enumerate(action):
-                if not (-self._action_bound - ACTION_EPS <= action_component <= self._action_bound + ACTION_EPS):
-                    raise ValueError("{}th action {} out of bounds.".format(i, action_component))
+        if self.leg_model_enabled:
+            #for i, action_component in enumerate(action):
+            #    if not (-self._action_bound - ACTION_EPS <= action_component <= self._action_bound + ACTION_EPS):
+            #        raise ValueError("{}th action {} out of bounds.".format(i, action_component))
             action = self.robot.ConvertFromLegModel(action)
         return action
     
@@ -212,12 +176,20 @@ class MinitaurNavigateEnv(CameraRobotEnv):
           ValueError: The action dimension is not the same as the number of motors.
           ValueError: The magnitude of actions is out of bounds.
         """
-
+        #print("Env apply raw action", action)
         action = self._transform_action_to_motor_command(action)
+        #print("Env apply action", action)
+    
         #for _ in range(self._action_repeat):
         #  self.robot.ApplyAction(action)
         #  pybullet.stepSimulation()
-        return CameraRobotEnv._step(self, action)
+        for i in range(len(self.Amax)):
+            if action[i] > self.Amax[i]:
+                self.Amax[i] = action[i]
+        print("Action max", self.Amax)
+        for _ in range(self.action_repeat):
+            state = CameraRobotEnv._step(self, action)
+        return state
 
 
     def calc_rewards_and_done(self, action, state):
@@ -274,15 +246,17 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         rot_mat = pybullet.getMatrixFromQuaternion(orientation)
         local_up = rot_mat[6:]
         pos = self.robot.GetBasePosition()
-        return (np.dot(np.asarray([0, 0, 1]), np.asarray(local_up)) < 0.85 or
-                pos[2] < 0.13)
+        #return (np.dot(np.asarray([0, 0, 1]), np.asarray(local_up)) < 0.85 or
+        #        pos[2] < 0.13)
+        return False
 
     def _termination(self, state=None, debugmode=False):
         position = self.robot.GetBasePosition()
         distance = math.sqrt(position[0]**2 + position[1]**2)
-        return self.is_fallen() or distance > self._distance_limit
+        #return self.is_fallen() or distance > self.distance_limit
+        return False
 
-    def _reward(self, action=None, debugmode=False):
+    def _rewards(self, action=None, debugmode=False):
         a = action
         current_base_position = self.robot.GetBasePosition()
         forward_reward = current_base_position[0] - self._last_base_position[0]
@@ -291,11 +265,11 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         self._last_base_position = current_base_position
         energy_reward = np.abs(
             np.dot(self.robot.GetMotorTorques(),
-                   self.robot.GetMotorVelocities())) * self._time_step
+                   self.robot.GetMotorVelocities())) * self.timestep
         reward = (
-            self._distance_weight * forward_reward -
-            self._energy_weight * energy_reward + self._drift_weight * drift_reward
-            + self._shake_weight * shake_reward)
+            self.distance_weight * forward_reward -
+            self.energy_weight * energy_reward + self.drift_weight * drift_reward
+            + self.shake_weight * shake_reward)
         self._objectives.append(
             [forward_reward, energy_reward, drift_reward, shake_reward])
         return [reward, ]
@@ -310,8 +284,54 @@ class MinitaurNavigateEnv(CameraRobotEnv):
     def _noisy_observation(self):
         self._get_observation()
         observation = np.array(self._observation)
-        if self._observation_noise_stdev > 0:
+        if self.observation_noise_stdev > 0:
           observation += (np.random.normal(
-              scale=self._observation_noise_stdev, size=observation.shape) *
+              scale=self.observation_noise_stdev, size=observation.shape) *
                           self.robot.GetObservationUpperBound())
         return observation
+
+
+    #==================== Environemnt Randomizer ====================
+    ## (hzyjerry) TODO: still under construction, not ready to use
+
+    def randomize_env(self, env):
+        self._randomize_minitaur(env.minitaur)
+
+    def _randomize_minitaur(self, minitaur):
+        """Randomize various physical properties of minitaur.
+
+        It randomizes the mass/inertia of the base, mass/inertia of the legs,
+        friction coefficient of the feet, the battery voltage and the motor damping
+        at each reset() of the environment.
+
+        Args:
+          minitaur: the Minitaur instance in minitaur_gym_env environment.
+        """
+        base_mass = minitaur.GetBaseMassFromURDF()
+        randomized_base_mass = random.uniform(
+            base_mass * (1.0 + self._minitaur_base_mass_err_range[0]),
+            base_mass * (1.0 + self._minitaur_base_mass_err_range[1]))
+        minitaur.SetBaseMass(randomized_base_mass)
+
+        leg_masses = minitaur.GetLegMassesFromURDF()
+        leg_masses_lower_bound = np.array(leg_masses) * (
+            1.0 + self._minitaur_leg_mass_err_range[0])
+        leg_masses_upper_bound = np.array(leg_masses) * (
+            1.0 + self._minitaur_leg_mass_err_range[1])
+        randomized_leg_masses = [
+            np.random.uniform(leg_masses_lower_bound[i], leg_masses_upper_bound[i])
+            for i in range(len(leg_masses))
+        ]
+        minitaur.SetLegMasses(randomized_leg_masses)
+
+        randomized_battery_voltage = random.uniform(BATTERY_VOLTAGE_RANGE[0],
+                                                    BATTERY_VOLTAGE_RANGE[1])
+        minitaur.SetBatteryVoltage(randomized_battery_voltage)
+
+        randomized_motor_damping = random.uniform(MOTOR_VISCOUS_DAMPING_RANGE[0],
+                                                  MOTOR_VISCOUS_DAMPING_RANGE[1])
+        minitaur.SetMotorViscousDamping(randomized_motor_damping)
+
+        randomized_foot_friction = random.uniform(MINITAUR_LEG_FRICTION[0],
+                                                  MINITAUR_LEG_FRICTION[1])
+        minitaur.SetFootFriction(randomized_foot_friction)

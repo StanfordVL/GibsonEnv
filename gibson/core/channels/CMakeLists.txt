@@ -159,3 +159,48 @@ add_custom_command(
    TARGET depth_render POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/depth_render${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
+
+
+
+
+cuda_add_executable(semantic
+    depth_render/semantic.cpp
+    common/controls.cpp
+    common/controls.hpp
+    common/MTLtexture.cpp
+    common/MTLtexture.hpp
+    common/MTLobjloader.cpp
+    common/MTLobjloader.hpp
+    common/MTLplyloader.cpp
+    common/MTLplyloader.hpp
+    common/objloader.cpp
+    common/objloader.hpp
+    common/tinyply.cpp
+    common/tinyply.h
+    common/vboindexer.cpp
+    common/vboindexer.hpp
+    common/picojson.h
+    common/cmdline.h
+    common/semantic_color.hpp
+
+    external/lodepng/lodepng.h
+    external/lodepng/lodepng.cpp
+)
+
+
+target_link_libraries(semantic
+    ${ALL_LIBS}
+)
+
+# Xcode and Visual working directories
+set_target_properties(semantic PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/")
+
+
+SOURCE_GROUP(common REGULAR_EXPRESSION ".*/common/.*" )
+SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
+
+
+add_custom_command(
+   TARGET semantic POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/semantic${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
+)

@@ -38,7 +38,6 @@ class AntNavigateEnv(CameraRobotEnv):
         self.gui = self.config["mode"] == "gui"
         self.total_reward = 0
         self.total_frame = 0
-        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
     def _rewards(self, action=None, debugmode=False):
         a = action
@@ -126,8 +125,7 @@ class AntClimbEnv(CameraRobotEnv):
         self.total_reward = 0
         self.total_frame = 0
         self.visual_flagId = None
-        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
-
+        
     def _rewards(self, action=None, debugmode=False):
         a = action
         potential_old = self.potential
@@ -263,8 +261,6 @@ class AntFlagRunEnv(CameraRobotEnv):
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
         self.lastid = None
 
-        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
-
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
         return obs
@@ -366,7 +362,6 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
         if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.5, 0.2])
-        assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
         
     def _reset(self):
         obs = CameraRobotEnv._reset(self)
@@ -388,10 +383,7 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
 
 
         self.flag = None
-        #self.flag = self.scene.cpp_world.debug_sphere(self.walk_target_x, self.walk_target_y, 0.2, 0.2, 0xFF8080)
         self.flag_timeout = 3000 / self.scene.frame_skip
-        #print('targetxy', self.flagid, self.walk_target_x, self.walk_target_y, p.getBasePositionAndOrientation(self.flagid))
-        #p.resetBasePositionAndOrientation(self.flagid, posObj = [self.walk_target_x, self.walk_target_y, 0.5], ornObj = [0,0,0,0])
         if self.lastid:
             p.removeBody(self.lastid)
 
