@@ -635,7 +635,7 @@ class SemanticRobotEnv(CameraRobotEnv):
 
         _, semantic_ids, _ = get_segmentId_by_name(osp.join(self.model_path, "semantic.house"), "chair")
         self.semantic_pos = self.semantic_pos[semantic_ids, :]
-        self.semantic_pos = np.array([[0, 0, 0.2]])
+        #self.semantic_pos = np.array([[0, 0, 0.2]])
     
     def dist_to_semantic_pos(self):
         pos = self.robot.get_position()
