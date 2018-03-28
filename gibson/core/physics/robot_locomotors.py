@@ -28,10 +28,11 @@ class WalkerBase(BaseRobot):
         sensor_dim=None,
         scale = 1, 
         resolution=512,
+        control = 'torque',
         env = None
     ):
         BaseRobot.__init__(self, filename, robot_name, scale, env)
-
+        self.control = control
         self.resolution = resolution
         self.obs_dim = None
         self.obs_dim = [self.resolution, self.resolution, 0]
@@ -84,10 +85,14 @@ class WalkerBase(BaseRobot):
         return self.robot_body.bp_pose.rpy()
 
     def apply_action(self, a):
-        print(self.ordered_joints)
-        for n, j in enumerate(self.ordered_joints):
-            j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
-
+        if self.control == 'torque':
+            for n, j in enumerate(self.ordered_joints):
+                j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
+        elif self.control == 'velocity':
+            for n, j in enumerate(self.ordered_joints):
+                j.set_motor_velocity(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
+        else:
+            pass
     def get_target_position(self):
         return self.target_pos
 
@@ -647,17 +652,18 @@ class Turtlebot(WalkerBase):
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"],
                             resolution=config["resolution"],
+                            control = 'velocity',
                             env=env)
         self.is_discrete = config["is_discrete"]
 
         # self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
-            self.torque = 0.001
-            self.action_list = [[self.torque, self.torque],
-                                [-self.torque, -self.torque],
-                                [self.torque, -self.torque],
-                                [-self.torque, self.torque],
+            self.vel = 0.1
+            self.action_list = [[self.vel, self.vel],
+                                [-self.vel, -self.vel],
+                                [self.vel, -self.vel],
+                                [-self.vel, self.vel],
                                 [0, 0]]
 
             self.setup_keys_to_action()
@@ -701,8 +707,8 @@ class Turtlebot(WalkerBase):
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            (ord('s'),): 0,  ## backward
-            (ord('w'),): 1,  ## forward
+            (ord('w'),): 0,  ## backward
+            (ord('s'),): 1,  ## forward
             (ord('d'),): 2,  ## turn right
             (ord('a'),): 3,  ## turn left
             (): 4
