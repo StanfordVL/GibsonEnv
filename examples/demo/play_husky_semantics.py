@@ -1,4 +1,4 @@
-from gibson.envs.husky_env import HuskyNavigateEnv
+from gibson.envs.husky_env import HuskyNavigateEnv, HuskySemanticNavigateEnv
 from gibson.utils.play import play
 import os
 
@@ -13,5 +13,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     #env = HuskyNavigateEnv(human=True, timestep=timestep, frame_skip=frame_skip, mode="RGB", is_discrete = True, resolution=args.resolution)
-    env = HuskyNavigateEnv(config=args.config)
+    env = HuskySemanticNavigateEnv(config=args.config)
     play(env, zoom=4)

@@ -75,22 +75,22 @@ bool loadPLY(
     // known to exist in the file header prior to reading the data. For brevity of this sample, properties 
     // like vertex position are hard-coded: 
     try { vertices = file.request_properties_from_element("vertex", { "x", "y", "z" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+    catch (const std::exception & e) { /*std::cerr << "tinyply exception: " << e.what() << std::endl; */}
 
     try { normals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+    catch (const std::exception & e) { /*std::cerr << "tinyply exception: " << e.what() << std::endl; */}
 
     try { colors = file.request_properties_from_element("vertex", { "red", "green", "blue", "alpha" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+    catch (const std::exception & e) { /*std::cerr << "tinyply exception: " << e.what() << std::endl; */}
 
     try { uvs = file.request_properties_from_element("vertex", { "texture_u", "texture_v" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+    catch (const std::exception & e) { /*std::cerr << "tinyply exception: " << e.what() << std::endl; */}
 
     try { faces = file.request_properties_from_element("face", { "vertex_indices" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+    catch (const std::exception & e) { /*std::cerr << "tinyply exception: " << e.what() << std::endl; */}
 
     try { texcoords = file.request_properties_from_element("face", { "texcoord" }); }
-    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+    catch (const std::exception & e) { /*std::cerr << "tinyply exception: " << e.what() << std::endl; */}
 
     timepoint before = now();
     file.read(ss);
@@ -187,7 +187,18 @@ bool loadPLY(
 };
 
 
-/* main function to parse JSON files, load or generate texture iamges and generate openGL texture IDs */
+/* Load semantic JSON file for Matterport3D dataset
+ * Require: semantic.fsegs.json, semantic.semseg.json
+ * Output:
+ *      out_label_id: list of semantic segment label 
+ *      out_segment_id: list of segmentic segment id (start from 0, incremental)
+ *      out_face_indices: list of semantic groups, each group contains all faces of the segment
+ * Example:
+ *      # 0th semantic component
+ *      out_label_id[0] = 1                  # Semantic id is 1 
+ *      out_segment_id[0] = 0                # Semantic label index is 0 (start from 0)
+ *      out_face_indices[0] = [0, 1, 2]      # Face index 0, 1, 2
+ */
 bool loadJSONtextures (
     std::string jsonpath, 
     std::vector<int> & out_label_id, 
@@ -351,12 +362,13 @@ bool loadPLY_MTL(
     std::vector<std::vector<glm::vec3>> & out_vertices,
     std::vector<std::vector<glm::vec2>> & out_uvs,
     std::vector<std::vector<glm::vec3>> & out_normals,
+    std::vector<glm::vec3> & out_centers,
     //std::vector<int> & out_material_name,
     std::vector<int> & out_material_id,
     std::string & out_mtllib,
     int & num_vertices
 ){
-    printf("Loading OBJ file %s...\n", path);
+    //printf("Loading OBJ file %s...\n", path);
 
     std::vector<glm::vec3> all_vertices;
     std::vector<glm::vec2> all_uvs;
@@ -385,12 +397,14 @@ bool loadPLY_MTL(
         std::vector<glm::vec3> curr_vertices;
         std::vector<glm::vec2> curr_uvs;
         std::vector<glm::vec3> curr_normals;
+        glm::vec3 center = glm::vec3(0.0);
         for (unsigned int j = 0; j < faces.size(); j++) {
             int face_index = faces[j];
             int3 curr_face = all_faces[face_index];
             curr_vertices.push_back(all_vertices[curr_face.a]);
             curr_vertices.push_back(all_vertices[curr_face.b]);
             curr_vertices.push_back(all_vertices[curr_face.c]);
+            center += (all_vertices[curr_face.a] + all_vertices[curr_face.b] + all_vertices[curr_face.c]) / 3.0f;
             if (has_uvs) {
                 curr_uvs.push_back(all_uvs[curr_face.a]);
                 curr_uvs.push_back(all_uvs[curr_face.b]);
@@ -402,6 +416,9 @@ bool loadPLY_MTL(
                 curr_normals.push_back(all_normals[curr_face.c]);
             }
         }
+        center /= faces.size();
+
+        out_centers.push_back(center);
         out_vertices.push_back(curr_vertices);
         if (has_uvs) out_uvs.push_back(curr_uvs);
         if (has_normals) out_normals.push_back(curr_normals);

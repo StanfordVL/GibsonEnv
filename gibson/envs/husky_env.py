@@ -1,4 +1,4 @@
-from gibson.envs.env_modalities import CameraRobotEnv, BaseRobotEnv
+from gibson.envs.env_modalities import CameraRobotEnv, BaseRobotEnv, SemanticRobotEnv
 from gibson.envs.env_bases import *
 from gibson.core.physics.robot_locomotors import Husky
 from transforms3d import quaternions
@@ -341,6 +341,93 @@ class HuskyGibsonFlagRunEnv(CameraRobotEnv):
 
         return state, reward, done, meta
 
+
+class HuskySemanticNavigateEnv(SemanticRobotEnv):
+    """Specfy navigation reward
+    """
+    def __init__(self, config, gpu_count=0):
+        #assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+        self.config = self.parse_config(config)
+        SemanticRobotEnv.__init__(self, self.config, gpu_count, 
+                                  scene_type="building",
+                                  tracking_camera=tracking_camera)
+        self.robot_introduce(Husky(self.config, env=self))
+        self.scene_introduce()
+
+        self.total_reward = 0
+        self.total_frame = 0
+        self.flag_timeout = 1
+        self.visualid = -1
+        self.lastid = None
+        self.gui = self.config["mode"] == "gui"
+        
+        if self.gui:
+            self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
+        self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2])
+
+        self.lastid = None
+        self.obstacle_dist = 100
+
+        debug_semantic = 1
+        if debug_semantic:
+            for i in range(self.semantic_pos.shape[0]):
+                pos = self.semantic_pos[i]
+                flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.1, 0.1, 0.1], rgbaColor=[1, 0, 0, 0.7])
+                flagId = p.createMultiBody(baseVisualShapeIndex=flagId, baseCollisionShapeIndex=-1, basePosition=pos)
+
+    def step(self, action):
+        obs, rew, env_done, info = SemanticRobotEnv.step(self,action=action)
+        return obs,rew,env_done,info
+
+    def _rewards(self, action = None, debugmode=False):
+        a = action
+        potential_old = self.potential
+        self.potential = self.robot.calc_potential()
+        if self.flag_timeout > 225:
+            progress = 0
+        else:
+            progress = float(self.potential - potential_old)
+
+        if not a is None:
+            electricity_cost = self.electricity_cost * float(np.abs(
+                a * self.robot.joint_speeds).mean())  # let's assume we have DC motor with controller, and reverse current braking
+            electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        else:
+            electricity_cost = 0
+
+        alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        if alive == 0:
+            alive_score = 0.1
+        else:
+            alive_score = -0.1
+
+        joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
+        debugmode = 0
+        if (debugmode):
+            print("progress")
+            print(progress)
+
+        obstacle_penalty = 0
+
+        #print("obs dist %.3f" %self.obstacle_dist)
+        if self.obstacle_dist < 0.7:
+            obstacle_penalty = self.obstacle_dist - 0.7
+
+        rewards = [
+            alive_score,
+            progress,
+            obstacle_penalty
+        ]
+        return rewards
+
+    def _termination(self, debugmode=False):
+        alive = len(self.robot.parts['top_bumper_link'].contact_list())
+        done = alive > 0 or self.nframe > 500
+        if (debugmode):
+            print("alive=")
+            print(alive)
+        print(len(self.robot.parts['top_bumper_link'].contact_list()), self.nframe, done)
+        return done
 
 
 def get_obstacle_penalty(robot, depth):
