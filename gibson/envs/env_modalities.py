@@ -25,6 +25,11 @@ import os.path as osp
 import os
 from PIL import Image
 
+from transforms3d.euler import euler2quat, euler2mat
+from transforms3d.quaternions import quat2mat, qmult
+import transforms3d.quaternions as quat
+
+
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
 DEFAULT_DEBUG_CAMERA = {
@@ -626,16 +631,35 @@ class SemanticRobotEnv(CameraRobotEnv):
 
         self.semantic_client.send_string("Ready")
         semantic_msg = self.semantic_client.recv()
-
         self.semantic_pos = np.frombuffer(semantic_msg, dtype=np.float32).reshape((-1, 3))
-        print("Semantic position", self.semantic_pos.shape)
 
         _, semantic_ids, _ = get_segmentId_by_name(osp.join(self.model_path, "semantic.house"), "chair")
-        print("Relevant segment ids", len(semantic_ids))
         self.semantic_pos = self.semantic_pos[semantic_ids, :]
-        print("Semantic position", self.semantic_pos.shape)        
+        self.semantic_pos = np.array([[0, 0, 0.2]])
+    
+    def dist_to_semantic_pos(self):
+        pos = self.robot.get_position()
+        orn = self.robot.get_orientation()
+        #print(self.semantic_pos)
+        #print(pos, orn)
+
+        diff_pos = self.semantic_pos - pos
+        dist_to_robot = np.sqrt(np.sum(diff_pos * diff_pos, axis = 1))
+        #print("Dist to robot", dist_to_robot)
+        diff_unit = (diff_pos.T / dist_to_robot).T
+
+        #TODO: (hzyjerry) orientation is still buggy
+        orn_unit = quat2mat(orn).dot(np.array([0, 0, 1]))
+        orn_to_robot = np.arccos(diff_unit.dot(orn_unit))
+        #print("Orientation to robot", orn_to_robot)
+        return dist_to_robot, orn_to_robot
+
+    def get_close_semantic_pos(self, dist_max=1.0, orn_max=np.pi/5):
+        dists, orns = self.dist_to_semantic_pos()
+        return [i for i in range(self.semantic_pos.shape[0]) if dists[i] < dist_max and orns[i] < orn_max]
 
     def step(self, action, tag=True):
+        self.dist_to_semantic_pos()
         return CameraRobotEnv.step(self, action)
 
 

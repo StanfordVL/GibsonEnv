@@ -35,14 +35,12 @@ class BuildingScene(Scene):
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = textureID)
         p.changeDynamics(boundaryUid, -1, lateralFriction=0.5, spinningFriction=0.1, rollingFriction=0)
         #print(p.getDynamicsInfo(boundaryUid, -1))
-        #sys.exit()
         self.scene_obj_list = [boundaryUid]
         
 
         planeName = os.path.join(pybullet_data.getDataPath(), "mjcf/ground_plane.xml")
         self.ground_plane_mjcf = p.loadMJCF(planeName)
-        #print(self.ground_plane_mjcf)
-
+        
         if "z_offset" in self.env.config:
             z_offset = self.env.config["z_offset"]
         else:

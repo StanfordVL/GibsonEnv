@@ -349,7 +349,7 @@ class HuskySemanticNavigateEnv(SemanticRobotEnv):
         #assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
         self.config = self.parse_config(config)
         SemanticRobotEnv.__init__(self, self.config, gpu_count, 
-                                  scene_type="building",
+                                  scene_type="stadium",
                                   tracking_camera=tracking_camera)
         self.robot_introduce(Husky(self.config, env=self))
         self.scene_introduce()
