@@ -635,23 +635,24 @@ class SemanticRobotEnv(CameraRobotEnv):
 
         _, semantic_ids, _ = get_segmentId_by_name(osp.join(self.model_path, "semantic.house"), "chair")
         self.semantic_pos = self.semantic_pos[semantic_ids, :]
-        #self.semantic_pos = np.array([[0, 0, 0.2]])
+
+        debugmode=0
+        if debugmode:
+            self.semantic_pos = np.array([[0, 0, 0.2]])
     
     def dist_to_semantic_pos(self):
         pos = self.robot.get_position()
-        orn = self.robot.get_orientation()
+        x, y, z, w = self.robot.get_orientation()
         #print(self.semantic_pos)
         #print(pos, orn)
 
         diff_pos = self.semantic_pos - pos
         dist_to_robot = np.sqrt(np.sum(diff_pos * diff_pos, axis = 1))
-        #print("Dist to robot", dist_to_robot)
         diff_unit = (diff_pos.T / dist_to_robot).T
 
         #TODO: (hzyjerry) orientation is still buggy
-        orn_unit = quat2mat(orn).dot(np.array([0, 0, 1]))
+        orn_unit = quat2mat([w, x, y, z]).dot(np.array([-1, 0, 0]))
         orn_to_robot = np.arccos(diff_unit.dot(orn_unit))
-        #print("Orientation to robot", orn_to_robot)
         return dist_to_robot, orn_to_robot
 
     def get_close_semantic_pos(self, dist_max=1.0, orn_max=np.pi/5):
@@ -659,7 +660,7 @@ class SemanticRobotEnv(CameraRobotEnv):
         return [i for i in range(self.semantic_pos.shape[0]) if dists[i] < dist_max and orns[i] < orn_max]
 
     def step(self, action, tag=True):
-        self.dist_to_semantic_pos()
+        semantic_pos = self.get_close_semantic_pos()
         return CameraRobotEnv.step(self, action)
 
 

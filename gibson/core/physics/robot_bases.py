@@ -203,9 +203,13 @@ class BodyPart:
         return np.array([vr, vp, vyaw])
 
     def current_position(self):
+        """Get position in physics simulation (unscaled)
+        """
         return self.get_pose()[:3]
 
     def current_orientation(self):
+        """Get orientation in physics simulation
+        """
         return self.get_pose()[3:]
 
     def reset_position(self, position):

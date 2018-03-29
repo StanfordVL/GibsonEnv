@@ -90,12 +90,12 @@ class WalkerBase(BaseRobot):
 
     def move_forward(self, forward=0.04):
         x, y, z, w = self.robot_body.current_orientation()
-        print(quat2mat([w, x, y, z]).dot(np.array([-forward, 0, 0])))
+        #print(quat2mat([w, x, y, z]).dot(np.array([-forward, 0, 0])))
         self.move_by(quat2mat([w, x, y, z]).dot(np.array([-forward, 0, 0])))
 
     def move_backward(self, backward=0.04):
         x, y, z, w = self.robot_body.current_orientation()
-        print(quat2mat([w, x, y, z]).dot(np.array([backward, 0, 0])))
+        #print(quat2mat([w, x, y, z]).dot(np.array([backward, 0, 0])))
         self.move_by(quat2mat([w, x, y, z]).dot(np.array([backward, 0, 0])))
 
     def turn_left(self, delta=0.01):
@@ -112,7 +112,6 @@ class WalkerBase(BaseRobot):
         return self.robot_body.bp_pose.rpy()
 
     def apply_action(self, a):
-        print(self.ordered_joints)
         for n, j in enumerate(self.ordered_joints):
             j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
 
