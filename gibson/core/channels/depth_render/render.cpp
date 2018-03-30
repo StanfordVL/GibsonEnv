@@ -492,11 +492,14 @@ int main( int argc, char * argv[] )
 
             if (semantic_clr == 1) 
                 color_coding_RAND(color); // Instance-by-Instance Color Coding
-            else {
-                if (semantic_src == 1) { color_coding_2D3DS(color, id);}   // Stanford 2D3DS
+            else if (semantic_clr == 2) {
+                if (semantic_src == 1)      { color_coding_2D3DS(color, id);}   // Stanford 2D3DS
                 else if (semantic_src == 2) { color_coding_MP3D(color, id );} // Matterport3D
                 else {printf("Invalid code for semantic source.\n"); exit(-1); }
-            }   
+            }  else {
+                if (semantic_src == 1)      { color_coding_2D3DS_pretty(color, material_name[i]);}
+                else {printf("Invalid code for semantic source.\n"); exit(-1); }
+            }
             
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,

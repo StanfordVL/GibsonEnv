@@ -413,7 +413,9 @@ class PCRenderer:
             self.surface_normal = normal_arr
         if self._require_semantics:
             self.show_semantics = semantic_arr
-            print("Semantics array", np.max(semantic_arr), np.min(semantic_arr), np.mean(semantic_arr), semantic_arr.shape)
+            debugmode = 0
+            if debugmode:
+                print("Semantics array", np.max(semantic_arr), np.min(semantic_arr), np.mean(semantic_arr), semantic_arr.shape)
         
         #Histogram matching happens here
         #with Profiler("Render: hist matching"):
