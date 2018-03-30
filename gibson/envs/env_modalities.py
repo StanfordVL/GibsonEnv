@@ -289,7 +289,7 @@ class CameraRobotEnv(BaseRobotEnv):
             assert "semantic_source" in self.config.keys(), "semantic_source not specified in configuration"
             assert "semantic_color" in self.config.keys(), "semantic_color not specified in configuration"
             assert self.config["semantic_source"] in [1, 2], "semantic_source not valid"
-            assert self.config["semantic_color"] in [1, 2], "semantic_source not valid"
+            assert self.config["semantic_color"] in [1, 2, 3], "semantic_source not valid"
             self._semantic_source = self.config["semantic_source"]
             self._semantic_color  = self.config["semantic_color"]
         self._require_normal = 'normal' in self.config["output"]
@@ -553,8 +553,8 @@ class CameraRobotEnv(BaseRobotEnv):
 
         render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
-        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
-        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz)
+        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
