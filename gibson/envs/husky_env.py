@@ -368,15 +368,27 @@ class HuskySemanticNavigateEnv(SemanticRobotEnv):
         self.lastid = None
         self.obstacle_dist = 100
 
+        self.semantic_flagIds = []
+
         debug_semantic = 1
         if debug_semantic:
             for i in range(self.semantic_pos.shape[0]):
                 pos = self.semantic_pos[i]
-                flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.1, 0.1, 0.1], rgbaColor=[1, 0, 0, 0.7])
-                flagId = p.createMultiBody(baseVisualShapeIndex=flagId, baseCollisionShapeIndex=-1, basePosition=pos)
+                pos[2] += 0.2   # make flag slight above object 
+                visualId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.1, 0.1, 0.1], rgbaColor=[1, 0, 0, 0.7])
+                flagId = p.createMultiBody(baseVisualShapeIndex=visualId, baseCollisionShapeIndex=-1, basePosition=pos)
+                self.semantic_flagIds.append(flagId)
 
     def step(self, action):
         obs, rew, env_done, info = SemanticRobotEnv.step(self,action=action)
+        self.close_semantic_ids = self.get_close_semantic_pos(dist_max=1.0, orn_max=np.pi/5)
+        print("Close ids", self.close_semantic_ids, "Flag ids", self.semantic_flagIds)
+        for i in self.close_semantic_ids:
+            flagId = self.semantic_flagIds[i]
+            print("Flag id", flagId)
+            p.changeVisualShape(flagId, -1, rgbaColor=[0, 1, 0, 1])
+        for flagId in self.semantic_flagIds:
+            print("semantic flagid", flagId)
         return obs,rew,env_done,info
 
     def _rewards(self, action = None, debugmode=False):
@@ -429,7 +441,11 @@ class HuskySemanticNavigateEnv(SemanticRobotEnv):
         print(len(self.robot.parts['top_bumper_link'].contact_list()), self.nframe, done)
         return done
 
-
+    def _reset(self):
+        CameraRobotEnv._reset(self)
+        for flagId in self.semantic_flagIds:
+            p.changeVisualShape(flagId, -1, rgbaColor=[1, 0, 0, 1])
+        
 def get_obstacle_penalty(robot, depth):
     screen_sz = robot.obs_dim[0]
     screen_delta = int(screen_sz / 8)

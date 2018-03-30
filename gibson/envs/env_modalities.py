@@ -656,11 +656,16 @@ class SemanticRobotEnv(CameraRobotEnv):
         return dist_to_robot, orn_to_robot
 
     def get_close_semantic_pos(self, dist_max=1.0, orn_max=np.pi/5):
+        '''Find the index of semantic positions close to the agent, within max
+        distance and max orientation
+        Return: list of index of the semantic positions, corresponding the index
+            in self.semantic_pos
+        '''
         dists, orns = self.dist_to_semantic_pos()
         return [i for i in range(self.semantic_pos.shape[0]) if dists[i] < dist_max and orns[i] < orn_max]
 
     def step(self, action, tag=True):
-        semantic_pos = self.get_close_semantic_pos()
+        #self.close_semantic_ids = self.get_close_semantic_pos()
         return CameraRobotEnv.step(self, action)
 
 
