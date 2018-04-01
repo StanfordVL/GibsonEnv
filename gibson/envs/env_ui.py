@@ -27,7 +27,7 @@ class View(Enum):
 
 class SimpleUI():
     '''Static UI'''
-    def __init__(self, width_col, height_col, windowsz, env = None):
+    def __init__(self, width_col, height_col, windowsz, env=None, save_first=True):
         self.env = env
         self.width  = width_col * windowsz
         self.height = height_col * windowsz
@@ -40,6 +40,8 @@ class SimpleUI():
         self._add_all_images()
         self.record_root = None
         self.port = 6666
+        self.nframe = 0
+        self.save_first = save_first
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PUB)
         self.socket.bind("tcp://*:%s" % self.port)
@@ -55,6 +57,12 @@ class SimpleUI():
 
     def update_view(self, view, tag):
         assert(tag in self.components), "Invalid view tag " + view
+        self.nframe += 1
+        if self.save_first and self.nframe <= len(self.POS):
+            import scipy.misc
+            img = np.zeros((view.shape[0], view.shape[1], 3))
+            img[:, :, :] = view
+            scipy.misc.imsave("Img%d.png" % self.nframe, img)
         for index, component in enumerate(self.components):
             if tag == component:
                 self._add_image(

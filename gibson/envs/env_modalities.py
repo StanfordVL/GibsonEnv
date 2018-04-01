@@ -633,7 +633,11 @@ class SemanticRobotEnv(CameraRobotEnv):
         semantic_msg = self.semantic_client.recv()
         self.semantic_pos = np.frombuffer(semantic_msg, dtype=np.float32).reshape((-1, 3))
 
-        _, semantic_ids, _ = get_segmentId_by_name(osp.join(self.model_path, "semantic.house"), "chair")
+        if self._semantic_source == 2:
+            _, semantic_ids, _ = get_segmentId_by_name_MP3D(osp.join(self.model_path, "semantic.house"), "chair")
+        elif self._semantic_source == 1:
+            _, semantic_ids, _ = get_segmentId_by_name_2D3DS(osp.join(self.model_path, "semantic.mtl"), osp.join(self.model_path, "semantic.obj"), "chair")
+
         self.semantic_pos = self.semantic_pos[semantic_ids, :]
 
         debugmode=0

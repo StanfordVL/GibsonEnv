@@ -450,7 +450,8 @@ int main( int argc, char * argv[] )
             res = loadPLY_MTL(model_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, mtl_sem_centers, material_id, mtllib, num_vertices);
             printf("From ply loaded total of %d vertices\n", num_vertices);
         } else {
-            res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
+            res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, mtl_sem_centers, material_name, mtllib);
+            printf("From ply loaded total of %d vertices\n", num_vertices);
         }
         //res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
         if (res == false) { printf("Was not able to load the semantic.obj file.\n"); exit(-1); }

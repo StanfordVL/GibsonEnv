@@ -13,7 +13,7 @@ import cv2
 CALC_OBSTACLE_PENALTY = 1
 
 tracking_camera = {
-    'yaw': 20,
+    'yaw': 110,
     'z_offset': 0.5,
     'distance': 1,
     'pitch': -20
@@ -382,13 +382,9 @@ class HuskySemanticNavigateEnv(SemanticRobotEnv):
     def step(self, action):
         obs, rew, env_done, info = SemanticRobotEnv.step(self,action=action)
         self.close_semantic_ids = self.get_close_semantic_pos(dist_max=1.0, orn_max=np.pi/5)
-        print("Close ids", self.close_semantic_ids, "Flag ids", self.semantic_flagIds)
         for i in self.close_semantic_ids:
             flagId = self.semantic_flagIds[i]
-            print("Flag id", flagId)
             p.changeVisualShape(flagId, -1, rgbaColor=[0, 1, 0, 1])
-        for flagId in self.semantic_flagIds:
-            print("semantic flagid", flagId)
         return obs,rew,env_done,info
 
     def _rewards(self, action = None, debugmode=False):
@@ -438,7 +434,7 @@ class HuskySemanticNavigateEnv(SemanticRobotEnv):
         if (debugmode):
             print("alive=")
             print(alive)
-        print(len(self.robot.parts['top_bumper_link'].contact_list()), self.nframe, done)
+        #print(len(self.robot.parts['top_bumper_link'].contact_list()), self.nframe, done)
         return done
 
     def _reset(self):

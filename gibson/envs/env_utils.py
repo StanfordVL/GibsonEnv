@@ -1,4 +1,5 @@
-def get_segmentId_by_name(meta, name):
+
+def get_segmentId_by_name_MP3D(meta, name):
     category_ids = []
     object_ids = []
     segment_ids = []
@@ -18,6 +19,36 @@ def get_segmentId_by_name(meta, name):
                 if o_index in object_ids:
                     segment_ids.append(e_index)
     return category_ids, object_ids, segment_ids
+
+
+def get_segmentId_by_name_2D3DS(mtl, obj, name):
+    semantic_label_list = get_semantic_label_list_2D3DS(obj)
+    object_ids = []
+    obj_id = 0
+    '''with open(mtl) as f:
+        for line in f:
+            if "newmtl" in line:
+                semantic_label = line.split()[1]
+                object_name, object_counchairt, segment_count = semantic_label.split("_")
+                if name in object_name:
+                    object_ids.append(obj_id)
+                obj_id += 1
+    '''
+    for semantic_label in semantic_label_list:
+        object_name, object_counchairt, segment_count = semantic_label.split("_")
+        if name in object_name:
+            object_ids.append(obj_id)
+        obj_id += 1 
+    return None, object_ids, None
+
+
+def get_semantic_label_list_2D3DS(obj):
+    label_list = []
+    with open(obj) as f:
+        for line in f:
+            if "usemtl " in line:
+                label_list.append(line.split()[1])
+    return label_list
 
 if __name__ == "__main__":
     meta = "/home/zhiyang/Desktop/universe-test/GibsonEnv/gibson/assets/dataset/17DRP5sb8fy/semantic.house"

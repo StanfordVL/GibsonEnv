@@ -419,11 +419,12 @@ class PCRenderer:
         
         #Histogram matching happens here
         #with Profiler("Render: hist matching"):
-        #if configs.HIST_MATCHING and is_rgb:
-        #    template = (show_prefilled/255.0).astype(np.float32)
-        #    source = (show/255.0).astype(np.float32)
-        #    source_matched = hist_match3(source, template)
-        #    show[:] = (source_matched[:] * 255).astype(np.uint8)
+        hist_matching = False
+        if hist_matching and is_rgb:
+            template = (show_prefilled/255.0).astype(np.float32)
+            source = (show/255.0).astype(np.float32)
+            source_matched = hist_match3(source, template)
+            show[:] = (source_matched[:] * 255).astype(np.uint8)
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling
