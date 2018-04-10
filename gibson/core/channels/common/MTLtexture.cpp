@@ -441,6 +441,8 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText, st
                   printf("Could not find any image path.\n");
                   return 0;
               }
+
+              /*
               std::string texturePath;
               std::string rgbString = "rgb.mtl";
               std::string semanticString = "semantic.mtl";
@@ -455,7 +457,7 @@ bool loadMTLtextures (std::string mtlpath, std::vector<TextureObj> & objText, st
               else {
                   printf("Could not find folder path to the image.\n");
                   return 0;
-              }
+              }*/
 
               TextureObj tempText;
               tempText.name = parsed_mtl_file[i].name;

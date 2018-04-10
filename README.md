@@ -98,19 +98,33 @@ You can either 1. build your own docker image or 2. pull from our docker image. 
 1. Build your own docker image (recommended)
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
-cd gibson
+cd GibsonEnv
 wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson 
 ./build.sh decompress_data
 ### the commands above downloads assets data file and decpmpress it into gibson/assets folder
 docker build . -t gibson ### finish building inside docker
 ```
-If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson` to create a container.
+If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to assets folder>:/root/mount/gibson/gibson/assets gibson` to create a container.
 
 
 2. Or pull from our docker image
 ```bash
-docker pull xf1280/gibson:0.1
+docker pull xf1280/gibson:0.2
 ```
+#### Notes on deployment on a headless server
+
+We have another docker file that supports deployment on a headless server and remote access with TurboVNC+virtualGL. 
+You can build your own docker image with the docker file `Dockerfile_server`.
+Instructions to run gibson on a headless server:
+
+1. Install nvidia-docker2 dependencies following the starter guide.
+2. Use `openssl req -new -x509 -days 365 -nodes -out self.pem -keyout self.pem` create `self.pem` file
+3. `docker build -f Dockerfile_server -t gibson_server .` use the `Dockerfile_server` to build a new docker image that support virtualgl and turbovnc
+4. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to assets folder>:/root/mount/gibson/gibson/assets -p 5901:5901 gibson_server`
+in docker terminal, start `/opt/websockify/run 5901 --web=/opt/noVNC --wrap-mode=ignore -- vncserver :1 -securitytypes otp -otp -noxstartup` in background, potentially with `tmux`
+5. Run gibson with `DISPLAY=:1 vglrun python <gibson example or training>`
+6. Visit your `host:5901` and type in one time password to see the GUI.
+
 
 B. Building from source
 -----
@@ -138,7 +152,7 @@ pip install tensorflow==1.3
 Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
-cd gibson
+cd GibsonEnv
 wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson
 ./build.sh decompress_data ### decompress data 
 #the commands above downloads assets data file and decpmpress it into gibson/assets folder

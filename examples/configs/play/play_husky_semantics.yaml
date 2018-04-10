@@ -22,7 +22,8 @@ random:
   random_target_range: 0.1
 
 output: [nonviz_sensor, rgb_filled, semantics]
-resolution: 512
+#output: [nonviz_sensor]
+resolution: 64
 
 speed:
   timestep: 0.01

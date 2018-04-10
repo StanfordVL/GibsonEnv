@@ -191,13 +191,25 @@ class BodyPart:
         if self.bodyPartIndex == -1:
             (vx, vy, vz), _ = p.getBaseVelocity(self.bodies[self.bodyIndex])
         else:
-            (x,y,z), (a,b,c,d), _,_,_,_, (vx, vy, vz), (vr,vp,vy) = p.getLinkState(self.bodies[self.bodyIndex], self.bodyPartIndex, computeLinkVelocity=1)
+            (x,y,z), (a,b,c,d), _,_,_,_, (vx, vy, vz), (vr,vp,vyaw) = p.getLinkState(self.bodies[self.bodyIndex], self.bodyPartIndex, computeLinkVelocity=1)
         return np.array([vx, vy, vz])
 
+
+    def angular_speed(self):
+        if self.bodyPartIndex == -1:
+            _, (vr,vp,vyaw) = p.getBaseVelocity(self.bodies[self.bodyIndex])
+        else:
+            (x,y,z), (a,b,c,d), _,_,_,_, (vx, vy, vz), (vr,vp,vyaw) = p.getLinkState(self.bodies[self.bodyIndex], self.bodyPartIndex, computeLinkVelocity=1)
+        return np.array([vr, vp, vyaw])
+
     def current_position(self):
+        """Get position in physics simulation (unscaled)
+        """
         return self.get_pose()[:3]
 
     def current_orientation(self):
+        """Get orientation in physics simulation
+        """
         return self.get_pose()[3:]
 
     def reset_position(self, position):
@@ -260,6 +272,10 @@ class Joint:
 
     def set_torque(self, torque):
         p.setJointMotorControl2(bodyIndex=self.bodies[self.bodyIndex], jointIndex=self.jointIndex, controlMode=p.TORQUE_CONTROL, force=torque) #, positionGain=0.1, velocityGain=0.1)
+
+    def set_motor_velocity(self, vel):
+        p.setJointMotorControl2(bodyIndex=self.bodies[self.bodyIndex], jointIndex=self.jointIndex,
+                                controlMode=p.VELOCITY_CONTROL, targetVelocity=vel)  # , positionGain=0.1, velocityGain=0.1)
 
     def reset_current_position(self, position, velocity): # just some synonyme method
         self.reset_position(position / self.scale, velocity)

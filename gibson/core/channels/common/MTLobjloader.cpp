@@ -23,6 +23,8 @@ bool loadOBJ_MTL(
     std::vector<std::vector<glm::vec3>> & out_vertices,
     std::vector<std::vector<glm::vec2>> & out_uvs,
     std::vector<std::vector<glm::vec3>> & out_normals,
+    std::vector<glm::vec3> & out_centers,
+
     std::vector<std::string> & out_material_name,
     std::string & out_mtllib
 ){
@@ -101,6 +103,7 @@ bool loadOBJ_MTL(
                 vertexIndices.push_back(temp_vertexIndices);
                 uvIndices.push_back(temp_uvIndices);
                 normalIndices.push_back(temp_normalIndices);
+                
                 temp_vertexIndices.clear();
                 temp_uvIndices.clear();
                 temp_normalIndices.clear();
@@ -133,6 +136,7 @@ bool loadOBJ_MTL(
             temp_vertexIndices.push_back(vertexIndex[0]);
             temp_vertexIndices.push_back(vertexIndex[1]);
             temp_vertexIndices.push_back(vertexIndex[2]);
+
             if (f_2_format || f_3_format) {
                 temp_uvIndices    .push_back(uvIndex[0]);
                 temp_uvIndices    .push_back(uvIndex[1]);
@@ -158,6 +162,21 @@ bool loadOBJ_MTL(
     temp_vertexIndices.clear();
     temp_uvIndices.clear();
     temp_normalIndices.clear();
+
+    // Calculate semantic center position
+    for (unsigned int i=0; i<vertexIndices.size(); i++) {
+        std::vector<unsigned int> vertexIndex_group = vertexIndices[i];
+        glm::vec3 center = glm::vec3(0.0);
+
+        for (unsigned int j=0; j<vertexIndex_group.size();j++) {
+            unsigned int vertexIndex = vertexIndex_group[j];
+            glm::vec3 vertex = temp_vertices[ vertexIndex-1 ];
+            center += vertex / 3.0f;            
+        }
+        center /= (vertexIndex_group.size() / 3);
+        out_centers.push_back(center);
+        center = glm::vec3(0.0);
+    }
 
     // For each vertex of each triangle
     for( unsigned int i=0; i<vertexIndices.size(); i++ ){

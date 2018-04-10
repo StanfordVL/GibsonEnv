@@ -30,30 +30,17 @@ class BuildingScene(Scene):
         magnified = [2, 2, 2]
 
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        #print("collision id", collisionId, "textureID", textureID)
-
-        #textureID = p.createVisualShape(p.GEOM_MESH, fileName=filename)
         textureID = -1
 
-        #p.changeVisualShape(collisionId, -1, textureUniqueId= textureID)
-
-        #visualId = p.createVisualShape(p.GEOM_MESH, fileName=filename, meshScale=original, rgbaColor = [93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = textureID)
-        #visualId = p.loadTexture(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tex256.png"))
-        #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
-        #self.scene_obj = [collisionId]
-        #planeName = os.path.join(pybullet_data.getDataPath(),"mjcf/ground_plane.xml")
-        #self.ground_plane_mjcf = p.loadMJCF(planeName)
-        #print("built plane", type(self.ground_plane_mjcf))
-        p.changeDynamics(boundaryUid, -1, lateralFriction=0.6, spinningFriction=0.1, rollingFriction=0.1)
+        p.changeDynamics(boundaryUid, -1, lateralFriction=0.5, spinningFriction=0.1, rollingFriction=0)
+        #print(p.getDynamicsInfo(boundaryUid, -1))
         self.scene_obj_list = [boundaryUid]
-        #self.scene_obj = (int(p.loadURDF(filename)), )
-
+        
 
         planeName = os.path.join(pybullet_data.getDataPath(), "mjcf/ground_plane.xml")
         self.ground_plane_mjcf = p.loadMJCF(planeName)
-        #print(self.ground_plane_mjcf)
-
+        
         if "z_offset" in self.env.config:
             z_offset = self.env.config["z_offset"]
         else:
@@ -62,14 +49,7 @@ class BuildingScene(Scene):
         p.resetBasePositionAndOrientation(self.ground_plane_mjcf[0], posObj = [0,0,z_offset], ornObj = [0,0,0,1])
         p.changeVisualShape(boundaryUid, -1, rgbaColor=[168 / 255.0, 164 / 255.0, 92 / 255.0, 1.0],
                             specularColor=[0.5, 0.5, 0.5])
-        #collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=[1, 1, 1], flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        #p.changeVisualShape(boundaryUid, -1, textureUniqueId=visualId)
-        #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.75], specularColor=[0.4, 0.4, 0.4])
-
-        #p.changeVisualShape(i,-1,rgbaColor=[93/255.0,95/255.0, 96/255.0,0.55], specularColor=[0.4, 0.4, 0.4])
-        #p.changeVisualShape(boundaryUid,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[0.5, 0.5, 0.5])
-        #p.changeVisualShape(self.scene_obj,-1,rgbaColor=[198/255.0,183/255.0, 115/255.0, 1.0], specularColor=[1, 1, 1])
-    
+        
     def episode_restart(self):
         Scene.episode_restart(self)
 

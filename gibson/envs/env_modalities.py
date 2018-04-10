@@ -2,6 +2,7 @@ from gibson.data.datasets import ViewDataSet3D, get_model_path
 from gibson.core.render.pcrender import PCRenderer
 from gibson.core.render.profiler import Profiler
 from gibson.envs.env_bases import BaseEnv
+from gibson.envs.env_utils import *
 import gibson
 from gym import error
 from gym.utils import seeding
@@ -20,8 +21,14 @@ import socket
 import shlex
 import gym
 import cv2
+import os.path as osp
 import os
 from PIL import Image
+
+from transforms3d.euler import euler2quat, euler2mat
+from transforms3d.quaternions import quat2mat, qmult
+import transforms3d.quaternions as quat
+
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
@@ -282,13 +289,13 @@ class CameraRobotEnv(BaseRobotEnv):
             assert "semantic_source" in self.config.keys(), "semantic_source not specified in configuration"
             assert "semantic_color" in self.config.keys(), "semantic_color not specified in configuration"
             assert self.config["semantic_source"] in [1, 2], "semantic_source not valid"
-            assert self.config["semantic_color"] in [1, 2], "semantic_source not valid"
+            assert self.config["semantic_color"] in [1, 2, 3], "semantic_source not valid"
             self._semantic_source = self.config["semantic_source"]
             self._semantic_color  = self.config["semantic_color"]
         self._require_normal = 'normal' in self.config["output"]
 
-        if self._require_camera_input:
-            self.model_path = get_model_path(self.model_id)
+        #if self._require_camera_input:
+        self.model_path = get_model_path(self.model_id)
 
         self.save_frame  = 0
         self.fps = 0
@@ -443,6 +450,7 @@ class CameraRobotEnv(BaseRobotEnv):
 
         self.render_nonviz_sensor = self.robot.calc_state()
 
+
         if self._require_camera_input:
             all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
             top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
@@ -539,14 +547,14 @@ class CameraRobotEnv(BaseRobotEnv):
         sys.excepthook = camera_multi_excepthook
         enable_render_smooth = 0
 
-        dr_path = os.path.join(os.path.dirname(os.path.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
+        dr_path = osp.join(osp.dirname(osp.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
 
         render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
-        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {}".format(self.model_path, self.windowsz, self.windowsz)
-        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz)
+        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
@@ -580,6 +588,89 @@ class CameraRobotEnv(BaseRobotEnv):
         """
         return
 
+
+
+class SemanticRobotEnv(CameraRobotEnv):
+    def __init__(self, config, gpu_count, scene_type, tracking_camera):
+        CameraRobotEnv.__init__(self, config, gpu_count, scene_type, tracking_camera)
+
+    def robot_introduce(self, robot):
+        CameraRobotEnv.robot_introduce(self, robot)
+        self.setup_semantic_parser()
+
+    def setup_semantic_parser(self):
+        #assert('semantics' in self.config["output"])
+        def semantic_excepthook(exctype, value, tb):
+            print("killing", self.r_camera_mul)
+            self.r_camera_mul.terminate()
+            if self.r_camera_dep:
+                self.r_camera_dep.terminate()
+            if self._require_normal:
+                self.r_camera_norm.terminate()
+            if self._require_semantics:
+                self.r_camera_semt.terminate()
+            while tb:
+                filename = tb.tb_frame.f_code.co_filename
+                name = tb.tb_frame.f_code.co_name
+                lineno = tb.tb_lineno
+                print('   File "%.500s", line %d, in %.500s' %(filename, lineno, name))
+                tb = tb.tb_next
+            print(' %s: %s' %(exctype.__name__, value))
+
+        #sys.excepthook = semantic_excepthook
+        dr_path = osp.join(osp.dirname(osp.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
+        cur_path = os.getcwd()
+        os.chdir(dr_path)
+        load_semantic  = "./semantic --modelpath {} -r {} ".format(self.model_path, self._semantic_source)
+        self.semantic_server = subprocess.Popen(shlex.split(load_semantic), shell=False)
+        os.chdir(cur_path)
+
+        self._context_sem = zmq.Context()
+        self.semantic_client = self._context_sem.socket(zmq.REQ)
+        self.semantic_client.connect("tcp://localhost:{}".format(5055))
+
+        self.semantic_client.send_string("Ready")
+        semantic_msg = self.semantic_client.recv()
+        self.semantic_pos = np.frombuffer(semantic_msg, dtype=np.float32).reshape((-1, 3))
+
+        if self._semantic_source == 2:
+            _, semantic_ids, _ = get_segmentId_by_name_MP3D(osp.join(self.model_path, "semantic.house"), "chair")
+        elif self._semantic_source == 1:
+            _, semantic_ids, _ = get_segmentId_by_name_2D3DS(osp.join(self.model_path, "semantic.mtl"), osp.join(self.model_path, "semantic.obj"), "chair")
+
+        self.semantic_pos = self.semantic_pos[semantic_ids, :]
+
+        debugmode=0
+        if debugmode:
+            self.semantic_pos = np.array([[0, 0, 0.2]])
+    
+    def dist_to_semantic_pos(self):
+        pos = self.robot.get_position()
+        x, y, z, w = self.robot.get_orientation()
+        #print(self.semantic_pos)
+        #print(pos, orn)
+
+        diff_pos = self.semantic_pos - pos
+        dist_to_robot = np.sqrt(np.sum(diff_pos * diff_pos, axis = 1))
+        diff_unit = (diff_pos.T / dist_to_robot).T
+
+        #TODO: (hzyjerry) orientation is still buggy
+        orn_unit = quat2mat([w, x, y, z]).dot(np.array([-1, 0, 0]))
+        orn_to_robot = np.arccos(diff_unit.dot(orn_unit))
+        return dist_to_robot, orn_to_robot
+
+    def get_close_semantic_pos(self, dist_max=1.0, orn_max=np.pi/5):
+        '''Find the index of semantic positions close to the agent, within max
+        distance and max orientation
+        Return: list of index of the semantic positions, corresponding the index
+            in self.semantic_pos
+        '''
+        dists, orns = self.dist_to_semantic_pos()
+        return [i for i in range(self.semantic_pos.shape[0]) if dists[i] < dist_max and orns[i] < orn_max]
+
+    def step(self, action, tag=True):
+        #self.close_semantic_ids = self.get_close_semantic_pos()
+        return CameraRobotEnv.step(self, action)
 
 
 STR_TO_PYGAME_KEY = {

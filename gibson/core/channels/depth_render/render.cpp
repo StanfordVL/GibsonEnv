@@ -427,6 +427,7 @@ int main( int argc, char * argv[] )
     std::vector<std::vector<glm::vec3>> mtl_vertices;
     std::vector<std::vector<glm::vec2>> mtl_uvs;
     std::vector<std::vector<glm::vec3>> mtl_normals;
+    std::vector<glm::vec3> mtl_sem_centers;
     std::vector<std::string> material_name;
     std::vector<int> material_id;
     std::string mtllib;
@@ -441,23 +442,16 @@ int main( int argc, char * argv[] )
     if ( semantic > 0) {
         /* initialize random seed: */
         srand (0);
-        /*
-        // Prevent clamping
-        glClampColorARB(GL_CLAMP_VERTEX_COLOR_ARB, GL_FALSE);
-        glClampColorARB(GL_CLAMP_READ_COLOR_ARB, GL_FALSE);
-        glClampColorARB(GL_CLAMP_FRAGMENT_COLOR_ARB, GL_FALSE);
-        */
         glShadeModel(GL_FLAT);
 
-        //bool res = loadPLYfile(name_obj)
-        // std::cout << "Loading ply file\n";
         bool res;
         int num_vertices;
         if (ply > 0) {
-            res = loadPLY_MTL(model_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_id, mtllib, num_vertices);
+            res = loadPLY_MTL(model_path.c_str(), mtl_vertices, mtl_uvs, mtl_normals, mtl_sem_centers, material_id, mtllib, num_vertices);
             printf("From ply loaded total of %d vertices\n", num_vertices);
         } else {
-            res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, material_name, mtllib);
+            res = loadOBJ_MTL(name_obj.c_str(), mtl_vertices, mtl_uvs, mtl_normals, mtl_sem_centers, material_name, mtllib);
+            printf("From ply loaded total of %d vertices\n", num_vertices);
         }
         //res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
         if (res == false) { printf("Was not able to load the semantic.obj file.\n"); exit(-1); }
@@ -499,11 +493,14 @@ int main( int argc, char * argv[] )
 
             if (semantic_clr == 1) 
                 color_coding_RAND(color); // Instance-by-Instance Color Coding
-            else {
-                if (semantic_src == 1) { color_coding_2D3DS(color, id);}   // Stanford 2D3DS
+            else if (semantic_clr == 2) {
+                if (semantic_src == 1)      { color_coding_2D3DS(color, id);}   // Stanford 2D3DS
                 else if (semantic_src == 2) { color_coding_MP3D(color, id );} // Matterport3D
                 else {printf("Invalid code for semantic source.\n"); exit(-1); }
-            }   
+            }  else {
+                if (semantic_src == 1)      { color_coding_2D3DS_pretty(color, material_name[i]);}
+                else {printf("Invalid code for semantic source.\n"); exit(-1); }
+            }
             
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,

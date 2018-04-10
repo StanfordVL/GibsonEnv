@@ -23,15 +23,19 @@ from multiprocessing import Process
 from gibson.data.datasets import ViewDataSet3D
 from gibson.learn.completion import CompletionNet
 import torch.nn as nn
-import scipy.misc
 
 import pdb
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 assets_file_dir = os.path.dirname(assets.__file__)
 
-cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
 coords  = np.load(os.path.join(assets_file_dir, 'coord.npy'))
+
+
+try:
+    cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
+except:
+    print("Error: cuda renderer is not loaded, rendering will not work")
 
 LINUX_OFFSET = {
     "x_delta": 10,
@@ -409,15 +413,18 @@ class PCRenderer:
             self.surface_normal = normal_arr
         if self._require_semantics:
             self.show_semantics = semantic_arr
-            print("Semantics array", np.max(semantic_arr), np.min(semantic_arr), np.mean(semantic_arr), semantic_arr.shape)
+            debugmode = 0
+            if debugmode:
+                print("Semantics array", np.max(semantic_arr), np.min(semantic_arr), np.mean(semantic_arr), semantic_arr.shape)
         
         #Histogram matching happens here
         #with Profiler("Render: hist matching"):
-        #if configs.HIST_MATCHING and is_rgb:
-        #    template = (show_prefilled/255.0).astype(np.float32)
-        #    source = (show/255.0).astype(np.float32)
-        #    source_matched = hist_match3(source, template)
-        #    show[:] = (source_matched[:] * 255).astype(np.uint8)
+        hist_matching = False
+        if hist_matching and is_rgb:
+            template = (show_prefilled/255.0).astype(np.float32)
+            source = (show/255.0).astype(np.float32)
+            source_matched = hist_match3(source, template)
+            show[:] = (source_matched[:] * 255).astype(np.uint8)
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling

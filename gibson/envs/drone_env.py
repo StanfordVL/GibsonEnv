@@ -122,8 +122,8 @@ class DroneNavigateEnv(CameraRobotEnv):
     def _termination(self, debugmode=False):
 
         done = self.nframe > 250 or self.robot.get_position()[2] < 0
-        if done:
-            print("Episode reset")
+        #if done:
+        #    print("Episode reset")
         return done
 
     def  _reset(self):
