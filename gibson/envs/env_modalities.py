@@ -184,7 +184,9 @@ class BaseRobotEnv(BaseEnv):
             pos = self.robot._get_scaled_position()
             orn = self.robot.get_orientation()
             pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
-            p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
+            _,_,viewMat,projMat,_,_,_,_,camY,camP,camDist,camTarget = p.getDebugVisualizerCamera()
+            p.resetDebugVisualizerCamera(camDist,camY,camP,pos)
+            #p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
 
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
