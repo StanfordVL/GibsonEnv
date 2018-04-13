@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 from PIL import Image
 from gibson.core.render.profiler import Profiler
-from enum import Enum
+from aenum import Enum
 import cv2
 import socket
 import sys
