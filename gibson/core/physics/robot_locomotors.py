@@ -677,7 +677,7 @@ class Turtlebot(WalkerBase):
     def __init__(self, config, env=None):
         self.config = config
         WalkerBase.__init__(self, "turtlebot/turtlebot.urdf", "base_link", action_dim=4,
-                            sensor_dim=20, power=2.5, scale=0.6,
+                            sensor_dim=20, power=2.5, scale=1,
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"],
                             resolution=config["resolution"],

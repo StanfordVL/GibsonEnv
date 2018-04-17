@@ -1,5 +1,5 @@
 envname: TurtlebotNavigateSpeedControlEnv
-model_id: stadium
+model_id: space7
 target_orn: [0, 0, 1.57]
 target_pos: [-14.3, 45.07, 0.5]
 initial_orn: [0, 0, 4.71]
@@ -24,7 +24,7 @@ output: [nonviz_sensor]
 resolution: 256
 
 speed:
-  timestep: 0.01
+  timestep: 0.004
   frameskip: 1
 
 mode: gui #gui|headless
