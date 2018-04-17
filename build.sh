@@ -110,8 +110,8 @@ build_local() {
 }
 
 decompress_data () {
-    cd gibson/assets
-    tar -zxf assets.tar.gz -C ..
+    cd gibson
+    tar -zxf assets.tar.gz
     rm assets.tar.gz
     if [ -f "gibson/assets/*.pkl" ]; then
         rm gibson/assets/*.pkl
