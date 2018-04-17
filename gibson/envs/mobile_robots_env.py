@@ -331,3 +331,47 @@ def get_obstacle_penalty(robot, depth):
         print("Obstacle distance", obstacle_dist)
         print("Obstacle penalty", obstacle_penalty)
     return obstacle_penalty
+
+
+
+class TurtlebotNavigateSpeedControlEnv(TurtlebotNavigateEnv):
+    """Specfy navigation reward
+    """
+    def __init__(self, config, gpu_count=0):
+        #assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
+        TurtlebotNavigateEnv.__init__(self, config, gpu_count)
+        self.robot.keys_to_action = {
+            (ord('s'), ): [-0.1,0], ## backward
+            (ord('w'), ): [0.1,0], ## forward
+            (ord('d'), ): [0,0.1], ## turn right
+            (ord('a'), ): [0,-0.1], ## turn left
+            (): [0,0]
+        }
+
+        self.base_action_omage = np.array([-0.001, 0.001, -0.001, 0.001])
+        self.base_action_v = np.array([0.001, 0.001, 0.001, 0.001])
+        self.action_space = gym.spaces.Discrete(5)
+        #control_signal = -0.5
+        #control_signal_omega = 0.5
+        self.v = 0
+        self.omega = 0
+        self.kp = 100
+        self.ki = 0.1
+        self.kd = 25
+        self.ie = 0
+        self.de = 0
+        self.olde = 0
+        self.ie_omega = 0
+        self.de_omega = 0
+        self.olde_omage = 0
+
+
+    def step(self, action):
+        real_action = [action[0]+action[1], action[0]-action[1]]
+
+        obs, rew, env_done, info = TurtlebotNavigateEnv.step(self, real_action)
+
+        self.v = obs["nonviz_sensor"][3]
+        self.omega = obs["nonviz_sensor"][-1]
+
+        return obs,rew,env_done,info
