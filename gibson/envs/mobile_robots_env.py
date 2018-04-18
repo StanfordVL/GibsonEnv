@@ -365,7 +365,6 @@ class TurtlebotNavigateSpeedControlEnv(TurtlebotNavigateEnv):
         self.de_omega = 0
         self.olde_omage = 0
 
-
     def step(self, action):
         real_action = [action[0]+action[1], action[0]-action[1]]
 
