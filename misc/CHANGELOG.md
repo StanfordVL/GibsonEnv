@@ -4,6 +4,15 @@ Notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 https://github.com/StanfordVL/GibsonEnv/blob/master/README.md
+
+
+## 0.2.1 - 2018-04-18
+Bug fixes
+### Fixed
+- Bug reported by @jackbruce. Random initialization for robot initial position.
+
+
+
 ## 0.2.0 - 2018-03-13
 MINOR adds and PATCH fixes. [Commit](https://github.com/StanfordVL/GibsonEnv/commit/69ae7ea348d1af9821bdc7ed124f1e46fc9e6479)
 ### Added

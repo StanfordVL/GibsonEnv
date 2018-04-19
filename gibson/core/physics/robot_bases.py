@@ -124,16 +124,23 @@ class BaseRobot:
     def reset_random_pos(self):
         '''Add randomness to resetted initial position
         '''
-        if not self.env.config["random"]["random_initial_pose"]:
+        if not self.config["random"]["random_initial_pose"]:
             return
 
         pos = self.robot_body.current_position()
         orn = self.robot_body.current_orientation()
 
-        new_pos = [ pos[0] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
-                    pos[1] + self.np_random.uniform(low=-delta_pos, high=delta_pos),
-                    pos[2] + self.np_random.uniform(low=0, high=delta_pos)]
-        new_orn = quaternions.qmult(quaternions.axangle2quat([1, 0, 0], self.np_random.uniform(low=-delta_orn, high=delta_orn)), orn)
+
+        x_range = self.config["random"]["random_init_x_range"]
+        y_range = self.config["random"]["random_init_y_range"]
+        z_range = self.config["random"]["random_init_z_range"]
+        r_range = self.config["random"]["random_init_rot_range"]
+
+        new_pos = [ pos[0] + self.np_random.uniform(low=x_range[0], high=x_range[1]),
+                    pos[1] + self.np_random.uniform(low=y_range[0], high=y_range[1]),
+                    pos[2] + self.np_random.uniform(low=z_range[0], high=z_range[1])]
+        new_orn = quaternions.qmult(quaternions.axangle2quat([1, 0, 0], self.np_random.uniform(low=r_range[0], high=r_range[1])), orn)
+
         self.robot_body.reset_orientation(new_orn)
         self.robot_body.reset_position(new_pos)
 
