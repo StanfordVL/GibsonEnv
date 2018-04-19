@@ -24,7 +24,7 @@ output: [nonviz_sensor]
 resolution: 256
 
 speed:
-  timestep: 0.004
+  timestep: 0.00417
   frameskip: 1
 
 mode: gui #gui|headless
