@@ -114,7 +114,6 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
     record_num = 0
     record_total = 0
     obs = env.reset()
-
     do_restart = False
     while running:
         if do_restart:

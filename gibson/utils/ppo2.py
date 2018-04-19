@@ -95,7 +95,7 @@ class Runner(object):
         self.obs_sensor = np.zeros((nenv,) + env.sensor_space.shape, dtype=model.train_model.X.dtype.name)
         print(self.obs.shape)
         print(self.obs_sensor.shape)
-        obs_all = env.reset()
+        obs_all = self.env.reset()
         self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
         self.obs_sensor[:] = obs_all['nonviz_sensor'] 
         self.gamma = gamma
@@ -120,7 +120,7 @@ class Runner(object):
             mb_dones.append([self.dones])   
 
             if self.dones:
-                obs_all = env.reset()
+                obs_all = self.env.reset()
                 self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
                 self.obs_sensor[:] = obs_all['nonviz_sensor'] 
                 rewards = 0
