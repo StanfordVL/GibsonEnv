@@ -10,7 +10,7 @@
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
   </node>
 
-  <node name="play_turtlebot_nonviz" pkg="gibson-ros" type="turtlebot_nonviz.py">
+  <node name="turtlebot_gibson_sim" pkg="gibson-ros" type="turtlebot_rgbd.py" output="screen">
   </node>
 
     <node name="gibson_clock" pkg="gibson-ros" type="simulation_clock.py">
@@ -20,7 +20,7 @@
     <param name="publish_frequency" type="double" value="5.0" />
   </node>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_rviz_launchers)/rviz/robot.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gibson-ros)/rviz/robot.rviz" />
 
   <!-- Velocity muxer -->
   <node pkg="nodelet" type="nodelet" name="mobile_base_nodelet_manager" args="manager"/>
@@ -30,5 +30,8 @@
     <remap from="cmd_vel_mux/output" to="mobile_base/commands/velocity"/>
   </node>
 
+ <include file="$(find turtlebot_teleop)/launch/ps3_teleop.launch">
+
+ </include>
 
 </launch>
