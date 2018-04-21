@@ -4,8 +4,9 @@ from gibson.utils.play import play
 import argparse
 import os
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import Float32
 import rospkg
+import numpy as np
 
 import gym
 #import pygame
@@ -28,7 +29,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     rospy.init_node('gibson-sim')
-    pub = rospy.Publisher('chatter', String, queue_size=10)
+    pub_vel_x = rospy.Publisher('/gibson/vel_x', Float32, queue_size=10)
+    pub_vel_y = rospy.Publisher('/gibson/vel_y', Float32, queue_size=10)
 
     env = TurtlebotNavigateEnv(config = args.config)
     print(env.config)
@@ -69,9 +71,12 @@ if __name__ == '__main__':
     obs = env.reset()
 
     do_restart = False
+
+    vel = obs["nonviz_sensor"][3:6]
+
     while not rospy.is_shutdown():
-        hello_str = "hello world %s" % rospy.get_time()
-        pub.publish(hello_str)
+        pub_vel_x.publish(vel[0])
+        pub_vel_y.publish(vel[1])
 
 
         if do_restart:
@@ -84,6 +89,7 @@ if __name__ == '__main__':
             with Profiler("Play Env: step"):
                 start = time.time()
                 obs, rew, env_done, info = env.step(action)
+                vel = obs["nonviz_sensor"][3:6]
                 record_total += time.time() - start
                 record_num += 1
             # print(info['sensor'])
@@ -94,6 +100,7 @@ if __name__ == '__main__':
             with Profiler("Play Env: step"):
                 start = time.time()
                 obs, rew, env_done, info = env.step(action)
+                vel = obs["nonviz_sensor"][3:6]
                 record_total += time.time() - start
                 record_num += 1
             print("Play mode: reward %f" % rew)
