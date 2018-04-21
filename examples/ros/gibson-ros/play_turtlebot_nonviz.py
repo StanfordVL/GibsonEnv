@@ -26,7 +26,7 @@ print(config_file)
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default=config_file)
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     rospy.init_node('gibson-sim')
     pub_vel_x = rospy.Publisher('/gibson/vel_x', Float32, queue_size=10)

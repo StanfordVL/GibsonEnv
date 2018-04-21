@@ -10,11 +10,25 @@
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
   </node>
 
+  <node name="play_turtlebot_nonviz" pkg="gibson-ros" type="turtlebot_nonviz.py">
+  </node>
+
+    <node name="gibson_clock" pkg="gibson-ros" type="simulation_clock.py">
+  </node>
+
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="5.0" />
   </node>
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_rviz_launchers)/rviz/robot.rviz" />
+
+  <!-- Velocity muxer -->
+  <node pkg="nodelet" type="nodelet" name="mobile_base_nodelet_manager" args="manager"/>
+  <node pkg="nodelet" type="nodelet" name="cmd_vel_mux"
+        args="load yocs_cmd_vel_mux/CmdVelMuxNodelet mobile_base_nodelet_manager">
+    <param name="yaml_cfg_file" value="$(find turtlebot_bringup)/param/mux.yaml" />
+    <remap from="cmd_vel_mux/output" to="mobile_base/commands/velocity"/>
+  </node>
 
 
 </launch>
