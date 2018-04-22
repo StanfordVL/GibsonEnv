@@ -11,7 +11,6 @@ import rospkg
 import numpy as np
 from cv_bridge import CvBridge
 
-
 import gym
 #import pygame
 import sys
@@ -30,6 +29,8 @@ print(config_file)
 cmdx = 0.0
 cmdy = 0.0
 image_pub = rospy.Publisher("/gibson_ros/image",Image)
+depth_pub = rospy.Publisher("/gibson_ros/depth_raw",Image)
+
 bridge = CvBridge()
 
 
@@ -42,8 +43,11 @@ def callback_step(data):
     global cmdx, cmdy, bridge
     obs, _, _, _ = env.step([cmdx, cmdy])
     rgb = obs["rgb_filled"]
+    depth = (np.clip(obs["depth"], 0, 10.0) / 10.0 * 255).astype(np.uint8)
     image_message = bridge.cv2_to_imgmsg(rgb, encoding="rgb8")
     image_pub.publish(image_message)
+    depth_message = bridge.cv2_to_imgmsg(depth, encoding="mono8")
+    depth_pub.publish(depth_message)
 
 
 parser = argparse.ArgumentParser()
