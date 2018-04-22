@@ -17,7 +17,6 @@ class WalkerBase(BaseRobot):
     base_position, apply_action, calc_state
     reward
     """
-    eye_offset_orn = euler2quat(0, 0, 0)
         
     def __init__(self, 
         filename,           # robot file name 
@@ -86,18 +85,18 @@ class WalkerBase(BaseRobot):
         self.robot_body.reset_position(pos)
 
     def move_by(self, delta):
-        new_pos = np.array(delta) + self._get_scaled_position()
+        new_pos = np.array(delta) + self.get_position()
         self.robot_body.reset_position(new_pos)
 
     def move_forward(self, forward=0.04):
         x, y, z, w = self.robot_body.current_orientation()
         #print(quat2mat([w, x, y, z]).dot(np.array([-forward, 0, 0])))
-        self.move_by(quat2mat([w, x, y, z]).dot(np.array([-forward, 0, 0])))
-
+        self.move_by(quat2mat([w, x, y, z]).dot(np.array([forward, 0, 0])))
+        
     def move_backward(self, backward=0.04):
         x, y, z, w = self.robot_body.current_orientation()
         #print(quat2mat([w, x, y, z]).dot(np.array([backward, 0, 0])))
-        self.move_by(quat2mat([w, x, y, z]).dot(np.array([backward, 0, 0])))
+        self.move_by(quat2mat([w, x, y, z]).dot(np.array([-backward, 0, 0])))
 
     def turn_left(self, delta=0.01):
         orn = self.robot_body.current_orientation()
@@ -280,7 +279,6 @@ class HalfCheetah(WalkerBase):
 
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
-    eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
         
     def __init__(self, config, env=None):
         self.config = config
@@ -350,20 +348,19 @@ class Ant(WalkerBase):
             (ord('6'), ): 5, 
             (ord('7'), ): 6, 
             (ord('8'), ): 7, 
-            (ord('q'), ): 8, 
-            (ord('w'), ): 9, 
-            (ord('e'), ): 10, 
-            (ord('r'), ): 11, 
-            (ord('t'), ): 12, 
-            (ord('y'), ): 13, 
-            (ord('u'), ): 14, 
-            (ord('i'), ): 15, 
+            (ord('9'), ): 8, 
+            (ord('0'), ): 9, 
+            (ord('q'), ): 10, 
+            (ord('w'), ): 11, 
+            (ord('e'), ): 12, 
+            (ord('r'), ): 13, 
+            (ord('t'), ): 14, 
+            (ord('y'), ): 15, 
             (): 4
         }
 
 
 class AntClimber(Ant):
-    eye_offset_orn = euler2quat(np.pi/4, 0, np.pi/2, axes='sxyz')  ## looking 45 degs down
     def __init__(self, config, env=None):
         Ant.__init__(self, config, env=env)
         
@@ -420,7 +417,6 @@ class Humanoid(WalkerBase):
     self_collision = True
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
 
-    #eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
     def __init__(self, config, env=None):
         self.config = config
         self.model_type = "MJCF"
@@ -516,8 +512,7 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
     mjcf_scaling = 1
     model_type = "URDF"
-    eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
-
+    
     def __init__(self, config, env=None):
         self.config = config
         WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, 
@@ -528,7 +523,6 @@ class Husky(WalkerBase):
                             env = env)
         self.is_discrete = config["is_discrete"]
 
-        #self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)        
             self.torque = 0.03
@@ -581,8 +575,8 @@ class Husky(WalkerBase):
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            (ord('s'), ): 0, ## backward
-            (ord('w'), ): 1, ## forward
+            (ord('w'), ): 0, ## forward
+            (ord('s'), ): 1, ## backward
             (ord('d'), ): 2, ## turn right
             (ord('a'), ): 3, ## turn left
             (): 4
@@ -616,7 +610,6 @@ class HuskyClimber(Husky):
 
 
 class Quadrotor(WalkerBase):
-    eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
     def __init__(self, config, env=None):
         self.model_type = "URDF"
         self.mjcf_scaling = 1
@@ -652,6 +645,7 @@ class Quadrotor(WalkerBase):
             realaction = action
 
         p.setGravity(0, 0, 0)
+        # TODO (hzyjerry): action relative to drone body
         p.resetBaseVelocity(self.robot_ids[0], realaction[:3], realaction[3:])
 
     def robot_specific_reset(self):
@@ -659,8 +653,8 @@ class Quadrotor(WalkerBase):
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            (ord('s'),): 0,  ## backward
-            (ord('w'),): 1,  ## forward
+            (ord('w'),): 0,  ## forward
+            (ord('s'),): 1,  ## backward
             (ord('d'),): 2,  ## turn right
             (ord('a'),): 3,  ## turn left
             (ord('z'),): 4,  ## turn left
@@ -673,8 +667,7 @@ class Turtlebot(WalkerBase):
     foot_list = []
     mjcf_scaling = 1
     model_type = "URDF"
-    eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
-
+    
     def __init__(self, config, env=None):
         self.config = config
         WalkerBase.__init__(self, "turtlebot/turtlebot.urdf", "base_link", action_dim=4,
@@ -686,7 +679,6 @@ class Turtlebot(WalkerBase):
                             env=env)
         self.is_discrete = config["is_discrete"]
 
-        # self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
             self.vel = 0.1
@@ -737,8 +729,8 @@ class Turtlebot(WalkerBase):
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            (ord('w'),): 0,  ## backward
-            (ord('s'),): 1,  ## forward
+            (ord('w'),): 0,  ## forward
+            (ord('s'),): 1,  ## backward
             (ord('d'),): 2,  ## turn right
             (ord('a'),): 3,  ## turn left
             (): 4
@@ -756,8 +748,7 @@ class JR(WalkerBase):
     foot_list = []
     mjcf_scaling = 1
     model_type = "URDF"
-    eye_offset_orn = euler2quat(np.pi / 2, 0, np.pi / 2, axes='sxyz')
-
+    
     def __init__(self, config, env=None):
         self.config = config
         WalkerBase.__init__(self, "jr1_urdf/jr1_gibson.urdf", "base_link", action_dim=4,
@@ -769,7 +760,6 @@ class JR(WalkerBase):
                             env=env)
         self.is_discrete = config["is_discrete"]
 
-        # self.eye_offset_orn = euler2quat(np.pi/2, 0, np.pi/2, axes='sxyz')
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
             self.vel = 0.1
@@ -820,8 +810,8 @@ class JR(WalkerBase):
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            (ord('w'),): 0,  ## backward
-            (ord('s'),): 1,  ## forward
+            (ord('w'),): 0,  ## forward
+            (ord('s'),): 1,  ## backward
             (ord('d'),): 2,  ## turn right
             (ord('a'),): 3,  ## turn left
             (): 4

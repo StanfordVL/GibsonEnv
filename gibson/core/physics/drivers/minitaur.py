@@ -588,7 +588,6 @@ class Minitaur(MinitaurBase):
     
     Attribtues:
         self.eyes
-        sekf.eye_offset_orn
         self.resolution
         self.walk_target_x, self.walk_target_y
         self.mjcf_scaling

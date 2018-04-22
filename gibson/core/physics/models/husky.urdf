@@ -98,39 +98,39 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   </joint>
   <!-- Robot camera -->
   <link name="eyes">
-  <visual>
-  <origin xyz="0 0 0" rpy="0 1.5708 0" />
-  <geometry>
-         <cylinder radius="0.03" length="0.02"/>
-  </geometry>
-  <material name="Black">
-    <color rgba="0 0 0 1.0"/>
-  </material>
-  </visual>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 1.5708 0" />
+      <geometry>
+             <cylinder radius="0.03" length="0.02"/>
+      </geometry>
+      <material name="Black">
+        <color rgba="0 0 0 1.0"/>
+      </material>
+    </visual>
 
- <visual>
-  <origin xyz="0 0 0" rpy="0 1.5708 0" />
-  <geometry>
-         <sphere radius="0.08"/>
-  </geometry>
-  <material name="Black2">
-    <color rgba="0.1 0.1 0.1 0.3"/>
-  </material>
-  </visual>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 1.5708 0" />
+      <geometry>
+             <sphere radius="0.08"/>
+      </geometry>
+      <material name="Black2">
+        <color rgba="0.1 0.1 0.1 0.3"/>
+      </material>
+    </visual>
 
-  <collision>
-  <origin xyz="0 0 0" rpy="0 1.5708 0" />
-  <geometry>
-         <sphere radius="0.25"/>
-  </geometry>
-  <material name="Black">
-    <color rgba="0.1 0.1 0.1 0.0"/>
-  </material>
-  </collision>
-    <inertial>
-      <mass value="0"/>
-      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
-    </inertial>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 1.5708 0" />
+      <geometry>
+             <sphere radius="0.25"/>
+      </geometry>
+      <material name="Black">
+        <color rgba="0.1 0.1 0.1 0.0"/>
+      </material>
+    </collision>
+      <inertial>
+        <mass value="0"/>
+        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+      </inertial>
 
   </link>
   <joint name="eyes_joint" type="fixed">
