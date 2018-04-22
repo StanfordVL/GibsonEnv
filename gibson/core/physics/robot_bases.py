@@ -281,7 +281,6 @@ class Joint:
         p.setJointMotorControl2(bodyIndex=self.bodies[self.bodyIndex], jointIndex=self.jointIndex, controlMode=p.TORQUE_CONTROL, force=torque) #, positionGain=0.1, velocityGain=0.1)
 
     def set_motor_velocity(self, vel):
-        print("Joint index", self.jointIndex, vel)
         p.setJointMotorControl2(bodyIndex=self.bodies[self.bodyIndex], jointIndex=self.jointIndex,
                                 controlMode=p.VELOCITY_CONTROL, targetVelocity=vel)  # , positionGain=0.1, velocityGain=0.1)
 

@@ -9,19 +9,17 @@
     - 3d Sensor : kinect
 -->
 <robot name="turtlebot" xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" xmlns:xacro="http://ros.org/wiki/xacro">
- 
- <link name="base_footprint"/>
+  <link name="base_footprint"/>
   <joint name="base_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0 0 0.0102"/>
     <parent link="base_footprint"/>
     <child link="base_link"/>
   </joint>
-
   <link name="base_link">
     <visual>
       <geometry>
         <!-- new mesh -->
-        <mesh filename="package://gibson-ros/turtlebot/kobuki_description/meshes/main_body.dae"/>
+        <mesh filename="package://kobuki_description/meshes/main_body.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0.001 0 0.05199"/>
     </visual>
@@ -47,7 +45,7 @@
   <link name="wheel_left_link">
     <visual>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/kobuki_description/meshes/wheel.dae"/>
+        <mesh filename="package://kobuki_description/meshes/wheel.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
@@ -57,17 +55,11 @@
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
-     <inertial>
-      <mass value="0.1"/>
+    <inertial>
+      <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
-     <contact>
-      <lateral_friction value="1.0"/>
-      <rolling_friction value="0.0"/>
-      <stiffness value="30000"/>
-      <damping value="1000"/>
-    </contact>
   </link>
   <joint name="wheel_right_joint" type="continuous">
     <parent link="base_link"/>
@@ -78,7 +70,7 @@
   <link name="wheel_right_link">
     <visual>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/kobuki_description/meshes/wheel.dae"/>
+        <mesh filename="package://kobuki_description/meshes/wheel.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
@@ -88,18 +80,11 @@
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
-   <inertial>
-      <mass value="0.1"/>
+    <inertial>
+      <mass value="0.01"/>
       <origin xyz="0 0 0"/>
-      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
-   	<contact>
-      <lateral_friction value="1.0"/>
-      <rolling_friction value="0.0"/>
-      <stiffness value="30000"/>
-      <damping value="10000"/>
-    </contact>
-
   </link>
   <joint name="caster_front_joint" type="fixed">
     <parent link="base_link"/>
@@ -118,12 +103,6 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
-    <contact>
-      <lateral_friction value="0.0"/>
-      <rolling_friction value="0.0"/>
-      <stiffness value="30000"/>
-      <damping value="10000"/>
-    </contact>
   </link>
   <joint name="caster_back_joint" type="fixed">
     <parent link="base_link"/>
@@ -142,12 +121,6 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
-    <contact>
-      <lateral_friction value="0.0"/>
-      <rolling_friction value="0.0"/>
-      <stiffness value="30000"/>
-      <damping value="1000"/>
-    </contact>
   </link>
   <joint name="gyro_joint" type="fixed">
     <axis xyz="0 1 0"/>
@@ -309,7 +282,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -333,7 +306,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -357,7 +330,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -381,7 +354,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -405,7 +378,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -429,7 +402,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_bottom.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -453,7 +426,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/plate_bottom.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/plate_bottom.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -477,7 +450,7 @@
     <visual>
       <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_middle.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_middle.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -501,7 +474,7 @@
     <visual>
       <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_middle.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_middle.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -525,7 +498,7 @@
     <visual>
       <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_middle.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_middle.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -549,7 +522,7 @@
     <visual>
       <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_middle.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_middle.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -573,7 +546,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/plate_middle.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/plate_middle.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -597,7 +570,7 @@
     <visual>
       <origin rpy="0 0 0" xyz=" 0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_top.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_top.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -621,7 +594,7 @@
     <visual>
       <origin rpy="0 0 0" xyz=" 0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_top.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_top.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -645,7 +618,7 @@
     <visual>
       <origin rpy="0 0 0" xyz=" 0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_top.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_top.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -669,7 +642,7 @@
     <visual>
       <origin rpy="0 0 0" xyz=" 0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_top.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_top.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -694,7 +667,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!--         <origin xyz="0 0 0" rpy="${-M_PI/2} ${M_PI} 0"/> -->
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_kinect.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_kinect.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -719,7 +692,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!--         <origin xyz="0 0 0" rpy="${-M_PI/2} ${M_PI} 0"/> -->
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/pole_kinect.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/pole_kinect.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -743,7 +716,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/stacks/hexagons/plate_top.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/stacks/hexagons/plate_top.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -785,13 +758,13 @@
   <joint name="camera_joint" type="fixed">
     <origin rpy="0 0 0" xyz="-0.031 0.0125 -0.016"/>
     <parent link="camera_rgb_frame"/>
-    <child link="kinect_camera"/>
+    <child link="camera_link"/>
   </joint>
-  <link name="kinect_camera">
+  <link name="camera_link">
     <visual>
       <origin rpy="0 0 1.57079632679" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://gibson-ros/turtlebot/turtlebot_description/meshes/sensors/kinect.dae"/>
+        <mesh filename="package://turtlebot_description/meshes/sensors/kinect.dae"/>
       </geometry>
     </visual>
     <collision>
@@ -806,20 +779,6 @@
       <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
     </inertial>
   </link>
-
-  <link name="eyes">
-      <inertial>
-      <mass value="0.001"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
-    </inertial>
-  </link>
-  <joint name="eye_joint" type="fixed">
-   <origin rpy="0 0 0" xyz="0 0.025 0"/>
-    <parent link="camera_rgb_optical_frame"/>
-    <child link="eyes"/>
-  </joint>
-
   <joint name="camera_depth_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0 0.025 0"/>
     <parent link="camera_rgb_frame"/>
@@ -844,5 +803,4 @@
       <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
     </inertial>
   </link>
-
 </robot>

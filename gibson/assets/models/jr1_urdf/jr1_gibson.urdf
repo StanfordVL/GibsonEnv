@@ -1,0 +1,1168 @@
+<?xml version="1.0" ?>
+<robot name="segway_robot" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!-- Included URDF/XACRO Files -->
+  <!-- Put all the color definitions in a separate file -->
+  <material name="Black">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+  </material>
+  <material name="TransparentBlack">
+    <color rgba="0.2 0.2 0.2 0.8"/>
+  </material>
+  <material name="Orange">
+    <color rgba="1.0  0.55 0.0 1.0"/>
+  </material>
+  <material name="Grey">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+  <material name="DarkGrey">
+    <color rgba="0.3 0.3 0.3 1.0"/>
+  </material>
+  <material name="Red">
+    <color rgba="0.8 0.0 0.0 1.0"/>
+  </material>
+  <material name="White">
+    <color rgba="1.0 1.0 1.0 1.0"/>
+  </material>
+  <material name="OffWhite">
+    <color rgba="0.8 0.8 0.8 1.0"/>
+  </material>
+  <material name="Blue">
+    <color rgba="0.0 0.0 0.8 1.0"/>
+  </material>
+  <material name="Green">
+    <color rgba="0.0 0.8 0.0 1.0"/>
+  </material>
+  <material name="TransparentGreen">
+    <color rgba="0.0 0.8 0.0 0.5"/>
+  </material>
+  <!-- Head Link Simple Collision Meshes -->
+  <link name="head">
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.075493 3.3383E-05 0.02774"/>
+      <mass value="1.41984"/>
+      <inertia ixx="0.0036053766" ixy="-1.5797E-06" ixz="-0.00089293" iyy="0.002080106" iyz="-6.8415E-07" izz="0.001782985"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="jr1_urdf/head.dae"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.9098 0.44314 0.031373 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.0503 0 -0.00195"/>
+      <geometry>
+        <box size="0.1311 0.12 0.0591"/>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_without_contact>true</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+  </link>
+  <link name="hokuyo_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.012428 0.0004084 -0.0041835"/>
+      <mass value="0.057654"/>
+      <inertia ixx="0.0004005974" ixy="4.9927E-08" ixz="1.1015E-05" iyy="0.002080106" iyz="-9.8165E-09" izz="0.001782985"/>
+    </inertial>
+    <visual>
+      <origin rpy="-0.314 0 0" xyz="0.045 -0.0261018277 -0.08342369"/>
+      <geometry>
+        <mesh filename="jr1_urdf/head_camera.dae"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.72941 0.35686 0.023529 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.01885 0.1 -0.02119"/>
+      <geometry>
+        <box size="0.08 0.06 0.04238"/>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_without_contact>true</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+  </link>
+  <joint name="hokuyo_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.0446 0 0.0880"/>
+    <parent link="head"/>
+    <child link="hokuyo_link"/>
+    <axis xyz="1 0 0"/>
+    <dynamics damping="0.01" friction="0"/>
+  </joint>
+  <!-- Hokuyo Laser -->
+  <joint name="head_hokuyo_joint" type="fixed">
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0.03 0 0"/>
+    <parent link="hokuyo_link"/>
+    <child link="head_hokuyo_frame"/>
+  </joint>
+  <link name="head_hokuyo_frame">
+    <inertial>
+      <mass value="1e-5"/>
+      <!-- collocate with parent link and remove mass from it -->
+      <origin rpy="0 0 0" xyz="0.042428 0.0004084 0.0108165"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0 " xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <gazebo reference="head_hokuyo_frame">
+    <sensor name="head_hokuyo_sensor" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>30</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>30.0</max>
+          <resolution>0.00436</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise parameters based on published spec for Hokuyo laser
+               achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+               stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+               reading. -->
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_head_hokuyo_controller">
+        <topicName>/sibot/rotating_lidar/scan</topicName>
+        <frameName>/sibot/head_hokuyo_frame</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <!-- Stereo Camera -->
+  <joint name="left_camera_frame_joint" type="fixed">
+    <!-- optical frame collocated with tilting DOF -->
+    <origin xyz="0.0 0.035 -0.002"/>
+    <parent link="head"/>
+    <child link="left_camera_frame"/>
+  </joint>
+  <link name="left_camera_frame">
+    <inertial>
+      <mass value="1e-5"/>
+      <!-- collocate with parent link and remove mass from it -->
+      <origin xyz="-0.075493 0.035033383 0.02574"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="left_camera_frame">
+    <sensor name="stereo_camera" type="multicamera">
+      <!-- see MultiSenseSLPlugin.h for available modes -->
+      <update_rate>30</update_rate>
+      <camera name="left">
+        <!-- Spec sheet says 80deg X 45deg @ 1024x544pix.  Based on feedback
+             from teams, we're instead doing 80deg X 80deg @ 800x800pix. -->
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>800</width>
+          <height>800</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise is sampled independently per pixel on each frame.  
+               That pixel's noise value is added to each of its color
+               channels, which at that point lie in the range [0,1].
+               The stddev value of 0.007 is based on experimental data 
+               from a camera in a Sandia hand pointed at a static scene
+               in a couple of different lighting conditions.  -->
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <camera name="right">
+        <pose>0 -0.07 0 0 0 0</pose>
+        <!-- Spec sheet says 80deg X 45deg @ 1024x544pix.  Based on feedback
+             from teams, we're instead doing 80deg X 80deg @ 800x800pix. -->
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>800</width>
+          <height>800</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise is sampled independently per pixel on each frame.  
+               That pixel's noise value is added to each of its color
+               channels, which at that point lie in the range [0,1].
+               The stddev value of 0.007 is based on experimental data 
+               from a camera in a Sandia hand pointed at a static scene
+               in a couple of different lighting conditions.  -->
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>10</updateRate>
+        <cameraName>multisense_sl/camera</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>sibot/left_camera_optical_frame</frameName>
+        <hackBaseline>0.07</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <joint name="right_camera_frame_joint" type="fixed">
+    <origin xyz="0.0 -0.035 -0.002"/>
+    <parent link="head"/>
+    <child link="right_camera_frame"/>
+  </joint>
+  <link name="right_camera_frame">
+    <inertial>
+      <mass value="1e-5"/>
+      <!-- collocate with parent link and remove mass from it -->
+      <origin xyz="-0.075493 -0.034966617 0.02574"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+  </link>
+
+  <joint name="center_top_led_frame_joint" type="fixed">
+    <origin xyz="0.01125 0.0 0.0105"/>
+    <parent link="head"/>
+    <child link="center_top_led_frame"/>
+  </joint>
+  <link name="center_top_led_frame">
+    <inertial>
+      <mass value="1e-5"/>
+      <!-- collocate with parent link and remove mass from it -->
+      <origin rpy="0 0 0" xyz="-0.064243 0.000033383 0.03824"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+  </link>
+  <joint name="center_bottom_led_frame_joint" type="fixed">
+    <origin xyz="0.01125 0.0 -0.0155"/>
+    <parent link="head"/>
+    <child link="center_bottom_led_frame"/>
+  </joint>
+  <link name="center_bottom_led_frame">
+    <inertial>
+      <mass value="1e-5"/>
+      <!-- collocate with parent link and remove mass from it -->
+      <origin rpy="0 0 0" xyz="-0.064243 0.000033383 0.01224"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+  </link>
+  <joint name="left_led_frame_joint" type="fixed">
+    <origin rpy="0 -0.15 0.53" xyz="-0.01443 0.07452 0.050346"/>
+    <parent link="head"/>
+    <child link="left_led_frame"/>
+  </joint>
+  <link name="left_led_frame">
+    <inertial>
+      <mass value="1e-5"/>
+      <!-- collocate with parent link and remove mass from it -->
+      <origin rpy="0 -0.15 0.53" xyz="-0.089923 0.074553383 0.078086"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+  </link>
+  <joint name="right_led_frame_joint" type="fixed">
+    <origin rpy="0 -0.15 -0.53" xyz="-0.01443 -0.07452 0.050346"/>
+    <parent link="head"/>
+    <child link="right_led_frame"/>
+  </joint>
+  <link name="right_led_frame">
+    <inertial>
+      <mass value="1e-5"/>
+      <!-- collocate with parent link and remove mass from it -->
+      <origin rpy="0 -0.15 -0.53" xyz="-0.089923 -0.074486617 0.07908"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+  </link>
+  <!-- imu link -->
+  <link name="head_imu_link">
+    <inertial>
+      <mass value="1e-5"/>
+      <!-- collocate with parent link and remove mass from it -->
+      <origin rpy="0 0 0" xyz="-0.122993 0.035033383 0.02774"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="head_imu_joint" type="fixed">
+    <parent link="head"/>
+    <child link="head_imu_link"/>
+    <!-- putting it at the same z-level as the stereo -->
+    <origin rpy="0 0 0" xyz="-0.0475 0.035 0.0"/>
+  </joint>
+  <gazebo reference="head_imu_link">
+    <!-- this is expected to be reparented to head with appropriate offset
+         when head_imu_link is reduced by fixed joint reduction -->
+    <!-- todo: this is working with gazebo 1.4, need to write a unit test -->
+    <sensor name="head_imu_sensor" type="imu">
+      <always_on>1</always_on>
+      <update_rate>30</update_rate>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise parameters from Boston Dynamics
+               (http://gazebosim.org/wiki/Sensor_noise):
+                 rates (rad/s): mean=0, stddev=2e-4
+                 accels (m/s/s): mean=0, stddev=1.7e-2
+                 rate bias (rad/s): 5e-6 - 1e-5
+                 accel bias (m/s/s): 1e-1
+               Experimentally, simulation provide rates with noise of
+               about 1e-3 rad/s and accels with noise of about 1e-1 m/s/s.
+               So we don't expect to see the noise unless number of inner iterations
+               are increased.
+
+               We will add bias.  In this model, bias is sampled once for rates
+               and once for accels at startup; the sign (negative or positive)
+               of each bias is then switched with equal probability.  Thereafter,
+               the biases are fixed additive offsets.  We choose
+               bias means and stddevs to produce biases close to the provided
+               data. -->
+          <rate>
+            <mean>0.0</mean>
+            <stddev>2e-4</stddev>
+            <bias_mean>0.0000075</bias_mean>
+            <bias_stddev>0.0000008</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0.0</mean>
+            <stddev>1.7e-2</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
+    </sensor>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libMultiSenseSLPlugin.so" name="multisense_plugin"/>
+  </gazebo>
+  <!-- ros_control plugin -->
+  <gazebo>
+    <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">
+      <robotNamespace>/</robotNamespace>
+      <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+    </plugin>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libgazebo_ros_p3d.so" name="ground_truth">
+      <frameName>world</frameName>
+      <bodyName>base_link</bodyName>
+      <topicName>ground_truth_odom</topicName>
+      <updateRate>50.0</updateRate>
+      <gaussianNoise>0.0</gaussianNoise>
+    </plugin>
+  </gazebo>
+  <!-- Wheel Mounting Positions -->
+  <!-- Wheel Properties -->
+  <!-- Base link is the center of the robot's chassis between the motors projected on the ground -->
+  <link name="base_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.05 0.05 0.001"/>
+      </geometry>
+      <material name="Red"/>
+    </visual>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.0036 0.0 0.0014"/>
+      <mass value="70.1294"/>
+      <inertia ixx="1.225" ixy="0.0" ixz="0.0" iyy="1.2853" iyz="0.0" izz="0.987"/>
+    </inertial>
+  </link>
+  <!-- Sibot Case -->
+  <link name="sibot_case_link">
+    <!-- xacro:box_inertial x="0.6" y="0.6" z="0.6" mass="20" / -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="jr1_urdf/sibot_case.stl" scale="0.9 1 0.9"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.6 0.6 0.6 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="jr1_urdf/sibot_case.stl" scale="0.9 1 0.9"/>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_without_contact>true</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+  </link>
+  <joint name="base_case_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.025"/>
+    <parent link="base_link"/>
+    <child link="sibot_case_link"/>
+  </joint>
+  <!--Chassis -->
+  <joint name="base_chassis_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.15801795"/>
+    <parent link="base_link"/>
+    <child link="base_chassis_link"/>
+  </joint>
+  <link name="base_chassis_link">
+    <!-- <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/std_gearbox_chassis.dae"/>
+      </geometry>
+    </visual>
+    -->
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+  </link>
+  <link name="inertial_collision_link">
+    <inertial>
+      <mass value="58.216824"/>
+      <origin xyz="0.0 0.01 -0.23120"/>
+      <inertia ixx="5.441713" ixy="0.017871" ixz="-0.023004" iyx="0.017871" iyy="4.732620" iyz="-0.000290" izx="-0.023004" izy="-0.000290" izz="1.951671"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/RMP210_chassis_collision.stl" scale="1 0.75 1"/>
+      </geometry>
+      <material name="Black"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="jr1_urdf/RMP210_chassis_collision.stl" scale="1 0.75 1"/>
+      </geometry>
+      <material name="Black"/>
+      <surface>
+        <contact>
+          <collide_without_contact>true</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+  </link>
+  <!-- Multisense head unit -->
+  <link name="head_root">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="head_root_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="head_root"/>
+    <child link="head"/>
+  </joint>
+  <joint name="head_root_to_base_link_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.13775 0 0.77"/>
+    <parent link="base_link"/>
+    <child link="head_root"/>
+  </joint>
+  <!-- These next two are from the sibot.URDF file -->
+  <link name="microstrain_imu_frame">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="microstrain_imu_frame_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.18877 0.0 0.74640"/>
+    <parent link="base_link"/>
+    <child link="microstrain_imu_frame"/>
+  </joint>
+  <link name="gps_rcvr_frame">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="microstrain_gps_frame_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.25728 0.0 0.94843"/>
+    <parent link="base_link"/>
+    <child link="gps_rcvr_frame"/>
+  </joint>
+  <!-- End Multisense Head Attachment -->
+  <link name="rear_right_camera_frame">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="rear_right_camera_frame_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.28657 -0.050243 0.66008"/>
+    <parent link="base_link"/>
+    <child link="rear_right_camera_frame"/>
+  </joint>
+
+  <link name="rear_left_camera_frame">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="rear_left_camera_frame_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.28657 0.050243 0.66008"/>
+    <parent link="base_link"/>
+    <child link="rear_left_camera_frame"/>
+  </joint>
+
+  <joint name="inertial_collision_joint" type="fixed">
+    <parent link="base_chassis_link"/>
+    <child link="inertial_collision_link"/>
+  </joint>
+  <!--Gearbox Spacers -->
+  <joint name="left_spacer_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0.19582 0.00665015"/>
+    <parent link="base_chassis_link"/>
+    <child link="left_spacer_link"/>
+  </joint>
+  <link name="left_spacer_link">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/single_spacer.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_spacer_joint" type="fixed">
+    <origin rpy="0 0 3.14159" xyz="0 -0.19582 0.00665015"/>
+    <parent link="base_chassis_link"/>
+    <child link="right_spacer_link"/>
+  </joint>
+  <link name="right_spacer_link">
+
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <!-- <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/single_spacer.dae"/>
+      </geometry>
+    </visual>
+    -->
+  </link>
+  <!-- Propulsion Batteries -->
+  <joint name="mcu_1_battery_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.09298 0 -0.01"/>
+    <parent link="base_chassis_link"/>
+    <child link="mcu_1_battery_link"/>
+  </joint>
+  <link name="mcu_1_battery_link">
+
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <!-- Two batteries at 10kg each -->
+    <xacro:box_inertial mass="10" x="0.38" y="0.35" z="-0.50"/>
+    <!--
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/battery.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="jr1_urdf/battery.dae"/>
+      </geometry>
+    </collision>
+    -->
+  </link>
+  <!-- UI Box -->
+  <joint name="ui_box_mount_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.1016 0 0.1273"/>
+    <parent link="base_chassis_link"/>
+    <child link="ui_box_mount_link"/>
+  </joint>
+  <link name="ui_box_mount_link">
+
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/ui_box_spacer_mount.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="ui_box_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.1016 0 0.1273"/>
+    <parent link="base_chassis_link"/>
+    <child link="ui_box_link"/>
+  </joint>
+  <link name="ui_box_link">
+
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/ui_box.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <!-- UI Batteries -->
+  <joint name="aux_battery_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.07845 0 -0.07"/>
+    <parent link="base_chassis_link"/>
+    <child link="aux_battery_link"/>
+  </joint>
+  <link name="aux_battery_link">
+
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <!-- Two batteries at 10kg each -->
+    <xacro:box_inertial mass="10" x="0.38" y="0.35" z="-0.50"/>
+    <!--
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/battery.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="jr1_urdf/battery.dae"/>
+      </geometry>
+    </collision>
+    -->
+  </link>
+  <!-- Segway wheel macros -->
+  <link name="left_wheel_link">
+    <inertial>
+      <mass value="4.195729"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.063680" ixy="0.000000" ixz="0.000000" iyx="0.000000" iyy="0.121410" iyz="0.000000" izx="0.000000" izy="0.000000" izz="0.063680"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0.0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="jr1_urdf/i2_wheel.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="1.570795 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.092249" radius="0.2405681"/>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_without_contact>false</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="30000"/>
+      <damping value="1000"/>
+    </contact>
+
+  </link>
+  <gazebo reference="left_wheel_link">
+    <mu1 value="10.0"/>
+    <mu2 value="10.0"/>
+    <kp value="500000.0"/>
+    <kd value="10.0"/>
+    <fdir1 value="1 0 0"/>
+    <maxVel>3.5</maxVel>
+    <minDepth>0.003</minDepth>
+  </gazebo>
+  <joint name="left_wheel" type="continuous">
+    <parent link="base_chassis_link"/>
+    <child link="left_wheel_link"/>
+    <origin rpy="0 0 0" xyz="0 0.2711955 0.08255015"/>
+    <axis rpy="0 0 0" xyz="0 1 0"/>
+    <dynamics damping="0.2" friction="10.0"/>
+  </joint>
+  <transmission name="left_wheel_trans" type="SimpleTransmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="left_wheel_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="left_wheel">
+      <hardwareInterface>VelocityJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  <link name="right_wheel_link">
+    <inertial>
+      <mass value="4.195729"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.063680" ixy="0.000000" ixz="0.000000" iyx="0.000000" iyy="0.121410" iyz="0.000000" izx="0.000000" izy="0.000000" izz="0.063680"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0.0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="jr1_urdf/i2_wheel.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="1.570795 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.092249" radius="0.2405681"/>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_without_contact>false</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="30000"/>
+      <damping value="1000"/>
+    </contact>
+
+
+  </link>
+  <gazebo reference="right_wheel_link">
+    <mu1 value="10.0"/>
+    <mu2 value="10.0"/>
+    <kp value="500000.0"/>
+    <kd value="10.0"/>
+    <fdir1 value="1 0 0"/>
+    <maxVel>3.5</maxVel>
+    <minDepth>0.003</minDepth>
+  </gazebo>
+  <joint name="right_wheel" type="continuous">
+    <parent link="base_chassis_link"/>
+    <child link="right_wheel_link"/>
+    <origin rpy="0 0 0" xyz="0 -0.2711955 0.08255015"/>
+    <axis rpy="0 0 0" xyz="0 1 0"/>
+    <dynamics damping="0.2" friction="10.0"/>
+  </joint>
+  <transmission name="right_wheel_trans" type="SimpleTransmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="right_wheel_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="right_wheel">
+      <hardwareInterface>VelocityJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  <!-- Segway Caster Assembly-->
+  <joint name="rear_caster_plate_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.31472057 0 0.02425235"/>
+    <parent link="base_chassis_link"/>
+    <child link="rear_caster_plate_link"/>
+  </joint>
+  <link name="rear_caster_plate_link">
+    <inertial>
+      <mass value="4.487241"/>
+      <origin xyz="0.027375 0 0.016101"/>
+      <inertia ixx="0.070527" ixy="0.000000" ixz="-0.001013" iyx="0.000000" iyy="0.010678" iyz="0.000000" izx="-0.001013" izy="0.000000" izz="0.078313"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/caster_plate.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="jr1_urdf/caster_plate_collision.stl"/>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_without_contact>true</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+  </link>
+  <link name="rear_caster_swivel_link">
+    <inertial>
+      <mass value="0.579519"/>
+      <origin xyz="-0.020596 0.000280 -0.055367"/>
+      <inertia ixx="0.001361" ixy="-0.000003" ixz="0.000347" iyx="-0.000003" iyy="0.001287" iyz="-0.000010" izx="0.000347" izy="-0.000010" izz="0.000632"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/caster_bracket.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="jr1_urdf/caster_bracket_collision.stl"/>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_without_contact>true</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+  </link>
+  <gazebo reference="rear_caster_swivel_link">
+    <mu1 value="10.0"/>
+    <mu2 value="10.0"/>
+    <kp value="10000000.0"/>
+    <kd value="1.0"/>
+  </gazebo>
+  <joint name="rear_caster_swivel" type="fixed">
+    <parent link="rear_caster_plate_link"/>
+    <child link="rear_caster_swivel_link"/>
+    <!--xacro:insert_block name="joint_pose"/-->
+    <axis xyz="0 0 1"/>
+    <anchor xyz="0 0 0"/>
+    <limit effort="0.0" velocity="1000"/>
+    <dynamics damping="0.7"/>
+  </joint>
+  <transmission name="rear_caster_swivel_trans" type="SimpleTransmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rear_caster_swivel">
+      <hardwareInterface>EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rear_caster_swivel_motor">
+      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <link name="rear_caster_wheel_link">
+    <inertial>
+      <mass value="1.25"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001442" ixy="0.000000" ixz="0.000000" iyx="0.000000" iyy="0.002493" iyz="0.000000" izx="0.000000" izy="0.000000" izz="0.001442"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/caster_wheel.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="1.570795 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.050" radius="0.0762"/>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_without_contact>false</collide_without_contact>
+        </contact>
+      </surface>
+    </collision>
+
+      <contact>
+      <lateral_friction value="0.0"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="30000"/>
+      <damping value="10000"/>
+    </contact>
+
+  </link>
+  <gazebo reference="rear_caster_wheel_link">
+    <mu1 value="0"/>
+    <mu2 value="0"/>
+    <kp value="10000000.0"/>
+    <kd value="10.0"/>
+    <fdir1 value="1 0 0"/>
+    <minDepth>0.003</minDepth>
+  </gazebo>
+  <joint name="rear_caster_wheel" type="fixed">
+    <parent link="rear_caster_swivel_link"/>
+    <child link="rear_caster_wheel_link"/>
+    <origin rpy="0 0 0" xyz="-0.03782 0 -0.10608"/>
+    <axis xyz="0 1 0"/>
+    <anchor xyz="-0.03782 0 -0.10608"/>
+    <limit effort="0.0" velocity="1000"/>
+    <dynamics damping="0.2" friction="1.0"/>
+  </joint>
+  <transmission name="rear_caster_wheel_trans" type="SimpleTransmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rear_caster_wheel">
+      <hardwareInterface>EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rear_caster_wheel_motor">
+      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <!-- Setup the sensors -->
+  <!-- CH Robotics UM7 Link-->
+  <!--GPS Link-->
+  <link name="gps_frame">
+<inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="gps_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="-0.1189 0 0.34665"/>
+    <parent link="base_chassis_link"/>
+    <child link="gps_frame"/>
+  </joint>
+  <gazebo>
+    <plugin filename="jr1_urdf/libhector_gazebo_ros_gps.so" name="gps_controller">
+      <alwaysOn>1</alwaysOn>
+      <updateRate>30</updateRate>
+      <bodyName>gps_frame</bodyName>
+      <topicName>/segway/feedback/gps/fix_2d</topicName>
+      <velocityTopicName>/segway/feedback/gps/vel</velocityTopicName>
+      <referenceLatitude>40.712784</referenceLatitude>
+      <referenceLongitude>-74.005941</referenceLongitude>
+      <referenceHeading>0</referenceHeading>
+      <referenceAltitude>0</referenceAltitude>
+      <drift>0.0001 0.0001 0.0001</drift>
+    </plugin>
+  </gazebo>
+  <!-- Primesense Head Camera -->
+  <joint name="camera_joint" type="fixed">
+    <origin rpy="1.57 0 -1.57" xyz="-0.1 0 0.2"/>
+    <parent link="head_root"/>
+    <child link="eyes"/>
+  </joint>
+  <link name="eyes">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="jr1_urdf/asus_xtion_pro_live.dae" scale="0.0254 0.0254 0.0254"/>
+      </geometry>
+      <material name="Black">
+        <color rgba="0.2 0.2 0.2 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.01"/>
+      <geometry>
+        <box size="0.045 0.185 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="camera_depth_frame">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+  </link>
+  <joint name="camera_depth_joint" type="fixed">
+    <parent link="eyes"/>
+    <child link="camera_depth_frame"/>
+    <origin rpy="0 0 0" xyz="0 -0.02  0"/>
+  </joint>
+  <link name="camera_rgb_frame">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="camera_rgb_joint" type="fixed">
+    <parent link="eyes"/>
+    <child link="camera_rgb_frame"/>
+    <origin rpy="0 0 0" xyz="0 -0.045  0"/>
+  </joint>
+
+  <gazebo reference="eyes">
+    <material>Gazebo/FlatBlack</material>
+    <sensor name="camera" type="depth">
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <camera>
+        <horizontal_fov>1.047197</horizontal_fov>
+        <image>
+          <format>R8G8B8</format>
+          <width>320</width>
+          <height>240</height>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <plugin filename="jr1_urdf/libgazebo_ros_openni_kinect.so" name="kinect_camera_controller">
+        <cameraName>camera</cameraName>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>20</updateRate>
+        <imageTopicName>rgb/image_rect_color</imageTopicName>
+        <depthImageTopicName>depth_registered/image_raw</depthImageTopicName>
+        <pointCloudTopicName>depth_registered/points</pointCloudTopicName>
+        <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+        <depthImageCameraInfoTopicName>depth_registered/camera_info</depthImageCameraInfoTopicName>
+        <pointCloudCutoff>0.4</pointCloudCutoff>
+        <pointCloudCutoffMax>10.0</pointCloudCutoffMax>
+        <frameName>sibot/camera_rgb_optical_frame</frameName>
+        <baseline>0.1</baseline>
+        <distortion_k1>0.0</distortion_k1>
+        <distortion_k2>0.0</distortion_k2>
+        <distortion_k3>0.0</distortion_k3>
+        <distortion_t1>0.0</distortion_t1>
+        <distortion_t2>0.0</distortion_t2>
+        <CxPrime>0</CxPrime>
+        <Cx>0</Cx>
+        <Cy>0</Cy>
+        <focalLength>0</focalLength>
+        <hackBaseline>0</hackBaseline>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <!-- Base Laser Scanner -->
+  <!-- SICK LMS1xx Sensor -->
+  <joint name="base_laser_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.29345 0 0.2"/>
+    <parent link="base_chassis_link"/>
+    <child link="base_laser_link"/>
+  </joint>
+  <link name="base_laser_link">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/sick_lms1xx.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.1 0.1 0.1"/>
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="base_laser_link">
+    <material>Gazebo/Blue</material>
+    <sensor name="base_hokuyo_laser" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>20</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>541</samples>
+            <resolution>1</resolution>
+            <min_angle>-2.3561945</min_angle>
+            <max_angle>2.3561945</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.50</min>
+          <max>20.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin filename="jr1_urdf/libgazebo_ros_laser.so" name="hokuyo_node">
+        <topicName>/sibot/base_scan</topicName>
+        <frameName>/sibot/base_laser_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <!-- Rear Laser Scanner -->
+  <!-- Hokuyo Laser Sensor -->
+  <joint name="rear_laser_joint" type="fixed">
+    <origin rpy="0 0 3.14159" xyz="-0.35 0 0.25"/>
+    <parent link="base_link"/>
+    <child link="rear_laser_link"/>
+  </joint>
+  <link name="rear_laser_link">
+  <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="jr1_urdf/hokuyo_ust20lx.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.1 0.1 0.1"/>
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="rear_laser_link">
+    <material>Gazebo/Black</material>
+    <sensor name="rear_hokuyo_laser" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>680</samples>
+            <resolution>1</resolution>
+            <min_angle>-2.086214</min_angle>
+            <max_angle>2.080078</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.2</min>
+          <max>5.6</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin filename="jr1_urdf/libgazebo_ros_laser.so" name="hokuyo_node">
+        <topicName>/sibot/rear_scan</topicName>
+        <frameName>/sibot/rear_laser_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+</robot>
+
