@@ -13,11 +13,21 @@ from transforms3d.euler import euler2quat
 from transforms3d import quaternions
 
 
-def quatWXYZ2quatXYZW(wxyz):
-    return np.concatenate((wxyz[1:], wxyz[:1]))
+def quatFromXYZW(xyzw, seq='xyzw'):
+    """Convert quaternion from arbitrary sequence to XYZW (pybullet convention)
+    """
+    assert len(seq) == 4 and 'x' in seq and 'y' in seq and 'z' in seq and 'w' in seq, \
+        "Quaternion sequence {} is not valid, please double check.".format(seq)
+    inds = [seq.index('x'), seq.index('y'), seq.index('z'), seq.index('w')]
+    return xyzw[inds]
 
-def quatXYZW2quatWXYZ(wxyz):
-    return np.concatenate((wxyz[-1:], wxyz[:-1]))
+def quatToXYZW(orn, seq='xyzw'):
+    """Convert quaternion from XYZW (pybullet convention) to arbitrary sequence
+    """
+    assert len(seq) == 4 and 'x' in seq and 'y' in seq and 'z' in seq and 'w' in seq, \
+        "Quaternion sequence {} is not valid, please double check.".format(seq)
+    inds = [seq.index('x'), seq.index('y'), seq.index('z'), seq.index('w')]
+    return orn[inds]
 
 
 class BaseRobot:
@@ -113,7 +123,7 @@ class BaseRobot:
         if self.robot_ids is None:
             self._load_model()
         
-        self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(*self.config["initial_orn"])))
+        self.robot_body.reset_orientation(quatToXYZW(euler2quat(*self.config["initial_orn"]), 'wxyz'))
         self.robot_body.reset_position(self.config["initial_pos"])
         self.reset_random_pos()
         self.robot_specific_reset()
@@ -127,8 +137,8 @@ class BaseRobot:
         if not self.config["random"]["random_initial_pose"]:
             return
 
-        pos = self.robot_body.current_position()
-        orn = self.robot_body.current_orientation()
+        pos = self.robot_body.get_position()
+        orn = self.robot_body.get_orientation()
 
 
         x_range = self.config["random"]["random_init_x_range"]
@@ -152,18 +162,18 @@ class BaseRobot:
     def calc_potential(self):
         return 0
 
-class Pose_Helper: # dummy class to comply to original interface
+class Pose_Helper:
     def __init__(self, body_part):
         self.body_part = body_part
 
     def xyz(self):
-        return self.body_part.current_position()
+        return self.body_part.get_position()
 
     def rpy(self):
-        return p.getEulerFromQuaternion(self.body_part.current_orientation())
+        return p.getEulerFromQuaternion(self.body_part.get_orientation())
 
     def orientation(self):
-        return self.body_part.current_orientation()
+        return self.body_part.get_orientation()
 
 
 class BodyPart:
@@ -176,14 +186,19 @@ class BodyPart:
             self.scale = scale
         else:
             self.scale = 1
-        self.initialPosition = self.current_position() / self.scale
-        self.initialOrientation = self.current_orientation()
+        self.initialPosition = self.get_position() / self.scale
+        self.initialOrientation = self.get_orientation()
         self.bp_pose = Pose_Helper(self)
-
+        
     def get_name(self):
         return self.body_name
 
-    def state_fields_of_pose_of(self, body_id, link_id=-1):  # a method you will most probably need a lot to get pose and orientation
+    def _state_fields_of_pose_of(self, body_id, link_id=-1):
+        """Calls native pybullet method for getting real (scaled) robot body pose
+           
+           Note that there is difference between xyz in real world scale and xyz
+           in simulation. Thus you should never call pybullet methods directly
+        """
         if link_id == -1:
             (x, y, z), (a, b, c, d) = p.getBasePositionAndOrientation(body_id)
         else:
@@ -191,8 +206,53 @@ class BodyPart:
         x, y, z = x * self.scale, y * self.scale, z * self.scale
         return np.array([x, y, z, a, b, c, d])
 
+    def _set_fields_of_pose_of(self, pos, orn):
+        """Calls native pybullet method for setting real (scaled) robot body pose"""
+        p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], np.array(pos) / self.scale, orn)
+
     def get_pose(self):
-        return self.state_fields_of_pose_of(self.bodies[self.bodyIndex], self.bodyPartIndex)
+        return self._state_fields_of_pose_of(self.bodies[self.bodyIndex], self.bodyPartIndex)
+
+    def get_position(self):
+        """Get position of body part
+           Position is defined in real world scale """
+        return self.get_pose()[:3]
+
+    def get_orientation(self):
+        """Get orientation of body part
+           Orientation is by default defined in [x,y,z,w]"""
+        return self.get_pose()[3:]
+
+    def set_position(self, position):
+        """Get position of body part
+           Position is defined in real world scale """
+        self._set_fields_of_pose_of(position, self.get_orientation())
+
+    def set_orientation(self, orientation):
+        """Get position of body part
+           Orientation is defined in [x,y,z,w]"""
+        self._set_fields_of_pose_of(self.current_position(), orientation)
+
+    def set_pose(self, position, orientation):
+        self._set_fields_of_pose_of(position, orientation)
+
+    def pose(self):
+        return self.bp_pose
+
+    def current_position(self):         # Synonym method
+        return self.get_position()
+
+    def current_orientation(self):      # Synonym method
+        return self.get_orientation()
+
+    def reset_position(self, position): # Backward compatibility
+        self.set_position(position)
+
+    def reset_orientation(self, orientation):       # Backward compatibility
+        self.set_orientation(orientation)
+
+    def reset_pose(self, position, orientation):    # Backward compatibility
+        self.set_pose(position, orientation)
 
     def speed(self):
         if self.bodyPartIndex == -1:
@@ -201,35 +261,12 @@ class BodyPart:
             (x,y,z), (a,b,c,d), _,_,_,_, (vx, vy, vz), (vr,vp,vyaw) = p.getLinkState(self.bodies[self.bodyIndex], self.bodyPartIndex, computeLinkVelocity=1)
         return np.array([vx, vy, vz])
 
-
     def angular_speed(self):
         if self.bodyPartIndex == -1:
             _, (vr,vp,vyaw) = p.getBaseVelocity(self.bodies[self.bodyIndex])
         else:
             (x,y,z), (a,b,c,d), _,_,_,_, (vx, vy, vz), (vr,vp,vyaw) = p.getLinkState(self.bodies[self.bodyIndex], self.bodyPartIndex, computeLinkVelocity=1)
         return np.array([vr, vp, vyaw])
-
-    def current_position(self):
-        """Get position in physics simulation (unscaled)
-        """
-        return self.get_pose()[:3]
-
-    def current_orientation(self):
-        """Get orientation in physics simulation
-        """
-        return self.get_pose()[3:]
-
-    def reset_position(self, position):
-        p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], np.array(position) / self.scale, self.current_orientation())
-
-    def reset_orientation(self, orientation):
-        p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], self.current_position() / self.scale, orientation)
-
-    def reset_pose(self, position, orientation):
-        p.resetBasePositionAndOrientation(self.bodies[self.bodyIndex], np.array(position) / self.scale, orientation)
-
-    def pose(self):
-        return self.bp_pose
 
     def contact_list(self):
         return p.getContactPoints(self.bodies[self.bodyIndex], -1, self.bodyPartIndex, -1)
@@ -241,22 +278,34 @@ class Joint:
         self.bodyIndex = bodyIndex
         self.jointIndex = jointIndex
         self.joint_name = joint_name
-        _,_,_,_,_,_,_,_,self.lowerLimit, self.upperLimit,_,_,_, _,_,_,_ = p.getJointInfo(self.bodies[self.bodyIndex], self.jointIndex)
+        _,_,self.jointType,_,_,_,_,_,self.lowerLimit, self.upperLimit,_,_,_, _,_,_,_ = p.getJointInfo(self.bodies[self.bodyIndex], self.jointIndex)
         self.power_coeff = 0
         if model_type=="mjcf":
             self.scale = scale
         else:
             self.scale = 1
+        if self.jointType == p.JOINT_PRISMATIC:
+            self.upperLimit *= self.scale
+            self.lowerLimit *= self.scale
+
+    def get_state(self):
+        """Get state of joint
+           Position is defined in real world scale """
+        x, vx,_,_ = p.getJointState(self.bodies[self.bodyIndex],self.jointIndex)
+        if self.jointType == p.JOINT_PRISMATIC:
+            x  *= self.scale
+            vx *= self.scale
+        return x, vx
 
     def set_state(self, x, vx):
+        """Set state of joint
+           x is defined in real world scale """
+        if self.jointType == p.JOINT_PRISMATIC:
+            x  /= self.scale
+            vx /= self.scale
         p.resetJointState(self.bodies[self.bodyIndex], self.jointIndex, x, vx)
 
-    def current_position(self): # just some synonyme method
-        state = self.get_state
-        state[:3] = state[:3] * self.scale
-        return state
-
-    def current_relative_position(self):
+    def get_relative_state(self):
         pos, vel = self.get_state()
         pos_mid = 0.5 * (self.lowerLimit + self.upperLimit);
         return (
@@ -264,32 +313,52 @@ class Joint:
             0.1 * vel
         )
 
-    def get_state(self):
-        x, vx,_,_ = p.getJointState(self.bodies[self.bodyIndex],self.jointIndex)
-        return x * self.scale, vx
-
     def set_position(self, position):
-        p.setJointMotorControl2(self.bodies[self.bodyIndex],self.jointIndex,p.POSITION_CONTROL, targetPosition=np.array(position) / self.scale)
+        """Set position of joint
+           Position is defined in real world scale """
+        if self.jointType == p.JOINT_PRISMATIC:
+            position = np.array(position) / self.scale
+        p.setJointMotorControl2(self.bodies[self.bodyIndex],self.jointIndex,p.POSITION_CONTROL, targetPosition=position)
 
     def set_velocity(self, velocity):
-        p.setJointMotorControl2(self.bodies[self.bodyIndex],self.jointIndex,p.VELOCITY_CONTROL, targetVelocity=velocity)
-
-    def set_motor_torque(self, torque): # just some synonyme method
-        self.set_torque(torque)
+        """Set velocity of joint
+           Velocity is defined in real world scale """
+        if self.jointType == p.JOINT_PRISMATIC:
+            velocity = np.array(velocity) / self.scale
+        p.setJointMotorControl2(self.bodies[self.bodyIndex],self.jointIndex,p.VELOCITY_CONTROL, targetVelocity=velocity) # , positionGain=0.1, velocityGain=0.1)
 
     def set_torque(self, torque):
         p.setJointMotorControl2(bodyIndex=self.bodies[self.bodyIndex], jointIndex=self.jointIndex, controlMode=p.TORQUE_CONTROL, force=torque) #, positionGain=0.1, velocityGain=0.1)
 
-    def set_motor_velocity(self, vel):
-        p.setJointMotorControl2(bodyIndex=self.bodies[self.bodyIndex], jointIndex=self.jointIndex,
-                                controlMode=p.VELOCITY_CONTROL, targetVelocity=vel)  # , positionGain=0.1, velocityGain=0.1)
-
-    def reset_current_position(self, position, velocity): # just some synonyme method
-        self.reset_position(position / self.scale, velocity)
-
-    def reset_position(self, position, velocity):
-        p.resetJointState(self.bodies[self.bodyIndex],self.jointIndex,targetValue= np.array(position) / self.scale, targetVelocity=velocity)
-        self.disable_motor()
+    def reset_state(self, pos, vel):
+        self.set_state(pos, vel)
 
     def disable_motor(self):
         p.setJointMotorControl2(self.bodies[self.bodyIndex],self.jointIndex,controlMode=p.POSITION_CONTROL, targetPosition=0, targetVelocity=0, positionGain=0.1, velocityGain=0.1, force=0)
+
+    def get_joint_relative_state(self): # Synonym method
+        return self.get_relative_state()
+
+    def set_motor_position(self, pos):  # Synonym method
+        return self.set_position(pos)
+
+    def set_motor_torque(self, torque): # Synonym method
+        return self.set_torque(torque)
+
+    def set_motor_velocity(self, vel):  # Synonym method
+        return self.set_velocity(vel)
+
+    def reset_joint_state(self, position, velocity): # Synonym method
+        return self.reset_state(position, velocity)
+
+    def current_position(self):             # Backward compatibility
+        return self.get_state()
+
+    def current_relative_position(self):    # Backward compatibility
+        return self.get_relative_state()
+
+    def reset_current_position(self, position, velocity):   # Backward compatibility
+        self.reset_state(position, velocity)
+
+    def reset_position(self, position, velocity):  # Backward compatibility
+        self.reset_state(position, velocity)

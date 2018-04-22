@@ -80,8 +80,6 @@ class HuskyNavigateEnv(CameraRobotEnv):
             print("steering cost", steering_cost)
 
         wall_contact = []
-        #for i, f in enumerate(self.robot.feet):
-        #    print(i, f)
         
         for i, f in enumerate(self.parts):
             if self.parts[f] not in self.robot.feet:
