@@ -28,8 +28,9 @@ print(config_file)
 
 cmdx = 0.0
 cmdy = 0.0
-image_pub = rospy.Publisher("/gibson_ros/image",Image)
-depth_pub = rospy.Publisher("/gibson_ros/depth_raw",Image)
+image_pub = rospy.Publisher("/gibson_ros/image",Image, queue_size=10)
+depth_pub = rospy.Publisher("/gibson_ros/depth",Image, queue_size=10)
+depth_raw_pub = rospy.Publisher("/gibson_ros/depth_raw",Image, queue_size=10)
 
 bridge = CvBridge()
 
@@ -48,6 +49,10 @@ def callback_step(data):
     image_pub.publish(image_message)
     depth_message = bridge.cv2_to_imgmsg(depth, encoding="mono8")
     depth_pub.publish(depth_message)
+    depth_raw_image = obs["depth"].astype(np.float32)
+    depth_raw_message = bridge.cv2_to_imgmsg(depth_raw_image, encoding="passthrough")
+    depth_raw_pub.publish(depth_raw_message)
+
 
 
 parser = argparse.ArgumentParser()
