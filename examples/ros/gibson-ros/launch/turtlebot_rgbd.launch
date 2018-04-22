@@ -33,9 +33,7 @@
  <include file="$(find turtlebot_teleop)/launch/ps3_teleop.launch">
  </include>
 
-  <node pkg="nodelet" type="nodelet" name="laserscan_nodelet_manager" args="manager"/>
-  <node pkg="nodelet" type="nodelet" name="depthimage_to_laserscan"
-        args="load depthimage_to_laserscan/DepthImageToLaserScanNodelet laserscan_nodelet_manager">
+  <node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan">
     <param name="scan_height" value="10"/>
     <param name="output_frame_id" value="/camera_depth_frame"/>
     <param name="range_min" value="0"/>
