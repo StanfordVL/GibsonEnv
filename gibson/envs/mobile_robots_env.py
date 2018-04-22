@@ -42,6 +42,10 @@ class TurtlebotNavigateEnv(CameraRobotEnv):
         self.total_reward = 0
         self.total_frame = 0
 
+
+    def get_odom(self):
+        return np.array(self.robot.body_xyz) - np.array(self.config["initial_pos"]), np.array(self.robot.body_rpy)
+
     def add_text(self, img):
         font = cv2.FONT_HERSHEY_SIMPLEX
         x,y,z = self.robot.get_position()

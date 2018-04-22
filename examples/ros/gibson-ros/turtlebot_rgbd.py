@@ -7,9 +7,12 @@ import rospy
 from std_msgs.msg import Float32, Int64
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image, CameraInfo
+
 import rospkg
 import numpy as np
 from cv_bridge import CvBridge
+
+import tf
 
 import gym
 #import pygame
@@ -34,7 +37,7 @@ depth_raw_pub = rospy.Publisher("/gibson_ros/camera/depth/image_raw",Image, queu
 
 camera_info_pub = rospy.Publisher("/gibson_ros/camera/depth/camera_info", CameraInfo, queue_size=10)
 bridge = CvBridge()
-
+br = tf.TransformBroadcaster()
 
 
 def callback(data):
@@ -69,6 +72,14 @@ def callback_step(data):
     msg.header.frame_id="camera_depth_optical_frame"
     camera_info_pub.publish(msg)
 
+    # odometry
+    odom = env.get_odom()
+    print(odom)
+    br.sendTransform((odom[0][0], odom[0][1], 0),
+                         tf.transformations.quaternion_from_euler(0, 0, odom[-1][-1]),
+                         rospy.Time.now(),
+                         'base_footprint',
+                         "odom")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default=config_file)
