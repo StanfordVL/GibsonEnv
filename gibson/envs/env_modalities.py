@@ -216,8 +216,8 @@ class BaseRobotEnv(BaseEnv):
 
     def get_eye_pos_orientation(self):
         """Used in CameraEnv.setup"""
-        eye_pos = self.robot.eyes.current_position()
-        x, y, z ,w = self.robot.eyes.current_orientation()
+        eye_pos = self.robot.eyes.get_position()
+        x, y, z ,w = self.robot.eyes.get_orientation()
         eye_quat = [w, x, y, z]
         return eye_pos, eye_quat
 

@@ -63,7 +63,7 @@ class WalkerBase(BaseRobot):
 
     def robot_specific_reset(self):
         for j in self.ordered_joints:
-            j.reset_current_position(self.np_random.uniform(low=-0.1, high=0.1), 0)
+            j.reset_joint_state(self.np_random.uniform(low=-0.1, high=0.1), 0)
 
         self.feet = [self.parts[f] for f in self.foot_list]
         self.feet_contact = np.array([0.0 for f in self.foot_list], dtype=np.float32)
@@ -74,12 +74,12 @@ class WalkerBase(BaseRobot):
     def get_position(self):
         '''Get current robot position
         '''
-        return self.robot_body.current_position()
+        return self.robot_body.get_position()
 
     def get_orientation(self):
-        '''Get current orientation
+        '''Return robot orientation
         '''
-        return self.robot_body.current_orientation()
+        return self.robot_body.get_orientation()
 
     def set_position(self, pos):
         self.robot_body.reset_position(pos)
@@ -89,22 +89,22 @@ class WalkerBase(BaseRobot):
         self.robot_body.reset_position(new_pos)
 
     def move_forward(self, forward=0.05):
-        x, y, z, w = self.robot_body.current_orientation()
+        x, y, z, w = self.robot_body.get_orientation()
         self.move_by(quat2mat([w, x, y, z]).dot(np.array([forward, 0, 0])))
         
     def move_backward(self, backward=0.05):
-        x, y, z, w = self.robot_body.current_orientation()
+        x, y, z, w = self.robot_body.get_orientation()
         self.move_by(quat2mat([w, x, y, z]).dot(np.array([-backward, 0, 0])))
 
     def turn_left(self, delta=0.03):
-        orn = self.robot_body.current_orientation()
+        orn = self.robot_body.get_orientation()
         new_orn = qmult((euler2quat(-delta, 0, 0)), orn)
-        self.robot_body.reset_orientation(new_orn)
+        self.robot_body.set_orientation(new_orn)
 
     def turn_right(self, delta=0.03):
-        orn = self.robot_body.current_orientation()
+        orn = self.robot_body.get_orientation()
         new_orn = qmult((euler2quat(delta, 0, 0)), orn)
-        self.robot_body.reset_orientation(new_orn)
+        self.robot_body.set_orientation(new_orn)
         
     def get_rpy(self):
         return self.robot_body.bp_pose.rpy()
@@ -126,7 +126,7 @@ class WalkerBase(BaseRobot):
         self.target_pos = pos
 
     def calc_state(self):
-        j = np.array([j.current_relative_position() for j in self.ordered_joints], dtype=np.float32).flatten()
+        j = np.array([j.get_joint_relative_state() for j in self.ordered_joints], dtype=np.float32).flatten()
         self.joint_speeds = j[1::2]
         self.joints_at_limit = np.count_nonzero(np.abs(j[0::2]) > 0.99)
 
@@ -212,7 +212,7 @@ class WalkerBase(BaseRobot):
         '''Private method, please don't use this method outside
         Used for downscaling MJCF models
         '''
-        return self.robot_body.current_position() / self.mjcf_scaling
+        return self.robot_body.get_position() / self.mjcf_scaling
 
 
 class Hopper(WalkerBase):

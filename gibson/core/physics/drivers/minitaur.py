@@ -20,9 +20,6 @@ tracking_camera = {
     'pitch': -20
 }
 
-def quatWXYZ2quatXYZW(wxyz):
-  return np.concatenate((wxyz[1:], wxyz[:1]))
-
 
 class MinitaurBase(WalkerBase):
     KNEE_CONSTRAINT_POINT_RIGHT = [0, 0.005, 0.2]
