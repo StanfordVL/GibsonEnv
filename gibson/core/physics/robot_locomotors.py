@@ -88,22 +88,20 @@ class WalkerBase(BaseRobot):
         new_pos = np.array(delta) + self.get_position()
         self.robot_body.reset_position(new_pos)
 
-    def move_forward(self, forward=0.04):
+    def move_forward(self, forward=0.05):
         x, y, z, w = self.robot_body.current_orientation()
-        #print(quat2mat([w, x, y, z]).dot(np.array([-forward, 0, 0])))
         self.move_by(quat2mat([w, x, y, z]).dot(np.array([forward, 0, 0])))
         
-    def move_backward(self, backward=0.04):
+    def move_backward(self, backward=0.05):
         x, y, z, w = self.robot_body.current_orientation()
-        #print(quat2mat([w, x, y, z]).dot(np.array([backward, 0, 0])))
         self.move_by(quat2mat([w, x, y, z]).dot(np.array([-backward, 0, 0])))
 
-    def turn_left(self, delta=0.01):
+    def turn_left(self, delta=0.03):
         orn = self.robot_body.current_orientation()
         new_orn = qmult((euler2quat(-delta, 0, 0)), orn)
         self.robot_body.reset_orientation(new_orn)
 
-    def turn_right(self, delta=0.01):
+    def turn_right(self, delta=0.03):
         orn = self.robot_body.current_orientation()
         new_orn = qmult((euler2quat(delta, 0, 0)), orn)
         self.robot_body.reset_orientation(new_orn)
@@ -134,7 +132,6 @@ class WalkerBase(BaseRobot):
 
         body_pose = self.robot_body.pose()
         parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
-        #print(list(zip(parts_xyz[0::3], self.parts.keys())))
         self.body_xyz = (
         parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
         self.body_rpy = body_pose.rpy()
@@ -194,11 +191,6 @@ class WalkerBase(BaseRobot):
         if (debugmode):
             print("calc_potential: self.walk_target_dist x y", self.walk_target_dist)
             print("robot position", self.body_xyz, "target position", [self.target_pos[0], self.target_pos[1], self.target_pos[2]])
-#            print("self.scene.dt")
-#            print(self.scene.dt)
-#            print("self.scene.frame_skip")
-#            print(self.scene.frame_skip)
-            #print("self.scene.timestep", self.scene.timestep)
         return - self.walk_target_dist / self.scene.dt
 
 
@@ -214,9 +206,6 @@ class WalkerBase(BaseRobot):
         self.body_xyz = (
         parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])  # torso z is more informative than mean z
         dist_to_goal = np.linalg.norm([self.body_xyz[0] - self.target_pos[0], self.body_xyz[1] - self.target_pos[1]])
-        #print("dist to goal", dist_to_goal)
-        #print(self.body_xyz[0], self.walk_target_x, self.body_xyz[1], self.walk_target_y)
-        #print(self.body_xyz)
         return dist_to_goal < 2
 
     def _get_scaled_position(self):
@@ -336,10 +325,6 @@ class Ant(WalkerBase):
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            #(ord('s'), ): 0, ## backward
-            #(ord('w'), ): 1, ## forward
-            #(ord('d'), ): 2, ## turn right
-            #(ord('a'), ): 3, ## turn left
             (ord('1'), ): 0,
             (ord('2'), ): 1, 
             (ord('3'), ): 2, 
@@ -463,31 +448,7 @@ class Humanoid(WalkerBase):
         self.motor_names += ["left_shoulder1", "left_shoulder2", "left_elbow"]
         self.motor_power += [75, 75, 75]
         self.motors = [self.jdict[n] for n in self.motor_names]
-        '''
-        if self.random_yaw:
-            position = [0,0,0]
-            orientation = [0,0,0]
-            yaw = self.np_random.uniform(low=-3.14, high=3.14)
-            if self.random_lean and self.np_random.randint(2)==0:
-                cpose.set_xyz(0, 0, 1.4)
-                if self.np_random.randint(2)==0:
-                    pitch = np.pi/2
-                    position = [0, 0, 0.45]
-                else:
-                    pitch = np.pi*3/2
-                    position = [0, 0, 0.25]
-                roll = 0
-                orientation = [roll, pitch, yaw]
-            else:
-                position = [0, 0, 1.4]
-            self.robot_body.reset_position(position)
-            # just face random direction, but stay straight otherwise
-            self.robot_body.reset_orientation(quatWXYZ2quatXYZW(euler2quat(0, 0, yaw)))
-        self.initial_z = 0.8
-        '''
-
-    random_yaw = False
-    random_lean = False
+        
 
     def apply_action(self, a):
         if self.is_discrete:
@@ -527,7 +488,6 @@ class Husky(WalkerBase):
             self.action_space = gym.spaces.Discrete(5)        
             self.torque = 0.03
             self.action_list = [[self.torque, self.torque, self.torque, self.torque],
-                                #[-self.torque * 2, -self.torque * 2, -self.torque * 2, -self.torque * 2],
                                 [-self.torque, -self.torque, -self.torque, -self.torque],
                                 [self.torque, -self.torque, self.torque, -self.torque],
                                 [-self.torque, self.torque, -self.torque, self.torque],
@@ -645,7 +605,6 @@ class Quadrotor(WalkerBase):
             realaction = action
 
         p.setGravity(0, 0, 0)
-        # TODO (hzyjerry): action relative to drone body
         p.resetBaseVelocity(self.robot_ids[0], realaction[:3], realaction[3:])
 
     def robot_specific_reset(self):
@@ -653,12 +612,12 @@ class Quadrotor(WalkerBase):
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            (ord('w'),): 0,  ## forward
-            (ord('s'),): 1,  ## backward
-            (ord('d'),): 2,  ## turn right
-            (ord('a'),): 3,  ## turn left
-            (ord('z'),): 4,  ## turn left
-            (ord('x'),): 5,  ## turn left
+            (ord('w'),): 0,  ## +x
+            (ord('s'),): 1,  ## -x
+            (ord('d'),): 2,  ## +y
+            (ord('a'),): 3,  ## -y
+            (ord('z'),): 4,  ## +z
+            (ord('x'),): 5,  ## -z
             (): 6
         }
 
