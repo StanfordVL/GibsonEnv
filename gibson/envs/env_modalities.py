@@ -128,7 +128,7 @@ class BaseRobotEnv(BaseEnv):
 
         if not self.ground_ids:
             self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
-                    self.scene.scene_obj_list)
+                    [])
             self.ground_ids = set(self.scene.scene_obj_list)
 
         ## Todo: (hzyjerry) this part is not working, robot_tracking_id = -1
