@@ -168,8 +168,8 @@ class HuskyNavigateSpeedControlEnv(HuskyNavigateEnv):
         #assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
         HuskyNavigateEnv.__init__(self, config, gpu_count)
         self.robot.keys_to_action = {
-            (ord('s'), ): [0.5,0], ## backward
-            (ord('w'), ): [-0.5,0], ## forward
+            (ord('s'), ): [-0.5,0], ## backward
+            (ord('w'), ): [0.5,0], ## forward
             (ord('d'), ): [0,-0.5], ## turn right
             (ord('a'), ): [0,0.5], ## turn left
             (): [0,0]

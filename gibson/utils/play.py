@@ -136,7 +136,6 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
         pressed_keys = []
 
         for key in key_codes:
-            print(key, last_keys)
             if key == ord('r') and key not in last_keys:
                 do_restart = True
             if key == ord('j') and key not in last_keys:

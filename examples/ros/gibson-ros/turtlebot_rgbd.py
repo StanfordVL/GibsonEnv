@@ -6,7 +6,7 @@ import os
 import rospy
 from std_msgs.msg import Float32, Int64
 from geometry_msgs.msg import Twist
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
 import rospkg
 import numpy as np
 from cv_bridge import CvBridge
@@ -28,11 +28,13 @@ print(config_file)
 
 cmdx = 0.0
 cmdy = 0.0
-image_pub = rospy.Publisher("/gibson_ros/image",Image, queue_size=10)
-depth_pub = rospy.Publisher("/gibson_ros/depth",Image, queue_size=10)
-depth_raw_pub = rospy.Publisher("/gibson_ros/depth_raw",Image, queue_size=10)
+image_pub = rospy.Publisher("/gibson_ros/camera/rgb/image",Image, queue_size=10)
+depth_pub = rospy.Publisher("/gibson_ros/camera/depth/image",Image, queue_size=10)
+depth_raw_pub = rospy.Publisher("/gibson_ros/camera/depth/image_raw",Image, queue_size=10)
 
+camera_info_pub = rospy.Publisher("/gibson_ros/camera/depth/camera_info", CameraInfo, queue_size=10)
 bridge = CvBridge()
+
 
 
 def callback(data):
@@ -44,15 +46,28 @@ def callback_step(data):
     global cmdx, cmdy, bridge
     obs, _, _, _ = env.step([cmdx, cmdy])
     rgb = obs["rgb_filled"]
-    depth = (np.clip(obs["depth"], 0, 10.0) / 10.0 * 255).astype(np.uint8)
+    depth = (np.clip(obs["depth"], 0.45, 10.0)).astype(np.float32)
     image_message = bridge.cv2_to_imgmsg(rgb, encoding="rgb8")
-    image_pub.publish(image_message)
-    depth_message = bridge.cv2_to_imgmsg(depth, encoding="mono8")
-    depth_pub.publish(depth_message)
-    depth_raw_image = obs["depth"].astype(np.float32)
+    depth_raw_image = (obs["depth"] * 1000).astype(np.uint16)
     depth_raw_message = bridge.cv2_to_imgmsg(depth_raw_image, encoding="passthrough")
-    depth_raw_pub.publish(depth_raw_message)
+    depth_message = bridge.cv2_to_imgmsg(depth, encoding="passthrough")
 
+    now = rospy.Time.now()
+
+    image_message.header.stamp = now
+    depth_message.header.stamp = now
+    depth_raw_message.header.stamp = now
+
+    image_pub.publish(image_message)
+    depth_pub.publish(depth_message)
+    depth_raw_pub.publish(depth_raw_message)
+    msg = CameraInfo(height=256, width=256, distortion_model="plumb_bob", D=[0.0, 0.0, 0.0, 0.0, 0.0],
+                     K=[256, 0.0, 128.5, 0.0, 256, 128.5, 0.0, 0.0, 1.0],
+                     R=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+                     P=[256, 0.0, 128.5, -0.0, 0.0, 256, 128.5, 0.0, 0.0, 0.0, 1.0, 0.0])
+    msg.header.stamp = now
+    msg.header.frame_id="camera_depth_optical_frame"
+    camera_info_pub.publish(msg)
 
 
 parser = argparse.ArgumentParser()
