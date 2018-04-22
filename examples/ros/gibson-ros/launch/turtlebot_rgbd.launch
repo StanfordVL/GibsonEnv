@@ -31,7 +31,16 @@
   </node>
 
  <include file="$(find turtlebot_teleop)/launch/ps3_teleop.launch">
-
  </include>
+
+  <node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan">
+    <param name="scan_height" value="10"/>
+    <param name="output_frame_id" value="/camera_depth_frame"/>
+    <param name="range_min" value="0"/>
+    <remap from="image" to="/gibson_ros/depth_raw"/>
+    <remap from="scan" to="/scan"/>
+  </node>
+
+
 
 </launch>
