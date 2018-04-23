@@ -4,10 +4,13 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
+        - /Status1
         - /Grid1
         - /TF1/Tree1
         - /Image1
         - /Image2
+        - /LaserScan2
       Splitter Ratio: 0.5
     Tree Height: 518
   - Class: rviz/Selection
@@ -27,7 +30,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: Image
 Visualization Manager:
   Class: ""
   Displays:
@@ -454,7 +457,7 @@ Visualization Manager:
       Class: rviz/LaserScan
       Color: 255; 255; 255
       Color Transformer: Intensity
-      Decay Time: 0
+      Decay Time: 10
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
@@ -477,7 +480,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: base_footprint
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -493,7 +496,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10.126936
+      Distance: 23.3198433
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -508,10 +511,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.520398974
+      Pitch: 0.425399035
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.74857998
+      Yaw: 1.43857837
     Saved: ~
 Window Geometry:
   Displays:

@@ -189,7 +189,7 @@ __global__ void transform2d(float *points3d_after, float fov_scale)
      float y = points3d_after[(ih * w + iw) * 3 + 1];
      float z = points3d_after[(ih * w + iw) * 3 + 2];
 
-      points3d_after[(ih * w + iw) * 3 + 0] = sqrt(x * x + y * y + z * z);
+      points3d_after[(ih * w + iw) * 3 + 0] = x;//sqrt(x * x + y * y + z * z);
     //points3d_after[(ih * w + iw) * 3 + 1] = atan2(y, x);
     //points3d_after[(ih * w + iw) * 3 + 2] = atan2(sqrt(x * x + y * y), z);
 
