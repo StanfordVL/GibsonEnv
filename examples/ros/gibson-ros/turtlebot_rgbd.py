@@ -49,7 +49,9 @@ def callback_step(data):
     global cmdx, cmdy, bridge
     obs, _, _, _ = env.step([cmdx, cmdy])
     rgb = obs["rgb_filled"]
-    depth = (np.clip(obs["depth"], 0.45, 10.0)).astype(np.float32)
+    depth = obs["depth"].astype(np.float32)
+    depth[depth > 10] = np.nan
+    depth[depth < 0.45] = np.nan
     image_message = bridge.cv2_to_imgmsg(rgb, encoding="rgb8")
     depth_raw_image = (obs["depth"] * 1000).astype(np.uint16)
     depth_raw_message = bridge.cv2_to_imgmsg(depth_raw_image, encoding="passthrough")
@@ -74,7 +76,6 @@ def callback_step(data):
 
     # odometry
     odom = env.get_odom()
-    print(odom)
     br.sendTransform((odom[0][0], odom[0][1], 0),
                          tf.transformations.quaternion_from_euler(0, 0, odom[-1][-1]),
                          rospy.Time.now(),
