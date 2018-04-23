@@ -92,6 +92,13 @@ env = TurtlebotNavigateEnv(config = args.config)
 print(env.config)
 
 obs = env.reset()
+
+br.sendTransform((0, 0, 0),
+                         tf.transformations.quaternion_from_euler(0, 0, 0),
+                         rospy.Time.now(),
+                         'base_footprint',
+                         "odom")
+
 rospy.Subscriber("/mobile_base/commands/velocity", Twist, callback)
 rospy.Subscriber("/gibson_ros/sim_clock", Int64, callback_step)
 
