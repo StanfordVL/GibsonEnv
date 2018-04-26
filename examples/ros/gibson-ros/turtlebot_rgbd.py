@@ -93,7 +93,7 @@ def callback_step(data):
         odom_msg.pose.pose.orientation.w = tf.transformations.quaternion_from_euler(0, 0, odom[-1][-1])
 
     odom_msg.twist.twist.linear.x = (cmdx + cmdy) * 5
-    odom_msg.twist.twist.angular.z = (cmdx - cmdy) * 25
+    odom_msg.twist.twist.angular.z = (cmdy - cmdx) * 25
 
     odom_pub.publish(odom_msg)
 
