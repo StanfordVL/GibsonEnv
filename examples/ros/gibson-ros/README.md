@@ -20,4 +20,6 @@ roslaunch gibson-ros turtlebot_hector_mapping.launch #Run hector mapping
 roslaunch gibson-ros turtlebot_navigation.launch #Run the navigation stack, we have provided the map
 ```
 
+The following screenshot is captured when running the gmapping example.
 
+![](misc/slam.png)
