@@ -5,8 +5,8 @@ This is a ros package that contains some examples of using Gibson Env with ros n
  
 ## Setup
  
-1. In this package, we use navigation stack from ros kinect, follow the [instruction](http://wiki.ros.org/kinetic/Installation/Ubuntu) to install ros first.  
-2. Install gibson __from source__ following [installation guide](../../README.md). However, as ros only supports `python2.7` at the moment, you need to create python2.7 virtual environmen instead of python3.5.
+1. In this package, we use navigation stack from ros kinetic, follow the [instruction](http://wiki.ros.org/kinetic/Installation/Ubuntu) to install ros first.  
+2. Install gibson __from source__ following [installation guide](../../README.md). However, as ros only supports `python2.7` at the moment, you need to create python2.7 virtual environment instead of python3.5.
 3. Some minor tweak of `PATH` and `PYTHONPATH` variable maybe required, in particular, `<anaconda installation root>/anaconda/bin` needs to be removed from `PATH`. `/usr/lib/python2.7/dist-packages/`, `/opt/ros/kinetic/lib/python2.7/dist-packages`(ros python libraries),
 `<anaconda installation root>/anaconda2/envs/py27/lib/python2.7/site-packages`(gibson dependencies) and `<gibson root>/gibson` need to be in `PYTHONPATH`.
 4. Finally, copy (or soft link) gibson-ros folder to your `catkin_ws/src` and run catkin_make to index gibson-ros package.
