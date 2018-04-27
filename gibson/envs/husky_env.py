@@ -61,18 +61,16 @@ class HuskyNavigateEnv(CameraRobotEnv):
         feet_collision_cost = 0.0
         for i, f in enumerate(
                 self.robot.feet):  # TODO: Maybe calculating feet contacts could be done within the robot code
-            # print(f.contact_list())
             contact_ids = set((x[2], x[4]) for x in f.contact_list())
-            # print("CONTACT OF '%d' WITH %d" % (contact_ids, ",".join(contact_names)) )
+            #contact_ids = set([x[2] for x in f.contact_list()])
             if (self.ground_ids & contact_ids):
                 # see Issue 63: https://github.com/openai/roboschool/issues/63
                 # feet_collision_cost += self.foot_collision_cost
                 self.robot.feet_contact[i] = 1.0
             else:
                 self.robot.feet_contact[i] = 0.0
-        # print(self.robot.feet_contact)
-
-        electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we 
+        
+        electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())
         electricity_cost  += self.stall_torque_cost * float(np.square(a).mean())
 
 
@@ -81,7 +79,12 @@ class HuskyNavigateEnv(CameraRobotEnv):
         if debugmode:
             print("steering cost", steering_cost)
 
-        wall_contact = [pt for pt in self.robot.parts['base_link'].contact_list() if pt[6][2] > 0.15]
+        wall_contact = []
+        
+        for i, f in enumerate(self.parts):
+            if self.parts[f] not in self.robot.feet:
+                wall_contact += [pt for pt in self.robot.parts[f].contact_list() if pt[6][2] > 0.15]
+        print(len(wall_contact))
         wall_collision_cost = self.wall_collision_cost * len(wall_contact)
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
@@ -165,8 +168,8 @@ class HuskyNavigateSpeedControlEnv(HuskyNavigateEnv):
         #assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
         HuskyNavigateEnv.__init__(self, config, gpu_count)
         self.robot.keys_to_action = {
-            (ord('s'), ): [0.5,0], ## backward
-            (ord('w'), ): [-0.5,0], ## forward
+            (ord('s'), ): [-0.5,0], ## backward
+            (ord('w'), ): [0.5,0], ## forward
             (ord('d'), ): [0,-0.5], ## turn right
             (ord('a'), ): [0,0.5], ## turn left
             (): [0,0]

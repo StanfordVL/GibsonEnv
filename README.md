@@ -237,8 +237,8 @@ More examples can be found in `examples/demo` and `examples/train` folder. A sho
 
 | Example        | Explanation          |
 |:-------------: |:-------------| 
-|`demo/play_ant_camera.py`|Use 1234567890qwertyui keys on your keyboard to control an ant to navigate around Gates building, while RGB and depth camera outputs are also shown. |
-|`demo/play_ant_nonviz.py`| Use 1234567890qwertyui keys on your keyboard to control an ant to navigate around Gates building.|
+|`demo/play_ant_camera.py`|Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building, while RGB and depth camera outputs are also shown. |
+|`demo/play_ant_nonviz.py`| Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building.|
 |`demo/play_drone_camera.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building, while RGB and depth camera outputs are also shown.|
 |`demo/play_drone_nonviz.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building|
 |`demo/play_humanoid_camera.py`| Use 1234567890qwertyui keys on your keyboard to control a humanoid to navigate around Gates building. Just kidding, controlling humaniod with keyboard is too difficult, you can only watch it fall. Press R to reset. RGB and depth camera outputs are also shown. |

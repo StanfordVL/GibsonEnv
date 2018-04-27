@@ -128,7 +128,7 @@ class BaseRobotEnv(BaseEnv):
 
         if not self.ground_ids:
             self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
-                    self.scene.scene_obj_list)
+                    [])
             self.ground_ids = set(self.scene.scene_obj_list)
 
         ## Todo: (hzyjerry) this part is not working, robot_tracking_id = -1
@@ -216,9 +216,9 @@ class BaseRobotEnv(BaseEnv):
 
     def get_eye_pos_orientation(self):
         """Used in CameraEnv.setup"""
-        eye_pos = self.robot.eyes.current_position()
-        x, y, z ,w = self.robot.eyes.current_orientation()
-        eye_quat = quaternions.qmult([w, x, y, z], self.robot.eye_offset_orn)
+        eye_pos = self.robot.eyes.get_position()
+        x, y, z ,w = self.robot.eyes.get_orientation()
+        eye_quat = [w, x, y, z]
         return eye_pos, eye_quat
 
     def move_robot(self, init_x, init_y, init_z):

@@ -92,21 +92,8 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
             keys_to_action = env.get_keys_to_action()
         elif hasattr(env.unwrapped, 'get_keys_to_action'):
             keys_to_action = env.unwrapped.get_keys_to_action()
-        #else:
-        #    assert False, env.spec.id + " does not have explicit key to action mapping, " + \
-        #                  "please specify one manually"
     relevant_keys = set(sum(map(list, keys_to_action.keys()),[]))
-    relevant_keys.add(ord('r'))
-
-    '''
-    if transpose:
-        video_size = env.observation_space.shape[1], env.observation_space.shape[0]
-    else:
-        video_size = env.observation_space.shape[0], env.observation_space.shape[1]
-
-    if zoom is not None:
-        video_size = int(video_size[0] * zoom), int(video_size[1] * zoom)
-    '''
+    
     pressed_keys = []
     running = True
     env_done = True
@@ -115,6 +102,7 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
     record_total = 0
     obs = env.reset()
     do_restart = False
+    last_keys = []              ## Prevent overacting
     while running:
         if do_restart:
             do_restart = False
@@ -147,36 +135,22 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
         pressed_keys = []
 
         for key in key_codes:
-            print(key)
-            if key == ord('r'):
+            if key == ord('r') and key not in last_keys:
                 do_restart = True
-            if key == ord('j'):
+            if key == ord('j') and key not in last_keys:
                 env.robot.turn_left()
-                continue
-            if key == ord('l'):
+            if key == ord('l') and key not in last_keys:
                 env.robot.turn_right()
-                continue
-            if key == ord('i'):
+            if key == ord('i') and key not in last_keys:
                 env.robot.move_forward()
-                continue
-            if key == ord('k'):
+            if key == ord('k') and key not in last_keys:
                 env.robot.move_backward()
-                continue
             if key not in relevant_keys:
                 continue
-            # test events, set key states
-            #print(relevant_keys)
             pressed_keys.append(key) 
             
-            #print(pressed_keys)
-            '''
-            elif event.type == pygame.QUIT:
-                running = False
-            elif event.type == VIDEORESIZE:
-                video_size = event.size
-                screen = pygame.display.set_mode(video_size)
-                print(video_size)
-            '''
+        last_keys = key_codes
+        
 
 class PlayPlot(object):
     def __init__(self, callback, horizon_timesteps, plot_names):

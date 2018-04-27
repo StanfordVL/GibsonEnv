@@ -33,9 +33,9 @@ class BuildingScene(Scene):
         textureID = -1
 
         boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = textureID)
-        p.changeDynamics(boundaryUid, -1, lateralFriction=0.5, spinningFriction=0.1, rollingFriction=0)
+        p.changeDynamics(boundaryUid, -1, lateralFriction=1)
         #print(p.getDynamicsInfo(boundaryUid, -1))
-        self.scene_obj_list = [boundaryUid]
+        self.scene_obj_list = [(boundaryUid, -1)]       # baselink index -1
         
 
         planeName = os.path.join(pybullet_data.getDataPath(), "mjcf/ground_plane.xml")
