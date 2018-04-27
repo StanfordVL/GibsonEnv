@@ -7,7 +7,7 @@ import rospy
 from std_msgs.msg import Float32, Int64
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image, CameraInfo
-
+from nav_msgs.msg import Odometry
 import rospkg
 import numpy as np
 from cv_bridge import CvBridge
@@ -34,6 +34,7 @@ cmdy = 0.0
 image_pub = rospy.Publisher("/gibson_ros/camera/rgb/image",Image, queue_size=10)
 depth_pub = rospy.Publisher("/gibson_ros/camera/depth/image",Image, queue_size=10)
 depth_raw_pub = rospy.Publisher("/gibson_ros/camera/depth/image_raw",Image, queue_size=10)
+odom_pub = rospy.Publisher("/odom",Odometry, queue_size=10)
 
 camera_info_pub = rospy.Publisher("/gibson_ros/camera/depth/camera_info", CameraInfo, queue_size=10)
 bridge = CvBridge()
@@ -81,6 +82,21 @@ def callback_step(data):
                          rospy.Time.now(),
                          'base_footprint',
                          "odom")
+    odom_msg = Odometry()
+    odom_msg.header.stamp = rospy.Time.now()
+    odom_msg.header.frame_id = 'odom'
+    odom_msg.child_frame_id = 'base_footprint'
+
+    odom_msg.pose.pose.position.x = odom[0][0]
+    odom_msg.pose.pose.position.y = odom[0][1]
+    odom_msg.pose.pose.orientation.x, odom_msg.pose.pose.orientation.y, odom_msg.pose.pose.orientation.z, \
+        odom_msg.pose.pose.orientation.w = tf.transformations.quaternion_from_euler(0, 0, odom[-1][-1])
+
+    odom_msg.twist.twist.linear.x = (cmdx + cmdy) * 5
+    odom_msg.twist.twist.angular.z = (cmdy - cmdx) * 25
+
+    odom_pub.publish(odom_msg)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default=config_file)
