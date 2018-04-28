@@ -268,6 +268,7 @@ class CameraRobotEnv(BaseRobotEnv):
     """CameraRobotEnv has full modalities. If it's initialized with mode="SENSOR",
     PC renderer is not initialized to save time.
     """
+    multiprocessing = True
     def __init__(self, config, gpu_count, scene_type, tracking_camera):
         ## The following properties are already instantiated inside xxx_env.py:
         BaseRobotEnv.__init__(self, config, tracking_camera, scene_type, gpu_count)
@@ -491,26 +492,47 @@ class CameraRobotEnv(BaseRobotEnv):
         targets, sources, source_depths, poses = [], [], [], []
         source_semantics = []
 
-        for k,v in tqdm((uuids)):
-            data = self.dataset[v]
-            target, target_depth = data[1], data[3]
-            if self.scale_up !=1:
-                target = cv2.resize(
-                    target,None,
-                    fx=1.0/self.scale_up,
-                    fy=1.0/self.scale_up,
-                    interpolation = cv2.INTER_CUBIC)
-                target_depth =  cv2.resize(
-                    target_depth, None,
-                    fx=1.0/self.scale_up,
-                    fy=1.0/self.scale_up,
-                    interpolation = cv2.INTER_CUBIC)
-            pose = data[-1][0].numpy()
-            targets.append(target)
-            poses.append(pose)
-            sources.append(target)
-            source_depths.append(target_depth)
-
+        if not self.multiprocessing:
+            for k,v in tqdm((uuids)):
+                data = self.dataset[v]
+                target, target_depth = data[1], data[3]
+                if self.scale_up !=1:
+                    target = cv2.resize(
+                        target,None,
+                        fx=1.0/self.scale_up,
+                        fy=1.0/self.scale_up,
+                        interpolation = cv2.INTER_CUBIC)
+                    target_depth =  cv2.resize(
+                        target_depth, None,
+                        fx=1.0/self.scale_up,
+                        fy=1.0/self.scale_up,
+                        interpolation = cv2.INTER_CUBIC)
+                pose = data[-1][0].numpy()
+                targets.append(target)
+                poses.append(pose)
+                sources.append(target)
+                source_depths.append(target_depth)
+        else:
+            all_data = self.dataset.get_multi_index([v for k, v in uuids])
+            for i, data in enumerate(all_data):
+                target, target_depth = data[1], data[3]
+                if self.scale_up !=1:
+                    target = cv2.resize(
+                        target,None,
+                        fx=1.0/self.scale_up,
+                        fy=1.0/self.scale_up,
+                        interpolation = cv2.INTER_CUBIC)
+                    target_depth =  cv2.resize(
+                        target_depth, None,
+                        fx=1.0/self.scale_up,
+                        fy=1.0/self.scale_up,
+                        interpolation = cv2.INTER_CUBIC)
+                pose = data[-1][0].numpy()
+                targets.append(target)
+                poses.append(pose)
+                sources.append(target)
+                source_depths.append(target_depth) 
+        
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
         self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, 
                                        semantics=source_semantics,
