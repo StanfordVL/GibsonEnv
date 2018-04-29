@@ -34,7 +34,7 @@ def is_image_file(filename):
 
 def default_loader(path):
     ## Heavy usage
-    img = cv2.imread(path)#.convert('RGB')
+    img = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)#.convert('RGB')
     #img = Image.open(path)
     return img
 
