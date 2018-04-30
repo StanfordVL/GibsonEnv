@@ -8,10 +8,9 @@ This is a ros package that contains some examples of using Gibson Env with ros n
 1. Install ROS: in this package, we use navigation stack from ros kinetic. Please follow the [instructions](http://wiki.ros.org/kinetic/Installation/Ubuntu).  
 2. Install gibson __from source__ following [installation guide](../../README.md) in __python2.7__. However, as ros only supports `python2.7` at the moment, you need to create python2.7 virtual environment instead of python3.5.
 3. If you use annaconda for setting up python environment, some tweaks of `PATH` and `PYTHONPATH` variable are required to avoid conflict. In particular:
-	1. For `PATH`: `<anaconda installation root>/anaconda/bin` needs to be removed from `PATH`
+	1. For `PATH`: conda related needs to be removed from `PATH`
 	```bash
-	## Remove these paths from $PATH
-	echo $PATH | grep -oP "[^:;]+" | grep conda
+	echo $PATH | grep -oP "[^:;]+" | grep conda	## Remove these paths from $PATH
 	```
 	2. For `PYTHONPATH`: `/usr/lib/python2.7/dist-packages/`, `/opt/ros/kinetic/lib/python2.7/dist-packages`(ros python libraries), `<anaconda installation root>/anaconda2/envs/py27/lib/python2.7/site-packages`(gibson dependencies) and `<gibson root>/gibson` need to be in `PYTHONPATH`.
 4. Finally, copy (or soft link) gibson-ros folder to your `catkin_ws/src` and run catkin_make to index gibson-ros package.
@@ -28,6 +27,13 @@ python -c 'import gibson, rospy, rospkg' #you should be able to do those without
 ```
 
 ## Running
+1. Prepare ROS environment
+```bash
+source /opt/ros/kinetic/setup.bash
+source /home/zhiyang/Development/catkin_ws/devel/setup.bash
+```
+2. Repeat step 3 from Preparation, sanitize `PATH` and `PYTHONPATH`
+3. Enjoy
 ```bash
 roslaunch gibson-ros turtlebot_gmapping.launch #Run gmapping
 roslaunch gibson-ros turtlebot_hector_mapping.launch #Run hector mapping

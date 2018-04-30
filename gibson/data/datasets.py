@@ -1,12 +1,16 @@
 from __future__ import print_function
 import torch.utils.data as data
 from PIL import Image
-import os
+import os, time
 import os.path
+from multiprocessing import Pool
+from functools import partial
+from gibson.core.render.profiler import Profiler
 import errno
 import torch
 import json
 import codecs
+import cv2
 import numpy as np
 import ctypes as ct
 import sys
@@ -29,12 +33,17 @@ def is_image_file(filename):
 
 
 def default_loader(path):
-    img = Image.open(path).convert('RGB')
+    ## Heavy usage
+    img = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)#.convert('RGB')
+    #img = Image.open(path)
     return img
 
 
 def depth_loader(path):
-    img = Image.open(path).convert('I')
+    ## Heavy usage
+    ## TODO: Image.open for depth image is main data loading bottleneck
+    #img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)#.convert('I')
+    img = Image.open(path)
     return img
 
 
@@ -42,6 +51,120 @@ def get_model_path(model_id):
     data_path = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), 'dataset')
     assert (model_id in os.listdir(data_path)) or model_id == 'stadium', "Model {} does not exist".format(model_id)
     return os.path.join(data_path, model_id)
+
+def get_item_fn(inds, select, root, loader, transform, off_3d, target_transform, depth_trans, off_pc_render, dll, train):
+    """ Functional programming version of Dataset.__getitem__
+    The advantage is that it is pickle-friendly and supports python multiprocessing
+    
+    Argument: 
+        inds: tuple of scene index and output index
+    """
+    index, out_i = inds
+    scene = select[index][0][0]
+    uuids = [item[1] for item in select[index]]
+    paths = ([os.path.join(root, scene, 'pano', 'rgb', "point_" + item + "_view_equirectangular_domain_rgb.png") for item in uuids])
+    mist_paths = ([os.path.join(root, scene, 'pano', 'mist', "point_" + item + "_view_equirectangular_domain_mist.png") for item in uuids])
+    normal_paths = ([os.path.join(root, scene, 'pano', 'normal', "point_" + item + "_view_equirectangular_domain_normal.png") for item in uuids])
+    pose_paths = ([os.path.join(root, scene, 'pano', 'points', "point_" + item + ".json") for item in uuids])
+    semantic_paths = ([os.path.join(root, scene, 'pano', 'semantic', "point_" + item + "_view_equirectangular_domain_semantic.png") for item in uuids])
+    poses = []
+    for i, item in enumerate(pose_paths):
+        f = open(item)
+        pose_dict = json.load(f)
+        p = np.concatenate(np.array(pose_dict[1][u'camera_rt_matrix'])).astype(np.float32).reshape((4, 4))
+        rotation = np.array([[0, 1, 0, 0], [0, 0, 1, 0], [-1, 0, 0, 0], [0, 0, 0, 1]])
+        p = np.dot(p, rotation)
+        poses.append(p)
+        f.close()
+
+    img_paths = paths[1:]
+    target_path = paths[0]
+    img_poses = poses[1:]
+    target_pose = poses[0]
+
+    mist_img_paths = mist_paths[1:]
+    mist_target_path = mist_paths[0]
+
+    normal_img_paths = normal_paths[1:]
+    normal_target_path = normal_paths[0]
+
+    semantic_img_paths = semantic_paths[1:]
+    semantic_target_path = semantic_paths[0]
+    poses_relative = []
+
+    semantic_imgs = None
+    semantic_target = None
+
+    normal_imgs = None
+    normal_target = None
+
+    mist_imgs = None
+    mist_target = None
+
+    for pose_i, item in enumerate(img_poses):
+        pose_i = pose_i + 1
+        relative = np.dot(inv(target_pose), item)
+        poses_relative.append(torch.from_numpy(relative))
+    imgs = [loader(item) for item in img_paths]
+    target = loader(target_path)
+
+    if not off_3d:
+        mist_imgs = [depth_loader(item) for item in mist_img_paths]
+        mist_target = depth_loader(mist_target_path)
+        if train:
+            normal_imgs = [loader(item) for item in normal_img_paths]
+            normal_target = loader(normal_target_path)
+
+    org_img = imgs[0].copy()
+
+    if not transform is None:
+        imgs = [transform(item) for item in imgs]
+    if not target_transform is None:
+        target = target_transform(target)
+
+    if not off_3d:
+        mist_imgs = [np.expand_dims(np.array(item).astype(np.float32) / 65536.0, 2) for item in mist_imgs]
+        org_mist = mist_imgs[0][:, :, 0].copy()
+        mist_target = np.expand_dims(np.array(mist_target).astype(np.float32) / 65536.0, 2)
+
+        if not depth_trans is None:
+            mist_imgs = [depth_trans(item) for item in mist_imgs]
+        if not depth_trans is None:
+            mist_target = depth_trans(mist_target)
+
+        if train:
+            if not transform is None:
+                normal_imgs = [transform(item) for item in normal_imgs]
+            if not target_transform is None:
+                normal_target = target_transform(normal_target)
+
+    if not off_pc_render:
+        img = np.array(org_img)
+        h, w, _ = img.shape
+        render = np.zeros((h, w, 3), dtype='uint8')
+        target_depth = np.zeros((h, w)).astype(np.float32)
+        depth = org_mist
+        pose = poses_relative[0].numpy()
+        dll.render(ct.c_int(img.shape[0]),
+                        ct.c_int(img.shape[1]),
+                        img.ctypes.data_as(ct.c_void_p),
+                        depth.ctypes.data_as(ct.c_void_p),
+                        pose.ctypes.data_as(ct.c_void_p),
+                        render.ctypes.data_as(ct.c_void_p),
+                        target_depth.ctypes.data_as(ct.c_void_p)
+                        )
+        if not transform is None:
+            render = transform(Image.fromarray(render))
+        if not depth_trans is None:
+            target_depth = depth_trans(np.expand_dims(target_depth, 2))
+
+    if off_3d:
+        out = (imgs, target, poses_relative)
+    elif off_pc_render:
+        out = (imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, poses_relative)
+    else:
+        out = (imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, poses_relative, render, target_depth)
+    return (out_i, out)
 
 
 class ViewDataSet3D(data.Dataset):
@@ -66,6 +189,8 @@ class ViewDataSet3D(data.Dataset):
         self.select = []
         self.fofn = self.root + '_fofn' + str(int(train)) + '.pkl'
         self.off_pc_render = off_pc_render
+        self.dll = None
+
         if not self.off_pc_render:
             self.dll = np.ctypeslib.load_library('render', '.')
 
@@ -129,31 +254,16 @@ class ViewDataSet3D(data.Dataset):
 
     def get_scene_info(self, index):
         scene = self.scenes[index]
-        # print(scene)
         data = [(i, item) for i, item in enumerate(self.select) if item[0][0] == scene]
-        # print(data)
         uuids = ([(item[1][0][1], item[0]) for item in data])
-        # print(uuids)
-
+        
         pose_paths = (
         [os.path.join(self.root, scene, 'pano', 'points', "point_" + item[0] + ".json") for item in uuids])
         poses = []
-        # print(pose_paths)
         for item in pose_paths:
             f = open(item)
             pose_dict = json.load(f)
-
-            ## Due to an issue of the generation code we're using, camera_rt_matrix of pose_dict[0] has pitch value of pi/2
-            ## (due to panorama stitching). IMPORTANT: use pose_dict[1] here. In bash script, always set NUM_POINTS_NEEDED
-            ## to be greater than 1
-            # p = np.concatenate(np.array(pose_dict[1][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
             p = np.concatenate(np.array(pose_dict[1][u'camera_rt_matrix'])).astype(np.float32).reshape((4, 4))
-
-            # p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
-            # rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
-            ## DEPTH DEBUG
-            # p = p #np.dot(rotation, p)
-            # rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
 
             rotation = np.array([[0, 1, 0, 0], [0, 0, 1, 0], [-1, 0, 0, 0], [0, 0, 0, 1]])
 
@@ -164,17 +274,8 @@ class ViewDataSet3D(data.Dataset):
         return uuids, poses
 
     def __getitem__(self, index):
-        # print(index)
         scene = self.select[index][0][0]
-        # print(scene)
         uuids = [item[1] for item in self.select[index]]
-        # print("selection length", len(self.select), len(self.select[0]))
-        # print(uuids)
-
-        # print(uuids)
-        # poses = ([self.meta[scene][item][1:] for item in uuids])
-        # poses = [item[0] + item[1] for item in poses]
-        # poses = [torch.from_numpy(np.array(item, dtype=np.float32)) for item in poses]
         paths = (
         [os.path.join(self.root, scene, 'pano', 'rgb', "point_" + item + "_view_equirectangular_domain_rgb.png") for
          item in uuids])
@@ -188,20 +289,11 @@ class ViewDataSet3D(data.Dataset):
         semantic_paths = ([os.path.join(self.root, scene, 'pano', 'semantic',
                                         "point_" + item + "_view_equirectangular_domain_semantic.png") for item in
                            uuids])
-        # print(paths)
         poses = []
-        # print(pose_paths)
         for i, item in enumerate(pose_paths):
             f = open(item)
             pose_dict = json.load(f)
-            # p = np.concatenate(np.array(pose_dict[0][u'camera_rt_matrix'] + [[0,0,0,1]])).astype(np.float32).reshape((4,4))
             p = np.concatenate(np.array(pose_dict[1][u'camera_rt_matrix'])).astype(np.float32).reshape((4, 4))
-            # print("from json", np.array(pose_dict[1][u'camera_rt_matrix']))
-            # print('org p', i, p)
-            ## DEPTH DEBUG
-            # rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
-            # p = p#np.dot(rotation, p)
-            # rotation = np.array([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]])
             rotation = np.array([[0, 1, 0, 0], [0, 0, 1, 0], [-1, 0, 0, 0], [0, 0, 0, 1]])
             p = np.dot(p, rotation)
             poses.append(p)
@@ -225,6 +317,12 @@ class ViewDataSet3D(data.Dataset):
         semantic_imgs = None
         semantic_target = None
 
+        normal_imgs = None
+        normal_target = None
+
+        mist_imgs = None
+        mist_target = None
+
         for pose_i, item in enumerate(img_poses):
             pose_i = pose_i + 1
             relative = np.dot(inv(target_pose), item)
@@ -235,26 +333,21 @@ class ViewDataSet3D(data.Dataset):
         if not self.off_3d:
             mist_imgs = [depth_loader(item) for item in mist_img_paths]
             mist_target = depth_loader(mist_target_path)
+            if self.train:      # Optimize
+                normal_imgs = [self.loader(item) for item in normal_img_paths]
+                normal_target = self.loader(normal_target_path)
 
-            normal_imgs = [self.loader(item) for item in normal_img_paths]
-            normal_target = self.loader(normal_target_path)
-
-            '''
-            if self._require_semantics:
-                semantic_imgs = [self.loader(item) for item in semantic_img_paths]
-                semantic_target = self.loader(semantic_target_path)
-            '''
-        org_img = imgs[0].copy()
-
-        if not self.transform is None:
-            imgs = [self.transform(item) for item in imgs]
-        if not self.target_transform is None:
-            target = self.target_transform(target)
+        if not self.off_pc_render:
+            org_img = imgs[0].copy()
+            if not self.transform is None:
+                imgs = [self.transform(item) for item in imgs]
+            if not self.target_transform is None:
+                target = self.target_transform(target)
 
         if not self.off_3d:
-
             mist_imgs = [np.expand_dims(np.array(item).astype(np.float32) / 65536.0, 2) for item in mist_imgs]
-            org_mist = mist_imgs[0][:, :, 0].copy()
+            if not self.off_pc_render:
+                org_mist = mist_imgs[0][:, :, 0].copy()
             mist_target = np.expand_dims(np.array(mist_target).astype(np.float32) / 65536.0, 2)
 
             if not self.depth_trans is None:
@@ -262,16 +355,12 @@ class ViewDataSet3D(data.Dataset):
             if not self.depth_trans is None:
                 mist_target = self.depth_trans(mist_target)
 
-            if not self.transform is None:
-                normal_imgs = [self.transform(item) for item in normal_imgs]
-            if not self.target_transform is None:
-                normal_target = self.target_transform(normal_target)
+            if self.train:
+                if not self.transform is None:
+                    normal_imgs = [self.transform(item) for item in normal_imgs]
+                if not self.target_transform is None:
+                    normal_target = self.target_transform(normal_target)
 
-            '''
-            if not self.semantic_trans is None and self._require_semantics:
-                semantic_imgs = [self.semantic_trans(item) for item in semantic_imgs]
-                semantic_target = self.semantic_trans(semantic_target)
-            '''
         if not self.off_pc_render:
             img = np.array(org_img)
             h, w, _ = img.shape
@@ -295,11 +384,18 @@ class ViewDataSet3D(data.Dataset):
         if self.off_3d:
             return imgs, target, poses_relative
         elif self.off_pc_render:
-            #return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, semantic_imgs, semantic_target, poses_relative
             return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, poses_relative
         else:
-            #return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, semantic_imgs, semantic_target, poses_relative, render, target_depth
             return imgs, target, mist_imgs, mist_target, normal_imgs, normal_target, poses_relative, render, target_depth
+
+    def get_multi_index(self, uuids):
+        indices = range(len(uuids))
+        p = Pool(16)
+        partial_fn = partial(get_item_fn, select=self.select, root=self.root, loader=self.loader, transform=self.transform, off_3d=self.off_3d, target_transform=self.target_transform, depth_trans=self.depth_trans, off_pc_render=self.off_pc_render, dll=self.dll, train=self.train)
+        mapped_pairs = list(tqdm(p.imap(partial_fn, list(zip(uuids, indices))), total=len(uuids)))
+        sorted_pairs = sorted(mapped_pairs, key=lambda x: x[0])
+        out_data = [key_pair[1] for key_pair in sorted_pairs]
+        return out_data
 
     def __len__(self):
         return len(self.select)

@@ -125,8 +125,8 @@ class PCRenderer:
 
         self.socket_mist = self._context_mist.socket(zmq.REQ)
         self.socket_mist.connect("tcp://localhost:{}".format(5555 + gpu_count))
-        self.socket_dept = self._context_dept.socket(zmq.REQ)
-        self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
+        #self.socket_dept = self._context_dept.socket(zmq.REQ)
+        #self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
         if self._require_normal:
             self.socket_norm = self._context_norm.socket(zmq.REQ)
             self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
@@ -135,6 +135,8 @@ class PCRenderer:
             self.socket_semt.connect("tcp://localhost:{}".format(5555 - 3))
 
         self.target_poses = target_poses
+        self.relative_poses = [np.dot(np.linalg.inv(tg), self.target_poses[0]) for tg in target_poses]
+
         self.imgs = imgs
         self.depths = depths
         self.target = target
@@ -321,8 +323,8 @@ class PCRenderer:
         ## Speed bottleneck: 100fps for mist + depth
         self.socket_mist.send_string(s)
         mist_msg = self.socket_mist.recv()
-        self.socket_dept.send_string(s)
-        dept_msg = self.socket_dept.recv()
+        #self.socket_dept.send_string(s)
+        #dept_msg = self.socket_dept.recv()
         if self._require_normal:
             self.socket_norm.send_string(s)
             norm_msg = self.socket_norm.recv()
@@ -342,14 +344,14 @@ class PCRenderer:
         pano = False
         if pano:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((h, w))
-            smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
+            #smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((h, w))
             if self._require_normal:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
             if self._require_semantics:
                 semantic_arr = np.frombuffer(semt_msg, dtype=np.uint32).reshape((n, n, 3))
         else:
             opengl_arr = np.frombuffer(mist_msg, dtype=np.float32).reshape((n, n))
-            smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
+            #smooth_arr = np.frombuffer(dept_msg, dtype=np.float32).reshape((n, n))
             if self._require_normal:
                 normal_arr = np.frombuffer(norm_msg, dtype=np.float32).reshape((n, n, 3))
             if self._require_semantics:
@@ -408,7 +410,7 @@ class PCRenderer:
             show[:] = (show2[:] * 255).astype(np.uint8)
 
         self.target_depth = opengl_arr ## target depth
-        self.smooth_depth = smooth_arr
+        #self.smooth_depth = smooth_arr
         if self._require_normal:
             self.surface_normal = normal_arr
         if self._require_semantics:
@@ -433,36 +435,27 @@ class PCRenderer:
         quat_xyzw = utils.quat_wxyz_to_xyzw(quat_wxyz).tolist()
         return pos, quat_xyzw
 
-    def rankPosesByDistance(self, pose):
-        """ This function is called immediately before renderOffScreen in simple_env
-        (hzyjerry) I know this is really bad style but currently we'll have to stick this way
-        """
-        ## Query physics engine to get [x, y, z, roll, pitch, yaw]
+    def setNewPose(self, pose):
         new_pos, new_quat = pose[0], pose[1]
         self.x, self.y, self.z = new_pos
         self.quat = new_quat
-
         v_cam2world = self.target_poses[0]
         v_cam2cam   = self._getViewerRelativePose()
         self.render_cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
-
-        relative_poses = np.copy(self.target_poses)
-        for i in range(len(relative_poses)):
-            relative_poses[i] = np.dot(np.linalg.inv(relative_poses[i]), self.target_poses[0])
-        self.relative_poses = relative_poses
-
-        poses_after = [self.render_cpose.dot(np.linalg.inv(relative_poses[i])).astype(np.float32) for i in range(len(self.imgs))]
-        pose_after_distance = [np.linalg.norm(rt[:3,-1]) for rt in poses_after]
-        pose_locations = [self.target_poses[i][:3,-1].tolist() for i in range(len(self.imgs))]
-
+        
+    def getAllPoseDist(self, pose):
+        ## Query physics engine to get [x, y, z, roll, pitch, yaw]
+        new_pos, new_quat = pose[0], pose[1]
+        pose_distances = [np.linalg.norm(new_pos - tp[:3, -1]) for tp in self.target_poses]
+        pose_locations = [tp[:3,-1] for tp in self.target_poses]
 
         #topk = (np.argsort(pose_after_distance))[:self.k]
-        return pose_after_distance, pose_locations
+        return pose_distances, pose_locations
 
 
     def renderOffScreen(self, pose, k_views=None):
-        if not k_views:
-            all_dist, _ = self.rankPosesByDistance(pose)
+        if k_views is not None:
+            all_dist, _ = self.getAllPoseDist(pose)
             k_views = (np.argsort(all_dist))[:self.k]
         if set(k_views) != self.old_topk:
             self.imgs_topk = np.array([self.imgs[i] for i in k_views])
@@ -479,7 +472,7 @@ class PCRenderer:
         self.show_rgb = self.show
         self.show_prefilled_rgb = self.show_prefilled
 
-        return self.show_rgb, self.smooth_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_prefilled_rgb
+        return self.show_rgb, self.target_depth[:, :, None], self.show_semantics, self.surface_normal, self.show_prefilled_rgb
 
 
     def renderToScreen(self):

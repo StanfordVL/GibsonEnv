@@ -233,30 +233,34 @@ class BaseRobotEnv(BaseEnv):
         self.camera_x = 0.98*self.camera_x + (1-0.98)*x
         self.camera.move_and_look_at(self.camera_x, y-2.0, 1.4, x, y, 1.0)
 
-    def find_best_k_views(self, eye_pos, all_dist, all_pos):
+    def find_best_k_views(self, eye_pos, all_dist, all_pos, avoid_block=False):
         least_order = (np.argsort(all_dist))
-        if len(all_pos) <= p.MAX_RAY_INTERSECTION_BATCH_SIZE:
-            collisions = list(p.rayTestBatch([eye_pos] * len(all_pos), all_pos))
-        else:
-            collisions = []
-            curr_i = 0
-            while (curr_i < len(all_pos)):
-                curr_n = min(len(all_pos), curr_i + p.MAX_RAY_INTERSECTION_BATCH_SIZE - 1)
-                collisions = collisions + list(p.rayTestBatch([eye_pos] * (curr_n - curr_i), all_pos[curr_i: curr_n]))
-                curr_i = curr_n
-        collisions  = [c[0] for c in collisions]
         top_k = []
-        for i in range(len(least_order)):
-            if len(top_k) >= self.k:
-                break
-            ## (hzyjerry): disabling ray_casting-based view selection because it gives unstable behaviour right now.
-            top_k.append(least_order[i])
-        if len(top_k) < self.k:
-            for o in least_order:
-                if o not in top_k:
-                    top_k.append(o)
-                if len(top_k) >= self.k:
-                    break
+        num_to_test = self.k * 2
+        curr_num = 0
+        all_pos = np.array(all_pos)
+
+        if not avoid_block:
+            return least_order[:self.k]
+
+        while len(top_k) < self.k:
+            curr_order = least_order[curr_num: curr_num + num_to_test]
+            curr_pos =  all_pos[curr_order]
+            print("Curr num", curr_num, "top k", len(top_k), self.k)
+            if len(curr_pos) <= p.MAX_RAY_INTERSECTION_BATCH_SIZE:
+                collisions = list(p.rayTestBatch([eye_pos] * len(curr_pos), curr_pos))
+            else:
+                collisions = []
+                curr_i = 0
+                while (curr_i < len(curr_pos)):
+                    curr_n = min(len(curr_pos), curr_i + p.MAX_RAY_INTERSECTION_BATCH_SIZE - 1)
+                    collisions = collisions + list(p.rayTestBatch([eye_pos] * (curr_n - curr_i), curr_pos[curr_i: curr_n]))
+                    curr_i = curr_n
+            has_collision = [c[0] > 0 for c in collisions]
+            ## (hzyjerry): ray_casting-based view selection occasionally gives unstable behaviour. Will keep watching on this
+            for i, x in enumerate(curr_order):
+                if not has_collision[i]:
+                    top_k.append(x)
         return top_k
 
 
@@ -268,6 +272,7 @@ class CameraRobotEnv(BaseRobotEnv):
     """CameraRobotEnv has full modalities. If it's initialized with mode="SENSOR",
     PC renderer is not initialized to save time.
     """
+    multiprocessing = True
     def __init__(self, config, gpu_count, scene_type, tracking_camera):
         ## The following properties are already instantiated inside xxx_env.py:
         BaseRobotEnv.__init__(self, config, tracking_camera, scene_type, gpu_count)
@@ -450,11 +455,12 @@ class CameraRobotEnv(BaseRobotEnv):
 
         self.render_nonviz_sensor = self.robot.calc_state()
 
-
         if self._require_camera_input:
-            all_dist, all_pos = self.r_camera_rgb.rankPosesByDistance(pose)
-            top_k = self.find_best_k_views(pose[0], all_dist, all_pos)
-            self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+            self.r_camera_rgb.setNewPose(pose)
+            all_dist, all_pos = self.r_camera_rgb.getAllPoseDist(pose)
+            top_k = self.find_best_k_views(pose[0], all_dist, all_pos, avoid_block=False)
+            with Profiler("Render to screen"):
+                self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         observations = {}
         for output in self.config["output"]:
@@ -491,26 +497,47 @@ class CameraRobotEnv(BaseRobotEnv):
         targets, sources, source_depths, poses = [], [], [], []
         source_semantics = []
 
-        for k,v in tqdm((uuids)):
-            data = self.dataset[v]
-            target, target_depth = data[1], data[3]
-            if self.scale_up !=1:
-                target = cv2.resize(
-                    target,None,
-                    fx=1.0/self.scale_up,
-                    fy=1.0/self.scale_up,
-                    interpolation = cv2.INTER_CUBIC)
-                target_depth =  cv2.resize(
-                    target_depth, None,
-                    fx=1.0/self.scale_up,
-                    fy=1.0/self.scale_up,
-                    interpolation = cv2.INTER_CUBIC)
-            pose = data[-1][0].numpy()
-            targets.append(target)
-            poses.append(pose)
-            sources.append(target)
-            source_depths.append(target_depth)
-
+        if not self.multiprocessing:
+            for k,v in tqdm((uuids)):
+                data = self.dataset[v]
+                target, target_depth = data[1], data[3]
+                if self.scale_up !=1:
+                    target = cv2.resize(
+                        target,None,
+                        fx=1.0/self.scale_up,
+                        fy=1.0/self.scale_up,
+                        interpolation = cv2.INTER_CUBIC)
+                    target_depth =  cv2.resize(
+                        target_depth, None,
+                        fx=1.0/self.scale_up,
+                        fy=1.0/self.scale_up,
+                        interpolation = cv2.INTER_CUBIC)
+                pose = data[-1][0].numpy()
+                targets.append(target)
+                poses.append(pose)
+                sources.append(target)
+                source_depths.append(target_depth)
+        else:
+            all_data = self.dataset.get_multi_index([v for k, v in uuids])
+            for i, data in enumerate(all_data):
+                target, target_depth = data[1], data[3]
+                if self.scale_up !=1:
+                    target = cv2.resize(
+                        target,None,
+                        fx=1.0/self.scale_up,
+                        fy=1.0/self.scale_up,
+                        interpolation = cv2.INTER_CUBIC)
+                    target_depth =  cv2.resize(
+                        target_depth, None,
+                        fx=1.0/self.scale_up,
+                        fy=1.0/self.scale_up,
+                        interpolation = cv2.INTER_CUBIC)
+                pose = data[-1][0].numpy()
+                targets.append(target)
+                poses.append(pose)
+                sources.append(target)
+                source_depths.append(target_depth) 
+        
         ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
         self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, 
                                        semantics=source_semantics,
@@ -552,12 +579,12 @@ class CameraRobotEnv(BaseRobotEnv):
         os.chdir(dr_path)
 
         render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
-        render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        #render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
-        self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
+        #self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
         if self._require_normal:
             self.r_camera_norm = subprocess.Popen(shlex.split(render_norm), shell=False)
         if self._require_semantics:
@@ -617,7 +644,7 @@ class SemanticRobotEnv(CameraRobotEnv):
                 tb = tb.tb_next
             print(' %s: %s' %(exctype.__name__, value))
 
-        #sys.excepthook = semantic_excepthook
+        sys.excepthook = semantic_excepthook
         dr_path = osp.join(osp.dirname(osp.abspath(gibson.__file__)), 'core', 'channels', 'depth_render')
         cur_path = os.getcwd()
         os.chdir(dr_path)
