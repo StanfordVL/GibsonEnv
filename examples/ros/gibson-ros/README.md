@@ -30,7 +30,7 @@ python -c 'import gibson, rospy, rospkg' #you should be able to do those without
 1. Prepare ROS environment
 ```bash
 source /opt/ros/kinetic/setup.bash
-source /home/zhiyang/Development/catkin_ws/devel/setup.bash
+source <catkin-workspace-root>/catkin_ws/devel/setup.bash
 ```
 2. Repeat step 3 from Preparation, sanitize `PATH` and `PYTHONPATH`
 3. Enjoy
