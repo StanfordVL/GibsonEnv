@@ -497,7 +497,7 @@ class CameraRobotEnv(BaseRobotEnv):
         targets, sources, source_depths, poses = [], [], [], []
         source_semantics = []
 
-        if not self.multiprocessing:
+        if not self.multiprocessing or self.config["envname"] == "TestEnv":
             for k,v in tqdm((uuids)):
                 data = self.dataset[v]
                 target, target_depth = data[1], data[3]

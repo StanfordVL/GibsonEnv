@@ -496,12 +496,12 @@ class PCRenderer:
             cv2.imshow("Surface Normal", normal)
 
         _render_depth(self.target_depth)
-        _render_depth(self.smooth_depth)
+        #_render_depth(self.smooth_depth)
         _render_rgb(self.show_rgb)
         ## TODO (hzyjerry): does this introduce extra time delay?
         cv2.waitKey(1)
         #return self.show_rgb, self.target_depth[:, :, None]
-        return self.show_rgb, self.smooth_depth[:, :, None]
+        return self.show_rgb, self.target_depth[:, :, None]
 
 
 def show_target(target_img):

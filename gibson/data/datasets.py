@@ -395,6 +395,8 @@ class ViewDataSet3D(data.Dataset):
         mapped_pairs = list(tqdm(p.imap(partial_fn, list(zip(uuids, indices))), total=len(uuids)))
         sorted_pairs = sorted(mapped_pairs, key=lambda x: x[0])
         out_data = [key_pair[1] for key_pair in sorted_pairs]
+        p.close()
+        p.join()
         return out_data
 
     def __len__(self):
