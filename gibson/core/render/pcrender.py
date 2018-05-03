@@ -176,8 +176,8 @@ class PCRenderer:
         if not self.env.config["use_filler"]:
             self.model = None
 
-        self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
-        self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
+        self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz)).cuda()
+        self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz)).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
 
         if gui and not self.env.config["display_ui"]:
@@ -405,7 +405,8 @@ class PCRenderer:
             mask = torch.cat([source_depth, mask], 0)
             self.imgv.data.copy_(source[None])
             self.maskv.data.copy_(mask)
-            recon = model(self.imgv, self.maskv)
+            with torch.no_grad():
+                recon = model(self.imgv, self.maskv)
             show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
             show[:] = (show2[:] * 255).astype(np.uint8)
 
