@@ -20,6 +20,7 @@ As a starter, we provide an example of integrating Gibson with ROS. This is a ro
 Environment Setup
 ============
 
+Here is all the steps you need to perform to install gibson and ros. Note that here you will need to install __from source__ and use __python2.7__. If you did it differntly when installing Gibson, you will need to do it again. python3 is known to not being able to work with ros.
 
 ## Preparation
  
@@ -52,6 +53,7 @@ python -c 'import gibson, rospy, rospkg' #you should be able to do those without
 
 Running
 ===========
+In order to run gibson+ros examples, you will need to perform the following steps:
 
 1. Prepare ROS environment
 ```bash
