@@ -230,25 +230,50 @@ For detailed instructions of rendering semantics in Gibson, see [semantic instru
 **Agreement**: If you choose to use the models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/) for rendering semantics, we ask you to agree to and sign their respective agreements. See [here](https://niessner.github.io/Matterport/) for Matterport3D and [here](https://github.com/alexsax/2D-3D-Semantics) for Stanford 2D3DS.
 
 
-Starter Code
+More Advanced Starting Guide
 ----
 
-More examples can be found in `examples/demo` and `examples/train` folder. A short introduction for each demo is shown below.
+### Starter Agents
+
+Gibson provides a base set of agents:
+<img src=misc/agents.gif>
+
+To enable (optionally) abstracting away low-level control and robot dynamics for high-level tasks, we also provide a set of practical and ideal controllers for each agent.
+
+| Agent Name     | DOF | Information      | Controller |
+|:-------------: | :-------------: |:-------------: |:-------------| 
+| Mujoco Ant      | 8   | [OpenAI Link](https://blog.openai.com/roboschool/) | None |
+| Mujoco Humanoid | 17  | [OpenAI Link](https://blog.openai.com/roboschool/) | None |
+| Husky Robot     | 4   | [ROS](http://wiki.ros.org/Robots/Husky), [Manufacturer](https://www.clearpathrobotics.com/) | Speed, Position |
+| Minitaur Robot  | 8   | [Robot Page](https://www.ghostrobotics.io/copy-of-robots), [Manufacturer](https://www.ghostrobotics.io/) | Sine Controller |
+| JackRabbot      | 2   | [Stanford Project Link](http://cvgl.stanford.edu/projects/jackrabbot/) | Speed, Position |
+| TurtleBot       | 2   | [ROS](http://wiki.ros.org/Robots/TurtleBot), [Manufacturer](https://www.turtlebot.com/) | Speed, Position |
+
+
+
+### Starter Code 
+
+More demonstration examples can be found in `examples/demo` folder
 
 | Example        | Explanation          |
 |:-------------: |:-------------| 
-|`demo/play_ant_camera.py`|Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building, while RGB and depth camera outputs are also shown. |
-|`demo/play_ant_nonviz.py`| Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building.|
-|`demo/play_drone_camera.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building, while RGB and depth camera outputs are also shown.|
-|`demo/play_drone_nonviz.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building|
-|`demo/play_humanoid_camera.py`| Use 1234567890qwertyui keys on your keyboard to control a humanoid to navigate around Gates building. Just kidding, controlling humaniod with keyboard is too difficult, you can only watch it fall. Press R to reset. RGB and depth camera outputs are also shown. |
-|`demo/play_humanoid_nonviz.py`| Watch a humanoid fall. Press R to reset.|
-|`demo/play_husky_camera.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building, while RGB and depth camera outputs are also shown.|
-|`demo/play_husky_nonviz.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building|
-|`train/train_husky_navigate_ppo2.py`|   Use PPO2 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
-|`train/train_husky_navigate_ppo1.py`|   Use PPO1 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
-|`train/train_ant_navigate_ppo1.py`| Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera. |
-|`train/train_ant_climb_ppo1.py`| Use PPO1 to train an ant to climb down the stairs in Gates building, using visual input from the camera.  |
+|`play_ant_camera.py`|Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building, while RGB and depth camera outputs are also shown. |
+|`play_ant_nonviz.py`| Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building.|
+|`play_drone_camera.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building, while RGB and depth camera outputs are also shown.|
+|`play_drone_nonviz.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building|
+|`play_humanoid_camera.py`| Use 1234567890qwertyui keys on your keyboard to control a humanoid to navigate around Gates building. Just kidding, controlling humaniod with keyboard is too difficult, you can only watch it fall. Press R to reset. RGB and depth camera outputs are also shown. |
+|`play_humanoid_nonviz.py`| Watch a humanoid fall. Press R to reset.|
+|`play_husky_camera.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building, while RGB and depth camera outputs are also shown.|
+|`play_husky_nonviz.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building|
+
+More training code can be found in `examples/train` folder.
+
+| Example        | Explanation          |
+|:-------------: |:-------------| 
+|`train_husky_navigate_ppo2.py`|   Use PPO2 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
+|`train_husky_navigate_ppo1.py`|   Use PPO1 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
+|`train_ant_navigate_ppo1.py`| Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera. |
+|`train_ant_climb_ppo1.py`| Use PPO1 to train an ant to climb down the stairs in Gates building, using visual input from the camera.  |
 |`train_ant_gibson_flagrun_ppo1.py`| Use PPO1 to train an ant to chase a target (a red cube) in Gates building. Everytime the ant gets to target(or time out), the target will change position.|
 |`train_husky_gibson_flagrun_ppo1.py`|Use PPO1 to train a car to chase a target (a red cube) in Gates building. Everytime the car gets to target(or time out), the target will change position. |
 
