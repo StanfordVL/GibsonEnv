@@ -352,7 +352,7 @@ class CameraRobotEnv(BaseRobotEnv):
     def _step(self, a):
         t = time.time()
         base_obs, sensor_reward, done, sensor_meta = BaseRobotEnv._step(self, a)
-        dt = time.time() - t    
+        dt = time.time() - t
         # Speed bottleneck
         observations = base_obs
         self.fps = 0.9 * self.fps + 0.1 * 1/dt
