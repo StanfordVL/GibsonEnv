@@ -101,6 +101,10 @@ class BaseRobotEnv(BaseEnv):
             self.windowsz = 512
             self.scale_up = 1
 
+        if "fast_lq_render" in self.config and self.config["fast_lq_render"] == True:
+            self.scale_up *= 2
+        # if fast render, use lower quality point cloud
+
         self._render_width = self.windowsz
         self._render_height = self.windowsz
 
@@ -501,6 +505,10 @@ class CameraRobotEnv(BaseRobotEnv):
             for k,v in tqdm((uuids)):
                 data = self.dataset[v]
                 target, target_depth = data[1], data[3]
+                ww = target.shape[0] // 8 + 2
+                target[:ww, :, :] = target[ww, :, :]
+                target[-ww:, :, :] = target[-ww, :, :]
+
                 if self.scale_up !=1:
                     target = cv2.resize(
                         target,None,
@@ -521,7 +529,12 @@ class CameraRobotEnv(BaseRobotEnv):
             all_data = self.dataset.get_multi_index([v for k, v in uuids])
             for i, data in enumerate(all_data):
                 target, target_depth = data[1], data[3]
+                ww = target.shape[0] // 8 + 2
+                target[:ww, :, :] = target[ww, :, :]
+                target[-ww:, :, :] = target[-ww, :, :]
+
                 if self.scale_up !=1:
+
                     target = cv2.resize(
                         target,None,
                         fx=1.0/self.scale_up,

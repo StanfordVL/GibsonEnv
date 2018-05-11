@@ -9,7 +9,7 @@ is_discrete: true
 
 use_filler: true
 display_ui: true
-show_diagnostics: true
+show_diagnostics: false
 ui_num: 2
 ui_components: [RGB_FILLED, DEPTH]
 random:
@@ -21,7 +21,7 @@ random:
   random_init_rot_range: [-0.1, 0.1]
 
 output: [nonviz_sensor, rgb_filled, depth]
-resolution: 256
+resolution: 128
 
 speed:
   timestep: 0.001
@@ -29,3 +29,4 @@ speed:
 
 mode: gui #gui|headless
 verbose: false
+fast_lq_render: true

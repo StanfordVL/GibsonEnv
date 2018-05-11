@@ -21,7 +21,7 @@ random:
   random_init_rot_range: [-0.1, 0.1]
 
 output: [nonviz_sensor, rgb_filled, depth]
-resolution: 128
+resolution: 256
 
 speed:
   timestep: 0.001
@@ -29,3 +29,5 @@ speed:
 
 mode: headless #gui|headless
 verbose: false
+fast_lq_render: true
+

@@ -16,7 +16,10 @@ if __name__ == '__main__':
     #env = HuskyNavigateEnv(human=True, timestep=timestep, frame_skip=frame_skip, mode="RGB", is_discrete = True, resolution=args.resolution)
     env = HuskyNavigateEnv(config=args.config)
     env.reset()
-
-    while True:
+    frame = 0
+    while frame < 1000:
         with Profiler("env step"):
             env.step(2)
+
+        frame += 1
+        print("frame {}".format(frame))

@@ -165,11 +165,19 @@ class PCRenderer:
 
         self.semtimg_count = 0
 
-        comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
+        if "fast_lq_render" in self.env.config and self.env.config["fast_lq_render"] == True:
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 12)
+        else:
+            comp = CompletionNet(norm=nn.BatchNorm2d, nf=64)
         comp = torch.nn.DataParallel(comp).cuda()
         #comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
-        comp.load_state_dict(
-        torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
+        if "fast_lq_render" in self.env.config and self.env.config["fast_lq_render"] == True:
+            comp.load_state_dict(
+            torch.load(os.path.join(assets_file_dir, "model_small_{}.pth".format(self.env.config["resolution"]))))
+        else:
+            comp.load_state_dict(
+            torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
+
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module
@@ -181,6 +189,7 @@ class PCRenderer:
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
+        self.mean = self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
 
         if gui and not self.env.config["display_ui"]:
             self.renderToScreenSetup()
@@ -403,7 +412,7 @@ class PCRenderer:
             #from IPython import embed; embed()
             source = tf(show)
             mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
-            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
+            source += (1-mask.repeat(3,1,1)) * self.mean
             source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
             mask = torch.cat([source_depth, mask], 0)
             self.imgv.data.copy_(source[None])
