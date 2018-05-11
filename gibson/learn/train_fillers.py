@@ -58,6 +58,7 @@ def main():
     parser.add_argument('--dataroot', required=True, help='path to dataset')
     parser.add_argument('--debug', action='store_true', help='debug mode')
     parser.add_argument('--imgsize', type=int, default=256, help='image size')
+    parser.add_argument('--nf', type=int, default=64, help='number of filters')
     parser.add_argument('--batchsize', type=int, default=20, help='batchsize')
     parser.add_argument('--workers', type=int, default=9, help='number of workers')
     parser.add_argument('--nepoch', type=int, default=50, help='number of epochs')
@@ -111,7 +112,7 @@ def main():
     img_original = Variable(torch.zeros(opt.batchsize, 3, 1024, 2048)).cuda()
     label = Variable(torch.LongTensor(opt.batchsize * 4)).cuda()
 
-    comp = CompletionNet(norm=nn.BatchNorm2d, nf=64)
+    comp = CompletionNet(norm=nn.BatchNorm2d, nf=opt.nf)
 
     current_epoch = opt.cepoch
 
