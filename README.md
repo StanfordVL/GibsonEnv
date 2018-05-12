@@ -27,7 +27,7 @@ Beta
 **This is the <strike>0.1.0</strike> 0.2.0 beta release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
 
 **Dataset**: To make the beta release lighter for the users, we are including a small subset (9) of the spaces in it. 
-The full dataset includes hundreds of spaces which will be made available if we dont get a major bug report during the brief beta release. 
+The [full dataset](gibson/data/README.md) includes 572 spaces and 1440 floors. It will be made available if we dont get a major bug report during the brief beta release. 
 
 Table of contents
 =================
