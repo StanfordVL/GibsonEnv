@@ -564,6 +564,9 @@ class CameraRobotEnv(BaseRobotEnv):
             if self._require_semantics:
                 self.r_camera_semt.terminate()
             while tb:
+                if exctype == KeyboardInterrupt:
+                    print("Exiting Gibson...")
+                    return
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
                 lineno = tb.tb_lineno
@@ -637,6 +640,9 @@ class SemanticRobotEnv(CameraRobotEnv):
             if self._require_semantics:
                 self.r_camera_semt.terminate()
             while tb:
+                if exctype == KeyboardInterrupt:
+                    print("Exiting Gibson...")
+                    return
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
                 lineno = tb.tb_lineno

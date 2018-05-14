@@ -27,7 +27,7 @@ class View(Enum):
 
 class SimpleUI():
     '''Static UI'''
-    def __init__(self, width_col, height_col, windowsz, env=None, save_first=True):
+    def __init__(self, width_col, height_col, windowsz, env=None, save_first=False):
         self.env = env
         self.width  = width_col * windowsz
         self.height = height_col * windowsz

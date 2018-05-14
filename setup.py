@@ -38,7 +38,7 @@ setup(name='gibson',
             'pygame>=1.9.3',
             'opencv-python',
             #'torch>=0.2.0',
-            'torchvision>=0.1.9',
+            'torchvision==0.2.0',
             'aenum'
     ],
     tests_require=[],

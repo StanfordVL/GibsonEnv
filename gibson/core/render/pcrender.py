@@ -357,7 +357,7 @@ class PCRenderer:
             if self._require_semantics:
                 semantic_arr = np.frombuffer(semt_msg, dtype=np.uint32).reshape((n, n, 3))
 
-        debugmode = 1
+        debugmode = 0
         if debugmode and self._require_normal:
             print("Inside show3d: surface normal max", np.max(normal_arr), "mean", np.mean(normal_arr))
 
