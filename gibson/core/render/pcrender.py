@@ -112,6 +112,8 @@ class PCRenderer:
         self.mousedown  = False
         self.overlay    = False
         self.show_depth = False
+
+        self.port = port
         self._context_phys = zmq.Context()
         self._context_mist = zmq.Context()
         self._context_dept = zmq.Context()      ## Channel for smoothed depth
@@ -124,15 +126,15 @@ class PCRenderer:
         self._require_normal = 'normal' in self.env.config["output"] #configs.View.NORMAL in configs.ViewComponent.getComponents()
 
         self.socket_mist = self._context_mist.socket(zmq.REQ)
-        self.socket_mist.connect("tcp://localhost:{}".format(5555 + gpu_count))
+        self.socket_mist.connect("tcp://localhost:{}".format(self.port-1))
         #self.socket_dept = self._context_dept.socket(zmq.REQ)
         #self.socket_dept.connect("tcp://localhost:{}".format(5555 - 1))
         if self._require_normal:
             self.socket_norm = self._context_norm.socket(zmq.REQ)
-            self.socket_norm.connect("tcp://localhost:{}".format(5555 - 2))
+            self.socket_norm.connect("tcp://localhost:{}".format(self.port-2))
         if self._require_semantics:
             self.socket_semt = self._context_semt.socket(zmq.REQ)
-            self.socket_semt.connect("tcp://localhost:{}".format(5555 - 3))
+            self.socket_semt.connect("tcp://localhost:{}".format(self.port-3))
 
         self.target_poses = target_poses
         self.relative_poses = [np.dot(np.linalg.inv(tg), self.target_poses[0]) for tg in target_poses]

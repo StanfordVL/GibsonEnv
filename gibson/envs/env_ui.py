@@ -27,7 +27,7 @@ class View(Enum):
 
 class SimpleUI():
     '''Static UI'''
-    def __init__(self, width_col, height_col, windowsz, env=None, save_first=False):
+    def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=False):
         self.env = env
         self.width  = width_col * windowsz
         self.height = height_col * windowsz
@@ -39,7 +39,7 @@ class SimpleUI():
         self.components = [View[item] for item in self.env.config["ui_components"]]
         self._add_all_images()
         self.record_root = None
-        self.port = 6666
+        self.port = port
         self.nframe = 0
         self.save_first = save_first
         self.context = zmq.Context()
@@ -138,23 +138,23 @@ class OneViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Center,
     '''
-    def __init__(self, windowsz=256, env = None):
+    def __init__(self, windowsz=256, env = None, port=-1):
         self.POS = [
             (0, 0)                 # One
         ]
-        SimpleUI.__init__(self, 1, 1, windowsz, env)
+        SimpleUI.__init__(self, 1, 1, windowsz, port, env)
 
 class TwoViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Left,
     Two: Right
     '''
-    def __init__(self, windowsz=256, env = None):
+    def __init__(self, windowsz=256, env = None, port=-1):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0)           # Two
         ]
-        SimpleUI.__init__(self, 2, 1, windowsz, env)
+        SimpleUI.__init__(self, 2, 1, windowsz, port, env)
 
 class ThreeViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -162,13 +162,13 @@ class ThreeViewUI(SimpleUI):
     Two:    center
     Three:  right
     '''
-    def __init__(self, windowsz=256, env = None):
+    def __init__(self, windowsz=256, env = None, port=-1):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0),          # Two
             (windowsz * 2, 0)       # Three
         ]
-        SimpleUI.__init__(self, 3, 1, windowsz, env)
+        SimpleUI.__init__(self, 3, 1, windowsz, port, env)
 
 class FourViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -177,14 +177,14 @@ class FourViewUI(SimpleUI):
     Three:  bottom left
     Four:   bottom right
     '''
-    def __init__(self, windowsz=256, env = None):
+    def __init__(self, windowsz=256, env = None, port=-1):
         self.POS = [
             (0, 0),                 # One
             (0, windowsz),          # Two
             (windowsz, 0),          # Three
             (windowsz, windowsz)    # Four
         ]
-        SimpleUI.__init__(self, 2, 2, windowsz, env)
+        SimpleUI.__init__(self, 2, 2, windowsz, port, env)
 
 
 def main6():

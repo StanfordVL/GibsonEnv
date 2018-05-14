@@ -216,10 +216,12 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Semantic Source", 'r', "Semantic data source", false, 1);
     cmdp.add<int>("Semantic Color", 'c', "Semantic rendering color scheme", false, 1);
 
+    cmdp.add<int>("Port", 'p', "Local port to render the channel", true, 5556);
     cmdp.parse_check(argc, argv);
 
     std::string model_path = cmdp.get<std::string>("modelpath");
     int GPU_NUM = cmdp.get<int>("GPU");
+    int PORT    = cmdp.get<int>("Port");
     int smooth = cmdp.get<int>("Smooth");
     int normal = cmdp.get<int>("Normal");
     int semantic = cmdp.get<int>("Semantic");
@@ -627,7 +629,7 @@ int main( int argc, char * argv[] )
     zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
     // std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
-    socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
+    socket.bind ("tcp://127.0.0.1:"  + std::to_string(PORT));
     cudaGetDevice( &cudaDevice );
     int g_cuda_device = 0;
     if (GPU_NUM > 0) {

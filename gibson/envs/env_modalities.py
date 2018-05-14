@@ -45,6 +45,7 @@ class BaseRobotEnv(BaseEnv):
     """Based on BaseEnv
     Handles action, reward
     """
+    DEFAULT_PORT = 5556
 
     def __init__(self, config, tracking_camera, scene_type="building", gpu_count=0):
         BaseEnv.__init__(self, config, scene_type, tracking_camera)
@@ -67,6 +68,7 @@ class BaseRobotEnv(BaseEnv):
         if self.gui:
             assert(self.tracking_camera is not None)
         self.gpu_count = gpu_count
+        self.assign_ports()
         self.nframe = 0
         self.eps_reward = 0
 
@@ -75,6 +77,24 @@ class BaseRobotEnv(BaseEnv):
 
         self._robot_introduced = False
         self._scene_introduced = False
+
+    def assign_ports(self):
+        '''Rendering multiple modalities (RGB, depth, normal) needs to be done 
+        on different ports. Assign individual ports to each modality:
+
+        | Rendering | Port         |
+        | RGB       | Default      |
+        | Depth     | Default - 1  |
+        | Normal    | Default - 2  |
+        | Semantics | Default - 3  |
+        | UI        | Default - 4  |
+        Default depends on how many Gibson environments are running simultanously
+        '''
+        self.port_rgb = self.DEFAULT_PORT - self.gpu_count * 4
+        self.port_depth = self.port_rgb - 1
+        self.port_normal = self.port_rgb - 2
+        self.port_sem  = self.port_rgb - 3
+        self.port_ui   = self.port_rgb - 4
 
     def robot_introduce(self, robot):
         self.robot = robot
@@ -287,6 +307,9 @@ class CameraRobotEnv(BaseRobotEnv):
                                      'depth' in self.config["output"] or \
                                      'normal' in self.config["output"] or \
                                      'semantics' in self.config["output"]
+        self._require_rgb = 'rgb_filled' in self.config["output"] or "rgb_prefilled" in self.config["output"]
+        self._require_depth = 'depth' in self.config["output"]
+        self._require_normal = 'depth' in self.config["output"]
         self._require_semantics = 'semantics' in self.config["output"]
         self._semantic_source = 1
         self._semantic_color = 1
@@ -332,7 +355,7 @@ class CameraRobotEnv(BaseRobotEnv):
 
         assert self.config["ui_num"] == len(self.config['ui_components']), "In configuration, ui_num is not equal to the number of ui components"
         if self.config["display_ui"]:
-            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self)
+            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui)
 
 
     def _reset(self):
@@ -538,8 +561,8 @@ class CameraRobotEnv(BaseRobotEnv):
                 sources.append(target)
                 source_depths.append(target_depth) 
         
-        ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, 
+        self.r_camera_rgb = PCRenderer(self.port_rgb, sources, source_depths, target, rts, 
+                                       scale_up=self.scale_up, 
                                        semantics=source_semantics,
                                        gui=self.gui, 
                                        use_filler=self._use_filler,  
@@ -581,10 +604,10 @@ class CameraRobotEnv(BaseRobotEnv):
         cur_path = os.getcwd()
         os.chdir(dr_path)
 
-        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {} -p {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_depth)
         #render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
-        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
-        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {} -p {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_normal)
+        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {} -p {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_sem)
         
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         #self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
@@ -604,20 +627,17 @@ class CameraRobotEnv(BaseRobotEnv):
     def check_port_available(self):
         assert(self._require_camera_input)
         # TODO (hzyjerry)
-        """
-        s = socket.socket()
-        try:
-            s.connect(("127.0.0.1", 5555))
-        except socket.error as e:
-            raise e
-            raise error.Error("gibson starting error: port {} is in use".format(5555))
-        try:
-            s.connect(("127.0.0.1", 5556))
-        except socket.error as e:
-            raise error.Error("gibson starting error: port {} is in use".format(5556))
-        """
-        return
-
+        ports = []
+        if self._require_depth: ports.append(self.port_depth)
+        if self._require_normal: ports.append(self.port_normal)
+        if self._require_semantics: ports.append(self.port_sem)
+        for port in ports:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                result = s.bind(("127.0.0.1", port - 1))
+            except socket.error as e:
+                raise e
+                raise error.Error("Gibson initialization Error: port {} is in use".format(port))
 
 
 class SemanticRobotEnv(CameraRobotEnv):
