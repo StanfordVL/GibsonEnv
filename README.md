@@ -99,13 +99,16 @@ You can either 1. build your own docker image or 2. pull from our docker image. 
 1. Build your own docker image (recommended)
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
-cd GibsonEnv
-wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson 
-./build.sh decompress_data
+cd GibsonEnv/gibson
+wget https://storage.googleapis.com/gibsonassets/assets_core.tar.gz
+tar -zxf assets_core.tar.gz
+cd assets
+wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
+tar -zxf dataset.tar.gz
 ### the commands above downloads assets data file and decpmpress it into gibson/assets folder
 docker build . -t gibson ### finish building inside docker
 ```
-If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to assets folder>:/root/mount/gibson/gibson/assets gibson` to create a container.
+If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson` to create a container.
 
 
 2. Or pull from our docker image
@@ -121,7 +124,7 @@ Instructions to run gibson on a headless server:
 1. Install nvidia-docker2 dependencies following the starter guide.
 2. Use `openssl req -new -x509 -days 365 -nodes -out self.pem -keyout self.pem` create `self.pem` file
 3. `docker build -f Dockerfile_server -t gibson_server .` use the `Dockerfile_server` to build a new docker image that support virtualgl and turbovnc
-4. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to assets folder>:/root/mount/gibson/gibson/assets -p 5901:5901 gibson_server`
+4. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset -p 5901:5901 gibson_server`
 in docker terminal, start `/opt/websockify/run 5901 --web=/opt/noVNC --wrap-mode=ignore -- vncserver :1 -securitytypes otp -otp -noxstartup` in background, potentially with `tmux`
 5. Run gibson with `DISPLAY=:1 vglrun python <gibson example or training>`
 6. Visit your `host:5901` and type in one time password to see the GUI.
@@ -146,17 +149,20 @@ Install required deep learning libraries: Using python3.5 is recommended. You ca
 conda create -n py35 python=3.5 anaconda 
 source activate py35 # the rest of the steps needs to be performed in the conda environment
 conda install -c conda-forge opencv
-pip install http://download.pytorch.org/whl/cu90/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
-pip install torchvision==0.1.9
+pip install http://download.pytorch.org/whl/cu90/torch-0.3.1-cp35-cp35m-linux_x86_64.whl 
+pip install torchvision==0.2.0
 pip install tensorflow==1.3
 ```
 Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
-cd GibsonEnv
-wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson
-./build.sh decompress_data ### decompress data 
-#the commands above downloads assets data file and decpmpress it into gibson/assets folder
+cd GibsonEnv/gibson
+wget https://storage.googleapis.com/gibsonassets/assets_core.tar.gz
+tar -zxf assets_core.tar.gz
+cd assets
+wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
+tar -zxf dataset.tar.gz
+#### the commands above downloads assets data file and decpmpress it into gibson/assets folder
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
 ```

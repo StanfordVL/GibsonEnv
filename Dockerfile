@@ -28,8 +28,8 @@ RUN conda create -y -n py35 python=3.5
 
 ENV PATH /miniconda/envs/py35/bin:$PATH
 
-RUN pip install http://download.pytorch.org/whl/cu90/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
-RUN pip install torchvision
+RUN pip install http://download.pytorch.org/whl/cu90/torch-0.3.1-cp35-cp35m-linux_x86_64.whl 
+RUN pip install torchvision==0.2.0
 RUN pip install tensorflow==1.3
 
 WORKDIR /root
