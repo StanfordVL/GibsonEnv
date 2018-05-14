@@ -40,6 +40,7 @@ Table of contents
         * [Web User Interface](#web-user-interface)
         * [Rendering Semantics](#rendering-semantics)
         * [Advanced Guide](#more-advanced-starting-guide)
+        * [ROS Configuration](#ros-configuration)
    * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
    * [Goggles: transferring the agent to real-world](#goggles-transferring-the-agent-to-real-world)
@@ -184,7 +185,7 @@ Uninstall gibson is easy. If you installed with docker, just run `docker images 
 Quick Start
 =================
 
-First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0.0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson`, you will get an interactive shell. Now you can run a few demos. 
+First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0.0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson`, you will get an interactive shell. Now you can run a few demos. 
 
 If you installed from source, you can run those directly using the following commands without using docker. 
 
@@ -284,6 +285,12 @@ More training code can be found in `examples/train` folder.
 |`train_ant_climb_ppo1.py`| Use PPO1 to train an ant to climb down the stairs in Gates building, using visual input from the camera.  |
 |`train_ant_gibson_flagrun_ppo1.py`| Use PPO1 to train an ant to chase a target (a red cube) in Gates building. Everytime the ant gets to target(or time out), the target will change position.|
 |`train_husky_gibson_flagrun_ppo1.py`|Use PPO1 to train a car to chase a target (a red cube) in Gates building. Everytime the car gets to target(or time out), the target will change position. |
+
+ROS Configuration
+---------
+
+We provide examples of configuring Gibson with ROS [here](examples/ros/gibson-ros). We use turtlebot as an example, after a policy is trained in Gibson, it requires minimal changes to deploy onto a turtlebot. See [README](examples/ros/gibson-ros) for more details.
+
 
 
 
