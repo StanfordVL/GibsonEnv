@@ -285,7 +285,8 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
   int w = gridDim.x * TILE_DIM;
   int h = w /2;
-  
+  int maxsize = oh * ow;
+
   for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
   {
   
@@ -355,7 +356,6 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
      //render[(ty * ow + tx)] = img[ih * w + iw];
      //selection[(ty * ow + tx)] = 1.0;
      
-
      if ((y > 3 * h/16) && (y < (h*13)/16))
      if ((mindelta > - 0.1 * this_depth) && (maxdelta <  0.1 * this_depth) && (this_depth < 10000)) {
            if ((txmax - txmin) * (tymax - tymin) < 500)
@@ -383,9 +383,10 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
                            if (g > 255) g = 255;
                            if (b > 255) b = 255;
 
-                           
-                           render[(ity * ow + itx)] = r * 256 * 256 + g * 256 + b;
-                           selection[(ity * ow + itx)] = 1.0 / abs(det);
+                           if ((ity * ow + itx > 0) && (ity * ow + itx < maxsize)) {
+                               render[(ity * ow + itx)] = r * 256 * 256 + g * 256 + b;
+                               selection[(ity * ow + itx)] = 1.0 / abs(det);
+                           }
                            }
                        }
                        

@@ -8,8 +8,8 @@ fov: 1.57
 is_discrete: true
 
 use_filler: true
-display_ui: true
-show_diagnostics: true
+display_ui: false
+show_diagnostics: false
 ui_num: 2
 ui_components: [RGB_FILLED, DEPTH]
 random:
@@ -27,6 +27,7 @@ speed:
   timestep: 0.001
   frameskip: 10
 
-mode: gui #gui|headless
+mode: headless #gui|headless
 verbose: false
-#fast_lq_render: true
+fast_lq_render: true
+

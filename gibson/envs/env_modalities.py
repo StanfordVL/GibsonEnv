@@ -90,7 +90,7 @@ class BaseRobotEnv(BaseEnv):
         | UI        | Default - 4  |
         Default depends on how many Gibson environments are running simultanously
         '''
-        self.port_rgb = self.DEFAULT_PORT - self.gpu_count * 4
+        self.port_rgb = self.DEFAULT_PORT - self.gpu_count * 5
         self.port_depth = self.port_rgb - 1
         self.port_normal = self.port_rgb - 2
         self.port_sem  = self.port_rgb - 3
@@ -120,6 +120,10 @@ class BaseRobotEnv(BaseEnv):
         else:
             self.windowsz = 512
             self.scale_up = 1
+
+        if "fast_lq_render" in self.config and self.config["fast_lq_render"] == True:
+            self.scale_up *= 2
+        # if fast render, use lower quality point cloud
 
         self._render_width = self.windowsz
         self._render_height = self.windowsz
@@ -375,7 +379,7 @@ class CameraRobotEnv(BaseRobotEnv):
     def _step(self, a):
         t = time.time()
         base_obs, sensor_reward, done, sensor_meta = BaseRobotEnv._step(self, a)
-        dt = time.time() - t    
+        dt = time.time() - t
         # Speed bottleneck
         observations = base_obs
         self.fps = 0.9 * self.fps + 0.1 * 1/dt
@@ -482,8 +486,8 @@ class CameraRobotEnv(BaseRobotEnv):
             self.r_camera_rgb.setNewPose(pose)
             all_dist, all_pos = self.r_camera_rgb.getAllPoseDist(pose)
             top_k = self.find_best_k_views(pose[0], all_dist, all_pos, avoid_block=False)
-            with Profiler("Render to screen"):
-                self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+            #with Profiler("Render to screen"):
+            self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         observations = {}
         for output in self.config["output"]:
@@ -524,6 +528,10 @@ class CameraRobotEnv(BaseRobotEnv):
             for k,v in tqdm((uuids)):
                 data = self.dataset[v]
                 target, target_depth = data[1], data[3]
+                ww = target.shape[0] // 8 + 2
+                target[:ww, :, :] = target[ww, :, :]
+                target[-ww:, :, :] = target[-ww, :, :]
+
                 if self.scale_up !=1:
                     target = cv2.resize(
                         target,None,
@@ -544,7 +552,12 @@ class CameraRobotEnv(BaseRobotEnv):
             all_data = self.dataset.get_multi_index([v for k, v in uuids])
             for i, data in enumerate(all_data):
                 target, target_depth = data[1], data[3]
+                ww = target.shape[0] // 8 + 2
+                target[:ww, :, :] = target[ww, :, :]
+                target[-ww:, :, :] = target[-ww, :, :]
+
                 if self.scale_up !=1:
+
                     target = cv2.resize(
                         target,None,
                         fx=1.0/self.scale_up,

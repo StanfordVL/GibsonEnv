@@ -15,7 +15,7 @@ class PostInstallCommand(install):
 '''
 
 setup(name='gibson',
-    version='0.1.0',
+    version='0.2.0',
     description='Real Environment Developed by Stanford University',
     url='https://github.com/fxia22/realenv',
     author='Stanford University',
@@ -37,7 +37,6 @@ setup(name='gibson',
             'cloudpickle>=0.4.1',
             'pygame>=1.9.3',
             'opencv-python',
-            #'torch>=0.2.0',
             'torchvision==0.2.0',
             'aenum'
     ],

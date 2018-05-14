@@ -137,6 +137,8 @@ class PCRenderer:
             self.socket_semt.connect("tcp://localhost:{}".format(self.port-3))
 
         self.target_poses = target_poses
+        self.pose_locations = np.array([tp[:3,-1] for tp in self.target_poses])
+
         self.relative_poses = [np.dot(np.linalg.inv(tg), self.target_poses[0]) for tg in target_poses]
 
         self.imgs = imgs
@@ -165,11 +167,19 @@ class PCRenderer:
 
         self.semtimg_count = 0
 
-        comp = CompletionNet(norm = nn.BatchNorm2d, nf = 64)
+        if "fast_lq_render" in self.env.config and self.env.config["fast_lq_render"] == True:
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 12)
+        else:
+            comp = CompletionNet(norm=nn.BatchNorm2d, nf=64)
         comp = torch.nn.DataParallel(comp).cuda()
         #comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
-        comp.load_state_dict(
-        torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
+        if "fast_lq_render" in self.env.config and self.env.config["fast_lq_render"] == True:
+            comp.load_state_dict(
+            torch.load(os.path.join(assets_file_dir, "model_small_{}.pth".format(self.env.config["resolution"]))))
+        else:
+            comp.load_state_dict(
+            torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
+
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
         self.model = comp.module
@@ -181,6 +191,7 @@ class PCRenderer:
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
         self.mean = torch.from_numpy(np.array([0.57441127,  0.54226291,  0.50356019]).astype(np.float32))
+        self.mean = self.mean.view(3,1,1).repeat(1,self.showsz,self.showsz)
 
         if gui and not self.env.config["display_ui"]:
             self.renderToScreenSetup()
@@ -390,6 +401,7 @@ class PCRenderer:
 
         #with Profiler("Render: render point cloud"):
         ## Speed bottleneck
+
         _render_pc(opengl_arr, rgbs, show)
         
         # Store prefilled rgb
@@ -401,8 +413,8 @@ class PCRenderer:
             tf = transforms.ToTensor()
             #from IPython import embed; embed()
             source = tf(show)
-            mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0).clone()
-            source += (1-mask.repeat(3,1,1)) * self.mean.view(3,1,1).clone().repeat(1,self.showsz,self.showsz)
+            mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+            source += (1-mask.repeat(3,1,1)) * self.mean
             source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
             mask = torch.cat([source_depth, mask], 0)
             self.imgv.data.copy_(source[None])
@@ -421,14 +433,7 @@ class PCRenderer:
             if debugmode:
                 print("Semantics array", np.max(semantic_arr), np.min(semantic_arr), np.mean(semantic_arr), semantic_arr.shape)
         
-        #Histogram matching happens here
-        #with Profiler("Render: hist matching"):
-        hist_matching = False
-        if hist_matching and is_rgb:
-            template = (show_prefilled/255.0).astype(np.float32)
-            source = (show/255.0).astype(np.float32)
-            source_matched = hist_match3(source, template)
-            show[:] = (source_matched[:] * 255).astype(np.uint8)
+
 
     def renderOffScreenInitialPose(self):
         ## TODO (hzyjerry): error handling
@@ -448,14 +453,14 @@ class PCRenderer:
     def getAllPoseDist(self, pose):
         ## Query physics engine to get [x, y, z, roll, pitch, yaw]
         new_pos, new_quat = pose[0], pose[1]
-        pose_distances = [np.linalg.norm(new_pos - tp[:3, -1]) for tp in self.target_poses]
-        pose_locations = [tp[:3,-1] for tp in self.target_poses]
-
+        pose_distances = np.linalg.norm(self.pose_locations - pose[0].reshape(1,3), axis = 1)
         #topk = (np.argsort(pose_after_distance))[:self.k]
-        return pose_distances, pose_locations
+        return pose_distances, self.pose_locations
 
 
     def renderOffScreen(self, pose, k_views=None):
+
+
         if k_views is not None:
             all_dist, _ = self.getAllPoseDist(pose)
             k_views = (np.argsort(all_dist))[:self.k]
@@ -466,8 +471,7 @@ class PCRenderer:
             #self.semantics_topk = np.array([self.semantics[i] for i in k_views])
             self.old_topk = set(k_views)
 
-        self.show.fill(0)
-
+        #self.show.fill(0)
         self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_prefilled, is_rgb=True)
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
