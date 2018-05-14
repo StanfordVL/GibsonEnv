@@ -108,7 +108,8 @@ tar -zxf dataset.tar.gz
 ### the commands above downloads assets data file and decpmpress it into gibson/assets folder
 docker build . -t gibson ### finish building inside docker
 ```
-If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson` to create a container.
+If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson` to create a container. Note that we don't include
+dataset files in docker image to keep our image slim, so you will need to mount it to the container when you start a container.
 
 
 2. Or pull from our docker image
