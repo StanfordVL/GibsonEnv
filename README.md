@@ -107,6 +107,7 @@ cd assets
 wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
 tar -zxf dataset.tar.gz
 ### the commands above downloads assets data file and decpmpress it into gibson/assets folder
+cd ../.. # back to GibsonEnv dir
 docker build . -t gibson ### finish building inside docker
 ```
 If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson` to create a container. Note that we don't include
@@ -165,6 +166,7 @@ cd assets
 wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
 tar -zxf dataset.tar.gz
 #### the commands above downloads assets data file and decpmpress it into gibson/assets folder
+cd ../.. #back to GibsonEnv dir
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
 ```
