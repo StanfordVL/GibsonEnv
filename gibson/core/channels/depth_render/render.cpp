@@ -468,7 +468,7 @@ int main( int argc, char * argv[] )
             // MTL_loaded = true;
             MTL_loaded = loadPLYtextures(TextObj, material_id);
         } else {
-            MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);    
+            MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);
         }
         if (MTL_loaded == false) { printf("Was not able to load textures\n"); exit(-1); }
         else { printf("Texture file was loaded with success, total: %lu\n", TextObj.size()); }
@@ -493,7 +493,7 @@ int main( int argc, char * argv[] )
             GLubyte color[3];
             unsigned int id = (uint)TextObj[i].textureID;
 
-            if (semantic_clr == 1) 
+            if (semantic_clr == 1)
                 color_coding_RAND(color); // Instance-by-Instance Color Coding
             else if (semantic_clr == 2) {
                 if (semantic_src == 1)      { color_coding_2D3DS(color, id);}   // Stanford 2D3DS
@@ -503,7 +503,7 @@ int main( int argc, char * argv[] )
                 if (semantic_src == 1)      { color_coding_2D3DS_pretty(color, material_name[i]);}
                 else {printf("Invalid code for semantic source.\n"); exit(-1); }
             }
-            
+
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,
                              0,                     //Mipmap number
@@ -551,9 +551,9 @@ int main( int argc, char * argv[] )
     glGenBuffers(1, &uvbuffer);
     if (! ply > 0 && ! semantic > 0) {
         glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-        if (indexed_uvs.size() > 0) glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);    
+        if (indexed_uvs.size() > 0) glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
     }
-    
+
     GLuint normalbuffer;
     glGenBuffers(1, &normalbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
@@ -596,9 +596,9 @@ int main( int argc, char * argv[] )
     glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
     // Give an empty image to OpenGL ( the last "0" means "empty" )
-    if (semantic > 0) { glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0); } 
+    if (semantic > 0) { glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0); }
     else { glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0); }
-    
+
     // Poor filtering
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -618,7 +618,7 @@ int main( int argc, char * argv[] )
     GLenum DrawBuffers[2] = {GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT};
     //GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(2, DrawBuffers); // "1" is the size of DrawBuffers
-      
+
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
       printf("Failed to properly draw buffers. Check your openGL frame buffer settings\n");
@@ -640,8 +640,8 @@ int main( int argc, char * argv[] )
     cudaSetDevice(cudaDevice);
     cudaGLSetGLDevice(cudaDevice);
     cudaGraphicsResource* resource;
-    checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
-    
+    //checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
+
     // std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
     int pose_idx = 0;
     zmq::message_t request;
@@ -669,7 +669,7 @@ int main( int argc, char * argv[] )
 
         //  Wait for next request from client
         socket.recv (&request);
-        
+
         boost::timer t;
 
         std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
@@ -681,12 +681,12 @@ int main( int argc, char * argv[] )
 
         int nSize = windowWidth*windowHeight*3*6;
         int nByte = nSize*sizeof(float);
-        
+
         // --------------------------------------------------------------
         // ---------- RENDERING IN PANORAMA MODE ------------------------
         // ---------- Render to our framebuffer -------------------------
         // --------------------------------------------------------------
-        
+
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -819,7 +819,7 @@ int main( int argc, char * argv[] )
             for (int j = 0; j < windowWidth; j++) {
               for (int k = 0; k < dim; k++) {
                 offset = k;
-                tmp_float = textureReadout[offset + (i * windowWidth + j) * dim];  
+                tmp_float = textureReadout[offset + (i * windowWidth + j) * dim];
                 reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = static_cast<unsigned int>(tmp_float);
               }
               /*
@@ -858,7 +858,7 @@ int main( int argc, char * argv[] )
 
         //if (pano)
         //{
-          /* 
+          /*
             // ==============================================================
             // ========== RENDERING IN PANORAMA MODE=========================
             // ========== CURRENTLY DISABLED ================================
@@ -976,7 +976,7 @@ int main( int argc, char * argv[] )
         //else {
         //}
     } while (true);
-    
+
     // Cleanup VBO and shader
     glDeleteBuffers(1, &vertexbuffer);
     if (!ply > 0 && ! semantic > 0) glDeleteBuffers(1, &uvbuffer);
@@ -984,7 +984,7 @@ int main( int argc, char * argv[] )
     if (semantic > 0) glDeleteBuffers(1, &semanticlayerbuffer);
     glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
-    
+
     glDeleteFramebuffers(1, &FramebufferName);
     glDeleteTextures(1, &renderedTexture);
     glDeleteRenderbuffers(1, &depthrenderbuffer);
