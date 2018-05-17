@@ -125,6 +125,8 @@ class PCRenderer:
         self._require_semantics = 'semantics' in self.env.config["output"]#configs.View.SEMANTICS in configs.ViewComponent.getComponents()
         self._require_normal = 'normal' in self.env.config["output"] #configs.View.NORMAL in configs.ViewComponent.getComponents()
 
+        self._requir_pc = 'rgb_filled' in self.env.config["output"] or 'rgb_prefilled' in self.env.config["output"]
+
         self.socket_mist = self._context_mist.socket(zmq.REQ)
         self.socket_mist.connect("tcp://localhost:{}".format(self.port-1))
         #self.socket_dept = self._context_dept.socket(zmq.REQ)
@@ -471,8 +473,10 @@ class PCRenderer:
             #self.semantics_topk = np.array([self.semantics[i] for i in k_views])
             self.old_topk = set(k_views)
 
+
+
         #self.show.fill(0)
-        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_prefilled, is_rgb=True)
+        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_prefilled, is_rgb=self._requir_pc)
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
         self.show_rgb = self.show
