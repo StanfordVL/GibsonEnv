@@ -62,74 +62,9 @@ class TurtlebotNavigateEnv(CameraRobotEnv):
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
 
-        feet_collision_cost = 0.0
-        for i, f in enumerate(
-                self.robot.feet):  # TODO: Maybe calculating feet contacts could be done within the robot code
-            # print(f.contact_list())
-            contact_ids = set((x[2], x[4]) for x in f.contact_list())
-            # print("CONTACT OF '%d' WITH %d" % (contact_ids, ",".join(contact_names)) )
-            if (self.ground_ids & contact_ids):
-                # see Issue 63: https://github.com/openai/roboschool/issues/63
-                # feet_collision_cost += self.foot_collision_cost
-                self.robot.feet_contact[i] = 1.0
-            else:
-                self.robot.feet_contact[i] = 0.0
-        # print(self.robot.feet_contact)
-
-        electricity_cost  = self.electricity_cost  * float(np.abs(a*self.robot.joint_speeds).mean())  # let's assume we 
-        electricity_cost  += self.stall_torque_cost * float(np.square(a).mean())
-
-
-        steering_cost = self.robot.steering_cost(a)
-        debugmode = 0
-        if debugmode:
-            print("steering cost", steering_cost)
-
-        wall_contact = [pt for pt in self.robot.parts['base_link'].contact_list() if pt[6][2] > 0.15]
-        wall_collision_cost = self.wall_collision_cost * len(wall_contact)
-
-        joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
-        close_to_target = 0
-
-        if self.robot.dist_to_target() < 2:
-            close_to_target = 0.5
-
-        angle_cost = self.robot.angle_cost()
-
-        obstacle_penalty = 0
-        if CALC_OBSTACLE_PENALTY and self._require_camera_input:
-            obstacle_penalty = get_obstacle_penalty(self.robot, self.render_depth)
-
-        debugmode = 0
-        if debugmode:
-            print("angle cost", angle_cost)
-
-        debugmode = 0
-        if (debugmode):
-            print("Wall contact points", len(wall_contact))
-            print("Collision cost", wall_collision_cost)
-            print("electricity_cost", electricity_cost)
-            print("close to target", close_to_target)
-            #print("progress")
-            #print(progress)
-            #print("electricity_cost")
-            #print(electricity_cost)
-            #print("joints_at_limit_cost")
-            #print(joints_at_limit_cost)
-            #print("feet_collision_cost")
-            #print(feet_collision_cost)
 
         rewards = [
-            #alive,
             progress,
-            #wall_collision_cost,
-            close_to_target,
-            steering_cost,
-            angle_cost,
-            obstacle_penalty
-            #electricity_cost,
-            #joints_at_limit_cost,
-            #feet_collision_cost
         ]
         return rewards
 
@@ -138,7 +73,8 @@ class TurtlebotNavigateEnv(CameraRobotEnv):
         pitch = self.robot.get_rpy()[1]
         alive = float(self.robot.alive_bonus(height, pitch))
 
-        done = not alive or self.nframe > 250 or height < 0
+        #done = not alive or self.nframe > 250 or height < 0
+        done = self.nframe > 250
         #if done:
         #    print("Episode reset")
         return done

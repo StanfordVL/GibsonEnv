@@ -6,7 +6,7 @@ os.sys.path.insert(0,parentdir)
 
 import gym, logging
 from mpi4py import MPI
-from gibson.envs.husky_env import HuskyNavigateEnv
+from gibson.envs.mobile_robots_env import TurtlebotNavigateEnv
 from baselines.common import set_global_seeds
 from gibson.utils import pposgd_simple
 import baselines.common.tf_util as U
@@ -28,6 +28,8 @@ from es import CMAES, PEPG
 from tensorboardX import SummaryWriter
 import cv2
 from torch.autograd import Variable
+import transforms3d
+from gibson.core.render.utils import quat_wxyz_to_xyzw
 
 img_size = 128
 fov = 90
@@ -35,6 +37,10 @@ sigma_init = 0.1
 sigma_decay = 0.9999
 popsize = 24
 nparam = 1640
+
+def eular2quat(a,b,c):
+    return quat_wxyz_to_xyzw(transforms3d.euler.euler2quat(a,b,c))
+
 
 class Net(nn.Module):
     def __init__(self):
@@ -94,18 +100,27 @@ class SimpleRNN(Net):
         input = self.inp(F.max_pool1d(input.view(1, 1, 128), 2).view(1,-1)).unsqueeze(1)
         output, hidden = self.rnn(input, hidden)
         output = self.out(output.squeeze(1))
-        return output, hidden
+        return output#, hidden
 
 
 def main(args):
     writer = SummaryWriter()
-    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'configs', 'husky_navigate_depth.yaml')
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'configs', 'turtlebot_navigate_depth.yaml')
     print(config_file)
-    env = HuskyNavigateEnv(gpu_count=args.gpu_count, config=config_file)
+    env = TurtlebotNavigateEnv(gpu_count=args.gpu_count, config=config_file)
 
     solver = CMAES(nparam,
                 sigma_init=sigma_init,
                 popsize=popsize)
+
+
+    angle = [-0.2 * np.pi, 0, 0.2 * np.pi]
+    orn = env.config["initial_orn"]
+    #print(orientations)
+    #print(eular2quat(orientations[0], orientations[1], orientations[2]))
+    orns = []
+    for i in range(3):
+        orns.append(eular2quat(orn[0],orn[1],orn[2] + angle[i]))
 
     for generation in range(200):
         solutions = solver.ask()
@@ -114,36 +129,43 @@ def main(args):
         rewards = np.zeros(solver.popsize)
 
         for i in range(popsize):
-            net = SimpleRNN()
-            net.restore(solutions[i])
 
-
-            obs = env.reset()
-            done = False
             reward_episode = []
-            hidden = None
-            while not done:
-                laser = np.mean(obs['depth'][img_size // 2 - 4: img_size // 2 + 4, :, 0], axis=0)
-                #print(laser)
-                laser_image = np.zeros((128,128))
-                laser_idx = np.clip(laser * 5, 0, 127).astype(np.int32)
-                laser_image[np.arange(0,128), laser_idx] = 1
-                cv2.imshow("laser", laser_image)
-                cv2.waitKey(1)
-                laser = torch.Tensor(laser).view(1, 1, 128)
-                action, hidden = net.step(laser, hidden)
-                action = action.squeeze()
-                #print(action)
-                action = action.data.max(0)[1][0]
 
-                #from IPython import embed; embed()
-                obs, rew, done, meta = env.step(action)
-                #print(rew)
-                #print(action,rew)
-                #print(laser)
-                reward_episode.append(rew)
-                #from IPython import embed; embed()
+            for j in range(3):
+                net = SimpleRNN()
+                net.restore(solutions[i])
 
+                env.reset()
+                #orn = env.robot.get_orientation()
+                #print(orn)
+                env.robot.reset_new_pos(env.robot.get_position(), orns[j])
+
+                done = False
+
+                obs, _, _, _ = env.step(4)
+
+                while not done:
+                    laser = np.mean(obs['depth'][img_size // 2 - 4: img_size // 2 + 4, :, 0], axis=0)
+                    #print(laser)
+                    laser_image = np.zeros((128,128))
+                    laser_idx = np.clip(laser * 5, 0, 127).astype(np.int32)
+                    laser_image[np.arange(0,128), laser_idx] = 1
+                    cv2.imshow("laser", laser_image)
+                    cv2.waitKey(1)
+                    laser = torch.Tensor(laser).view(1, 1, 128)
+                    action = net.step(laser).squeeze()
+                    #print(action)
+                    action = action.data.max(0)[1][0]
+
+                    #from IPython import embed; embed()
+                    obs, rew, done, meta = env.step(action)
+                    #print(rew)
+                    #print(action,rew)
+                    #print(laser)
+                    reward_episode.append(rew)
+                    #from IPython import embed; embed()
+            #print(reward_episode)
             rewards[i] = np.mean(np.array(reward_episode))
 
         solver.tell(rewards)

@@ -124,10 +124,10 @@ class HuskyNavigateEnv(CameraRobotEnv):
             #alive,
             progress,
             #wall_collision_cost,
-            close_to_target,
-            steering_cost,
-            angle_cost,
-            obstacle_penalty
+            #close_to_target,
+            #steering_cost,
+            #angle_cost,
+            #obstacle_penalty
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
