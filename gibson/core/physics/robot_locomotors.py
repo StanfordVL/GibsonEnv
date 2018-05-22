@@ -110,13 +110,25 @@ class WalkerBase(BaseRobot):
         return self.robot_body.bp_pose.rpy()
 
     def apply_action(self, a):
-        print(self.ordered_joints)
+        #print(self.ordered_joints)
         if self.control == 'torque':
             for n, j in enumerate(self.ordered_joints):
                 j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
         elif self.control == 'velocity':
             for n, j in enumerate(self.ordered_joints):
                 j.set_motor_velocity(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
+        elif self.control == 'position':
+            for n, j in enumerate(self.ordered_joints):
+                j.set_motor_position(a[n])
+        elif type(self.control) is list or type(self.control) is tuple: #if control is a tuple, set different control
+        # type for each joint
+            for n, j in enumerate(self.ordered_joints):
+                if self.control[n] == 'torque':
+                    j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
+                elif self.control[n] == 'velocity':
+                    j.set_motor_velocity(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
+                elif self.control[n] == 'position':
+                    j.set_motor_position(a[n])
         else:
             pass
 
@@ -796,17 +808,17 @@ class JR2(WalkerBase):
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"],
                             resolution=config["resolution"],
-                            control='velocity',
+                            control=['velocity', 'velocity', 'position', 'position'],
                             env=env)
         self.is_discrete = config["is_discrete"]
 
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
             self.vel = 0.01
-            self.action_list = [[self.vel, self.vel,0,0],
-                                [-self.vel, -self.vel,0,0],
-                                [self.vel, -self.vel,0,0],
-                                [-self.vel, self.vel,0,0],
+            self.action_list = [[self.vel, self.vel,0,0.2],
+                                [-self.vel, -self.vel,0,-0.2],
+                                [self.vel, -self.vel,-0.5,0],
+                                [-self.vel, self.vel,0.5,0],
                                 [0, 0,0,0]]
 
             self.setup_keys_to_action()

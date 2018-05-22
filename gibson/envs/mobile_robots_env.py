@@ -515,6 +515,8 @@ class JR2NavigateEnv(CameraRobotEnv):
         self._flag_reposition()
         return obs
 
+    def get_odom(self):
+        return np.array(self.robot.body_xyz) - np.array(self.config["initial_pos"]), np.array(self.robot.body_rpy)
 
 def get_obstacle_penalty(robot, depth):
     screen_sz = robot.obs_dim[0]
