@@ -110,7 +110,7 @@ class WalkerBase(BaseRobot):
         return self.robot_body.bp_pose.rpy()
 
     def apply_action(self, a):
-        print(self.ordered_joints)
+        #print(self.ordered_joints)
         if self.control == 'torque':
             for n, j in enumerate(self.ordered_joints):
                 j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
