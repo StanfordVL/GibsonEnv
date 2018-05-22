@@ -155,7 +155,7 @@ class BaseRobot:
         self.robot_body.reset_position(new_pos)
 
 
-    def reset_new_pos(self, pos, orn):
+    def reset_new_pose(self, pos, orn):
         self.robot_body.reset_orientation(orn)
         self.robot_body.reset_position(pos)        
 
