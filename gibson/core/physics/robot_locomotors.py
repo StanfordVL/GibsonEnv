@@ -802,12 +802,12 @@ class JR2(WalkerBase):
 
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
-            self.vel = 0.1
-            self.action_list = [[self.vel, self.vel],
-                                [-self.vel, -self.vel],
-                                [self.vel, -self.vel],
-                                [-self.vel, self.vel],
-                                [0, 0]]
+            self.vel = 0.01
+            self.action_list = [[self.vel, self.vel,0,0],
+                                [-self.vel, -self.vel,0,0],
+                                [self.vel, -self.vel,0,0],
+                                [-self.vel, self.vel,0,0],
+                                [0, 0,0,0]]
 
             self.setup_keys_to_action()
         else:

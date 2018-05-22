@@ -288,6 +288,9 @@ class Joint:
             self.upperLimit *= self.scale
             self.lowerLimit *= self.scale
 
+    def __str__(self):
+        return "idx: {}, name: {}".format(self.jointIndex, self.joint_name)
+
     def get_state(self):
         """Get state of joint
            Position is defined in real world scale """
