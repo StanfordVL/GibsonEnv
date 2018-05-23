@@ -39,7 +39,7 @@ DEFAULT_DEBUG_CAMERA = {
     'z_offset': 0
 }
 
-DEPTH_SCALE_FACTOR = 15
+DEPTH_SCALE_FACTOR = 45
 
 class BaseRobotEnv(BaseEnv):
     """Based on BaseEnv
@@ -58,6 +58,7 @@ class BaseRobotEnv(BaseEnv):
 
         self.scale_up  = 4
         self.dataset  = ViewDataSet3D(
+            root = "/mnt/sdc/Gibson_Models/572_processed/",
             transform = np.array,
             mist_transform = np.array,
             seqlen = 2,
@@ -346,7 +347,7 @@ class CameraRobotEnv(BaseRobotEnv):
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
         self.r_camera_dep = None
-        self.check_port_available()
+        #self.check_port_available()
         self.setup_camera_multi()
         self.setup_camera_rgb()
         
@@ -359,7 +360,7 @@ class CameraRobotEnv(BaseRobotEnv):
 
         assert self.config["ui_num"] == len(self.config['ui_components']), "In configuration, ui_num is not equal to the number of ui components"
         if self.config["display_ui"]:
-            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui)
+            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui, model_id=self.config["model_id"], point_num=self.config["point_num"])
 
 
     def _reset(self):
@@ -649,8 +650,7 @@ class CameraRobotEnv(BaseRobotEnv):
             try:
                 result = s.bind(("127.0.0.1", port - 1))
             except socket.error as e:
-                raise e
-                raise error.Error("Gibson initialization Error: port {} is in use".format(port))
+                raise error.Error("Gibson initialization Error: port {} is in use".format(port), e)
 
 
 class SemanticRobotEnv(CameraRobotEnv):
@@ -659,6 +659,7 @@ class SemanticRobotEnv(CameraRobotEnv):
 
     def robot_introduce(self, robot):
         CameraRobotEnv.robot_introduce(self, robot)
+        assert self._require_semantics, "Please include 'semantics' in your config output."
         self.setup_semantic_parser()
 
     def setup_semantic_parser(self):

@@ -48,7 +48,8 @@ def depth_loader(path):
 
 
 def get_model_path(model_id):
-    data_path = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), 'dataset')
+    data_path = "/mnt/sdc/Gibson_Models/572_processed/"
+    #data_path = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), 'dataset')
     assert (model_id in os.listdir(data_path)) or model_id == 'stadium', "Model {} does not exist".format(model_id)
     return os.path.join(data_path, model_id)
 

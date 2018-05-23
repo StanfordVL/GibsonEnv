@@ -15,6 +15,8 @@ import sys
 import zmq
 import pickle
 
+DISCOUNT = 4
+
 class View(Enum):
     EMPTY = 0
     RGB_FILLED = 1
@@ -27,7 +29,7 @@ class View(Enum):
 
 class SimpleUI():
     '''Static UI'''
-    def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=False):
+    def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=False, model_id=None, point_num=1):
         self.env = env
         self.width  = width_col * windowsz
         self.height = height_col * windowsz
@@ -42,8 +44,11 @@ class SimpleUI():
         self.port = port
         self.nframe = 0
         self.save_first = save_first
+        self.model_id = model_id
+        self.point_num = point_num
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PUB)
+        #self.start_record()
         self.socket.bind("tcp://*:%s" % self.port)
 
     def _close(self):
@@ -87,9 +92,11 @@ class SimpleUI():
             if cmd == ord('q'):
                 self.end_record()
 
-            img = np.uint8(self.screen_arr)
-            cv2.imshow("Recording", img)
-            if self.is_recording:
+        img = np.uint8(np.transpose(self.screen_arr, (1, 0, 2)))
+            #cv2.imshow("Recording", img)
+        if self.is_recording:
+            self.frame += 1
+            if self.frame % DISCOUNT == 0:
                 self.curr_output.write(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         #with Profiler("Refreshing"):
         pygame.display.flip()
@@ -100,9 +107,6 @@ class SimpleUI():
         #from IPython import embed; embed()
         
         self.socket.send(b"ui" + screen)
-
-
-
         #surf = pygame.surfarray.make_surface(self.screen_arr)
         #self.screen.blit(surf, (0, 0))
         #pygame.display.update()
@@ -114,15 +118,15 @@ class SimpleUI():
             return    # prevent double enter
         fourcc = cv2.VideoWriter_fourcc(*'MJPG') # 'XVID' smaller
         file_keyword = datetime.now()
-        filename = 'record-{}.avi'.format(file_keyword)
-        filepath = os.path.join(self.RECORD_ROOT, filename)
-
+        filename = '{}-{:0>6d}.avi'.format(self.model_id, self.point_num)
+        filepath = os.path.join("recording", filename)
+        self.frame = 0
+        '''
         foldername = 'record-{}'.format(file_keyword)
         folderpath = os.path.join(self.RECORD_ROOT, foldername)
-
+        '''
         #os.mkdir(folderpath)
-        self.curr_output = cv2.VideoWriter(filepath, fourcc, 22.0, self.UI_DIM)
-
+        self.curr_output = cv2.VideoWriter(filepath, fourcc, 100.0 / DISCOUNT, self.UI_DIM)
         self.is_recording = True
 
     def make_video(self):
@@ -138,23 +142,25 @@ class OneViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Center,
     '''
-    def __init__(self, windowsz=256, env = None, port=-1):
+    def __init__(self, windowsz=256, env = None, port=-1, model_id=None, point_num=1):
         self.POS = [
             (0, 0)                 # One
         ]
-        SimpleUI.__init__(self, 1, 1, windowsz, port, env)
+        self.UI_DIM = (int(windowsz), int(windowsz))
+        SimpleUI.__init__(self, 1, 1, windowsz, port, env, model_id=model_id, point_num=point_num)
 
 class TwoViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Left,
     Two: Right
     '''
-    def __init__(self, windowsz=256, env = None, port=-1):
+    def __init__(self, windowsz=256, env = None, port=-1, model_id=None, point_num=1):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0)           # Two
         ]
-        SimpleUI.__init__(self, 2, 1, windowsz, port, env)
+        self.UI_DIM = (2 *int(windowsz), int(windowsz))
+        SimpleUI.__init__(self, 2, 1, windowsz, port, env, model_id=model_id, point_num=point_num)
 
 class ThreeViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -162,13 +168,14 @@ class ThreeViewUI(SimpleUI):
     Two:    center
     Three:  right
     '''
-    def __init__(self, windowsz=256, env = None, port=-1):
+    def __init__(self, windowsz=256, env = None, port=-1, model_id=None, point_num=1):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0),          # Two
             (windowsz * 2, 0)       # Three
         ]
-        SimpleUI.__init__(self, 3, 1, windowsz, port, env)
+        self.UI_DIM = (3 *int(windowsz), int(windowsz))
+        SimpleUI.__init__(self, 3, 1, windowsz, port, env, model_id=model_id, point_num=point_num)
 
 class FourViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -177,14 +184,15 @@ class FourViewUI(SimpleUI):
     Three:  bottom left
     Four:   bottom right
     '''
-    def __init__(self, windowsz=256, env = None, port=-1):
+    def __init__(self, windowsz=256, env = None, port=-1, model_id=None, point_num=1):
         self.POS = [
             (0, 0),                 # One
             (0, windowsz),          # Two
             (windowsz, 0),          # Three
             (windowsz, windowsz)    # Four
         ]
-        SimpleUI.__init__(self, 2, 2, windowsz, port, env)
+        self.UI_DIM = (2 * int(windowsz), 2 * int(windowsz))
+        SimpleUI.__init__(self, 2, 2, windowsz, port, env, model_id=model_id, point_num=point_num)
 
 
 def main6():
