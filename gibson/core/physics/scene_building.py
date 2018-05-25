@@ -30,9 +30,17 @@ class BuildingScene(Scene):
         magnified = [2, 2, 2]
 
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        textureID = -1
 
-        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = textureID)
+
+        view_only_mesh = os.path.join(get_model_path(model_id), "mesh_view_only_z_up.obj")
+        if os.path.exists(view_only_mesh):
+            visualId = p.createVisualShape(p.GEOM_MESH,
+                                       fileName=view_only_mesh,
+                                       meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+        else:
+            visualId = -1
+
+        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
         p.changeDynamics(boundaryUid, -1, lateralFriction=1)
         #print(p.getDynamicsInfo(boundaryUid, -1))
         self.scene_obj_list = [(boundaryUid, -1)]       # baselink index -1
