@@ -1,9 +1,9 @@
 envname: HuskyNavigateEnv
-model_id: space7
+model_id: MBvEuugEk8G
 target_orn: [0, 0, 1.57]
 target_pos: [-14.3, 45.07, 0.5]
 initial_orn: [0, 0, 4.71]
-initial_pos: [-14.3, 5, 1.2]
+initial_pos: [ 0, 0, 1.3577029705047607]
 fov: 1.57
 is_discrete: true
 

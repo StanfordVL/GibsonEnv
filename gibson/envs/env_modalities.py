@@ -63,7 +63,7 @@ class BaseRobotEnv(BaseEnv):
             seqlen = 2,
             off_3d = False,
             train = False,
-            overwrite_fofn=True, env = self)
+            overwrite_fofn=True, env = self, only_load = self.config["model_id"])
         self.ground_ids = None
         if self.gui:
             assert(self.tracking_camera is not None)
