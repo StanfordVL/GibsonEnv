@@ -15,8 +15,8 @@ import subprocess, os, signal
 import numpy as np
 import sys
 import zmq
-import pygame
-from pygame import surfarray
+#import pygame
+#from pygame import surfarray
 import socket
 import shlex
 import gym
@@ -39,7 +39,8 @@ DEFAULT_DEBUG_CAMERA = {
     'z_offset': 0
 }
 
-DEPTH_SCALE_FACTOR = 45
+DEPTH_SCALE_FACTOR = 35
+DEPTH_OFFSET_FACTOR = 20
 
 class BaseRobotEnv(BaseEnv):
     """Based on BaseEnv
@@ -57,8 +58,9 @@ class BaseRobotEnv(BaseEnv):
         self.robot_tracking_id = -1
 
         self.scale_up  = 4
+        self.root = config["root"] if "root" in config.keys() else "/media/Drive3/Gibson_Models/572_processed"
         self.dataset  = ViewDataSet3D(
-            root = "/mnt/sdc/Gibson_Models/572_processed/",
+            root = self.root,
             transform = np.array,
             mist_transform = np.array,
             seqlen = 2,
@@ -205,11 +207,11 @@ class BaseRobotEnv(BaseEnv):
         if debugmode:
             print("Eps frame {} reward {}".format(self.nframe, self.reward))
             print("position", self.robot.get_position())
-        if self.gui:
-            pos = self.robot._get_scaled_position()
-            orn = self.robot.get_orientation()
-            pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
-            p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
+        #if self.gui:
+        pos = self.robot._get_scaled_position()
+        orn = self.robot.get_orientation()
+        pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
+        p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
 
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
@@ -241,7 +243,9 @@ class BaseRobotEnv(BaseEnv):
 
     def get_eye_pos_orientation(self):
         """Used in CameraEnv.setup"""
+        offset = 0.6
         eye_pos = self.robot.eyes.get_position()
+        eye_pos[2] += offset
         x, y, z ,w = self.robot.eyes.get_orientation()
         eye_quat = [w, x, y, z]
         return eye_pos, eye_quat
@@ -328,10 +332,11 @@ class CameraRobotEnv(BaseRobotEnv):
         self._require_normal = 'normal' in self.config["output"]
 
         #if self._require_camera_input:
-        self.model_path = get_model_path(self.model_id)
+        self.model_path = os.path.join(self.root, self.model_id) #get_model_path(self.model_id)
 
         self.save_frame  = 0
         self.fps = 0
+        self.is_record = True
 
 
     def robot_introduce(self, robot):
@@ -360,7 +365,9 @@ class CameraRobotEnv(BaseRobotEnv):
 
         assert self.config["ui_num"] == len(self.config['ui_components']), "In configuration, ui_num is not equal to the number of ui components"
         if self.config["display_ui"]:
-            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui, model_id=self.config["model_id"], point_num=self.config["point_num"])
+            point_num = 0
+            if "point_num" in self.config.keys(): point_num = self.config["point_num"]
+            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui, model_id=self.config["model_id"], point_num=point_num)
 
 
     def _reset(self):
@@ -377,7 +384,7 @@ class CameraRobotEnv(BaseRobotEnv):
     def add_text(self, img):
         return img
 
-    def _step(self, a):
+    def _step(self, a, record=True):
         t = time.time()
         base_obs, sensor_reward, done, sensor_meta = BaseRobotEnv._step(self, a)
         dt = time.time() - t
@@ -390,7 +397,7 @@ class CameraRobotEnv(BaseRobotEnv):
         sensor_meta.pop("eye_quat", None)
         #sensor_meta["sensor"] = sensor_state
 
-        if not self._require_camera_input or self.test_env:
+        if not self._require_camera_input or self.test_env or not self.is_record:
             return base_obs, sensor_reward, done, sensor_meta
 
         if self.config["show_diagnostics"]:
@@ -421,12 +428,12 @@ class CameraRobotEnv(BaseRobotEnv):
         if tag == View.RGB_PREFILLED:
             return self.render_rgb_prefilled
         if tag == View.DEPTH:
-            scaled_depth = self.render_depth * DEPTH_SCALE_FACTOR
+            scaled_depth = self.render_depth * DEPTH_SCALE_FACTOR + DEPTH_OFFSET_FACTOR
             return scaled_depth
         if tag == View.NORMAL:
             return self.render_normal
         if tag == View.SEMANTICS:
-            print("Render components: semantics", np.mean(self.render_semantics))
+            #print("Render components: semantics", np.mean(self.render_semantics))
             return self.render_semantics
 
     def render_to_UI(self):
@@ -482,8 +489,7 @@ class CameraRobotEnv(BaseRobotEnv):
         '''
 
         self.render_nonviz_sensor = self.robot.calc_state()
-
-        if self._require_camera_input:
+        if self._require_camera_input and self.is_record:
             self.r_camera_rgb.setNewPose(pose)
             all_dist, all_pos = self.r_camera_rgb.getAllPoseDist(pose)
             top_k = self.find_best_k_views(pose[0], all_dist, all_pos, avoid_block=False)
@@ -740,7 +746,7 @@ class SemanticRobotEnv(CameraRobotEnv):
         return CameraRobotEnv.step(self, action)
 
 
-STR_TO_PYGAME_KEY = {
+'''STR_TO_PYGAME_KEY = {
     'a': pygame.K_a,
     'b': pygame.K_b,
     'c': pygame.K_c,
@@ -768,3 +774,4 @@ STR_TO_PYGAME_KEY = {
     'y': pygame.K_y,
     'z': pygame.K_z,
 }
+'''

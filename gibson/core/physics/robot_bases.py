@@ -123,6 +123,7 @@ class BaseRobot:
         if self.robot_ids is None:
             self._load_model()
         
+        print("Reset", self.config["initial_pos"], self.config["initial_orn"])
         self.robot_body.reset_orientation(quatToXYZW(euler2quat(*self.config["initial_orn"]), 'wxyz'))
         self.robot_body.reset_position(self.config["initial_pos"])
         self.reset_random_pos()

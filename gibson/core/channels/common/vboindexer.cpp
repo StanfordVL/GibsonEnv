@@ -29,12 +29,12 @@ bool getSimilarVertexIndex(
         if (
             is_near( in_vertex.x , out_vertices[i].x ) &&
             is_near( in_vertex.y , out_vertices[i].y ) &&
-            is_near( in_vertex.z , out_vertices[i].z ) &&
-            is_near( in_uv.x     , out_uvs     [i].x ) &&
-            is_near( in_uv.y     , out_uvs     [i].y ) &&
-            is_near( in_normal.x , out_normals [i].x ) &&
-            is_near( in_normal.y , out_normals [i].y ) &&
-            is_near( in_normal.z , out_normals [i].z )
+            is_near( in_vertex.z , out_vertices[i].z ) //&&
+            //is_near( in_uv.x     , out_uvs     [i].x ) &&
+            //is_near( in_uv.y     , out_uvs     [i].y ) &&
+            //is_near( in_normal.x , out_normals [i].x ) &&
+            //is_near( in_normal.y , out_normals [i].y ) &&
+            //is_near( in_normal.z , out_normals [i].z )
         ){
             result = i;
             return true;
@@ -81,6 +81,7 @@ struct PackedVertex{
         return memcmp((void*)this, (void*)&that, sizeof(PackedVertex))>0;
     };
 };
+
 
 bool getSimilarVertexIndex_fast( 
     PackedVertex & packed,

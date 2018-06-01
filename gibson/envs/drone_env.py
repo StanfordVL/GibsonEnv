@@ -34,7 +34,7 @@ class DroneNavigateEnv(CameraRobotEnv):
         print(self.config["envname"])
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
         CameraRobotEnv.__init__(self, self.config, gpu_count, 
-                                scene_type="building",
+                                scene_type="stadium" if self.config["model_id"] == "stadium" else "building",
                                 tracking_camera=tracking_camera)
 
         self.robot_introduce(Quadrotor(self.config, env=self))

@@ -61,6 +61,9 @@ class WalkerBase(BaseRobot):
         self.scale = scale
         self.angle_to_target = 0
 
+        self.last_dx = 0
+        self.last_dy = 0
+
     def robot_specific_reset(self):
         for j in self.ordered_joints:
             j.reset_joint_state(self.np_random.uniform(low=-0.1, high=0.1), 0)
@@ -490,7 +493,7 @@ class Husky(WalkerBase):
     def __init__(self, config, env=None):
         self.config = config
         WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, 
-                            sensor_dim=23, power=2.5, scale = 0.6,
+                            sensor_dim=23, power=0.5, scale = 0.6,
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
                             resolution=config["resolution"], 
@@ -588,7 +591,7 @@ class Quadrotor(WalkerBase):
         self.mjcf_scaling = 1
         self.config = config
         self.is_discrete = config["is_discrete"]
-        WalkerBase.__init__(self, "quadrotor.urdf", "base_link", action_dim=4, 
+        WalkerBase.__init__(self, "quadrotor.urdf", "base_link", action_dim=3, 
                             sensor_dim=20, power=2.5, scale = self.mjcf_scaling, 
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
@@ -618,8 +621,15 @@ class Quadrotor(WalkerBase):
             realaction = action
 
         p.setGravity(0, 0, 0)
-        p.resetBaseVelocity(self.robot_ids[0], realaction[:3], realaction[3:])
-
+        yaw = self.body_rpy[2]
+        #forward, rotate, up = realaction
+        #forward_x = forward * np.cos(yaw)
+        #forward_y = forward * np.sin(yaw)
+        #p.resetBaseVelocity(self.robot_ids[0], [forward_x, forward_y, up], [0, 0, rotate])
+        forward_x, forward_y, up = realaction
+        p.resetBaseVelocity(self.robot_ids[0], [forward_x, forward_y, up], [0, 0, 0])
+        
+        
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
 

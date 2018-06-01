@@ -15,7 +15,7 @@ import sys
 import zmq
 import pickle
 
-DISCOUNT = 4
+DISCOUNT = 1
 
 class View(Enum):
     EMPTY = 0
@@ -28,6 +28,7 @@ class View(Enum):
 
 
 class SimpleUI():
+    RECORD_DEST = None
     '''Static UI'''
     def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=False, model_id=None, point_num=1):
         self.env = env
@@ -47,9 +48,9 @@ class SimpleUI():
         self.model_id = model_id
         self.point_num = point_num
         self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.PUB)
+        #self.socket = self.context.socket(zmq.PUB)
         #self.start_record()
-        self.socket.bind("tcp://*:%s" % self.port)
+        #self.socket.bind("tcp://*:%s" % self.port)
 
     def _close(self):
         self.context.destroy()
@@ -106,27 +107,38 @@ class SimpleUI():
         screen = pickle.dumps(cv2.imencode('.jpg', screen_to_dump), protocol=0)
         #from IPython import embed; embed()
         
-        self.socket.send(b"ui" + screen)
+        #self.socket.send(b"ui" + screen)
         #surf = pygame.surfarray.make_surface(self.screen_arr)
         #self.screen.blit(surf, (0, 0))
         #pygame.display.update()
 
+    def is_recorded(self, record_dest=None):
+        filename = '{}-{:0>6d}.avi'.format(self.model_id, self.point_num)
+        file_dir = os.path.join(record_dest, self.model_id)
+        self.RECORD_DEST = record_dest
+        if not os.path.isdir(file_dir): os.mkdir(file_dir)
+        filepath = os.path.join(file_dir, filename)
+        return os.path.isfile(filepath)
 
-    def start_record(self):
+    def start_record(self, record_dest=None):
         print("start recording")
         if self.is_recording:
             return    # prevent double enter
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG') # 'XVID' smaller
+        if record_dest is not None: self.RECORD_DEST = record_dest
+        #fourcc = cv2.VideoWriter_fourcc(*'MJPG') # 'XVID' smaller
+        fourcc = cv2.VideoWriter_fourcc(*'MP4V') # 'XVID' smaller
         file_keyword = datetime.now()
-        filename = '{}-{:0>6d}.avi'.format(self.model_id, self.point_num)
-        filepath = os.path.join("recording", filename)
+        filename = '{}-{:0>6d}.mp4'.format(self.model_id, self.point_num)
+        file_dir = os.path.join(self.RECORD_DEST, self.model_id)
+        if not os.path.isdir(file_dir): os.mkdir(file_dir)
+        filepath = os.path.join(file_dir, filename)
         self.frame = 0
         '''
         foldername = 'record-{}'.format(file_keyword)
         folderpath = os.path.join(self.RECORD_ROOT, foldername)
         '''
         #os.mkdir(folderpath)
-        self.curr_output = cv2.VideoWriter(filepath, fourcc, 100.0 / DISCOUNT, self.UI_DIM)
+        self.curr_output = cv2.VideoWriter(filepath, fourcc, 10.0 / DISCOUNT, self.UI_DIM)
         self.is_recording = True
 
     def make_video(self):

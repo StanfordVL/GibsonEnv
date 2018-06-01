@@ -1,5 +1,5 @@
 from gibson.envs.husky_env import HuskyNavigateEnv
-from gibson.utils.play_record import play
+from gibson.utils.play_record_husky import play
 import os, yaml
 
 if __name__ == '__main__':
@@ -9,7 +9,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config_root = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'recording')
-    config_paths = [os.path.join(config_root, file) for file in os.listdir(config_root) if args.model_id in file]    
+    config_paths = [os.path.join(config_root, file) for file in os.listdir(config_root) if args.model_id in file]
+    #config_paths = ["examples/configs/test_control.yaml"]
     print(config_paths)
     all_configs = []
 

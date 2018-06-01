@@ -1,7 +1,7 @@
 import os, yaml
 import numpy as np
 
-MODEL_ROOT = "/mnt/sdc/Gibson_Models/572_processed/"
+MODEL_ROOT = "/mnt/sdc/Gibson_Models/mp3d/"
 CONFIG_PATH = "/home/jerry/Desktop/gibson-test/GibsonEnv/examples/configs/recording"
 SAMPLE_CONFIG = "/home/jerry/Desktop/gibson-test/GibsonEnv/examples/configs/record_.yaml"
 
@@ -21,17 +21,22 @@ for model_id in os.listdir(MODEL_ROOT):
     template["envname"] = "DroneNavigateEnv"
     
     template["ui_num"] = 3
-    template["ui_components"] = ["RGB_FILLED", "DEPTH", "NORMAL"]
-    template["output"] = ["rgb_filled", "depth", "normal"]
+    template["ui_components"] = ["RGB_FILLED", "DEPTH", "SEMANTICS"]
+    template["output"] = ["rgb_filled", "depth", "semantics"]
+    #template["ui_num"] = 2
+    #template["ui_components"] = ["RGB_FILLED", "DEPTH"]
+    #template["output"] = ["rgb_filled", "depth"]
 
+    template["semantic_source"] = 2 # Matterport 3D
+    template["semantic_color"] = 1  # Random
+    #template['model_id'] = "stadium"
     template['model_id'] = model_id
     template['is_discrete'] = False
-    template['speed']['frameskip'] = 10
+    template['speed']['frameskip'] = 20
     template['speed']['timestep'] = 0.001
     template['fov'] = 2.094
     #template['display_ui'] = False
-    template["save_dir"] = "/media/Drive3/Gibson_Models/572_avi"
-    template["root"] = "/media/Drive3/Gibson_Models/572_processed"
+    template["root"] = "/media/Drive3/Gibson_Models/mp3d"
 
     if not os.path.isdir(os.path.join(MODEL_ROOT, model_id)): continue
     if not os.path.isfile(os.path.join(MODEL_ROOT, model_id, 'pair.csv')): continue

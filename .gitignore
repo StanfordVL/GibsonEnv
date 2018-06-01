@@ -69,3 +69,9 @@ nav_models
 
 gibson/assets
 *.pdf
+*.mp4
+*.avi
+*.gif
+*.txt
+examples/configs/recording
+*.json

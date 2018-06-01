@@ -4,7 +4,7 @@
 #include <cstring>
 #include <iostream>
 #include <glm/glm.hpp>
-
+#include <map>
 #include "objloader.hpp"
 
 // Very, VERY simple OBJ loader.
@@ -16,6 +16,107 @@
 // - More stable. Change a line in the OBJ file and it crashes.
 // - More secure. Change another line and you can inject code.
 // - Loading from memory, stream, etc
+
+
+struct Surface{
+    unsigned int v1;
+    unsigned int v2;
+    unsigned int v3;
+    bool operator<(const Surface that) const{
+        // Calculate a hash of the surface
+        return (92233 * v1 + 92003 * v2 + 90793 * v3) <
+        (92233 * that.v1 + 92003 * that.v2 + 90793 * that.v3);
+    };
+};
+
+bool getIdenticalSurface_fast( 
+    Surface & surf,
+    std::map<Surface,unsigned int> & SurfaceToOutIndex,
+    unsigned int & result
+){
+    std::map<Surface,unsigned int>::iterator it = SurfaceToOutIndex.find(surf);
+    if ( it == SurfaceToOutIndex.end() ){
+        return false;
+    }else{
+        result = it->second;
+        // printf("it->second %lu\n", it->second);
+        return true;
+    }
+}
+
+
+float hash1(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) {
+    double s1 = (53.0 / v1.x + 97.0 / v1.y + 193.0 / v1.z \
+        + 389.0 / v2.x + 769.0 / v2.y + 1543.0 / v2.z \
+        + 3079.0 / v3.x + 6151.0 / v3.y + 12289.0 / v3.z);
+    double s2 = (53.0 * v1.x * v1.x + 97.0 * v1.y * v1.y + 193.0 * v1.z * v1.z \
+        + 389.0 * v2.x * v2.x + 769.0 * v2.y * v2.y + 1543.0 * v2.z * v2.z\
+        + 3079.0 * v3.x * v3.x + 6151.0 * v3.y * v2.y + 12289.0 * v3.z * v3.z);
+    return s1 + s2;
+}
+
+float hash2(glm::vec3 v) {
+    //double s1 = (53.0 / v.x + 97.0 / v.y + 193.0 / v.z);
+    //double s2 = (53.0 * v.x * v.x + 97.0 * v.y * v.y + 193.0 * v.z * v.z);
+    //return s1 + s2;
+    return (53.0 * v.x + 97.0 * v.y + 193.0 * v.z);   
+}
+
+
+float lessThan(glm::vec3 a1, glm::vec3 a2, glm::vec3 a3, glm::vec3 b1, glm::vec3 b2, glm::vec3 b3) {
+    // Calculate less than given current sequence
+    double this_hash_1 = hash2(a1);
+    double this_hash_2 = hash2(a2);
+    double this_hash_3 = hash2(a3);
+    double that_hash_1 = hash2(b1);
+    double that_hash_2 = hash2(b2);
+    double that_hash_3 = hash2(b3);
+    double threshold = 0.001;
+    if (this_hash_1 + threshold < that_hash_1) return true;
+    if (this_hash_1 - threshold > that_hash_1) return false;
+
+    if (this_hash_2 + threshold < that_hash_2) return true;
+    if (this_hash_2 - threshold > that_hash_2) return false;
+
+    if (this_hash_3 + threshold < that_hash_3) return true;
+    if (this_hash_3 - threshold > that_hash_3) return false;
+
+    return  false;
+}
+
+struct VecSurface{
+    glm::vec3 v1;
+    glm::vec3 v2;
+    glm::vec3 v3;
+    bool operator<(const VecSurface that) const{
+        // Calculate a hash of the surface
+        //double this_hash = hash1(v1, v2, v3);
+        //double that_hash = hash1(that.v1, that.v2, that.v3);
+        return lessThan(v1, v2, v3, that.v1, that.v2, that.v3) or 
+               lessThan(v1, v3, v2, that.v1, that.v2, that.v3) or
+               lessThan(v2, v1, v3, that.v1, that.v2, that.v3) or
+               lessThan(v2, v3, v1, that.v1, that.v2, that.v3) or
+               lessThan(v3, v1, v2, that.v1, that.v2, that.v3) or
+               lessThan(v3, v2, v1, that.v1, that.v2, that.v3);
+    };
+};
+
+
+bool getSimilarSurface_fast( 
+    VecSurface & surf,
+    std::map<VecSurface,unsigned int> & VecSurfaceToOutIndex,
+    unsigned int & result
+){
+    std::map<VecSurface,unsigned int>::iterator it = VecSurfaceToOutIndex.find(surf);
+    if ( it == VecSurfaceToOutIndex.end() ){
+        return false;
+    }else{
+        result = it->second;
+        // printf("it->second %lu\n", it->second);
+        return true;
+    }
+}
+
 
 bool loadOBJ(
     const char * path,
@@ -38,6 +139,8 @@ bool loadOBJ(
     }
 
     unsigned int v_count = 0;
+    std::map<Surface,unsigned int> SurfaceToOutIndex;
+    std::vector<Surface> allSurface;
 
     while( 1 ){
 
@@ -94,9 +197,28 @@ bool loadOBJ(
                     }
                 }
             }
+            
+            Surface surf = {vertexIndex[0],vertexIndex[1], vertexIndex[2]};
+            unsigned int index;
+            //bool found = getIdenticalSurface_fast(surf, SurfaceToOutIndex, index);
+
+            /*if (found) {
+                // (hzyjerry) Important: In this case, do not add in the surface, to avoid z-fighting
+                //std::cout << "Found " << std::endl;
+                Surface s = allSurface[index];
+                vertexIndex[0] = s.v1;
+                vertexIndex[1] = s.v2;
+                vertexIndex[2] = s.v3;
+            } //else {*/
+            allSurface.push_back(surf);
+            unsigned int newindex = (unsigned int) allSurface.size() - 1;
+            SurfaceToOutIndex[ surf ] = newindex;
+
             vertexIndices.push_back(vertexIndex[0]);
             vertexIndices.push_back(vertexIndex[1]);
             vertexIndices.push_back(vertexIndex[2]);
+
+
             if (f_2_format || f_3_format) {
                 uvIndices    .push_back(uvIndex[0]);
                 uvIndices    .push_back(uvIndex[1]);
@@ -107,6 +229,8 @@ bool loadOBJ(
                 normalIndices.push_back(normalIndex[1]);
                 normalIndices.push_back(normalIndex[2]);
             }
+            //}
+
         }else{
             // Probably a comment, eat up the rest of the line
             char stupidBuffer[1000];
@@ -115,11 +239,57 @@ bool loadOBJ(
 
     }
 
+    std::map<VecSurface,unsigned int> VecSurfaceToOutIndex;
+    std::vector<unsigned int> cleanVertexIndices;
+    std::vector<VecSurface> allVecSurface;
+    unsigned num_similar = 0;
+
+    // Sanitize all surface vertices to remove similar surfaces
+    for( unsigned int i=0; i<vertexIndices.size(); i+=3 ){
+        // Get the indices of its attributes
+        unsigned int index1 = vertexIndices[i];
+        unsigned int index2 = vertexIndices[i + 1];
+        unsigned int index3 = vertexIndices[i + 2];
+        glm::vec3 v1 = temp_vertices[ index1 -1 ];
+        glm::vec3 v2 = temp_vertices[ index2 -1 ];
+        glm::vec3 v3 = temp_vertices[ index3 -1 ];
+        VecSurface vs = {v1, v2, v3};
+        unsigned int index;
+        //bool found = getSimilarSurface_fast(vs, VecSurfaceToOutIndex, index);
+        /*if (found) {
+            num_similar += 1;
+            
+            // To remove duplicated
+            //VecSurface that = allVecSurface[index];
+            
+
+            // To keep duplicated
+            allVecSurface.push_back(vs);
+            unsigned int newindex = (unsigned int) allVecSurface.size() - 1;
+            VecSurfaceToOutIndex[ vs ] = newindex;
+
+            cleanVertexIndices.push_back(index1);
+            cleanVertexIndices.push_back(index2);
+            cleanVertexIndices.push_back(index3);
+        
+        } else {*/
+            allVecSurface.push_back(vs);
+            unsigned int newindex = (unsigned int) allVecSurface.size() - 1;
+            VecSurfaceToOutIndex[ vs ] = newindex;
+
+            cleanVertexIndices.push_back(index1);
+            cleanVertexIndices.push_back(index2);
+            cleanVertexIndices.push_back(index3);
+        //}
+    }
+
+
+
     // For each vertex of each triangle
-    for( unsigned int i=0; i<vertexIndices.size(); i++ ){
+    for( unsigned int i=0; i<cleanVertexIndices.size(); i++ ){
 
         // Get the indices of its attributes
-        unsigned int vertexIndex = vertexIndices[i];
+        unsigned int vertexIndex = cleanVertexIndices[i];
         unsigned int uvIndex = -1;
 
         if (uvIndices.size() > 0)
@@ -158,12 +328,12 @@ bool loadOBJ(
 
         std::vector<unsigned int> vertexFaces(temp_vertices.size());
         std::fill(vertexFaces.begin(), vertexFaces.end(), 0);
-        for ( unsigned int i=0; i<vertexIndices.size(); i++ ) {
-            vertexFaces[vertexIndices[i]] += 1;
+        for ( unsigned int i=0; i<cleanVertexIndices.size(); i++ ) {
+            vertexFaces[cleanVertexIndices[i]] += 1;
         }
 
 
-        for ( unsigned int i=0; i<vertexIndices.size(); i++ ){
+        for ( unsigned int i=0; i<cleanVertexIndices.size(); i++ ){
             // make sure vertices are arranged in right hand order
             unsigned int v1 = i;
             unsigned int v2 = ((v1+1)%3==0) ? (v1-2) : (v1+1);
@@ -175,7 +345,7 @@ bool loadOBJ(
             glm::vec3 edge2 = out_vertices[v3] - out_vertices[v1];
 
             // set normal as cross product
-            unsigned int vertexIndex = vertexIndices[i];
+            unsigned int vertexIndex = cleanVertexIndices[i];
             glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
             //std::cout << normal.x << " " << normal.y << " " << normal.z <<  " " << normal.x * normal.x + normal.y * normal.y + normal.z * normal.z << " " << float(vertexFaces[vertexIndex-1]) <<  std::endl;
             out_normals[i] += normal / float(vertexFaces[vertexIndex-1]);

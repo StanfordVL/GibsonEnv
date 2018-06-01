@@ -187,7 +187,7 @@ bool computeMatricesFromInputs(){
     float fov         = glm::radians(90.0f);
 
 
-    ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 5000.0f); // near & far are not verified, but accuracy seems to work well
+    ProjectionMatrix = glm::perspective(fov, 1.0f, 0.1f, 500.0f); // near & far are not verified, but accuracy seems to work well
 
     // Point 6 view 0
     //float rotationX = 1.4468656778335571;

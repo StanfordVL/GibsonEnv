@@ -214,6 +214,7 @@ class ViewDataSet3D(data.Dataset):
                 last = len(self.scenes)
 
             for scene in self.scenes[:last]:
+                if scene != self.env.config["model_id"]: continue
                 posefile = os.path.join(self.root, scene, 'camera_poses.csv')
                 with open(posefile) as f:
                     for line in f:

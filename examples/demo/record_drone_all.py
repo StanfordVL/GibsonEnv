@@ -31,8 +31,8 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), csv_name), 'r
         all_models.append(line.strip())
 
 for m in sorted(all_models):
-    if os.path.isdir(os.path.join(RECORD_ROOT, m)) and len(os.listdir(os.path.join(RECORD_ROOT, m))) > 3: continue
-    cmd_line = "/home/jerry/Desktop/gibson-test/GibsonEnv/examples/demo/record_husky.py --model_id {}".format(m)
+    if os.path.isdir(os.path.join(RECORD_ROOT, m)) and len(os.listdir(os.path.join(RECORD_ROOT, m))) > 0: continue
+    cmd_line = "/home/jerry/Desktop/gibson-test/GibsonEnv/examples/demo/record_drone.py --model_id {}".format(m)
     proc = Popen([sys.executable] + cmd_line.split())    
     timer = Timer(300, proc.kill)
     try:

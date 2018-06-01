@@ -1,5 +1,6 @@
 envname: HuskyNavigateEnv
-model_id: 1su8sK2bQG9
+model_id: space7
+point_num: 1
 target_orn: [0, 0, 1.57]
 target_pos: [-14.3, 45.07, 0.5]
 initial_orn: [0, 0, 4.71]
@@ -10,8 +11,8 @@ is_discrete: true
 use_filler: true
 display_ui: true
 show_diagnostics: false
-ui_num: 2
-ui_components: [RGB_FILLED, DEPTH]
+ui_num: 3
+ui_components: [RGB_FILLED, DEPTH, NORMAL]
 random:
   random_initial_pose : false
   random_target_pose : false
@@ -20,8 +21,8 @@ random:
   random_init_z_range: [-0.1, 0.1]
   random_init_rot_range: [-0.1, 0.1]
 
-output: [nonviz_sensor, rgb_filled, depth]
-resolution: 256
+output: [nonviz_sensor, rgb_filled, depth, normal]
+resolution: 512
 
 speed:
   timestep: 0.001

@@ -18,11 +18,13 @@ for file in os.listdir(CONFIG_PATH):
     os.remove(os.path.join(CONFIG_PATH, file))
 
 for model_id in os.listdir(MODEL_ROOT):
-    template["envname"] = "DroneNavigateEnv"
+    template["envname"] = "HuskyNavigateEnv"
     
     template["ui_num"] = 3
     template["ui_components"] = ["RGB_FILLED", "DEPTH", "NORMAL"]
-    template["output"] = ["rgb_filled", "depth", "normal"]
+    template["output"] = ["rgb_filled", "depth", "normal", "nonviz_sensor"]
+    #template["output"] = ["nonviz_sensor"]
+
 
     template['model_id'] = model_id
     template['is_discrete'] = False
@@ -41,8 +43,9 @@ for model_id in os.listdir(MODEL_ROOT):
         p_pos_start = [float(v.strip()) for v in line.split(",")[1:4]]
         p_pos_end = [float(v.strip()) for v in line.split(",")[4:7]]
         p_orn = [float(v.strip()) for v in line.split(",")[7:]]
-        #p_pos[2] -= 0.5
-        p_orn[2] -= np.pi/2
+        p_pos_start[2] -= 0.35
+        p_pos_end[2] -= 0.35
+        #p_orn[2] -= np.pi/2
         template['initial_pos'] = p_pos_start
         template['initial_orn'] = p_orn
         template['target_pos'] = p_pos_end

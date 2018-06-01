@@ -15,14 +15,14 @@ CALC_OBSTACLE_PENALTY = 1
 tracking_camera = {
     'yaw': 110,
     'z_offset': 0.5,
-    'distance': 1,
+    'distance': 0.3,
     'pitch': -20
 }
 
 tracking_camera_top = {
     'yaw': 20,  # demo: living room, stairs
     'z_offset': 0.5,
-    'distance': 1,
+    'distance': 0.3,
     'pitch': -20
 }
 
@@ -330,8 +330,8 @@ class HuskyGibsonFlagRunEnv(CameraRobotEnv):
         print(len(self.robot.parts['top_bumper_link'].contact_list()), self.nframe, done)
         return done
 
-    def _step(self, a):
-        state, reward, done, meta = CameraRobotEnv._step(self, a)
+    def _step(self, a, record=False):
+        state, reward, done, meta = CameraRobotEnv._step(self, a, record=record)
         if self.flag_timeout <= 0 or (self.flag_timeout < 225 and self.robot.walk_target_dist < 0.8):
             self._flag_reposition()
         self.flag_timeout -= 1

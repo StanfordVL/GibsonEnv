@@ -43,7 +43,8 @@ def play(env, configs, transpose=True, zoom=None, callback=None, keys_to_action=
         obs = env.reset()
         env.UI.model_id = config['model_id']
         env.UI.point_num = config['point_num']
-        env.UI.start_record()
+        if env.UI.is_recorded("/media/Drive3/Gibson_Models/572_avi"): continue
+        env.UI.start_record("/media/Drive3/Gibson_Models/572_avi")
         pressed_keys = []
         last_keys = []              ## Prevent overacting
     

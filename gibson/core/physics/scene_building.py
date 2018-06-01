@@ -18,7 +18,12 @@ class BuildingScene(Scene):
         # if self.zero_at_running_strip_start_line:
         #    stadium_pose.set_xyz(27, 21, 0)  # see RUN_STARTLINE, RUN_RAD constants
         
-        filename = os.path.join(get_model_path(model_id), "mesh_z_up.obj")
+        #filename = os.path.join(robot.config["root"], robot.config["model_id"], "gibson_z_up.obj")
+        filename = os.path.join(robot.config["root"], robot.config["model_id"], "mesh_z_up.obj")
+        if not os.path.isfile(filename):
+            filename = os.path.join(robot.config["root"], robot.config["model_id"], "gibson_z_up.obj")
+
+        print(os.path.isfile(filename), filename)
         #filename = os.path.join(get_model_path(model_id), "3d", "blender.obj")
         #textureID = p.loadTexture(os.path.join(get_model_path(model_id), "3d", "rgb.mtl"))
 
