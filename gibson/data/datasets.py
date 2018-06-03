@@ -234,7 +234,8 @@ class ViewDataSet3D(data.Dataset):
                         # print(uuid, xyz)
 
                         if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + uuid + '.json')):
-                            self.meta[scene][uuid] = metadata
+                            if np.linalg.norm( np.array(xyz) - np.array([0,0,0])) > 1e-5: #remove scans that are not registered
+                                self.meta[scene][uuid] = metadata
             print("Indexing")
 
             for scene, meta in tqdm(list(self.meta.items())):

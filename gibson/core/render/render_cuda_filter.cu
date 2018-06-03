@@ -290,13 +290,9 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
   for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
   {
   
-
-
-
      int iw = x;
      int ih = y + j;
-     //int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + 1)/2 * ow - 0.5);
-     //int ty = round((points3d_polar[(ih * w + iw) * 3 + 2] + 1)/2 * oh - 0.5);
+
           
      int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + 1)/2 * ow - 0.5);
      int ty = round((points3d_polar[(ih * w + iw) * 3 + 2] + 1)/2 * oh - 0.5);
@@ -355,10 +351,12 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
      
      //render[(ty * ow + tx)] = img[ih * w + iw];
      //selection[(ty * ow + tx)] = 1.0;
-     
-     if ((y > 3 * h/16) && (y < (h*13)/16))
-     if ((mindelta > - 0.1 * this_depth) && (maxdelta <  0.1 * this_depth) && (this_depth < 10000)) {
-           if ((txmax - txmin) * (tymax - tymin) < 500)
+
+     float tolerance = 0.1 * this_depth > 5? 0.1 * this_depth : 5;
+
+     if ((y > 1 * h/8) && (y < (h*7)/8))
+     if (((mindelta > - tolerance) && (maxdelta <  tolerance)) && (this_depth < 10000)) {
+           if (((txmax - txmin) * (tymax - tymin) < 1600) && (txmax - txmin < 40) && (tymax - tymin < 40))
            {
                for (itx = txmin; itx < txmax; itx ++)
                    for (ity = tymin; ity < tymax; ity ++)
@@ -373,7 +371,6 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
                           if (newy < 0) newy = 0;
                           if (newx > 1) newx = 1;
                           if (newy > 1) newy = 1;
-                          
                           
                            r = img[(ih * w + iw)] / (256*256) * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / (256*256) * (1-newx) * (newy) + img[((ih+1) * w + iw)] / (256*256) * (newx) * (1-newy) + img[((ih+1) * w + iw + 1)] / (256*256) * newx * newy;
                            g = img[(ih * w + iw)] / 256 % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / 256 % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] / 256 % 256  * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] / 256 % 256 * newx * newy;
