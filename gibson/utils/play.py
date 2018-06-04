@@ -28,6 +28,23 @@ def display_arr(screen, arr, video_size, transpose):
     pyg_img = pygame.transform.scale(pyg_img, video_size)
     screen.blit(pyg_img, (0,0))
 
+def simple_play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
+    #assert type(obs_s) == gym.spaces.box.Box
+    #assert len(obs_s.shape) == 2 or (len(obs_s.shape) == 3 and obs_s.shape[2] in [1,3])
+    if keys_to_action is None:
+        if hasattr(env, 'get_keys_to_action'):
+            keys_to_action = env.get_keys_to_action()
+        elif hasattr(env.unwrapped, 'get_keys_to_action'):
+            keys_to_action = env.unwrapped.get_keys_to_action()
+
+    obs = env.reset()
+    do_restart = False
+    last_keys = []              ## Prevent overacting
+    while True:
+        action = keys_to_action[()]
+        with Profiler("Play Env: step"):
+            env.step(action)
+
 def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
     """Allows one to play the game using keyboard.
 

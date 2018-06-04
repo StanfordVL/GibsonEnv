@@ -33,6 +33,8 @@ class Model(object):
         vf_losses1 = tf.square(vpred - R)
         vf_losses2 = tf.square(vpredclipped - R)
         vf_loss = .5 * tf.reduce_mean(tf.maximum(vf_losses1, vf_losses2))
+
+
         ratio = tf.exp(OLDNEGLOGPAC - neglogpac)
         pg_losses = -ADV * ratio
         pg_losses2 = -ADV * tf.clip_by_value(ratio, 1.0 - CLIPRANGE, 1.0 + CLIPRANGE)
@@ -57,6 +59,8 @@ class Model(object):
             if states is not None:
                 td_map[train_model.S] = states
                 td_map[train_model.M] = masks
+
+            var_23 = [v for v in tf.global_variables() if v.name == "model/v/w:0"][0]
             return sess.run(
                 [pg_loss, vf_loss, entropy, approxkl, clipfrac, _train],
                 td_map
@@ -96,7 +100,8 @@ class Runner(object):
         print(self.obs.shape)
         print(self.obs_sensor.shape)
         obs_all = self.env.reset()
-        self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+        #self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+        self.obs[:] = obs_all['rgb_filled']
         self.obs_sensor[:] = obs_all['nonviz_sensor'] 
         self.gamma = gamma
         self.lam = lam
@@ -121,13 +126,15 @@ class Runner(object):
 
             if self.dones:
                 obs_all = self.env.reset()
-                self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+                #self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+                self.obs[:] = obs_all['rgb_filled']
                 self.obs_sensor[:] = obs_all['nonviz_sensor'] 
                 rewards = 0
                 self.dones = False
             else:
                 obs_all, rewards, self.dones, infos = self.env.step(actions)
-                self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+                #self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+                self.obs[:] = obs_all['rgb_filled']
                 self.obs_sensor[:] = obs_all['nonviz_sensor'] 
                 #print("PPO2", rewards, self.dones)
                 if 'sensor' in infos:
@@ -228,7 +235,9 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
         lrnow = lr(frac)
         cliprangenow = cliprange(frac)
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632
-        #print("ep infos", epinfos)
+        print("Returns Mean: {} Max: {} Min: {}".format( returns.mean(), returns.max(), returns.min() ))
+        print("Values Mean: {} Max: {} Min: {}".format( values.mean(), values.max(), values.min() ))
+        print("neglogpacs Mean: {} Max: {} Min: {}".format( neglogpacs.mean(), neglogpacs.max(), neglogpacs.min() ))
         epinfobuf.extend(epinfos)
         mblossvals = []
         if states is None: # nonrecurrent version

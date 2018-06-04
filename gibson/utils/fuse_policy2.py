@@ -90,7 +90,13 @@ class CnnPolicy(object):
             h2 = conv(h, 'c2', nf=64, rf=4, stride=2, init_scale=np.sqrt(2))
             h3 = conv(h2, 'c3', nf=64, rf=3, stride=1, init_scale=np.sqrt(2))
             h3 = conv_to_fc(h3)
-            h4 = fc(h3, 'fc1', nh=512, init_scale=np.sqrt(2))
+            h4 = tf.nn.relu(fc(h3, 'fc1', nh=512, init_scale=np.sqrt(2)))
+
+           # h = tf.nn.relu(conv(tf.cast(X, tf.float32)/255., 'c1', nf=32, rf=8, stride=4, init_scale=np.sqrt(2)))
+           # h2 = tf.nn.relu(conv(h, 'c2', nf=64, rf=4, stride=2, init_scale=np.sqrt(2)))
+           # h3 = tf.nn.relu(conv(h2, 'c3', nf=64, rf=3, stride=1, init_scale=np.sqrt(2)))
+           # h3 = conv_to_fc(h3)
+           # h4 = tf.nn.relu(fc(h3, 'fc1', nh=512, init_scale=np.sqrt(2)))
             pi = fc(h4, 'pi', nact, init_scale=0.01)
             vf = fc(h4, 'v', 1)[:,0]
 
