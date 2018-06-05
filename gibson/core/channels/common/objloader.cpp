@@ -151,13 +151,14 @@ bool loadOBJ(
 
     // construct the temp_normals vector here, using vertex positions and face vertex indices
     // TODO: this is not well-tested yet
+    std::vector<unsigned int> vertexFaces(temp_vertices.size());
+    std::fill(vertexFaces.begin(), vertexFaces.end(), 0);
+
     if ( out_normals.size() == 0 ) {
         for ( unsigned int i=0; i<out_vertices.size(); i++ ){
             out_normals.push_back(glm::vec3(0.0));
         }
 
-        std::vector<unsigned int> vertexFaces(temp_vertices.size());
-        std::fill(vertexFaces.begin(), vertexFaces.end(), 0);
         for ( unsigned int i=0; i<vertexIndices.size(); i++ ) {
             vertexFaces[vertexIndices[i]] += 1;
         }

@@ -234,6 +234,7 @@ int main( int argc, char * argv[] )
     windowWidth  = cmdp.get<int>("Width");
 
     std::string name_obj = model_path + "/mesh.obj";
+    //std::string name_obj = model_path + "/gibson_decimated_z_up.obj";
     if (smooth > 0) {
         name_obj = model_path + "/out_smoothed.obj";
         GPU_NUM = -1;
@@ -440,6 +441,7 @@ int main( int argc, char * argv[] )
     std::vector<TextureObj> TextObj;
     unsigned int num_layers;
 
+
     GLuint gArrayTexture(0);
     if ( semantic > 0) {
         /* initialize random seed: */
@@ -522,6 +524,7 @@ int main( int argc, char * argv[] )
         bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
     }
 
+            
     // Get a handle for our "myTextureSampler" uniform
     GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
@@ -539,7 +542,19 @@ int main( int argc, char * argv[] )
         std::cout << "Semantics ";
         //for (unsigned int i = 250000; i < 260000; i++) printf("%u (%f)", i, indexed_semantics[i].x);
         std::cout << std::endl;
-    } else { indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals); }
+    } else { 
+        printf("Before indexing VBO\n");
+        printf("Before indexing VBO\n");
+        printf("Before indexing VBO\n");
+        indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals); 
+        printf("After indexing VBO\n");
+        printf("After indexing VBO\n");
+        printf("After indexing VBO\n");
+    }
+
+
+
+    std::cout << "Indexed object" << std::endl;
 
     // Load it into a VBO
     GLuint vertexbuffer;
