@@ -245,7 +245,8 @@ class BaseRobotEnv(BaseEnv):
         """Used in CameraEnv.setup"""
         offset = 0.6
         eye_pos = self.robot.eyes.get_position()
-        eye_pos[2] += offset
+        if "eye_elevate" in self.config.keys() and self.config["eye_elevate"]:
+            eye_pos[2] += offset
         x, y, z ,w = self.robot.eyes.get_orientation()
         eye_quat = [w, x, y, z]
         return eye_pos, eye_quat

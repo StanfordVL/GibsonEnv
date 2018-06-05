@@ -44,9 +44,9 @@ for model_id in os.listdir(MODEL_ROOT):
         p_pos_start = [float(v.strip()) for v in line.split(",")[1:4]]
         p_pos_end = [float(v.strip()) for v in line.split(",")[4:7]]
         p_orn = [float(v.strip()) for v in line.split(",")[7:]]
-        p_pos_start[2] -= 0.35
-        p_pos_end[2] -= 0.35
-        #p_orn[2] -= np.pi/2
+        p_pos_start[2] += 0.1
+        p_pos_end[2] += 0.1
+        p_orn[2] -= np.pi/2
         template['initial_pos'] = p_pos_start
         template['initial_orn'] = p_orn
         template['target_pos'] = p_pos_end

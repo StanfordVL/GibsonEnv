@@ -239,6 +239,7 @@ bool loadOBJ(
 
     }
 
+
     std::map<VecSurface,unsigned int> VecSurfaceToOutIndex;
     std::vector<unsigned int> cleanVertexIndices;
     std::vector<VecSurface> allVecSurface;
@@ -319,15 +320,16 @@ bool loadOBJ(
 
     }
 
+
     // construct the temp_normals vector here, using vertex positions and face vertex indices
     // TODO: this is not well-tested yet
+    std::vector<unsigned int> vertexFaces(temp_vertices.size());
+    std::fill(vertexFaces.begin(), vertexFaces.end(), 0);
     if ( out_normals.size() == 0 ) {
         for ( unsigned int i=0; i<out_vertices.size(); i++ ){
             out_normals.push_back(glm::vec3(0.0));
         }
 
-        std::vector<unsigned int> vertexFaces(temp_vertices.size());
-        std::fill(vertexFaces.begin(), vertexFaces.end(), 0);
         for ( unsigned int i=0; i<cleanVertexIndices.size(); i++ ) {
             vertexFaces[cleanVertexIndices[i]] += 1;
         }
@@ -339,7 +341,6 @@ bool loadOBJ(
             unsigned int v2 = ((v1+1)%3==0) ? (v1-2) : (v1+1);
             unsigned int v3 = ((v2+1)%3==0) ? (v2-2) : (v2+1);
 
-            //std::cout << "v1 " << v1 << " v2 " << v2 << " v3 " << v3 << std::endl;
             glm::vec3 edge1 = out_vertices[v2] - out_vertices[v1];
             //glm::vec3 edge2 = out_vertices[v3] - out_vertices[v2];
             glm::vec3 edge2 = out_vertices[v3] - out_vertices[v1];
@@ -356,6 +357,8 @@ bool loadOBJ(
 
         // Renormalize all the normal vectors
         for (unsigned int i=0; i<out_normals.size(); i++) {
+            glm::vec3 norm = out_normals[i];
+            norm = glm::normalize(norm);
             out_normals[i] = glm::normalize(out_normals[i]);
         }        
     }

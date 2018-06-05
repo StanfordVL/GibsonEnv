@@ -695,7 +695,7 @@ int main( int argc, char * argv[] )
 
         // Compute the MVP matrix from keyboard and mouse input
         float fov = glm::radians(camera_fov);
-        glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.01f, 5000.0f); // near & far are not verified, but accuracy seems to work well
+        glm::mat4 ProjectionMatrix = glm::perspective(fov, 1.0f, 0.01f, 5000000.0f); // near & far are not verified, but accuracy seems to work well
         glm::mat4 ViewMatrix =  getView(viewMat, 2);
         glm::mat4 viewMatPose = glm::inverse(ViewMatrix);
 
