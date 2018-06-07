@@ -542,19 +542,13 @@ int main( int argc, char * argv[] )
         std::cout << "Semantics ";
         //for (unsigned int i = 250000; i < 260000; i++) printf("%u (%f)", i, indexed_semantics[i].x);
         std::cout << std::endl;
-    } else { 
-        printf("Before indexing VBO\n");
-        printf("Before indexing VBO\n");
-        printf("Before indexing VBO\n");
-        indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals); 
-        printf("After indexing VBO\n");
-        printf("After indexing VBO\n");
-        printf("After indexing VBO\n");
+    } else {
+        indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
     }
 
 
 
-    std::cout << "Indexed object" << std::endl;
+    //std::cout << "Indexed object" << std::endl;
 
     // Load it into a VBO
     GLuint vertexbuffer;
