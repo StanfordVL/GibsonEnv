@@ -346,7 +346,7 @@ class CameraRobotEnv(BaseRobotEnv):
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
         self.r_camera_dep = None
-        self.check_port_available()
+        #self.check_port_available()
         self.setup_camera_multi()
         self.setup_camera_rgb()
         
@@ -427,6 +427,8 @@ class CameraRobotEnv(BaseRobotEnv):
         if tag == View.SEMANTICS:
             print("Render components: semantics", np.mean(self.render_semantics))
             return self.render_semantics
+        if tag == View.PHYSICS:
+            return self.render_physics()
 
     def render_to_UI(self):
         '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO
@@ -487,7 +489,7 @@ class CameraRobotEnv(BaseRobotEnv):
             all_dist, all_pos = self.r_camera_rgb.getAllPoseDist(pose)
             top_k = self.find_best_k_views(pose[0], all_dist, all_pos, avoid_block=False)
             #with Profiler("Render to screen"):
-            self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+            self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_rgb_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         observations = {}
         for output in self.config["output"]:

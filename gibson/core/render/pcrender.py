@@ -417,9 +417,16 @@ class PCRenderer:
             source += (1-mask.repeat(3,1,1)) * self.mean
             source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
             mask = torch.cat([source_depth, mask], 0)
-            self.imgv.data.copy_(source[None])
-            self.maskv.data.copy_(mask)
-            recon = model(self.imgv, self.maskv)
+            #self.imgv.data.copy_(source)
+            #self.maskv.data.copy_(mask)
+            #print(torch.max(self.maskv), torch.max(self.imgv))
+
+            imgv = Variable(source).cuda().unsqueeze(0)
+            maskv = Variable(mask).cuda().unsqueeze(0)
+
+            #print(imgv.size(), maskv.size())
+
+            recon = model(imgv, maskv)
             show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
             show[:] = (show2[:] * 255).astype(np.uint8)
 
