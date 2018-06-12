@@ -63,6 +63,11 @@ def callback_step(data):
     image_message.header.stamp = now
     depth_message.header.stamp = now
     depth_raw_message.header.stamp = now
+    image_message.header.frame_id="camera_depth_optical_frame"
+    depth_message.header.frame_id="camera_depth_optical_frame"
+    depth_raw_message.header.frame_id="camera_depth_optical_frame"
+
+
 
     image_pub.publish(image_message)
     depth_pub.publish(depth_message)

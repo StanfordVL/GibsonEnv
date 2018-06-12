@@ -1,0 +1,17 @@
+<launch>
+
+  <!-- important generally, but specifically utilised by the current app manager -->
+  <param name="robot/name" value="$(optenv ROBOT turtlebot)"/>
+  <param name="robot/type" value="turtlebot"/>
+
+
+  <arg name="base"/>
+  <arg name="stacks"/>
+  <arg name="3d_sensor"/>
+
+  <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find turtlebot_description)/robots/kobuki_hexagons_kinect.urdf.xacro'"/>
+  <param name="robot_description" command="$(arg urdf_file)"/>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gibson-ros)/rviz/gonet.rviz" />
+
+</launch>
