@@ -35,10 +35,17 @@ def get_segmentId_by_name_2D3DS(mtl, obj, name):
                 obj_id += 1
     '''
     for semantic_label in semantic_label_list:
-        object_name, object_counchairt, segment_count = semantic_label.split("_")
-        if name in object_name:
-            object_ids.append(obj_id)
-        obj_id += 1 
+        assert(len(semantic_label.split("_")) == 5 or len(semantic_label.split("_")) == 3, "Unable to parse semantic label {}".format(semantic_label))
+        if len(semantic_label.split("_")) == 5:
+            object_name, object_count, context_name, context_count, floor_count = semantic_label.split("_")
+            if name in object_name:
+                object_ids.append(obj_id)
+            obj_id += 1 
+        if len(semantic_label.split("_")) == 3:
+            object_name, object_count, floor_count = semantic_label.split("_")
+            if name in object_name:
+                object_ids.append(obj_id)
+            obj_id += 1
     return None, object_ids, None
 
 
@@ -51,7 +58,8 @@ def get_semantic_label_list_2D3DS(obj):
     return label_list
 
 if __name__ == "__main__":
-    meta = "/home/zhiyang/Desktop/universe-test/GibsonEnv/gibson/assets/dataset/17DRP5sb8fy/semantic.house"
+    meta = ""
+    #meta = "/home/zhiyang/Desktop/universe-test/GibsonEnv/gibson/assets/dataset/17DRP5sb8fy/semantic.house"
     c_id, o_id, e_id = get_segmentId_by_name(meta, "chair")
     print(len(c_id))
     print(len(o_id))

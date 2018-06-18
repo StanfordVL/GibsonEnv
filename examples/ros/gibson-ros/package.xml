@@ -58,6 +58,10 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>turtlebot_navigation</exec_depend>
+  <exec_depend>map_server</exec_depend>
+  <exec_depend>nav2d</exec_depend>
+  <exec_depend>turtlebot_teleop</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

@@ -30,9 +30,17 @@ class BuildingScene(Scene):
         magnified = [2, 2, 2]
 
         collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        textureID = -1
 
-        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = textureID)
+
+        view_only_mesh = os.path.join(get_model_path(model_id), "mesh_view_only_z_up.obj")
+        if os.path.exists(view_only_mesh):
+            visualId = p.createVisualShape(p.GEOM_MESH,
+                                       fileName=view_only_mesh,
+                                       meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+        else:
+            visualId = -1
+
+        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
         p.changeDynamics(boundaryUid, -1, lateralFriction=1)
         #print(p.getDynamicsInfo(boundaryUid, -1))
         self.scene_obj_list = [(boundaryUid, -1)]       # baselink index -1
@@ -44,7 +52,7 @@ class BuildingScene(Scene):
         if "z_offset" in self.env.config:
             z_offset = self.env.config["z_offset"]
         else:
-            z_offset = -0.5
+            z_offset = -10 #with hole filling, we don't need ground plane to be the same height as actual floors
 
         p.resetBasePositionAndOrientation(self.ground_plane_mjcf[0], posObj = [0,0,z_offset], ornObj = [0,0,0,1])
         p.changeVisualShape(boundaryUid, -1, rgbaColor=[168 / 255.0, 164 / 255.0, 92 / 255.0, 1.0],

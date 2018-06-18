@@ -24,10 +24,10 @@ Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for 
 
 Beta
 =================
-**This is the <strike>0.1.0</strike> 0.2.0 beta release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
+**This is the 0.3.0 release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
 
 **Dataset**: To make the beta release lighter for the users, we are including a small subset (9) of the spaces in it. 
-The full dataset includes hundreds of spaces which will be made available if we dont get a major bug report during the brief beta release. 
+The [full dataset](gibson/data/README.md) includes 572 spaces and 1440 floors. It will be made available if we dont get a major bug report during the brief beta release. 
 
 Table of contents
 =================
@@ -39,6 +39,8 @@ Table of contents
    * [Quick Start](#quick-start)
         * [Web User Interface](#web-user-interface)
         * [Rendering Semantics](#rendering-semantics)
+        * [Advanced Guide](#more-advanced-starting-guide)
+        * [ROS Configuration](#ros-configuration)
    * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
    * [Goggles: transferring the agent to real-world](#goggles-transferring-the-agent-to-real-world)
@@ -70,21 +72,7 @@ For building from the source(B):
 #### Download data
 
 First, our environment assets data are available [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
-<!-- 
-Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file in it.
--->
-<!--
-To download the file from the command line, run the following from the main directory of this repo:
-```bash
-filename="gibson/assets/assets.tar.gz"
-fileid="1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0"
-sudo apt-get install golang-go
-export GOPATH=$HOME/go
-go get github.com/ericchiang/pup
-query=`curl -c ./cookie.txt -s -L "https://drive.google.com/uc?export=download&id=${fileid}" | pup 'a#uc-download-link attr{href}' | sed -e 's/amp;//g'`
-curl -b ./cookie.txt -L -o ${filename} "https://drive.google.com${query}"
-```
--->
+
 
 A. Quick installation (docker)
 -----
@@ -98,13 +86,18 @@ You can either 1. build your own docker image or 2. pull from our docker image. 
 1. Build your own docker image (recommended)
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
-cd GibsonEnv
-wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson 
-./build.sh decompress_data
+cd GibsonEnv/gibson
+wget https://storage.googleapis.com/gibsonassets/assets_core.tar.gz
+tar -zxf assets_core.tar.gz
+cd assets
+wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
+tar -zxf dataset.tar.gz
 ### the commands above downloads assets data file and decpmpress it into gibson/assets folder
+cd ../.. # back to GibsonEnv dir
 docker build . -t gibson ### finish building inside docker
 ```
-If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to assets folder>:/root/mount/gibson/gibson/assets gibson` to create a container.
+If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson` to create a container. Note that we don't include
+dataset files in docker image to keep our image slim, so you will need to mount it to the container when you start a container.
 
 
 2. Or pull from our docker image
@@ -120,7 +113,7 @@ Instructions to run gibson on a headless server:
 1. Install nvidia-docker2 dependencies following the starter guide.
 2. Use `openssl req -new -x509 -days 365 -nodes -out self.pem -keyout self.pem` create `self.pem` file
 3. `docker build -f Dockerfile_server -t gibson_server .` use the `Dockerfile_server` to build a new docker image that support virtualgl and turbovnc
-4. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to assets folder>:/root/mount/gibson/gibson/assets -p 5901:5901 gibson_server`
+4. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset -p 5901:5901 gibson_server`
 in docker terminal, start `/opt/websockify/run 5901 --web=/opt/noVNC --wrap-mode=ignore -- vncserver :1 -securitytypes otp -otp -noxstartup` in background, potentially with `tmux`
 5. Run gibson with `DISPLAY=:1 vglrun python <gibson example or training>`
 6. Visit your `host:5901` and type in one time password to see the GUI.
@@ -145,17 +138,21 @@ Install required deep learning libraries: Using python3.5 is recommended. You ca
 conda create -n py35 python=3.5 anaconda 
 source activate py35 # the rest of the steps needs to be performed in the conda environment
 conda install -c conda-forge opencv
-pip install http://download.pytorch.org/whl/cu90/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
-pip install torchvision==0.1.9
+pip install http://download.pytorch.org/whl/cu90/torch-0.3.1-cp35-cp35m-linux_x86_64.whl 
+pip install torchvision==0.2.0
 pip install tensorflow==1.3
 ```
 Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
-cd GibsonEnv
-wget https://storage.googleapis.com/gibsonassets/assets.tar.gz -P gibson
-./build.sh decompress_data ### decompress data 
-#the commands above downloads assets data file and decpmpress it into gibson/assets folder
+cd GibsonEnv/gibson
+wget https://storage.googleapis.com/gibsonassets/assets_core.tar.gz
+tar -zxf assets_core.tar.gz
+cd assets
+wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
+tar -zxf dataset.tar.gz
+#### the commands above downloads assets data file and decpmpress it into gibson/assets folder
+cd ../.. #back to GibsonEnv dir
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
 ```
@@ -176,7 +173,7 @@ Uninstall gibson is easy. If you installed with docker, just run `docker images 
 Quick Start
 =================
 
-First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0.0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson`, you will get an interactive shell. Now you can run a few demos. 
+First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0.0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson`, you will get an interactive shell. Now you can run a few demos. 
 
 If you installed from source, you can run those directly using the following commands without using docker. 
 
@@ -230,27 +227,58 @@ For detailed instructions of rendering semantics in Gibson, see [semantic instru
 **Agreement**: If you choose to use the models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/) for rendering semantics, we ask you to agree to and sign their respective agreements. See [here](https://niessner.github.io/Matterport/) for Matterport3D and [here](https://github.com/alexsax/2D-3D-Semantics) for Stanford 2D3DS.
 
 
-Starter Code
+More Advanced Starting Guide
 ----
 
-More examples can be found in `examples/demo` and `examples/train` folder. A short introduction for each demo is shown below.
+### Starter Agents
+
+Gibson provides a base set of agents:
+<img src=misc/agents.gif>
+
+To enable (optionally) abstracting away low-level control and robot dynamics for high-level tasks, we also provide a set of practical and ideal controllers for each agent.
+
+| Agent Name     | DOF | Information      | Controller |
+|:-------------: | :-------------: |:-------------: |:-------------| 
+| Mujoco Ant      | 8   | [OpenAI Link](https://blog.openai.com/roboschool/) | Torque |
+| Mujoco Humanoid | 17  | [OpenAI Link](https://blog.openai.com/roboschool/) | Torque |
+| Husky Robot     | 4   | [ROS](http://wiki.ros.org/Robots/Husky), [Manufacturer](https://www.clearpathrobotics.com/) | Torque, Velocity, Position |
+| Minitaur Robot  | 8   | [Robot Page](https://www.ghostrobotics.io/copy-of-robots), [Manufacturer](https://www.ghostrobotics.io/) | Sine Controller |
+| JackRabbot      | 2   | [Stanford Project Link](http://cvgl.stanford.edu/projects/jackrabbot/) | Torque, Velocity, Position |
+| TurtleBot       | 2   | [ROS](http://wiki.ros.org/Robots/TurtleBot), [Manufacturer](https://www.turtlebot.com/) | Torque, Velocity, Position |
+| Quadrotor         | 6   | [Paper](https://repository.upenn.edu/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=1705&context=edissertations) | Position |
+
+
+### Starter Code 
+
+More demonstration examples can be found in `examples/demo` folder
 
 | Example        | Explanation          |
 |:-------------: |:-------------| 
-|`demo/play_ant_camera.py`|Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building, while RGB and depth camera outputs are also shown. |
-|`demo/play_ant_nonviz.py`| Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building.|
-|`demo/play_drone_camera.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building, while RGB and depth camera outputs are also shown.|
-|`demo/play_drone_nonviz.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building|
-|`demo/play_humanoid_camera.py`| Use 1234567890qwertyui keys on your keyboard to control a humanoid to navigate around Gates building. Just kidding, controlling humaniod with keyboard is too difficult, you can only watch it fall. Press R to reset. RGB and depth camera outputs are also shown. |
-|`demo/play_humanoid_nonviz.py`| Watch a humanoid fall. Press R to reset.|
-|`demo/play_husky_camera.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building, while RGB and depth camera outputs are also shown.|
-|`demo/play_husky_nonviz.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building|
-|`train/train_husky_navigate_ppo2.py`|   Use PPO2 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
-|`train/train_husky_navigate_ppo1.py`|   Use PPO1 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
-|`train/train_ant_navigate_ppo1.py`| Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera. |
-|`train/train_ant_climb_ppo1.py`| Use PPO1 to train an ant to climb down the stairs in Gates building, using visual input from the camera.  |
+|`play_ant_camera.py`|Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building, while RGB and depth camera outputs are also shown. |
+|`play_ant_nonviz.py`| Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building.|
+|`play_drone_camera.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building, while RGB and depth camera outputs are also shown.|
+|`play_drone_nonviz.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building|
+|`play_humanoid_camera.py`| Use 1234567890qwertyui keys on your keyboard to control a humanoid to navigate around Gates building. Just kidding, controlling humaniod with keyboard is too difficult, you can only watch it fall. Press R to reset. RGB and depth camera outputs are also shown. |
+|`play_humanoid_nonviz.py`| Watch a humanoid fall. Press R to reset.|
+|`play_husky_camera.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building, while RGB and depth camera outputs are also shown.|
+|`play_husky_nonviz.py`| Use ASWD keys on your keyboard to control a car to navigate around Gates building|
+
+More training code can be found in `examples/train` folder.
+
+| Example        | Explanation          |
+|:-------------: |:-------------| 
+|`train_husky_navigate_ppo2.py`|   Use PPO2 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
+|`train_husky_navigate_ppo1.py`|   Use PPO1 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
+|`train_ant_navigate_ppo1.py`| Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera. |
+|`train_ant_climb_ppo1.py`| Use PPO1 to train an ant to climb down the stairs in Gates building, using visual input from the camera.  |
 |`train_ant_gibson_flagrun_ppo1.py`| Use PPO1 to train an ant to chase a target (a red cube) in Gates building. Everytime the ant gets to target(or time out), the target will change position.|
 |`train_husky_gibson_flagrun_ppo1.py`|Use PPO1 to train a car to chase a target (a red cube) in Gates building. Everytime the car gets to target(or time out), the target will change position. |
+
+ROS Configuration
+---------
+
+We provide examples of configuring Gibson with ROS [here](examples/ros/gibson-ros). We use turtlebot as an example, after a policy is trained in Gibson, it requires minimal changes to deploy onto a turtlebot. See [README](examples/ros/gibson-ros) for more details.
+
 
 
 
@@ -304,6 +332,7 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |speed : frameskip | 10 | how many timestep to skip when rendering frames. See above row for an example. For tasks that does not require high frequency control, you can set frameskip to larger value to gain further speed up. |
 |mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
 |verbose |true/false  | show dignostics in terminal |
+|fast_lq_render| true/false| it there is fast_lq_render in yaml file, Gibson will use a smaller filler network, this will render faster but generate slightly lower quality camera output. This option is useful for training RL agents fast. |
 
 #### Making Your Customized Environment
 Gibson provides a set of methods for you to define your own environments. You can follow the existing environments inside `gibson/core/envs`.

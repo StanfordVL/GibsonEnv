@@ -216,10 +216,12 @@ int main( int argc, char * argv[] )
     cmdp.add<int>("Semantic Source", 'r', "Semantic data source", false, 1);
     cmdp.add<int>("Semantic Color", 'c', "Semantic rendering color scheme", false, 1);
 
+    cmdp.add<int>("Port", 'p', "Local port to render the channel", true, 5556);
     cmdp.parse_check(argc, argv);
 
     std::string model_path = cmdp.get<std::string>("modelpath");
     int GPU_NUM = cmdp.get<int>("GPU");
+    int PORT    = cmdp.get<int>("Port");
     int smooth = cmdp.get<int>("Smooth");
     int normal = cmdp.get<int>("Normal");
     int semantic = cmdp.get<int>("Semantic");
@@ -232,6 +234,7 @@ int main( int argc, char * argv[] )
     windowWidth  = cmdp.get<int>("Width");
 
     std::string name_obj = model_path + "/mesh.obj";
+    //std::string name_obj = model_path + "/gibson_decimated_z_up.obj";
     if (smooth > 0) {
         name_obj = model_path + "/out_smoothed.obj";
         GPU_NUM = -1;
@@ -438,6 +441,7 @@ int main( int argc, char * argv[] )
     std::vector<TextureObj> TextObj;
     unsigned int num_layers;
 
+
     GLuint gArrayTexture(0);
     if ( semantic > 0) {
         /* initialize random seed: */
@@ -466,7 +470,7 @@ int main( int argc, char * argv[] )
             // MTL_loaded = true;
             MTL_loaded = loadPLYtextures(TextObj, material_id);
         } else {
-            MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);    
+            MTL_loaded = loadMTLtextures(mtl_path, TextObj, material_name);
         }
         if (MTL_loaded == false) { printf("Was not able to load textures\n"); exit(-1); }
         else { printf("Texture file was loaded with success, total: %lu\n", TextObj.size()); }
@@ -491,7 +495,7 @@ int main( int argc, char * argv[] )
             GLubyte color[3];
             unsigned int id = (uint)TextObj[i].textureID;
 
-            if (semantic_clr == 1) 
+            if (semantic_clr == 1)
                 color_coding_RAND(color); // Instance-by-Instance Color Coding
             else if (semantic_clr == 2) {
                 if (semantic_src == 1)      { color_coding_2D3DS(color, id);}   // Stanford 2D3DS
@@ -501,7 +505,7 @@ int main( int argc, char * argv[] )
                 if (semantic_src == 1)      { color_coding_2D3DS_pretty(color, material_name[i]);}
                 else {printf("Invalid code for semantic source.\n"); exit(-1); }
             }
-            
+
             //Specify i-essim image
             glTexSubImage3D( GL_TEXTURE_2D_ARRAY,
                              0,                     //Mipmap number
@@ -520,6 +524,7 @@ int main( int argc, char * argv[] )
         bool res = loadOBJ(name_obj.c_str(), vertices, uvs, normals);
     }
 
+            
     // Get a handle for our "myTextureSampler" uniform
     GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
@@ -537,7 +542,13 @@ int main( int argc, char * argv[] )
         std::cout << "Semantics ";
         //for (unsigned int i = 250000; i < 260000; i++) printf("%u (%f)", i, indexed_semantics[i].x);
         std::cout << std::endl;
-    } else { indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals); }
+    } else {
+        indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+    }
+
+
+
+    //std::cout << "Indexed object" << std::endl;
 
     // Load it into a VBO
     GLuint vertexbuffer;
@@ -549,9 +560,9 @@ int main( int argc, char * argv[] )
     glGenBuffers(1, &uvbuffer);
     if (! ply > 0 && ! semantic > 0) {
         glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-        if (indexed_uvs.size() > 0) glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);    
+        if (indexed_uvs.size() > 0) glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
     }
-    
+
     GLuint normalbuffer;
     glGenBuffers(1, &normalbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
@@ -594,9 +605,9 @@ int main( int argc, char * argv[] )
     glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
     // Give an empty image to OpenGL ( the last "0" means "empty" )
-    if (semantic > 0) { glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0); } 
+    if (semantic > 0) { glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0); }
     else { glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F, windowWidth, windowHeight, 0,GL_BLUE, GL_FLOAT, 0); }
-    
+
     // Poor filtering
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -616,7 +627,7 @@ int main( int argc, char * argv[] )
     GLenum DrawBuffers[2] = {GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT};
     //GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(2, DrawBuffers); // "1" is the size of DrawBuffers
-      
+
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
       printf("Failed to properly draw buffers. Check your openGL frame buffer settings\n");
@@ -627,7 +638,7 @@ int main( int argc, char * argv[] )
     zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
     // std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
-    socket.bind ("tcp://127.0.0.1:"  + std::to_string(GPU_NUM + 5555));
+    socket.bind ("tcp://127.0.0.1:"  + std::to_string(PORT));
     cudaGetDevice( &cudaDevice );
     int g_cuda_device = 0;
     if (GPU_NUM > 0) {
@@ -638,8 +649,8 @@ int main( int argc, char * argv[] )
     cudaSetDevice(cudaDevice);
     cudaGLSetGLDevice(cudaDevice);
     cudaGraphicsResource* resource;
-    checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
-    
+    //checkCudaErrors(cudaGraphicsGLRegisterImage(&resource, renderedTexture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
+
     // std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
     int pose_idx = 0;
     zmq::message_t request;
@@ -667,7 +678,7 @@ int main( int argc, char * argv[] )
 
         //  Wait for next request from client
         socket.recv (&request);
-        
+
         boost::timer t;
 
         std::string request_str = std::string(static_cast<char*>(request.data()), request.size());
@@ -679,12 +690,12 @@ int main( int argc, char * argv[] )
 
         int nSize = windowWidth*windowHeight*3*6;
         int nByte = nSize*sizeof(float);
-        
+
         // --------------------------------------------------------------
         // ---------- RENDERING IN PANORAMA MODE ------------------------
         // ---------- Render to our framebuffer -------------------------
         // --------------------------------------------------------------
-        
+
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -817,7 +828,7 @@ int main( int argc, char * argv[] )
             for (int j = 0; j < windowWidth; j++) {
               for (int k = 0; k < dim; k++) {
                 offset = k;
-                tmp_float = textureReadout[offset + (i * windowWidth + j) * dim];  
+                tmp_float = textureReadout[offset + (i * windowWidth + j) * dim];
                 reply_data_handle[offset + ((windowHeight - 1 -i) * windowWidth + j) * dim] = static_cast<unsigned int>(tmp_float);
               }
               /*
@@ -856,7 +867,7 @@ int main( int argc, char * argv[] )
 
         //if (pano)
         //{
-          /* 
+          /*
             // ==============================================================
             // ========== RENDERING IN PANORAMA MODE=========================
             // ========== CURRENTLY DISABLED ================================
@@ -974,7 +985,7 @@ int main( int argc, char * argv[] )
         //else {
         //}
     } while (true);
-    
+
     // Cleanup VBO and shader
     glDeleteBuffers(1, &vertexbuffer);
     if (!ply > 0 && ! semantic > 0) glDeleteBuffers(1, &uvbuffer);
@@ -982,7 +993,7 @@ int main( int argc, char * argv[] )
     if (semantic > 0) glDeleteBuffers(1, &semanticlayerbuffer);
     glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
-    
+
     glDeleteFramebuffers(1, &FramebufferName);
     glDeleteTextures(1, &renderedTexture);
     glDeleteRenderbuffers(1, &depthrenderbuffer);

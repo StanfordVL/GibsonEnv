@@ -76,9 +76,9 @@ class World:
             # which will make the visualization like a fast-forward video.
             time_spent = time.time() - self._last_frame_time
             self._last_frame_time = time.time()
-            time_to_sleep = self.timestep * self.frame_skip - time_spent
-            if time_to_sleep > 0:
-                time.sleep(time_to_sleep)
+            #time_to_sleep = self.timestep * self.frame_skip - time_spent
+            #if time_to_sleep > 0:
+            #    time.sleep(time_to_sleep)
         p.stepSimulation()
 
 

@@ -170,7 +170,7 @@ def get_item_fn(inds, select, root, loader, transform, off_3d, target_transform,
 class ViewDataSet3D(data.Dataset):
     def __init__(self, root=None, train=False, transform=None, mist_transform=None, loader=default_loader, seqlen=5,
                  debug=False, dist_filter=None, off_3d=True, off_pc_render=True, overwrite_fofn=False,
-                 semantic_transform=np.array, env = None):
+                 semantic_transform=np.array, env = None, only_load = None):
         print('Processing the data:')
         if not root:
             self.root = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), "dataset")
@@ -195,22 +195,30 @@ class ViewDataSet3D(data.Dataset):
             self.dll = np.ctypeslib.load_library('render', '.')
 
         if overwrite_fofn or not os.path.isfile(self.fofn):
-            self.scenes = sorted([d for d in (os.listdir(self.root)) if
+
+            if only_load is None:
+                self.scenes = sorted([d for d in (os.listdir(self.root)) if
                                   os.path.isdir(os.path.join(self.root, d)) and os.path.isfile(
                                       os.path.join(self.root, d, 'camera_poses.csv')) and os.path.isdir(
                                       os.path.join(self.root, d, 'pano'))])
 
-            num_scenes = len(self.scenes)
-            num_train = int(num_scenes * 0.9)
+                num_scenes = len(self.scenes)
+                num_train = int(num_scenes * 0.9)
+
+            else:
+
+                self.scenes = sorted([only_load])
+                num_scenes = 1
+                num_train = 0
+
+
             print("Total %d scenes %d train %d test" % (num_scenes, num_train, num_scenes - num_train))
             if train:
                 self.scenes = self.scenes[:num_train]
 
             self.meta = {}
-            if debug:
-                last = 35
-            else:
-                last = len(self.scenes)
+
+            last = len(self.scenes)
 
             for scene in self.scenes[:last]:
                 posefile = os.path.join(self.root, scene, 'camera_poses.csv')
@@ -226,7 +234,8 @@ class ViewDataSet3D(data.Dataset):
                         # print(uuid, xyz)
 
                         if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + uuid + '.json')):
-                            self.meta[scene][uuid] = metadata
+                            if np.linalg.norm( np.array(xyz) - np.array([0,0,0])) > 1e-5: #remove scans that are not registered
+                                self.meta[scene][uuid] = metadata
             print("Indexing")
 
             for scene, meta in tqdm(list(self.meta.items())):

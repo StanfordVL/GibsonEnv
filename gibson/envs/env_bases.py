@@ -129,6 +129,7 @@ class BaseEnv(gym.Env):
             renderer=p.ER_BULLET_HARDWARE_OPENGL
             )
         rgb_array = np.array(px)
+        if close: return None
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
 

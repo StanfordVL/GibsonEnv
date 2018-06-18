@@ -14,6 +14,8 @@ import socket
 import sys
 import zmq
 import pickle
+import scipy
+
 
 class View(Enum):
     EMPTY = 0
@@ -27,7 +29,7 @@ class View(Enum):
 
 class SimpleUI():
     '''Static UI'''
-    def __init__(self, width_col, height_col, windowsz, env=None, save_first=True):
+    def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=False):
         self.env = env
         self.width  = width_col * windowsz
         self.height = height_col * windowsz
@@ -39,13 +41,13 @@ class SimpleUI():
         self.components = [View[item] for item in self.env.config["ui_components"]]
         self._add_all_images()
         self.record_root = None
-        self.port = 6666
+        self.port = port
         self.nframe = 0
         self.save_first = save_first
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PUB)
         self.socket.bind("tcp://*:%s" % self.port)
-
+        self.record_nframe = 0
     def _close(self):
         self.context.destroy()
 
@@ -81,24 +83,26 @@ class SimpleUI():
 
     def refresh(self):
         if "enable_ui_recording" in self.env.config:
+            screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1, 0, 2), cv2.COLOR_BGR2RGB)
+            cv2.imshow("Recording", screen_to_dump)
             cmd=cv2.waitKey(5)%256
             if cmd == ord('r'):
                 self.start_record()
             if cmd == ord('q'):
                 self.end_record()
 
-            img = np.uint8(self.screen_arr)
-            cv2.imshow("Recording", img)
             if self.is_recording:
-                self.curr_output.write(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+                #self.curr_output.write(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+                #from IPython import embed; embed()
+                cv2.imwrite(os.path.join(self.output_dir, "frame%06d.png" % self.record_nframe), screen_to_dump)
+                self.record_nframe += 1
         #with Profiler("Refreshing"):
         pygame.display.flip()
         surfarray.blit_array(self.screen, self.screen_arr)
         #print(self.screen_arr.shape)
         screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1,0,2), cv2.COLOR_BGR2RGB)
         screen = pickle.dumps(cv2.imencode('.jpg', screen_to_dump), protocol=0)
-        #from IPython import embed; embed()
-        
+
         self.socket.send(b"ui" + screen)
 
 
@@ -109,19 +113,20 @@ class SimpleUI():
 
 
     def start_record(self):
+        self.record_nframe = 0
         print("start recording")
         if self.is_recording:
             return    # prevent double enter
         fourcc = cv2.VideoWriter_fourcc(*'MJPG') # 'XVID' smaller
-        file_keyword = datetime.now()
-        filename = 'record-{}.avi'.format(file_keyword)
-        filepath = os.path.join(self.RECORD_ROOT, filename)
+        file_keyword = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+        #filename = 'record-{}.mpeg'.format(file_keyword)
+        self.output_dir = file_keyword
+        try:
+            os.mkdir(file_keyword)
+        except:
+            pass
 
-        foldername = 'record-{}'.format(file_keyword)
-        folderpath = os.path.join(self.RECORD_ROOT, foldername)
-
-        #os.mkdir(folderpath)
-        self.curr_output = cv2.VideoWriter(filepath, fourcc, 22.0, self.UI_DIM)
+        #self.curr_output = cv2.VideoWriter(filename, fourcc, 22.0, (self.width, self.height))
 
         self.is_recording = True
 
@@ -130,7 +135,7 @@ class SimpleUI():
 
     def end_record(self):
         print("end recording")
-        self.curr_output.release()
+        #self.curr_output.release()
         self.is_recording = False
         return
 
@@ -138,23 +143,23 @@ class OneViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Center,
     '''
-    def __init__(self, windowsz=256, env = None):
+    def __init__(self, windowsz=256, env = None, port=-1):
         self.POS = [
             (0, 0)                 # One
         ]
-        SimpleUI.__init__(self, 1, 1, windowsz, env)
+        SimpleUI.__init__(self, 1, 1, windowsz, port, env)
 
 class TwoViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Left,
     Two: Right
     '''
-    def __init__(self, windowsz=256, env = None):
+    def __init__(self, windowsz=256, env = None, port=-1):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0)           # Two
         ]
-        SimpleUI.__init__(self, 2, 1, windowsz, env)
+        SimpleUI.__init__(self, 2, 1, windowsz, port, env)
 
 class ThreeViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -162,13 +167,13 @@ class ThreeViewUI(SimpleUI):
     Two:    center
     Three:  right
     '''
-    def __init__(self, windowsz=256, env = None):
+    def __init__(self, windowsz=256, env = None, port=-1):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0),          # Two
             (windowsz * 2, 0)       # Three
         ]
-        SimpleUI.__init__(self, 3, 1, windowsz, env)
+        SimpleUI.__init__(self, 3, 1, windowsz, port, env)
 
 class FourViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -177,14 +182,14 @@ class FourViewUI(SimpleUI):
     Three:  bottom left
     Four:   bottom right
     '''
-    def __init__(self, windowsz=256, env = None):
+    def __init__(self, windowsz=256, env = None, port=-1):
         self.POS = [
             (0, 0),                 # One
             (0, windowsz),          # Two
             (windowsz, 0),          # Three
             (windowsz, windowsz)    # Four
         ]
-        SimpleUI.__init__(self, 2, 2, windowsz, env)
+        SimpleUI.__init__(self, 2, 2, windowsz, port, env)
 
 
 def main6():

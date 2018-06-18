@@ -45,6 +45,7 @@ class BaseRobotEnv(BaseEnv):
     """Based on BaseEnv
     Handles action, reward
     """
+    DEFAULT_PORT = 5556
 
     def __init__(self, config, tracking_camera, scene_type="building", gpu_count=0):
         BaseEnv.__init__(self, config, scene_type, tracking_camera)
@@ -62,11 +63,12 @@ class BaseRobotEnv(BaseEnv):
             seqlen = 2,
             off_3d = False,
             train = False,
-            overwrite_fofn=True, env = self)
+            overwrite_fofn=True, env = self, only_load = self.config["model_id"])
         self.ground_ids = None
         if self.gui:
             assert(self.tracking_camera is not None)
         self.gpu_count = gpu_count
+        self.assign_ports()
         self.nframe = 0
         self.eps_reward = 0
 
@@ -75,6 +77,24 @@ class BaseRobotEnv(BaseEnv):
 
         self._robot_introduced = False
         self._scene_introduced = False
+
+    def assign_ports(self):
+        '''Rendering multiple modalities (RGB, depth, normal) needs to be done 
+        on different ports. Assign individual ports to each modality:
+
+        | Rendering | Port         |
+        | RGB       | Default      |
+        | Depth     | Default - 1  |
+        | Normal    | Default - 2  |
+        | Semantics | Default - 3  |
+        | UI        | Default - 4  |
+        Default depends on how many Gibson environments are running simultanously
+        '''
+        self.port_rgb = self.DEFAULT_PORT - self.gpu_count * 5
+        self.port_depth = self.port_rgb - 1
+        self.port_normal = self.port_rgb - 2
+        self.port_sem  = self.port_rgb - 3
+        self.port_ui   = self.port_rgb - 4
 
     def robot_introduce(self, robot):
         self.robot = robot
@@ -100,6 +120,10 @@ class BaseRobotEnv(BaseEnv):
         else:
             self.windowsz = 512
             self.scale_up = 1
+
+        if "fast_lq_render" in self.config and self.config["fast_lq_render"] == True:
+            self.scale_up *= 2
+        # if fast render, use lower quality point cloud
 
         self._render_width = self.windowsz
         self._render_height = self.windowsz
@@ -287,6 +311,9 @@ class CameraRobotEnv(BaseRobotEnv):
                                      'depth' in self.config["output"] or \
                                      'normal' in self.config["output"] or \
                                      'semantics' in self.config["output"]
+        self._require_rgb = 'rgb_filled' in self.config["output"] or "rgb_prefilled" in self.config["output"]
+        self._require_depth = 'depth' in self.config["output"]
+        self._require_normal = 'depth' in self.config["output"]
         self._require_semantics = 'semantics' in self.config["output"]
         self._semantic_source = 1
         self._semantic_color = 1
@@ -319,7 +346,7 @@ class CameraRobotEnv(BaseRobotEnv):
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
         self.r_camera_dep = None
-        self.check_port_available()
+        #self.check_port_available()
         self.setup_camera_multi()
         self.setup_camera_rgb()
         
@@ -332,7 +359,7 @@ class CameraRobotEnv(BaseRobotEnv):
 
         assert self.config["ui_num"] == len(self.config['ui_components']), "In configuration, ui_num is not equal to the number of ui components"
         if self.config["display_ui"]:
-            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self)
+            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui)
 
 
     def _reset(self):
@@ -352,7 +379,7 @@ class CameraRobotEnv(BaseRobotEnv):
     def _step(self, a):
         t = time.time()
         base_obs, sensor_reward, done, sensor_meta = BaseRobotEnv._step(self, a)
-        dt = time.time() - t    
+        dt = time.time() - t
         # Speed bottleneck
         observations = base_obs
         self.fps = 0.9 * self.fps + 0.1 * 1/dt
@@ -400,6 +427,8 @@ class CameraRobotEnv(BaseRobotEnv):
         if tag == View.SEMANTICS:
             print("Render components: semantics", np.mean(self.render_semantics))
             return self.render_semantics
+        if tag == View.PHYSICS:
+            return self.render_physics()
 
     def render_to_UI(self):
         '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO
@@ -459,8 +488,8 @@ class CameraRobotEnv(BaseRobotEnv):
             self.r_camera_rgb.setNewPose(pose)
             all_dist, all_pos = self.r_camera_rgb.getAllPoseDist(pose)
             top_k = self.find_best_k_views(pose[0], all_dist, all_pos, avoid_block=False)
-            with Profiler("Render to screen"):
-                self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
+            #with Profiler("Render to screen"):
+            self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_rgb_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k)
 
         observations = {}
         for output in self.config["output"]:
@@ -501,6 +530,10 @@ class CameraRobotEnv(BaseRobotEnv):
             for k,v in tqdm((uuids)):
                 data = self.dataset[v]
                 target, target_depth = data[1], data[3]
+                ww = target.shape[0] // 8 + 2
+                target[:ww, :, :] = target[ww, :, :]
+                target[-ww:, :, :] = target[-ww, :, :]
+
                 if self.scale_up !=1:
                     target = cv2.resize(
                         target,None,
@@ -521,7 +554,12 @@ class CameraRobotEnv(BaseRobotEnv):
             all_data = self.dataset.get_multi_index([v for k, v in uuids])
             for i, data in enumerate(all_data):
                 target, target_depth = data[1], data[3]
+                ww = target.shape[0] // 8 + 2
+                target[:ww, :, :] = target[ww, :, :]
+                target[-ww:, :, :] = target[-ww, :, :]
+
                 if self.scale_up !=1:
+
                     target = cv2.resize(
                         target,None,
                         fx=1.0/self.scale_up,
@@ -538,8 +576,8 @@ class CameraRobotEnv(BaseRobotEnv):
                 sources.append(target)
                 source_depths.append(target_depth) 
         
-        ## TODO (hzyjerry): make sure 5555&5556 are not occupied, or use configurable ports
-        self.r_camera_rgb = PCRenderer(5556, sources, source_depths, target, rts, self.scale_up, 
+        self.r_camera_rgb = PCRenderer(self.port_rgb, sources, source_depths, target, rts, 
+                                       scale_up=self.scale_up, 
                                        semantics=source_semantics,
                                        gui=self.gui, 
                                        use_filler=self._use_filler,  
@@ -564,6 +602,9 @@ class CameraRobotEnv(BaseRobotEnv):
             if self._require_semantics:
                 self.r_camera_semt.terminate()
             while tb:
+                if exctype == KeyboardInterrupt:
+                    print("Exiting Gibson...")
+                    return
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
                 lineno = tb.tb_lineno
@@ -578,10 +619,10 @@ class CameraRobotEnv(BaseRobotEnv):
         cur_path = os.getcwd()
         os.chdir(dr_path)
 
-        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {} -p {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_depth)
         #render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
-        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
-        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {} -p {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_normal)
+        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {} -p {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_sem)
         
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         #self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
@@ -601,20 +642,17 @@ class CameraRobotEnv(BaseRobotEnv):
     def check_port_available(self):
         assert(self._require_camera_input)
         # TODO (hzyjerry)
-        """
-        s = socket.socket()
-        try:
-            s.connect(("127.0.0.1", 5555))
-        except socket.error as e:
-            raise e
-            raise error.Error("gibson starting error: port {} is in use".format(5555))
-        try:
-            s.connect(("127.0.0.1", 5556))
-        except socket.error as e:
-            raise error.Error("gibson starting error: port {} is in use".format(5556))
-        """
-        return
-
+        ports = []
+        if self._require_depth: ports.append(self.port_depth)
+        if self._require_normal: ports.append(self.port_normal)
+        if self._require_semantics: ports.append(self.port_sem)
+        for port in ports:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                result = s.bind(("127.0.0.1", port - 1))
+            except socket.error as e:
+                raise e
+                raise error.Error("Gibson initialization Error: port {} is in use".format(port))
 
 
 class SemanticRobotEnv(CameraRobotEnv):
@@ -637,6 +675,9 @@ class SemanticRobotEnv(CameraRobotEnv):
             if self._require_semantics:
                 self.r_camera_semt.terminate()
             while tb:
+                if exctype == KeyboardInterrupt:
+                    print("Exiting Gibson...")
+                    return
                 filename = tb.tb_frame.f_code.co_filename
                 name = tb.tb_frame.f_code.co_name
                 lineno = tb.tb_lineno

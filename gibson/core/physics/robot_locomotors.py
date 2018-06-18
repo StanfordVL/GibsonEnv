@@ -110,12 +110,25 @@ class WalkerBase(BaseRobot):
         return self.robot_body.bp_pose.rpy()
 
     def apply_action(self, a):
+        #print(self.ordered_joints)
         if self.control == 'torque':
             for n, j in enumerate(self.ordered_joints):
                 j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
         elif self.control == 'velocity':
             for n, j in enumerate(self.ordered_joints):
                 j.set_motor_velocity(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
+        elif self.control == 'position':
+            for n, j in enumerate(self.ordered_joints):
+                j.set_motor_position(a[n])
+        elif type(self.control) is list or type(self.control) is tuple: #if control is a tuple, set different control
+        # type for each joint
+            for n, j in enumerate(self.ordered_joints):
+                if self.control[n] == 'torque':
+                    j.set_motor_torque(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
+                elif self.control[n] == 'velocity':
+                    j.set_motor_velocity(self.power * j.power_coef * float(np.clip(a[n], -1, +1)))
+                elif self.control[n] == 'position':
+                    j.set_motor_position(a[n])
         else:
             pass
 
@@ -727,6 +740,86 @@ class JR(WalkerBase):
                                 [self.vel, -self.vel],
                                 [-self.vel, self.vel],
                                 [0, 0]]
+
+            self.setup_keys_to_action()
+        else:
+            action_high = 0.02 * np.ones([4])
+            self.action_space = gym.spaces.Box(-action_high, action_high)
+
+    def apply_action(self, action):
+        if self.is_discrete:
+            realaction = self.action_list[action]
+        else:
+            realaction = action
+        WalkerBase.apply_action(self, realaction)
+
+    def steering_cost(self, action):
+        if not self.is_discrete:
+            return 0
+        if action == 2 or action == 3:
+            return -0.1
+        else:
+            return 0
+
+    def angle_cost(self):
+        angle_const = 0.2
+        diff_to_half = np.abs(self.angle_to_target - 1.57)
+        is_forward = self.angle_to_target > 1.57
+        diff_angle = np.abs(1.57 - diff_to_half) if is_forward else 3.14 - np.abs(1.57 - diff_to_half)
+        debugmode = 0
+        if debugmode:
+            print("is forward", is_forward)
+            print("diff to half", diff_to_half)
+            print("angle to target", self.angle_to_target)
+            print("diff angle", diff_angle)
+        return -angle_const * diff_angle
+
+    def robot_specific_reset(self):
+        WalkerBase.robot_specific_reset(self)
+
+    def alive_bonus(self, z, pitch):
+        return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
+
+    def setup_keys_to_action(self):
+        self.keys_to_action = {
+            (ord('w'),): 0,  ## forward
+            (ord('s'),): 1,  ## backward
+            (ord('d'),): 2,  ## turn right
+            (ord('a'),): 3,  ## turn left
+            (): 4
+        }
+
+    def calc_state(self):
+        base_state = WalkerBase.calc_state(self)
+
+        angular_speed = self.robot_body.angular_speed()
+        return np.concatenate((base_state, np.array(angular_speed)))
+
+
+class JR2(WalkerBase):
+    foot_list = []
+    mjcf_scaling = 1
+    model_type = "URDF"
+
+    def __init__(self, config, env=None):
+        self.config = config
+        WalkerBase.__init__(self, "jr2_urdf/jr2.urdf", "base_link", action_dim=4,
+                            sensor_dim=20, power=2.5, scale=0.6,
+                            initial_pos=config['initial_pos'],
+                            target_pos=config["target_pos"],
+                            resolution=config["resolution"],
+                            control=['velocity', 'velocity', 'position', 'position'],
+                            env=env)
+        self.is_discrete = config["is_discrete"]
+
+        if self.is_discrete:
+            self.action_space = gym.spaces.Discrete(5)
+            self.vel = 0.01
+            self.action_list = [[self.vel, self.vel,0,0.2],
+                                [-self.vel, -self.vel,0,-0.2],
+                                [self.vel, -self.vel,-0.5,0],
+                                [-self.vel, self.vel,0.5,0],
+                                [0, 0,0,0]]
 
             self.setup_keys_to_action()
         else:

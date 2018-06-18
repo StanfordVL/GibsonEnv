@@ -84,7 +84,9 @@ class HuskyNavigateEnv(CameraRobotEnv):
         for i, f in enumerate(self.parts):
             if self.parts[f] not in self.robot.feet:
                 wall_contact += [pt for pt in self.robot.parts[f].contact_list() if pt[6][2] > 0.15]
-        print(len(wall_contact))
+        debugmode = 0
+        if debugmode:
+            print("Husky wall contact:", len(wall_contact))
         wall_collision_cost = self.wall_collision_cost * len(wall_contact)
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)

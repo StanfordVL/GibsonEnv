@@ -13,5 +13,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     #env = HuskyNavigateEnv(human=True, timestep=timestep, frame_skip=frame_skip, mode="RGB", is_discrete = True, resolution=args.resolution)
-    env = HuskyNavigateEnv(config=args.config)
+    env = HuskyNavigateEnv(config=args.config, gpu_count = 0)
     play(env, zoom=4)

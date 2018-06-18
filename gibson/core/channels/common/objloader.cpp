@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string>
 #include <cstring>
-
+#include <iostream>
 #include <glm/glm.hpp>
 
 #include "objloader.hpp"
@@ -75,16 +75,22 @@ bool loadOBJ(
             int matches = sscanf(stringBuffer, "%u/%u/%u %u/%u/%u %u/%u/%u\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
             bool f_3_format = (matches == 9);
             bool f_2_format = true;
+            bool f_2_format_normal = true;
             if (! f_3_format) {
                 // .obj file has `f v1/uv1 v2/uv2 v3/uv3` format
                 int matches = sscanf(stringBuffer, " %u/%u %u/%u %u/%u\n", &vertexIndex[0], &uvIndex[0], &vertexIndex[1], &uvIndex[1], &vertexIndex[2], &uvIndex[2] );
                 f_2_format = (matches == 6);
                 if (! f_2_format) {
-                    matches = sscanf(stringBuffer, " %u %u %u\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
-                    if (matches != 3){
-                        printf("File %s can't be read by our simple parser :-( Try exporting with other options\n", path);
-                        fclose(file);
-                        return false;
+                    int matches = sscanf(stringBuffer, " %u//%u %u//%u %u//%u\n", &vertexIndex[0], &normalIndex[0], &vertexIndex[1], &normalIndex[1], &vertexIndex[2], &normalIndex[2] );
+                    f_2_format_normal = (matches == 6);
+                    if (! f_2_format_normal) {
+                        int matches = sscanf(stringBuffer, " %u %u %u\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
+                        if (matches != 3){
+                            printf("File %s can't be read by our simple parser :-( Try exporting with other options\n", path);
+                            fclose(file);
+                            return false;
+                        }
+
                     }
                 }
             }
@@ -96,7 +102,7 @@ bool loadOBJ(
                 uvIndices    .push_back(uvIndex[1]);
                 uvIndices    .push_back(uvIndex[2]);
             }
-            if (f_3_format) {
+            if (f_3_format || f_2_format_normal) {
                 normalIndices.push_back(normalIndex[0]);
                 normalIndices.push_back(normalIndex[1]);
                 normalIndices.push_back(normalIndex[2]);
@@ -145,16 +151,18 @@ bool loadOBJ(
 
     // construct the temp_normals vector here, using vertex positions and face vertex indices
     // TODO: this is not well-tested yet
+    std::vector<unsigned int> vertexFaces(temp_vertices.size());
+    std::fill(vertexFaces.begin(), vertexFaces.end(), 0);
+
     if ( out_normals.size() == 0 ) {
         for ( unsigned int i=0; i<out_vertices.size(); i++ ){
             out_normals.push_back(glm::vec3(0.0));
         }
 
-        std::vector<unsigned int> vertexFaces(out_vertices.size());
-        std::fill(vertexFaces.begin(), vertexFaces.end(), 0);
-        for ( unsigned int i=0; i<vertexIndices.size(); i++ ){
+        for ( unsigned int i=0; i<vertexIndices.size(); i++ ) {
             vertexFaces[vertexIndices[i]] += 1;
         }
+
 
         for ( unsigned int i=0; i<vertexIndices.size(); i++ ){
             // make sure vertices are arranged in right hand order
@@ -162,15 +170,27 @@ bool loadOBJ(
             unsigned int v2 = ((v1+1)%3==0) ? (v1-2) : (v1+1);
             unsigned int v3 = ((v2+1)%3==0) ? (v2-2) : (v2+1);
 
+            //std::cout << "v1 " << v1 << " v2 " << v2 << " v3 " << v3 << std::endl;
             glm::vec3 edge1 = out_vertices[v2] - out_vertices[v1];
-            glm::vec3 edge2 = out_vertices[v3] - out_vertices[v2];
+            //glm::vec3 edge2 = out_vertices[v3] - out_vertices[v2];
+            glm::vec3 edge2 = out_vertices[v3] - out_vertices[v1];
 
             // set normal as cross product
             unsigned int vertexIndex = vertexIndices[i];
             glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
-            out_normals[vertexIndex-1] += normal / float(vertexFaces[vertexIndex-1]);
+            //std::cout << normal.x << " " << normal.y << " " << normal.z <<  " " << normal.x * normal.x + normal.y * normal.y + normal.z * normal.z << " " << float(vertexFaces[vertexIndex-1]) <<  std::endl;
+            out_normals[i] += normal / float(vertexFaces[vertexIndex-1]);
+            
+            //std::cout << "Writing to " << vertexIndex << std::endl;
+            //out_normals[vertexIndex-1] = glm::vec3(1, 0, 0);
         }
+
+        // Renormalize all the normal vectors
+        for (unsigned int i=0; i<out_normals.size(); i++) {
+            out_normals[i] = glm::normalize(out_normals[i]);
+        }        
     }
+
 
     // TODO: (hzyjerry) this is a dummy place holder
     if ( out_uvs.size() == 0 ) {

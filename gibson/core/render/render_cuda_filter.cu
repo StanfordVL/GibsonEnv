@@ -92,6 +92,18 @@ __global__ void fill(unsigned char * img)
     }
 }
 
+__global__ void selection_sum_weights(float * selection_sum,  float * selection, int n, int stride) {
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    int width = gridDim.x * TILE_DIM;
+    int idx = 0;
+    for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS) {
+        selection_sum[((y+j)*width + x)] = 0;
+        for ( idx = 0; idx < n; idx ++) {
+            atomicAdd(&(selection_sum[((y+j)*width + x)]),  selection[idx * stride + ((y+j)*width + x)]);
+        }
+    }
+}
 
 
 
@@ -101,29 +113,63 @@ __global__ void merge(unsigned char * img_all, unsigned char * img, float * sele
     int y = blockIdx.y * TILE_DIM + threadIdx.y;
     int width = gridDim.x * TILE_DIM;
     int idx = 0;
-    float sum = 0; 
+    float sum = 0;
     float weight = 0;
     for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS) {
       sum = 0;
       for (idx = 0; idx < n; idx ++) sum += selection[idx * stride + ((y+j)*width + x)];
-      //printf("%f\n", sum);
-      
+
+      for (idx = 0; idx < n; idx ++) selection[idx * stride + ((y+j)*width + x)] /= (sum + 1e-5);
+
       img[3*((y+j)*width + x)] = 0;        
       img[3*((y+j)*width + x)+1] = 0;    
       img[3*((y+j)*width + x)+2] = 0;    
       
       for (idx = 0; idx < n; idx ++) {
-      
-      weight = selection[idx * stride + ((y+j)*width + x)] / (sum + 1e-4);
-      //weight = 0.25;
-      
+
+      //weight = selection[idx * stride + ((y+j)*width + x)];
+      weight = 0.25;
+      //weight = 0.5;
+
+
       img[3*((y+j)*width + x)] += (unsigned char) (img_all[idx * stride * 3 + 3*((y+j)*width + x)] * weight);
       img[3*((y+j)*width + x)+1] += (unsigned char) (img_all[idx * stride * 3 + 3*((y+j)*width + x) + 1] * weight);
       img[3*((y+j)*width + x)+2] += (unsigned char)(img_all[idx * stride * 3 + 3*((y+j)*width + x) + 2] * weight);
-      
+
       }
-      
-    
+
+
+    }
+}
+
+
+__global__ void merge_sum(unsigned char * img_all, unsigned char * img, float * selection, float * selection_sum,  int n, int stride)
+{
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    int width = gridDim.x * TILE_DIM;
+    int idx = 0;
+    float weight = 0;
+    for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS) {
+
+      img[3*((y+j)*width + x)] = 0;
+      img[3*((y+j)*width + x)+1] = 0;
+      img[3*((y+j)*width + x)+2] = 0;
+
+      for (idx = 0; idx < n; idx ++) {
+
+      weight = selection[idx * stride + ((y+j)*width + x)] / selection_sum[((y+j)*width + x)];
+      //weight = 0.25;
+      //weight = 0.5;
+
+
+      img[3*((y+j)*width + x)] += (unsigned char) (img_all[idx * stride * 3 + 3*((y+j)*width + x)] * weight);
+      img[3*((y+j)*width + x)+1] += (unsigned char) (img_all[idx * stride * 3 + 3*((y+j)*width + x) + 1] * weight);
+      img[3*((y+j)*width + x)+2] += (unsigned char)(img_all[idx * stride * 3 + 3*((y+j)*width + x) + 2] * weight);
+
+      }
+
+
     }
 }
 
@@ -194,13 +240,13 @@ __global__ void transform2d(float *points3d_after, float fov_scale)
     //points3d_after[(ih * w + iw) * 3 + 2] = atan2(sqrt(x * x + y * y), z);
 
       float x2 = fov_scale * x;
-      if ((x2 > 0) && (y < x2) && (y > -x2) && (z < x2) && (z > -x2)) {
+      if ((x2 > 0) && (y < x2 * 1.1) && (y > -x2 * 1.1) && (z < x2 * 1.1) && (z > -x2 * 1.1)) {
           points3d_after[(ih * w + iw) * 3 + 1] = y / (x2 + 1e-5);
           points3d_after[(ih * w + iw) * 3 + 2] = -z / (x2 + 1e-5);
       }
       else {
-          points3d_after[(ih * w + iw) * 3 + 1] = 0;
-          points3d_after[(ih * w + iw) * 3 + 2] = 0;
+          points3d_after[(ih * w + iw) * 3 + 1] = -1;
+          points3d_after[(ih * w + iw) * 3 + 2] = -1;
       }
   }
 }
@@ -285,17 +331,14 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
   int y = blockIdx.y * TILE_DIM + threadIdx.y;
   int w = gridDim.x * TILE_DIM;
   int h = w /2;
-  
+  int maxsize = oh * ow;
+
   for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
   {
   
-
-
-
      int iw = x;
      int ih = y + j;
-     //int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + 1)/2 * ow - 0.5);
-     //int ty = round((points3d_polar[(ih * w + iw) * 3 + 2] + 1)/2 * oh - 0.5);
+
           
      int tx = round((points3d_polar[(ih * w + iw) * 3 + 1] + 1)/2 * ow - 0.5);
      int ty = round((points3d_polar[(ih * w + iw) * 3 + 2] + 1)/2 * oh - 0.5);
@@ -354,26 +397,29 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
      
      //render[(ty * ow + tx)] = img[ih * w + iw];
      //selection[(ty * ow + tx)] = 1.0;
-     
 
-     if ((y > 3 * h/16) && (y < (h*13)/16))
-     if ((mindelta > - 0.1 * this_depth) && (maxdelta <  0.1 * this_depth) && (this_depth < 10000)) {
-           if ((txmax - txmin) * (tymax - tymin) < 500)
+     float tolerance = 0.1 * this_depth > 10? 0.1 * this_depth : 10;
+
+     float flank = 0.01;
+
+     if ((y > 1 * h/8) && (y < (h*7)/8))
+     if (((mindelta > - tolerance) && (maxdelta <  tolerance)) && (this_depth < 10000)) {
+           if (((txmax - txmin) * (tymax - tymin) < 1600) && (txmax - txmin < 40) && (tymax - tymin < 40))
            {
                for (itx = txmin; itx < txmax; itx ++)
                    for (ity = tymin; ity < tymax; ity ++)
+                   { if (( 0 <= itx) && (itx < ow) && ( 0 <= ity) && (ity < oh))
                        {
                        newx = (itx - tx_offset) * it00 + it10 * (ity - ty_offset);
                        newy = (itx - tx_offset) * it01 + it11 * (ity - ty_offset);
-                       
+
                        //printf("%f %f\n", newx, newy);
-                       if ((newx > -0.01) && (newx < 1.01) && (newy > -0.01) && (newy < 1.01))
+                       if ((newx > -flank) && (newx < 1 + flank) && (newy > -flank) && (newy < 1 + flank))
                           { 
                           if (newx < 0) newx = 0;
                           if (newy < 0) newy = 0;
                           if (newx > 1) newx = 1;
                           if (newy > 1) newy = 1;
-                          
                           
                            r = img[(ih * w + iw)] / (256*256) * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / (256*256) * (1-newx) * (newy) + img[((ih+1) * w + iw)] / (256*256) * (newx) * (1-newy) + img[((ih+1) * w + iw + 1)] / (256*256) * newx * newy;
                            g = img[(ih * w + iw)] / 256 % 256 * (1-newx) * (1-newy) + img[(ih * w + iw + 1)] / 256 % 256 * (1-newx) * (newy) + img[((ih+1) * w + iw)] / 256 % 256  * (newx) * (1-newy)  + img[((ih+1) * w + iw + 1)] / 256 % 256 * newx * newy;
@@ -383,11 +429,13 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
                            if (g > 255) g = 255;
                            if (b > 255) b = 255;
 
-                           
-                           render[(ity * ow + itx)] = r * 256 * 256 + g * 256 + b;
-                           selection[(ity * ow + itx)] = 1.0 / abs(det);
+                           if ((ity * ow + itx > 0) && (ity * ow + itx < maxsize)) {
+                               render[(ity * ow + itx)] = r * 256 * 256 + g * 256 + b;
+                               selection[(ity * ow + itx)] = 1.0 / abs(det);
+                           }
                            }
                        }
+                   }
                        
             }
      }
@@ -418,14 +466,13 @@ void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * dep
     dim3 dimGrid(nx/TILE_DIM, ny/TILE_DIM, 1);
     dim3 dimGrid_out(onx/TILE_DIM, ony/TILE_DIM, 1);
     dim3 dimBlock(TILE_DIM, BLOCK_ROWS, 1);
-    
+
     unsigned char *d_img, *d_render, *d_render_all;
     float *d_depth, *d_pose;
     float *d_depth_render;
     float *d_3dpoint, *d_3dpoint_after;
     
-    float * d_selection; 
-    
+    float * d_selection, * d_selection_sum;
     int * nz;
     int * average;
     
@@ -443,6 +490,7 @@ void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * dep
 
 
     cudaMalloc((void **)&d_selection, output_mem_size * sizeof(float) * n);
+    cudaMalloc((void **)&d_selection_sum, output_mem_size * sizeof(float));
 
     cudaMalloc((void **)&d_render2, output_mem_size * sizeof(int));
     
@@ -454,10 +502,11 @@ void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * dep
     cudaMemset(nz, 0, output_mem_size * sizeof(int));
     cudaMemset(average, 0, output_mem_size * sizeof(int) * 3);
     cudaMemset(d_selection, 0, output_mem_size * sizeof(float) * n);
-    
+    cudaMemset(d_selection_sum, 0, output_mem_size * sizeof(float));
+
     cudaMemcpy(d_depth_render, depth_render, output_mem_size * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemset(d_render_all, 0, output_mem_size * sizeof(unsigned char) * 3 * n);
-    
+
     int idx;
     for (idx = 0; idx < n; idx ++) {
     
@@ -486,26 +535,22 @@ void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * dep
         //int_to_char <<< dimGrid_out, dimBlock >>> (d_render2, d_render);
         int_to_char <<< dimGrid_out, dimBlock >>> (d_render2, &(d_render_all[idx * output_mem_size * 3]));
 
-    }
 
-        merge <<< dimGrid_out, dimBlock >>> (d_render_all, d_render, d_selection, n, output_mem_size);
-        
-        //int fill_size[10] = {3, 5, 10, 20, 50, 75, 100, 200, 400, 768};
         int fill_size[1] = {3};
 
         for (int j = 0; j < 1; j++) {
             cudaMemset(nz, 0, output_mem_size * sizeof(int));
             cudaMemset(average, 0, output_mem_size * sizeof(int) * 3);
-            get_average <<< dimGrid_out, dimBlock >>> (d_render, nz, average, fill_size[j]);
-            fill_with_average <<< dimGrid_out, dimBlock >>> (d_render, nz, average, fill_size[j]);
+            get_average <<< dimGrid_out, dimBlock >>> (&(d_render_all[idx * output_mem_size * 3]), nz, average, fill_size[j]);
+            fill_with_average <<< dimGrid_out, dimBlock >>> (&(d_render_all[idx * output_mem_size * 3]), nz, average, fill_size[j]);
         }
-        /*
-            cudaMemset(nz, 0, output_mem_size * sizeof(int));
-            cudaMemset(average, 0, output_mem_size * sizeof(int) * 3);
-            get_average <<< dimGrid_out, dimBlock >>> (d_render, nz, average, 3);
-            fill_with_average <<< dimGrid_out, dimBlock >>> (d_render, nz, average, 3);
-        */
-        cudaMemcpy(render, d_render, output_mem_size * sizeof(unsigned char) * 3 , cudaMemcpyDeviceToHost);
+    }
+
+        selection_sum_weights <<< dimGrid_out, dimBlock >>> (d_selection_sum, d_selection, n, output_mem_size);
+        merge_sum <<< dimGrid_out, dimBlock >>> (d_render_all, d_render, d_selection, d_selection_sum, n, output_mem_size);
+        //merge <<< dimGrid_out, dimBlock >>> (d_render_all, d_render, d_selection, n, output_mem_size);
+
+    cudaMemcpy(render, d_render, output_mem_size * sizeof(unsigned char) * 3 , cudaMemcpyDeviceToHost);
 
         
     cudaFree(d_img);
@@ -521,6 +566,7 @@ void render(int n, int h,int w, int oh, int ow, unsigned char * img, float * dep
     cudaFree(d_selection);
     cudaFree(nz);
     cudaFree(average);
+    cudaFree(d_selection_sum);
 }
     
     
