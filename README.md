@@ -24,7 +24,7 @@ Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for 
 
 Beta
 =================
-**This is the <strike>0.1.0</strike> 0.2.0 beta release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
+**This is the 0.3.0 release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
 
 **Dataset**: To make the beta release lighter for the users, we are including a small subset (9) of the spaces in it. 
 The [full dataset](gibson/data/README.md) includes 572 spaces and 1440 floors. It will be made available if we dont get a major bug report during the brief beta release. 
@@ -72,21 +72,7 @@ For building from the source(B):
 #### Download data
 
 First, our environment assets data are available [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
-<!-- 
-Make a folder `gibson/assets` and put the downloaded `assets.tar.gz` file in it.
--->
-<!--
-To download the file from the command line, run the following from the main directory of this repo:
-```bash
-filename="gibson/assets/assets.tar.gz"
-fileid="1jV-UN4ePwsE9XYv8m4YbNiGxRI_WWpW0"
-sudo apt-get install golang-go
-export GOPATH=$HOME/go
-go get github.com/ericchiang/pup
-query=`curl -c ./cookie.txt -s -L "https://drive.google.com/uc?export=download&id=${fileid}" | pup 'a#uc-download-link attr{href}' | sed -e 's/amp;//g'`
-curl -b ./cookie.txt -L -o ${filename} "https://drive.google.com${query}"
-```
--->
+
 
 A. Quick installation (docker)
 -----

@@ -6,10 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 https://github.com/StanfordVL/GibsonEnv/blob/master/README.md
 
 
-## 0.3.0
+## 0.3.0 - 2018-06-18
 ### Added
  - Full dataset
  - ROS integration
+ - Misc bug fixes
 
 ## 0.2.1 - 2018-04-18
 Bug fixes
