@@ -106,20 +106,23 @@ class BaseRobotEnv(BaseEnv):
         # seed for robot
         self.robot.np_random = self.np_random
         self._robot_introduced = True
-        assert (self.robot.resolution in [64,128,256,512]), \
-            "Robot resolution must be in 64/128/256/512"
-        if self.robot.resolution == 64:
-            self.windowsz = 64
-            self.scale_up = 4
-        elif self.robot.resolution == 128:
-            self.windowsz = 128
-            self.scale_up = 4
-        elif self.robot.resolution == 256:
-            self.windowsz = 256
-            self.scale_up = 2
-        else:
-            self.windowsz = 512
-            self.scale_up = 1
+        assert (self.robot.resolution <= 512 and self.robot.resolution >= 64), \
+            "Robot resolution must in [64, 512]"
+        #if self.robot.resolution == 64:
+        #    self.windowsz = 64
+        #    self.scale_up = 4
+        #elif self.robot.resolution == 128:
+        #    self.windowsz = 128
+        #    self.scale_up = 4
+        #elif self.robot.resolution == 256:
+        #    self.windowsz = 256
+        #    self.scale_up = 2
+        #else:
+        #    self.windowsz = 512
+        #    self.scale_up = 1
+
+        self.windowsz = self.robot.resolution
+        self.scale_up = int(512 / self.windowsz)
 
         if "fast_lq_render" in self.config and self.config["fast_lq_render"] == True:
             self.scale_up *= 2

@@ -173,12 +173,22 @@ class PCRenderer:
             comp = CompletionNet(norm=nn.BatchNorm2d, nf=64)
         comp = torch.nn.DataParallel(comp).cuda()
         #comp.load_state_dict(torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
+
+        if self.env.config["resolution"] <= 64:
+            res = 64
+        elif self.env.config["resolution"] <= 128:
+            res = 128
+        elif self.env.config["resolution"] <= 256:
+            res = 256
+        else:
+            res = 512
+
         if "fast_lq_render" in self.env.config and self.env.config["fast_lq_render"] == True:
             comp.load_state_dict(
-            torch.load(os.path.join(assets_file_dir, "model_small_{}.pth".format(self.env.config["resolution"]))))
+            torch.load(os.path.join(assets_file_dir, "model_small_{}.pth".format(res))))
         else:
             comp.load_state_dict(
-            torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(self.env.config["resolution"]))))
+            torch.load(os.path.join(assets_file_dir, "model_{}.pth".format(res))))
 
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model.pth")))
         #comp.load_state_dict(torch.load(os.path.join(file_dir, "model_large.pth")))
