@@ -29,7 +29,7 @@ class View(Enum):
 
 class SimpleUI():
     '''Static UI'''
-    def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=False):
+    def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=True):
         self.env = env
         self.width  = width_col * windowsz
         self.height = height_col * windowsz
@@ -96,6 +96,8 @@ class SimpleUI():
                 #from IPython import embed; embed()
                 cv2.imwrite(os.path.join(self.output_dir, "frame%06d.png" % self.record_nframe), screen_to_dump)
                 self.record_nframe += 1
+                #self.curr_output.write(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        
         #with Profiler("Refreshing"):
         pygame.display.flip()
         surfarray.blit_array(self.screen, self.screen_arr)

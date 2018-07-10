@@ -188,7 +188,7 @@ bool loadOBJ(
         // Renormalize all the normal vectors
         for (unsigned int i=0; i<out_normals.size(); i++) {
             out_normals[i] = glm::normalize(out_normals[i]);
-        }        
+        }
     }
 
 

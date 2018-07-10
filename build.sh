@@ -100,7 +100,7 @@ build_local() {
 
     mkdir -p ./gibson/core/channels/build
     cd ./gibson/core/channels/build
-    cmake .. && make clean && make -j 10
+    cmake -DCMAKE_BUILD_TYPE=Debug .. && make clean && make -j 10
     cd -
 
 

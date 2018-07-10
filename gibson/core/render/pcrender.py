@@ -475,7 +475,7 @@ class PCRenderer:
         return pose_distances, self.pose_locations
 
 
-    def renderOffScreen(self, pose, k_views=None):
+    def renderOffScreen(self, pose, k_views=None, rgb=True):
 
 
         if k_views is not None:
@@ -488,8 +488,7 @@ class PCRenderer:
             #self.semantics_topk = np.array([self.semantics[i] for i in k_views])
             self.old_topk = set(k_views)
 
-        #self.show.fill(0)
-        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_prefilled, is_rgb=True)
+        self.render(self.imgs_topk, self.depths_topk, self.render_cpose.astype(np.float32), self.model, self.relative_poses_topk, self.target_poses[0], self.show, self.show_prefilled, is_rgb=rgb)
 
         self.show = np.reshape(self.show, (self.showsz, self.showsz, 3))
         self.show_rgb = self.show
