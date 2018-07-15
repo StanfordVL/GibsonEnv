@@ -87,8 +87,8 @@ You can either 1. build your own docker image or 2. pull from our docker image. 
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd GibsonEnv/gibson
-wget https://storage.googleapis.com/gibsonassets/assets_core.tar.gz
-tar -zxf assets_core.tar.gz
+wget https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz
+tar -zxf assets_core_v2.tar.gz
 cd assets
 wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
 tar -zxf dataset.tar.gz
@@ -146,8 +146,8 @@ Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd GibsonEnv/gibson
-wget https://storage.googleapis.com/gibsonassets/assets_core.tar.gz
-tar -zxf assets_core.tar.gz
+wget https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz
+tar -zxf assets_core_v2.tar.gz
 cd assets
 wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
 tar -zxf dataset.tar.gz

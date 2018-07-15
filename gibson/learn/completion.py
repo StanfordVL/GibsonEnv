@@ -34,6 +34,7 @@ class CompletionNet(nn.Module):
 
         self.convs = nn.Sequential(
             nn.Conv2d(5, nf // 4, kernel_size=5, stride=1, padding=2),
+            norm(nf//4, momentum=alpha),
             nn.LeakyReLU(0.1),
 
             nn.Conv2d(nf // 4, nf, kernel_size=5, stride=2, padding=2),
