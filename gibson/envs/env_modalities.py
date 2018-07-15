@@ -39,7 +39,8 @@ DEFAULT_DEBUG_CAMERA = {
     'z_offset': 0
 }
 
-DEPTH_SCALE_FACTOR = 100
+DEPTH_SCALE_FACTOR = 35
+DEPTH_OFFSET_FACTOR = 20
 
 class BaseRobotEnv(BaseEnv):
     """Based on BaseEnv
@@ -423,7 +424,10 @@ class CameraRobotEnv(BaseRobotEnv):
         if tag == View.RGB_PREFILLED:
             return self.render_rgb_prefilled
         if tag == View.DEPTH:
-            scaled_depth = self.render_depth * DEPTH_SCALE_FACTOR
+            scaled_depth = self.render_depth.copy()
+            scaled_depth = scaled_depth * DEPTH_SCALE_FACTOR + DEPTH_OFFSET_FACTOR
+            overflow = scaled_depth > 255.
+            scaled_depth[overflow] = 255.
             return scaled_depth
         if tag == View.NORMAL:
             return self.render_normal

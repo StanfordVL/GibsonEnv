@@ -233,7 +233,7 @@ int main( int argc, char * argv[] )
     windowHeight = cmdp.get<int>("Height");
     windowWidth  = cmdp.get<int>("Width");
 
-    std::string name_obj = model_path + "/gibson.obj";
+    std::string name_obj = model_path + "/mesh.obj";
     //std::string name_obj = model_path + "/gibson_decimated_z_up.obj";
     if (smooth > 0) {
         name_obj = model_path + "/out_smoothed.obj";
