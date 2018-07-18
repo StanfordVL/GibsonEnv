@@ -384,8 +384,15 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
      
      int mindelta = min(min(delta00, delta01), min(delta10, delta11));
      int maxdelta = max(max(delta00, delta01), max(delta10, delta11));
-     
-     
+
+     int depth00 = (int)(12800/128 * points3d_polar[(ih * w + iw) * 3 + 0]);
+     int depth01 = (int)(12800/128 * points3d_polar[(ih * w + iw + 1) * 3 + 0]);
+     int depth10 = (int)(12800/128 * points3d_polar[((ih+1) * w + iw) * 3 + 0]);
+     int depth11 = (int)(12800/128 * points3d_polar[((ih+1) * w + iw+1) * 3 + 0]);
+     int max_depth =  max(max(depth00, depth10), max(depth01, depth11));
+     int min_depth =  min(min(depth00, depth10), min(depth01, depth11));
+     int delta_depth = max_depth - min_depth;
+
      int txmin = floor(tx_offset + min(min(tx00, tx11), min(tx01, tx10)));
      int txmax = ceil(tx_offset + max(max(tx00, tx11), max(tx01, tx10)));
      int tymin = floor(ty_offset + min(min(ty00, ty11), min(ty01, ty10)));
@@ -399,10 +406,10 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
      //selection[(ty * ow + tx)] = 1.0;
 
      float tolerance = 0.1 * this_depth > 10? 0.1 * this_depth : 10;
+     float tolerance2 = 0.015 * max_depth > 6? 0.015 * max_depth: 6;
 
      float flank = 0.01;
-
-     if ((y > 1 * h/8) && (y < (h*7)/8))
+     if ((det < 0) && (delta_depth < tolerance2) && (y > 1 * h/8) && (y < (h*7)/8))
      if (((mindelta > - tolerance) && (maxdelta <  tolerance)) && (this_depth < 10000)) {
            if (((txmax - txmin) * (tymax - tymin) < 1600) && (txmax - txmin < 40) && (tymax - tymin < 40))
            {
