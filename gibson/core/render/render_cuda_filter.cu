@@ -406,10 +406,10 @@ __global__ void render_final(float *points3d_polar, float * selection, float * d
      //selection[(ty * ow + tx)] = 1.0;
 
      float tolerance = 0.1 * this_depth > 10? 0.1 * this_depth : 10;
-     float tolerance2 = 0.015 * max_depth > 6? 0.015 * max_depth: 6;
+     float tolerance2 = 0.05 * max_depth > 10? 0.05 * max_depth: 10;
 
      float flank = 0.01;
-     if ((det < 0) && (delta_depth < tolerance2) && (y > 1 * h/8) && (y < (h*7)/8))
+     if ((delta_depth < tolerance2) && (y > 1 * h/8) && (y < (h*7)/8))
      if (((mindelta > - tolerance) && (maxdelta <  tolerance)) && (this_depth < 10000)) {
            if (((txmax - txmin) * (tymax - tymin) < 1600) && (txmax - txmin < 40) && (tymax - tymin < 40))
            {
