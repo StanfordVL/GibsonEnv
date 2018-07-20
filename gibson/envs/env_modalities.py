@@ -496,7 +496,7 @@ class CameraRobotEnv(BaseRobotEnv):
             all_dist, all_pos = self.r_camera_rgb.getAllPoseDist(pose)
             top_k = self.find_best_k_views(pose[0], all_dist, all_pos, avoid_block=False)
             #with Profiler("Render to screen"):
-            self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k, rgb=self._require_rgb)
+            self.render_rgb_filled, self.render_depth, self.render_semantics, self.render_normal, self.render_rgb_prefilled = self.r_camera_rgb.renderOffScreen(pose, top_k, rgb=self._require_rgb)
 
         observations = {}
         for output in self.config["output"]:
