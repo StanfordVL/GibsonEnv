@@ -168,7 +168,7 @@ class PCRenderer:
         self.semtimg_count = 0
 
         if "fast_lq_render" in self.env.config and self.env.config["fast_lq_render"] == True:
-            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 12)
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 12, skip_first_bn=True)
         else:
             comp = CompletionNet(norm=nn.BatchNorm2d, nf=64)
         comp = torch.nn.DataParallel(comp).cuda()
@@ -531,8 +531,6 @@ def show_target(target_img):
     cv2.moveWindow('target',1032,256 + 50)
     show_rgb = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
     cv2.imshow('target', show_rgb)
-
-
 
 
 
