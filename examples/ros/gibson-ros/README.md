@@ -31,7 +31,7 @@ Here is all the steps you need to perform to install gibson and ros. Note that h
 	```bash
 	echo $PATH | grep -oP "[^:;]+" | grep conda	## Remove these paths from $PATH
 	```
-	2. For `PYTHONPATH`: `/usr/lib/python2.7/dist-packages/`, `/opt/ros/kinetic/lib/python2.7/dist-packages`(ros python libraries), `<anaconda installation root>/anaconda2/envs/py27/lib/python2.7/site-packages`(gibson dependencies) and `<gibson root>/gibson` need to be in `PYTHONPATH`.
+	2. For `PYTHONPATH`: `/usr/lib/python2.7/dist-packages/`, `/opt/ros/kinetic/lib/python2.7/dist-packages`(ros python libraries), `<anaconda installation root>/anaconda2/envs/py27/lib/python2.7/site-packages`(gibson dependencies) and `<gibson root>` need to be in `PYTHONPATH`.
 4. Copy (or soft link) gibson-ros folder to your `catkin_ws/src` and run catkin_make to index gibson-ros package.
 ```bash
 ln -s $PWD/examples/ros/gibson-ros/ ~/catkin_ws/src/

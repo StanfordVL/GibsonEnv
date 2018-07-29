@@ -168,7 +168,7 @@ class PCRenderer:
         self.semtimg_count = 0
 
         if "fast_lq_render" in self.env.config and self.env.config["fast_lq_render"] == True:
-            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 12, skip_first_bn=True)
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
         else:
             comp = CompletionNet(norm=nn.BatchNorm2d, nf=64)
         comp = torch.nn.DataParallel(comp).cuda()
@@ -413,10 +413,10 @@ class PCRenderer:
         ## Speed bottleneck
 
         _render_pc(opengl_arr, rgbs, show)
-        
+
         # Store prefilled rgb
         show_prefilled[:] = show
-        
+
         #with Profiler("Render: NN total time"):
         ## Speed bottleneck
         if self.use_filler and self.model and is_rgb and need_filler:
@@ -449,7 +449,7 @@ class PCRenderer:
             debugmode = 0
             if debugmode:
                 print("Semantics array", np.max(semantic_arr), np.min(semantic_arr), np.mean(semantic_arr), semantic_arr.shape)
-        
+
 
 
     def renderOffScreenInitialPose(self):
@@ -466,7 +466,7 @@ class PCRenderer:
         v_cam2world = self.target_poses[0]
         v_cam2cam   = self._getViewerRelativePose()
         self.render_cpose = np.linalg.inv(np.linalg.inv(v_cam2world).dot(v_cam2cam).dot(PCRenderer.ROTATION_CONST))
-        
+
     def getAllPoseDist(self, pose):
         ## Query physics engine to get [x, y, z, roll, pitch, yaw]
         new_pos, new_quat = pose[0], pose[1]
