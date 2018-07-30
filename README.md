@@ -332,7 +332,7 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |speed : frameskip | 10 | how many timestep to skip when rendering frames. See above row for an example. For tasks that does not require high frequency control, you can set frameskip to larger value to gain further speed up. |
 |mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
 |verbose |true/false  | show dignostics in terminal |
-|fast_lq_render| true/false| it there is fast_lq_render in yaml file, Gibson will use a smaller filler network, this will render faster but generate slightly lower quality camera output. This option is useful for training RL agents fast. |
+|fast_lq_render| true/false| if there is fast_lq_render in yaml file, Gibson will use a smaller filler network, this will render faster but generate slightly lower quality camera output. This option is useful for training RL agents fast. |
 
 #### Making Your Customized Environment
 Gibson provides a set of methods for you to define your own environments. You can follow the existing environments inside `gibson/core/envs`.

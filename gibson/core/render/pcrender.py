@@ -168,7 +168,7 @@ class PCRenderer:
         self.semtimg_count = 0
 
         if "fast_lq_render" in self.env.config and self.env.config["fast_lq_render"] == True:
-            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24)
+            comp = CompletionNet(norm = nn.BatchNorm2d, nf = 24, skip_first_bn = True)
         else:
             comp = CompletionNet(norm=nn.BatchNorm2d, nf=64)
         comp = torch.nn.DataParallel(comp).cuda()
