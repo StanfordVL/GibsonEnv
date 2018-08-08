@@ -14,16 +14,7 @@ tracking_camera = {
     'yaw': 20,  # demo: living room, stairs
     #'yaw'; 30,   # demo: kitchen
     'z_offset': 0.5,
-    'distance': 2,
-    'pitch': -20
-    # 'pitch': -24  # demo: stairs
-}
-
-tracking_camera_top = {
-    'yaw': 20,  # demo: living room, stairs
-    #'yaw'; 30,   # demo: kitchen
-    'z_offset': 0.5,
-    'distance': 1,
+    'distance': 1.2,
     'pitch': -20
     # 'pitch': -24  # demo: stairs
 }

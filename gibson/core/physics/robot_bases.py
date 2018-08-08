@@ -280,7 +280,7 @@ class Joint:
         self.joint_name = joint_name
         _,_,self.jointType,_,_,_,_,_,self.lowerLimit, self.upperLimit,_,_,_, _,_,_,_ = p.getJointInfo(self.bodies[self.bodyIndex], self.jointIndex)
         self.power_coeff = 0
-        if model_type=="mjcf":
+        if model_type=="MJCF":
             self.scale = scale
         else:
             self.scale = 1

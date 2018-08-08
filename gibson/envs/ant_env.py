@@ -19,7 +19,7 @@ Each class specifies:
 tracking_camera = {
     'yaw': 20,
     'z_offset': 0.3,
-    'distance': 2,
+    'distance': 0.5,
     'pitch': -20
 }
 

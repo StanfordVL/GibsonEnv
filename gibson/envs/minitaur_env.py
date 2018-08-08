@@ -186,7 +186,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         for i in range(len(self.Amax)):
             if action[i] > self.Amax[i]:
                 self.Amax[i] = action[i]
-        print("Action max", self.Amax)
+        #print("Action max", self.Amax)
         for _ in range(self.action_repeat):
             state = CameraRobotEnv._step(self, action)
         return state

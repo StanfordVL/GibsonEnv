@@ -22,6 +22,9 @@ tracking_camera = {
 
 
 class MinitaurBase(WalkerBase):
+    model_type = "URDF"
+    default_scale = 1
+    
     KNEE_CONSTRAINT_POINT_RIGHT = [0, 0.005, 0.2]
     KNEE_CONSTRAINT_POINT_LEFT = [0, 0.01, 0.2]
     OVERHEAT_SHUTDOWN_TORQUE = 2.45
@@ -88,13 +91,15 @@ class MinitaurBase(WalkerBase):
         self.model_type = "URDF"
         #self.robot_name = "quadruped"
         self.robot_name = "base_chassis_link"
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
+        
         WalkerBase.__init__(self, 
                             "quadruped/minitaur.urdf", 
                             self.robot_name, 
                             action_dim=8, 
                             sensor_dim=self.OBSERVATION_DIM, 
                             power=5,
-                            scale = self.mjcf_scaling,
+                            scale = scale,
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
                             resolution=config["resolution"], 
@@ -401,7 +406,7 @@ class MinitaurBase(WalkerBase):
             if self.accurate_motor_model_enabled:
                 actual_torque, observed_torque = self._motor_model.convert_to_torque(
                     motor_commands, q, qdot)
-                print("q", q, "qdot", qdot)
+                #print("q", q, "qdot", qdot)
                 #print("motor commands", motor_commands)
                 #print("actual torque", actual_torque, "observed torque", observed_torque)
                 self.debug_count += 1
@@ -410,7 +415,7 @@ class MinitaurBase(WalkerBase):
                 for i in range(len(self.qmax)):
                     if q[i] > self.qmax[i]:
                         self.qmax[i] = q[i]
-                print("Q max", self.qmax)
+                #print("Q max", self.qmax)
     
                 if self.motor_overheat_protection:
                     for i in range(self.num_motors):
@@ -440,7 +445,7 @@ class MinitaurBase(WalkerBase):
                 for i in range(len(self.fmax)):
                     if motor_commands[i] > self.fmax[i]:
                         self.fmax[i] = motor_commands[i]
-                print("F max", self.fmax)
+                #print("F max", self.fmax)
     
             else:
                 torque_commands = -self._kp * (q - motor_commands) - self._kd * qdot

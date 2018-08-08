@@ -25,8 +25,8 @@ class WalkerBase(BaseRobot):
         power,
         initial_pos,
         target_pos,
+        scale,
         sensor_dim=None,
-        scale = 1, 
         resolution=512,
         control = 'torque',
         env = None
@@ -228,66 +228,18 @@ class WalkerBase(BaseRobot):
         return self.robot_body.get_position() / self.mjcf_scaling
 
 
-class Hopper(WalkerBase):
-    foot_list = ["foot"]
-
-    def __init__(self):
-        self.model_type = "MJCF"
-        self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "hopper.xml", "torso", action_dim=3, sensor_dim=15, power=0.75, scale=self.mjcf_scaling)
-
-    def alive_bonus(self, z, pitch):
-        return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
-
-
-class Walker2D(WalkerBase):
-    foot_list = ["foot", "foot_left"]
-
-    def __init__(self):
-        self.model_type = "MJCF"
-        self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, sensor_dim=22, power=0.40, scale=self.mjcf_scaling)
-
-    def alive_bonus(self, z, pitch):
-        return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
-
-    def robot_specific_reset(self):
-        WalkerBase.robot_specific_reset(self)
-        for n in ["foot_joint", "foot_left_joint"]:
-            self.jdict[n].power_coef = 30.0
-
-
-class HalfCheetah(WalkerBase):
-    foot_list = ["ffoot", "fshin", "fthigh",  "bfoot", "bshin", "bthigh"]  # track these contacts with ground
-
-    def __init__(self):
-        self.model_type = "MJCF"
-        self.mjcf_scaling = 1
-        WalkerBase.__init__(self, "half_cheetah.xml", "torso", action_dim=6, sensor_dim=26, power=0.90, scale=self.mjcf_scaling)
-
-    def alive_bonus(self, z, pitch):
-        # Use contact other than feet to terminate episode: due to a lot of strange walks using knees
-        return +1 if np.abs(pitch) < 1.0 and not self.feet_contact[1] and not self.feet_contact[2] and not self.feet_contact[4] and not self.feet_contact[5] else -1
-
-    def robot_specific_reset(self):
-        WalkerBase.robot_specific_reset(self)
-        self.jdict["bthigh"].power_coef = 120.0
-        self.jdict["bshin"].power_coef  = 90.0
-        self.jdict["bfoot"].power_coef  = 60.0
-        self.jdict["fthigh"].power_coef = 140.0
-        self.jdict["fshin"].power_coef  = 60.0
-        self.jdict["ffoot"].power_coef  = 30.0
-
 
 class Ant(WalkerBase):
     foot_list = ['front_left_foot', 'front_right_foot', 'left_back_foot', 'right_back_foot']
-        
+    model_type = "MJCF"
+    default_scale = 0.25
+
     def __init__(self, config, env=None):
         self.config = config
-        self.model_type = "MJCF"
-        self.mjcf_scaling = 0.25
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
+        self.mjcf_scaling = scale
         WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, 
-                            sensor_dim=28, power=2.5, scale = self.mjcf_scaling, 
+                            sensor_dim=28, power=2.5, scale=scale, 
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
                             resolution=config["resolution"], 
@@ -414,13 +366,15 @@ class AntClimber(Ant):
 class Humanoid(WalkerBase):
     self_collision = True
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
+    model_type = "MJCF"
+    default_scale = 0.6
 
     def __init__(self, config, env=None):
         self.config = config
-        self.model_type = "MJCF"
-        self.mjcf_scaling = 0.6
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
+        self.mjcf_scaling = scale
         WalkerBase.__init__(self, "humanoid.xml", "torso", action_dim=17, 
-                            sensor_dim=44, power=2.5, scale = self.mjcf_scaling, 
+                            sensor_dim=44, power=2.5, scale=scale, 
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
                             resolution=config["resolution"], 
@@ -486,11 +440,14 @@ class Husky(WalkerBase):
     foot_list = ['front_left_wheel_link', 'front_right_wheel_link', 'rear_left_wheel_link', 'rear_right_wheel_link']
     mjcf_scaling = 1
     model_type = "URDF"
+    default_scale = 0.6
     
     def __init__(self, config, env=None):
         self.config = config
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
+        
         WalkerBase.__init__(self, "husky.urdf", "base_link", action_dim=4, 
-                            sensor_dim=23, power=2.5, scale = 0.6,
+                            sensor_dim=23, power=2.5, scale=scale,
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
                             resolution=config["resolution"], 
@@ -583,13 +540,16 @@ class HuskyClimber(Husky):
 
 
 class Quadrotor(WalkerBase):
+    model_type = "URDF"
+    default_scale=1
+    mjcf_scaling=1
+
     def __init__(self, config, env=None):
-        self.model_type = "URDF"
-        self.mjcf_scaling = 1
         self.config = config
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
         self.is_discrete = config["is_discrete"]
         WalkerBase.__init__(self, "quadrotor.urdf", "base_link", action_dim=4, 
-                            sensor_dim=20, power=2.5, scale = self.mjcf_scaling, 
+                            sensor_dim=20, power=2.5, scale = scale, 
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
                             resolution=config["resolution"], 
@@ -639,11 +599,13 @@ class Turtlebot(WalkerBase):
     foot_list = []
     mjcf_scaling = 1
     model_type = "URDF"
+    default_scale = 1
     
     def __init__(self, config, env=None):
         self.config = config
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
         WalkerBase.__init__(self, "turtlebot/turtlebot.urdf", "base_link", action_dim=4,
-                            sensor_dim=20, power=2.5, scale=1,
+                            sensor_dim=20, power=2.5, scale=scale,
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"],
                             resolution=config["resolution"],
@@ -720,11 +682,13 @@ class JR(WalkerBase):
     foot_list = []
     mjcf_scaling = 1
     model_type = "URDF"
+    default_scale = 0.6
     
     def __init__(self, config, env=None):
         self.config = config
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
         WalkerBase.__init__(self, "jr1_urdf/jr1_gibson.urdf", "base_link", action_dim=4,
-                            sensor_dim=20, power=2.5, scale=0.6,
+                            sensor_dim=20, power=2.5, scale=scale,
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"],
                             resolution=config["resolution"],
@@ -800,11 +764,13 @@ class JR2(WalkerBase):
     foot_list = []
     mjcf_scaling = 1
     model_type = "URDF"
+    default_scale = 1
 
     def __init__(self, config, env=None):
         self.config = config
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
         WalkerBase.__init__(self, "jr2_urdf/jr2.urdf", "base_link", action_dim=4,
-                            sensor_dim=20, power=2.5, scale=0.6,
+                            sensor_dim=20, power=2.5, scale=scale,
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"],
                             resolution=config["resolution"],

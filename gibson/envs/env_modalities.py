@@ -58,13 +58,15 @@ class BaseRobotEnv(BaseEnv):
         self.robot_tracking_id = -1
 
         self.scale_up  = 4
-        self.dataset  = ViewDataSet3D(
-            transform = np.array,
-            mist_transform = np.array,
-            seqlen = 2,
-            off_3d = False,
-            train = False,
-            overwrite_fofn=True, env = self, only_load = self.config["model_id"])
+        self.dataset = None
+        if scene_type == "building":
+            self.dataset = ViewDataSet3D(
+                transform = np.array,
+                mist_transform = np.array,
+                seqlen = 2,
+                off_3d = False,
+                train = False,
+                overwrite_fofn=True, env = self, only_load = self.config["model_id"])
         self.ground_ids = None
         if self.gui:
             assert(self.tracking_camera is not None)
@@ -212,7 +214,9 @@ class BaseRobotEnv(BaseEnv):
             pos = self.robot._get_scaled_position()
             orn = self.robot.get_orientation()
             pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
-            p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
+            pos = np.array(pos)
+            dist = self.tracking_camera['distance'] / self.robot.mjcf_scaling
+            p.resetDebugVisualizerCamera(dist, self.tracking_camera['yaw'], self.tracking_camera['pitch'], pos)
 
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
