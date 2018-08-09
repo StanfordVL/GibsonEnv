@@ -7,15 +7,16 @@ Table of contents
 =================
 
    * [Download](#download)
-   * [Dataset Modalities](#dataset-modalities)
-   * [Dataset Splits](#dataset-splits)
+      * [Dataset Modalities](#dataset-modalities)
+      * [Dataset Splits](#dataset-splits)
    * [Navigation Benchmark Scenarios](#navigation-benchmark-scenarios)
-   * [Dataset Metrics](#dataset-metrics)
+      * [Dataset Metrics](#dataset-metrics)
+      * [Navigation Waypoints](#navigation-waypoints)
 
-## Download
+# Download
 The link will first take you to a license agreement, and then to the data.
 
-### [[ Download the full Gibson Dataset ]](http://gibson.vision)  [[ checksums ]](gibson.vision)
+### [[ Download the full Gibson Dataset ]](http://gibson.vision)  [[ checksums ]](https://github.com/StanfordVL/GibsonEnv/wiki/Checksum-Values-for-Data.md)
 
 #### License Note: The dataset license is included in the above link. The license in this repository covers only the provided software.
 
@@ -36,32 +37,31 @@ If you use this dataset please cite:
 Each model in the dataset has its own folder in the dataset. All the modalities and metadata for each area are contained in that folder. 
 ```
 /pano
-  /points		 # camera metadata
-  /rgb			 # rgb images
-  /mist			 # depth images
-  /normal		 # surface normal images
-mesh.obj 		 # 3d mesh
-mesh_z_up.mtl 	 # 3d mesh for physics engine
-camera_poses.csv # camera locations
-semantic.obj (optional) # 3d mesh with semantic annotation
+  /points                 # camera metadata
+  /rgb                    # rgb images
+  /mist                   # depth images
+mesh.obj                  # 3d mesh
+mesh_z_up.obj             # 3d mesh for physics engine
+camera_poses.csv          # camera locations
+semantic.obj (optional)   # 3d mesh with semantic annotation
 ```
 
 ## Dataset Splits
-We provide three different standard splits for our dataset. 
+We provide three different standard splits for our dataset, which are subsets of the full Gibson Dataset of 572 models. We recommend starting with tiny dataset, and then progressively adding more models. Each split is divided into `training/validation/testing` models. [You can download the standard split files here](https://storage.googleapis.com/gibsonassets/splits.tar.gz).
 
-| Split Name   |      Train     |  Val  |  Test | Hole Filled |
-|----------|:-------------:|-------------:|------:| ------:|
-| Tiny |  25 | 5 | 5 | 100% |
-| Medium |  100 |  20 | 20 | 100% |
-| Full | 360 | 70 | 70 | 100% |
-| Full+ | 412 |  80 | 80 | 90.9% |
+| Split Name   |      Train     |  Val  |  Test | Hole Filled | Total Size |
+|----------|:-------------:|-------------:|------:| ------:| -------------:|
+| Tiny |  25 | 5 | 5 | 100% |  8 GiB |
+| Medium |  100 |  20 | 20 | 100% |  21 GiB |
+| Full | 360 | 70 | 70 | 100% | 65 GiB |
+| Full+ | 412 |  80 | 80 | 90.9% | 89 GiB |
 
 **Hole Filling**: We applied combination of automatic and manual hole-filling techniques on `tiny`, `medium` and `full` sets, to ensure that the models do not have severe reconstruction artifacts. `full+` contains the rest of the models that we are incapable of hole-filling, based on current techniques.  
 **Split Criteria**: In every split, we sort all 572 models by the linear combination of `loor number`, `area`, `ssa` and `navigation complexity`. We select a `tiny` as the set of models with the highest combination scores. We also set `medium` to be inclusive of `tiny`, and `full` to be inclusive of `mediuim`.
 
 # Navigation Benchmark Scenarios
 
-We define navigation scenarios in [Gibson Standard Navigation Benchmark](https://www.dropbox.com/sh/9wpego1rswwbbm8/AAD_e6ZwXU4tzniaBidkdXIwa?dl=0). The following column values are provided for each episode:
+We define navigation scenarios in [Gibson Standard Navigation Benchmark](https://storage.googleapis.com/gibsonassets/navigation_scenarios.tar.gz). The following column values are provided for each episode:
 
 - `split`: `train`, `val`, or `test` indicating split for the episode.
 - `task`: string id for task type, currently restricted to `p` for `point_goal`.
@@ -98,3 +98,30 @@ We sample arbitrary point pairs inside the model, and calculate `A∗` navigatio
 **Subjective Attributes**
 
 We examine each model manually, and note the subjective attributes of them. This includes their furnishing style, house shapes, whether they have long stairs, etc.
+
+
+## Navigation Waypoints
+
+For every navigation scenario, we provide navigation waypoints as an optional choice to assist users with training navigation agents. The waypoints of each model is stored as a json file named with the id of that model. 
+
+### Visualization
+
+We also provide code for visualizing waypoints. In order to use it, you need to install the latest [Blender](https://www.blender.org/).
+
+```bash
+## Make sure that you can start blender in terminal
+blender
+
+## Configure your blender python path
+echo `python -c "import sys; print(':'.join(x for x in sys.path if x))"` > path.txt
+
+### Running visualization
+blender -b --python visualize_path.py --filepath path_to_scenario_json_dir \
+                                      --datapath path_to_dataset_root_dir \
+                                      --renderpath . \
+                                      --model  Allensville \
+                                      --idx 1 \
+```
+
+Should give you: 
+<img src=https://i.imgur.com/ryJuhx5.png width="800">
