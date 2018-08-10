@@ -6,20 +6,13 @@
 #include <fstream>
 #include <iostream>
 #include <cstdlib>  //rand
-#include <X11/Xlib.h>
 #include <chrono>
 #include "boost/multi_array.hpp"
 #include "boost/timer.hpp"
 
-// Include GLEW
-#include <GL/glew.h>
-#include <GL/glut.h>
-#include <GL/glx.h>
-#include "lodepng.h"
 
-// Include GLFW
-#include <glfw3.h>
-
+#include  <glad/egl.h>
+#include  <glad/gl.h>
 #include "lodepng.h"
 
 #include <glm/glm.hpp>

@@ -453,8 +453,6 @@ int main( int argc, char * argv[] )
     }
 */
 
-    printf("before loading shaders\n");
-
     // Ensure we can capture the escape key being pressed below
     //glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     // Hide the mouse and enable unlimited mouvement
@@ -486,7 +484,6 @@ int main( int argc, char * argv[] )
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    printf("some gl functions finished\n");
 
     // Create and compile our GLSL program from the shaders
     GLuint programID;
