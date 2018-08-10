@@ -6,20 +6,16 @@
 #include <fstream>
 #include <iostream>
 #include <cstdlib>  //rand
-#include <X11/Xlib.h>
 #include <chrono>
 #include "boost/multi_array.hpp"
 #include "boost/timer.hpp"
-
+#include  <glad/egl.h>
+#include  <glad/gl.h>
 // Include GLEW
-#include <GL/glew.h>
+//#include <GL/glew.h>
 #include <GL/glut.h>
-#include <GL/glx.h>
 #include "lodepng.h"
 
-// Include GLFW
-#include <glfw3.h>
-GLFWwindow* window;
 
 // Include GLM
 #include <glm/glm.hpp>
@@ -70,10 +66,10 @@ size_t panoHeight = 1024;
 int cudaDevice = -1;
 
 //float camera_fov = 90.0f;
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
-static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
-static glXMakeContextCurrentARBProc   glXMakeContextCurrentARB   = NULL;
+//typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+//typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
+//static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
+//static glXMakeContextCurrentARBProc   glXMakeContextCurrentARB   = NULL;
 
 #define checkCudaErrors(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -199,7 +195,26 @@ void debug_mat(glm::mat4 mat, std::string name) {
     }
 }
 
+struct EGLInternalData2 {
+    bool m_isInitialized;
 
+    int m_windowWidth;
+    int m_windowHeight;
+    int m_renderDevice;
+
+
+    EGLBoolean success;
+    EGLint num_configs;
+    EGLConfig egl_config;
+    EGLSurface egl_surface;
+    EGLContext egl_context;
+    EGLDisplay egl_display;
+
+    EGLInternalData2()
+    : m_isInitialized(false),
+    m_windowWidth(0),
+    m_windowHeight(0) {}
+};
 
 int main( int argc, char * argv[] )
 {
@@ -261,112 +276,172 @@ int main( int argc, char * argv[] )
 
     std::string name_loc   = model_path + "/" + "camera_poses.csv";
 
+    EGLBoolean success;
+    EGLint num_configs;
+    EGLConfig egl_config;
+    EGLSurface egl_surface;
+    EGLContext egl_context;
+    EGLDisplay egl_display;
 
-    glfwSetErrorCallback(error_callback);
+    int m_windowWidth;
+    int m_windowHeight;
+    int m_renderDevice;
 
-    const char *displayName = NULL;
-    Display* display = XOpenDisplay( displayName );
+    m_windowWidth = windowWidth;
+    m_windowHeight = windowHeight;
+    m_renderDevice = -1;
 
-    if (display == NULL) {
-        printf("Failed to properly open the display\n");
-        return -1;
-    }
+    EGLint egl_config_attribs[] = {EGL_RED_SIZE,
+        8,
+        EGL_GREEN_SIZE,
+        8,
+        EGL_BLUE_SIZE,
+        8,
+        EGL_DEPTH_SIZE,
+        8,
+        EGL_SURFACE_TYPE,
+        EGL_PBUFFER_BIT,
+        EGL_RENDERABLE_TYPE,
+        EGL_OPENGL_BIT,
+        EGL_NONE};
 
-    // printf("opened this display, default %i\n", DefaultScreen(display));
-
-    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
-    glXMakeContextCurrentARB   = (glXMakeContextCurrentARBProc)   glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent"      );
-
-
-    static int visualAttribs[] = { None };
-    int numberOfFramebufferConfigurations = 0;
-
-    //int err = glxewInit();
-
-
-    //printf("starting from this point %d\n", err );
-    GLXFBConfig* fbConfigs = glXChooseFBConfig( display, 0/*DefaultScreen(display)*/, visualAttribs, &numberOfFramebufferConfigurations );
-
-    if (fbConfigs == NULL) {
-        printf("Failed to properly set up frame buffer configurations\n");
-        return -1;
-    }
-
-    int context_attribs[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-        GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
-        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-        None
+    EGLint egl_pbuffer_attribs[] = {
+        EGL_WIDTH, m_windowWidth, EGL_HEIGHT, m_windowHeight,
+        EGL_NONE,
     };
 
+    EGLInternalData2* m_data = new EGLInternalData2();
 
-    // printf("Running up to this point %X\n", (char *)fbConfigs);
+    // Load EGL functions
+    int egl_version = gladLoaderLoadEGL(NULL);
+    if(!egl_version) {
+        fprintf(stderr, "failed to EGL with glad.\n");
+        exit(EXIT_FAILURE);
 
-    // This breaks if DISPLAY is not set as 0
-    GLXContext openGLContext = glXCreateContextAttribsARB( display, fbConfigs[0], 0, True, context_attribs);
-
-
-    // Initialise GLFW
-    int pbufferAttribs[] = {
-        GLX_PBUFFER_WIDTH,  32,
-        GLX_PBUFFER_HEIGHT, 32,
-        None
     };
-    GLXPbuffer pbuffer = glXCreatePbuffer( display, fbConfigs[0], pbufferAttribs );
+
+    // Query EGL Devices
+    const int max_devices = 32;
+    EGLDeviceEXT egl_devices[max_devices];
+    EGLint num_devices = 0;
+    EGLint egl_error = eglGetError();
+    if (!eglQueryDevicesEXT(max_devices, egl_devices, &num_devices) ||
+        egl_error != EGL_SUCCESS) {
+        printf("eglQueryDevicesEXT Failed.\n");
+        m_data->egl_display = EGL_NO_DISPLAY;
+    }
+
+    printf("number of devices found %d\n", num_devices);
+    m_data->m_renderDevice = -1;
+    // Query EGL Screens
+    if(m_data->m_renderDevice == -1) {
+        // Chose default screen, by trying all
+        for (EGLint i = 0; i < num_devices; ++i) {
+            // Set display
+            EGLDisplay display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
+                                                          egl_devices[i], NULL);
+            if (eglGetError() == EGL_SUCCESS && display != EGL_NO_DISPLAY) {
+                int major, minor;
+                EGLBoolean initialized = eglInitialize(display, &major, &minor);
+                if (eglGetError() == EGL_SUCCESS && initialized == EGL_TRUE) {
+                    m_data->egl_display = display;
+                }
+            }
+        }
+    } else {
+        // Chose specific screen, by using m_renderDevice
+        if (m_data->m_renderDevice < 0 || m_data->m_renderDevice >= num_devices) {
+            fprintf(stderr, "Invalid render_device choice: %d < %d.\n", m_data->m_renderDevice, num_devices);
+            exit(EXIT_FAILURE);
+        }
+
+        // Set display
+        EGLDisplay display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
+                                                      egl_devices[m_data->m_renderDevice], NULL);
+        if (eglGetError() == EGL_SUCCESS && display != EGL_NO_DISPLAY) {
+            int major, minor;
+            EGLBoolean initialized = eglInitialize(display, &major, &minor);
+            if (eglGetError() == EGL_SUCCESS && initialized == EGL_TRUE) {
+                m_data->egl_display = display;
+            }
+        }
+    }
+
+    if (!eglInitialize(m_data->egl_display, NULL, NULL)) {
+        fprintf(stderr, "Unable to initialize EGL\n");
+        exit(EXIT_FAILURE);
+    }
+
+    egl_version = gladLoaderLoadEGL(m_data->egl_display);
+    if (!egl_version) {
+        fprintf(stderr, "Unable to reload EGL.\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("Loaded EGL %d.%d after reload.\n", GLAD_VERSION_MAJOR(egl_version),
+           GLAD_VERSION_MINOR(egl_version));
 
 
-    // clean up:
-    XFree( fbConfigs );
-    XSync( display, False );
+    m_data->success = eglBindAPI(EGL_OPENGL_API);
+    if (!m_data->success) {
+        // TODO: Properly handle this error (requires change to default window
+        // API to change return on all window types to bool).
+        fprintf(stderr, "Failed to bind OpenGL API.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    m_data->success =
+    eglChooseConfig(m_data->egl_display, egl_config_attribs,
+                    &m_data->egl_config, 1, &m_data->num_configs);
+    if (!m_data->success) {
+        // TODO: Properly handle this error (requires change to default window
+        // API to change return on all window types to bool).
+        fprintf(stderr, "Failed to choose config (eglError: %d)\n", eglGetError());
+        exit(EXIT_FAILURE);
+    }
+    if (m_data->num_configs != 1) {
+        fprintf(stderr, "Didn't get exactly one config, but %d\n", m_data->num_configs);
+        exit(EXIT_FAILURE);
+    }
 
-    if ( !glXMakeContextCurrent( display, pbuffer, pbuffer, openGLContext ) )
-    {
-        printf("Something is wrong\n");
-        return -1;
-        // something went wrong
+    m_data->egl_surface = eglCreatePbufferSurface(
+                                                  m_data->egl_display, m_data->egl_config, egl_pbuffer_attribs);
+    if (m_data->egl_surface == EGL_NO_SURFACE) {
+        fprintf(stderr, "Unable to create EGL surface (eglError: %d)\n", eglGetError());
+        exit(EXIT_FAILURE);
     }
 
 
-    if( !glfwInit() )
-    {
-        fprintf( stderr, "Failed to initialize GLFW\n" );
-        getchar();
-        return -1;
+    m_data->egl_context = eglCreateContext(
+                                           m_data->egl_display, m_data->egl_config, EGL_NO_CONTEXT, NULL);
+    if (!m_data->egl_context) {
+        fprintf(stderr, "Unable to create EGL context (eglError: %d)\n",eglGetError());
+        exit(EXIT_FAILURE);
     }
 
-    /*
-    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    */
-
-    // Open a window and create its OpenGL context
-
-
-    //window = glfwCreateWindow( windowWidth, windowHeight, "Depth Rendering", NULL, NULL);
-    /*
-    if( window == NULL ){
-        fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
-        getchar();
-        glfwTerminate();
-        return -1;
+    m_data->success =
+        eglMakeCurrent(m_data->egl_display, m_data->egl_surface, m_data->egl_surface,
+                   m_data->egl_context);
+    if (!m_data->success) {
+        fprintf(stderr, "Failed to make context current (eglError: %d)\n", eglGetError());
+        exit(EXIT_FAILURE);
     }
-    */
 
-    //glfwMakeContextCurrent(window);
+    if (!gladLoadGL(eglGetProcAddress)) {
+        fprintf(stderr, "failed to load GL with glad.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    const GLubyte* ven = glGetString(GL_VENDOR);
+    printf("GL_VENDOR=%s\n", ven);
 
-    // But on MacOS X with a retina screen it'll be 1024*2 and 768*2, so we get the actual framebuffer size:
-    //glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+    const GLubyte* ren = glGetString(GL_RENDERER);
+    printf("GL_RENDERER=%s\n", ren);
+    const GLubyte* ver = glGetString(GL_VERSION);
+    printf("GL_VERSION=%s\n", ver);
+    const GLubyte* sl = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    printf("GL_SHADING_LANGUAGE_VERSION=%s\n", sl);
 
-    // Initialize GLEW
-
-
+/*
     glewExperimental = true; // Needed for core profile
     GLenum err = glewInit();
     if ( err!= GLEW_OK) {
@@ -376,6 +451,9 @@ int main( int argc, char * argv[] )
         //glfwTerminate();
         return -1;
     }
+*/
+
+    printf("before loading shaders\n");
 
     // Ensure we can capture the escape key being pressed below
     //glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
@@ -408,6 +486,8 @@ int main( int argc, char * argv[] )
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
+    printf("some gl functions finished\n");
+
     // Create and compile our GLSL program from the shaders
     GLuint programID;
     if (normal == 0 && semantic == 0) {
@@ -421,6 +501,8 @@ int main( int argc, char * argv[] )
         programID = LoadShaders( "./StandardShadingRTT.vertexshader", "./MistShadingRTT.fragmentshader" );
     }
 
+
+    printf("finish loading shaders\n");
     // Get a handle for our "MVP" uniform
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
     GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
