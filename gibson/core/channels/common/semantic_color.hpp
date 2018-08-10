@@ -6,9 +6,7 @@
 #include <string.h>
 #include <vector>
 #include <cstdlib>  //rand
-#include <GL/glew.h>
 #include <GL/glut.h>
-#include <GL/glx.h>
 #include <fstream>
 #include <glfw3.h>
 #include "common/MTLtexture.hpp"

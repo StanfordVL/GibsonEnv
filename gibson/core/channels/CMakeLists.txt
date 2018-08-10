@@ -66,24 +66,18 @@ if(ASSIMP_FOUND)
 endif()
 
 
-# Compile external dependencies
 add_subdirectory (external)
 
-# On Visual 2005 and above, this module can set the debug working directory
-
-#find_package(glfw REQUIRED)
-
-#message("GLFW" ${GLFW3_INCLUDE_DIR}/GLFW)
-#message("GLFW lib" ${GLFW3_LIBRARY})
+add_definitions(-DGLEW_EGL)
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
-    #${GLFW3_INCLUDE_DIR}/GLFW
     external/glfw-3.1.2/include/GLFW
     external/lodepng/
     ${GLUT_INCLUDE_DIRS}
     .
     ${ZeroMQ_INCLUDE_DIR}
+    glad
 )
 
 
@@ -94,6 +88,8 @@ set(ALL_LIBS
     ${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
     glfw
+    dl
+    pthread
 )
 
 add_definitions(
@@ -107,6 +103,7 @@ add_definitions(
 
 
 cuda_add_executable(depth_render
+    glad/egl.c glad/gl.c
     depth_render/render.cpp
     common/render_cuda_f.cu
     common/render_cuda_f.h
@@ -133,10 +130,8 @@ cuda_add_executable(depth_render
     common/picojson.h
     common/cmdline.h
     common/semantic_color.hpp
-
     external/lodepng/lodepng.h
     external/lodepng/lodepng.cpp
-
     depth_render/StandardShadingRTT.vertexshader
     depth_render/MistShadingRTT.fragmentshader
     depth_render/NormalShadingRTT.fragmentshader
@@ -166,6 +161,8 @@ add_custom_command(
 
 
 cuda_add_executable(semantic
+    glad/egl.c
+    glad/gl.c
     depth_render/semantic.cpp
     common/controls.cpp
     common/controls.hpp
