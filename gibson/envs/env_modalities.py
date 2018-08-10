@@ -178,7 +178,6 @@ class BaseRobotEnv(BaseEnv):
         p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
         return observations
 
-
     electricity_cost     = -2.0 # cost for using motors -- this parameter should be carefully tuned against reward for making progress, other values less improtant
     stall_torque_cost   = -0.1  # cost for running electric current through a motor even at zero rotational speed, small
     foot_collision_cost  = -1.0 # touches another leg, or other objects, that cost makes robot avoid smashing feet into itself
@@ -299,6 +298,10 @@ class BaseRobotEnv(BaseEnv):
     def getExtendedObservation(self):
         pass
 
+    # Gym v0.10.5 compatibility
+    reset = _reset
+    step  = _step
+
 
 class CameraRobotEnv(BaseRobotEnv):
     """CameraRobotEnv has full modalities. If it's initialized with mode="SENSOR",
@@ -373,7 +376,6 @@ class CameraRobotEnv(BaseRobotEnv):
     def _reset(self):
         sensor_state = BaseRobotEnv._reset(self)
         self.potential = self.robot.calc_potential()
-
         eye_pos, eye_quat = self.get_eye_pos_orientation()
         pose = [eye_pos, eye_quat]
         
@@ -664,6 +666,10 @@ class CameraRobotEnv(BaseRobotEnv):
             except socket.error as e:
                 raise e
                 raise error.Error("Gibson initialization Error: port {} is in use".format(port))
+    # Gym v0.10.5 compatibility
+    reset = _reset
+    step  = _step
+    close = _close
 
 
 class SemanticRobotEnv(CameraRobotEnv):
