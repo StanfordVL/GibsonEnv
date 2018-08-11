@@ -24,7 +24,7 @@ Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for 
 
 Beta
 =================
-**This is the 0.3.0 release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
+**This is the 0.3.1 release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
 
 **Dataset**: To make the beta release lighter for the users, we are including a small subset (9) of the spaces in it. 
 The [full dataset](gibson/data/README.md) includes 572 spaces and 1440 floors. It will be made available if we dont get a major bug report during the brief beta release. 
