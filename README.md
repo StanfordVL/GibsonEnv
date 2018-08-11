@@ -88,10 +88,10 @@ You can either 1. build your own docker image or 2. pull from our docker image. 
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd GibsonEnv/gibson
 wget https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz
-tar -zxf assets_core_v2.tar.gz
+tar -zxf assets_core_v2.tar.gz && rm assets_core_v2.tar.gz
 cd assets
 wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
-tar -zxf dataset.tar.gz
+tar -zxf dataset.tar.gz && rm dataset.tar.gz
 ### the commands above downloads assets data file and decpmpress it into gibson/assets folder
 cd ../.. # back to GibsonEnv dir
 docker build . -t gibson ### finish building inside docker
@@ -102,13 +102,13 @@ dataset files in docker image to keep our image slim, so you will need to mount 
 
 2. Or pull from our docker image
 ```bash
-docker pull xf1280/gibson:0.2
+docker pull xf1280/gibson:0.3.1
 ```
 #### Notes on deployment on a headless server
 
 We have another docker file that supports deployment on a headless server and remote access with TurboVNC+virtualGL. 
 You can build your own docker image with the docker file `Dockerfile_server`.
-Instructions to run gibson on a headless server:
+Instructions to run gibson on a headless server (requires X server running):
 
 1. Install nvidia-docker2 dependencies following the starter guide.
 2. Use `openssl req -new -x509 -days 365 -nodes -out self.pem -keyout self.pem` create `self.pem` file
@@ -117,6 +117,8 @@ Instructions to run gibson on a headless server:
 in docker terminal, start `/opt/websockify/run 5901 --web=/opt/noVNC --wrap-mode=ignore -- vncserver :1 -securitytypes otp -otp -noxstartup` in background, potentially with `tmux`
 5. Run gibson with `DISPLAY=:1 vglrun python <gibson example or training>`
 6. Visit your `host:5901` and type in one time password to see the GUI.
+
+If you don't have X server running, you can still run gibson, see [this guide](https://github.com/StanfordVL/GibsonEnv/wiki/Running-GibsonEnv-on-headless-server) for more details.
 
 
 B. Building from source
@@ -211,8 +213,7 @@ By running this command you will start training an ant to navigate in Gates buil
 
 Web User Interface
 ----
-When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
-
+When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py python gibson/utils/web_ui.py 5552`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
 
 <img src=misc/web_ui.png width="600">
 
