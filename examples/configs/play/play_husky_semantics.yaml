@@ -23,7 +23,7 @@ random:
 
 output: [nonviz_sensor, rgb_filled, depth, normal, semantics]
 #output: [nonviz_sensor]
-resolution: 64
+resolution: 256
 
 speed:
   timestep: 0.01
