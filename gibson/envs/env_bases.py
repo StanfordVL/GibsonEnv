@@ -43,10 +43,10 @@ class BaseEnv(gym.Env):
 
         if config["display_ui"]:
             #self.physicsClientId = p.connect(p.DIRECT)
-            self.physicsClientId = p.connect(p.GUI)
+            self.physicsClientId = p.connect(p.GUI, "--opengl2")
             p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
         elif (self.gui):
-            self.physicsClientId = p.connect(p.GUI)
+            self.physicsClientId = p.connect(p.GUI, "--opengl2")
         else:
             self.physicsClientId = p.connect(p.DIRECT)
 
