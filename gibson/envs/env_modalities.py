@@ -59,14 +59,6 @@ class BaseRobotEnv(BaseEnv):
 
         self.scale_up  = 4
         self.dataset = None
-        if scene_type == "building":
-            self.dataset = ViewDataSet3D(
-                transform = np.array,
-                mist_transform = np.array,
-                seqlen = 2,
-                off_3d = False,
-                train = False,
-                overwrite_fofn=True, env = self, only_load = self.config["model_id"])
         self.ground_ids = None
         if self.gui:
             assert(self.tracking_camera is not None)
@@ -359,7 +351,7 @@ class CameraRobotEnv(BaseRobotEnv):
         self.r_camera_dep = None
         #self.check_port_available()
         self.setup_camera_multi()
-        self.setup_camera_rgb()
+        self.setup_camera_pc()
         
         ui_map = {
             1: OneViewUI,
@@ -525,9 +517,18 @@ class CameraRobotEnv(BaseRobotEnv):
         #visuals = np.concatenate(visuals, 2)
         return observations
 
-    def setup_camera_rgb(self):
+    def setup_camera_pc(self):
         ## Camera specific
         assert(self._require_camera_input)
+        if self.scene_type == "building":
+            self.dataset = ViewDataSet3D(
+                transform = np.array,
+                mist_transform = np.array,
+                seqlen = 2,
+                off_3d = False,
+                train = False,
+                overwrite_fofn=True, env = self, only_load = self.config["model_id"])
+
         scene_dict = dict(zip(self.dataset.scenes, range(len(self.dataset.scenes))))
         ## Todo: (hzyjerry) more error handling
         if not self.model_id in scene_dict.keys():
@@ -567,6 +568,8 @@ class CameraRobotEnv(BaseRobotEnv):
             all_data = self.dataset.get_multi_index([v for k, v in uuids])
             for i, data in enumerate(all_data):
                 target, target_depth = data[1], data[3]
+                if not self._require_rgb:
+                    continue
                 ww = target.shape[0] // 8 + 2
                 target[:ww, :, :] = target[ww, :, :]
                 target[-ww:, :, :] = target[-ww, :, :]
@@ -632,8 +635,8 @@ class CameraRobotEnv(BaseRobotEnv):
         cur_path = os.getcwd()
         os.chdir(dr_path)
 
-        render_main  = "./depth_render --modelpath {} --GPU {} -w {} -h {} -f {} -p {}".format(self.model_path, self.gpu_count, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_depth)
-        #render_depth = "./depth_render --modelpath {} --GPU -1 -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
+        render_main  = "./depth_render --modelpath {} -w {} -h {} -f {} -p {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_depth)
+        #render_depth = "./depth_render --modelpath {} -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
         render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {} -p {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_normal)
         render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {} -p {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_sem)
         

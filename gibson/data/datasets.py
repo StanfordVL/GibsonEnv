@@ -52,7 +52,7 @@ def get_model_path(model_id):
     assert (model_id in os.listdir(data_path)) or model_id == 'stadium', "Model {} does not exist".format(model_id)
     return os.path.join(data_path, model_id)
 
-def get_item_fn(inds, select, root, loader, transform, off_3d, target_transform, depth_trans, off_pc_render, dll, train):
+def get_item_fn(inds, select, root, loader, transform, off_3d, target_transform, depth_trans, off_pc_render, dll, train, require_rgb):
     """ Functional programming version of Dataset.__getitem__
     The advantage is that it is pickle-friendly and supports python multiprocessing
     
@@ -101,28 +101,33 @@ def get_item_fn(inds, select, root, loader, transform, off_3d, target_transform,
     mist_imgs = None
     mist_target = None
 
+    imgs = None
+    target = None
+
     for pose_i, item in enumerate(img_poses):
         pose_i = pose_i + 1
         relative = np.dot(inv(target_pose), item)
         poses_relative.append(torch.from_numpy(relative))
-    imgs = [loader(item) for item in img_paths]
-    target = loader(target_path)
+    
+    if require_rgb:
+        imgs = [loader(item) for item in img_paths]
+        target = loader(target_path)
+        org_img = imgs[0].copy()
 
-    if not off_3d:
+    if not off_3d and require_rgb:
         mist_imgs = [depth_loader(item) for item in mist_img_paths]
         mist_target = depth_loader(mist_target_path)
         if train:
             normal_imgs = [loader(item) for item in normal_img_paths]
             normal_target = loader(normal_target_path)
 
-    org_img = imgs[0].copy()
 
-    if not transform is None:
+    if not transform is None and require_rgb:
         imgs = [transform(item) for item in imgs]
-    if not target_transform is None:
+    if not target_transform is None and require_rgb:
         target = target_transform(target)
 
-    if not off_3d:
+    if not off_3d and require_rgb:
         mist_imgs = [np.expand_dims(np.array(item).astype(np.float32) / 65536.0, 2) for item in mist_imgs]
         org_mist = mist_imgs[0][:, :, 0].copy()
         mist_target = np.expand_dims(np.array(mist_target).astype(np.float32) / 65536.0, 2)
@@ -138,7 +143,7 @@ def get_item_fn(inds, select, root, loader, transform, off_3d, target_transform,
             if not target_transform is None:
                 normal_target = target_transform(normal_target)
 
-    if not off_pc_render:
+    if not off_pc_render and require_rgb:
         img = np.array(org_img)
         h, w, _ = img.shape
         render = np.zeros((h, w, 3), dtype='uint8')
@@ -185,6 +190,7 @@ class ViewDataSet3D(data.Dataset):
         self.depth_trans = mist_transform
         self.semantic_trans = semantic_transform
         self._require_semantics = "SEMANTICS" in self.env.config["ui_components"]
+        self._require_rgb = "RGB_FILLED" in self.env.config["ui_components"] or "RGB_PREFILLED" in self.env.config["ui_components"]
         self.off_3d = off_3d
         self.select = []
         self.fofn = self.root + '_fofn' + str(int(train)) + '.pkl'
@@ -232,7 +238,6 @@ class ViewDataSet3D(data.Dataset):
                             self.meta[scene] = {}
                         metadata = (uuid, xyz, quat)
                         # print(uuid, xyz)
-
                         if os.path.isfile(os.path.join(self.root, scene, 'pano', 'points', 'point_' + uuid + '.json')):
                             if np.linalg.norm( np.array(xyz) - np.array([0,0,0])) > 1e-5: #remove scans that are not registered
                                 self.meta[scene][uuid] = metadata
@@ -332,28 +337,32 @@ class ViewDataSet3D(data.Dataset):
         mist_imgs = None
         mist_target = None
 
+        imgs, target = None, None
+
         for pose_i, item in enumerate(img_poses):
             pose_i = pose_i + 1
             relative = np.dot(inv(target_pose), item)
             poses_relative.append(torch.from_numpy(relative))
-        imgs = [self.loader(item) for item in img_paths]
-        target = self.loader(target_path)
 
-        if not self.off_3d:
+        if self._require_rgb:
+            imgs = [self.loader(item) for item in img_paths]
+            target = self.loader(target_path)
+
+        if not self.off_3d and self._require_rgb:
             mist_imgs = [depth_loader(item) for item in mist_img_paths]
             mist_target = depth_loader(mist_target_path)
             if self.train:      # Optimize
                 normal_imgs = [self.loader(item) for item in normal_img_paths]
                 normal_target = self.loader(normal_target_path)
 
-        if not self.off_pc_render:
+        if not self.off_pc_render and self._require_rgb:
             org_img = imgs[0].copy()
             if not self.transform is None:
                 imgs = [self.transform(item) for item in imgs]
             if not self.target_transform is None:
                 target = self.target_transform(target)
 
-        if not self.off_3d:
+        if not self.off_3d and self._require_rgb:
             mist_imgs = [np.expand_dims(np.array(item).astype(np.float32) / 65536.0, 2) for item in mist_imgs]
             if not self.off_pc_render:
                 org_mist = mist_imgs[0][:, :, 0].copy()
@@ -370,7 +379,7 @@ class ViewDataSet3D(data.Dataset):
                 if not self.target_transform is None:
                     normal_target = self.target_transform(normal_target)
 
-        if not self.off_pc_render:
+        if not self.off_pc_render and self._require_rgb:
             img = np.array(org_img)
             h, w, _ = img.shape
             render = np.zeros((h, w, 3), dtype='uint8')
@@ -400,7 +409,7 @@ class ViewDataSet3D(data.Dataset):
     def get_multi_index(self, uuids):
         indices = range(len(uuids))
         p = Pool(16)
-        partial_fn = partial(get_item_fn, select=self.select, root=self.root, loader=self.loader, transform=self.transform, off_3d=self.off_3d, target_transform=self.target_transform, depth_trans=self.depth_trans, off_pc_render=self.off_pc_render, dll=self.dll, train=self.train)
+        partial_fn = partial(get_item_fn, select=self.select, root=self.root, loader=self.loader, transform=self.transform, off_3d=self.off_3d, target_transform=self.target_transform, depth_trans=self.depth_trans, off_pc_render=self.off_pc_render, dll=self.dll, train=self.train, require_rgb=self._require_rgb)
         mapped_pairs = list(tqdm(p.imap(partial_fn, list(zip(uuids, indices))), total=len(uuids)))
         sorted_pairs = sorted(mapped_pairs, key=lambda x: x[0])
         out_data = [key_pair[1] for key_pair in sorted_pairs]

@@ -16,7 +16,6 @@
 #include <GL/glut.h>
 #include "lodepng.h"
 
-
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -235,7 +234,6 @@ int main( int argc, char * argv[] )
     cmdp.parse_check(argc, argv);
 
     std::string model_path = cmdp.get<std::string>("modelpath");
-    int GPU_NUM = cmdp.get<int>("GPU");
     int PORT    = cmdp.get<int>("Port");
     int smooth = cmdp.get<int>("Smooth");
     int normal = cmdp.get<int>("Normal");
@@ -252,13 +250,6 @@ int main( int argc, char * argv[] )
     //std::string name_obj = model_path + "/gibson_decimated_z_up.obj";
     if (smooth > 0) {
         name_obj = model_path + "/out_smoothed.obj";
-        GPU_NUM = -1;
-    }
-
-    // if rendering normals
-    if (normal > 0) {
-        //name_obj = model_path + "/rgb.obj";
-        GPU_NUM = -2;
     }
 
     // if rendering semantics
@@ -271,7 +262,6 @@ int main( int argc, char * argv[] )
         name_obj = model_path + "/semantic.obj";
         if (semantic_src == 1) ply = 0;
         if (semantic_src == 2) ply = 1;
-        GPU_NUM = -3;
     }
 
     std::string name_loc   = model_path + "/" + "camera_poses.csv";
@@ -716,15 +706,14 @@ int main( int argc, char * argv[] )
 
     zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
-    // std::cout << "GPU NUM:" << GPU_NUM  << " bound to port " << GPU_NUM + 5555 << std::endl;
     socket.bind ("tcp://127.0.0.1:"  + std::to_string(PORT));
     cudaGetDevice( &cudaDevice );
     int g_cuda_device = 0;
-    if (GPU_NUM > 0) {
-        cudaDevice = GPU_NUM;
-    } else {
-        cudaDevice = 0;
-    }
+    //if (GPU_NUM > 0) {
+    //    cudaDevice = GPU_NUM;
+    //} else {
+    cudaDevice = 0;
+    //}
     cudaSetDevice(cudaDevice);
     cudaGLSetGLDevice(cudaDevice);
     cudaGraphicsResource* resource;

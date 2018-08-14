@@ -119,7 +119,6 @@ class PCRenderer:
         self._context_dept = zmq.Context()      ## Channel for smoothed depth
         self._context_norm = zmq.Context()      ## Channel for smoothed depth
         self._context_semt = zmq.Context()
-
         self.env = env
 
         self._require_semantics = 'semantics' in self.env.config["output"]#configs.View.SEMANTICS in configs.ViewComponent.getComponents()
@@ -154,7 +153,6 @@ class PCRenderer:
         self.capture_count = 0
 
         #print(self.showsz)
-
         #self.show   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
         #self.show_rgb   = np.zeros((self.showsz,self.showsz * 2,3),dtype='uint8')
 
@@ -162,7 +160,7 @@ class PCRenderer:
         self.show_rgb        = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
         self.show_semantics  = np.zeros((self.showsz, self.showsz ,3),dtype='uint8')
 
-        self.show_prefilled   = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
+        self.show_prefilled  = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
         self.surface_normal  = np.zeros((self.showsz, self.showsz, 3),dtype='uint8')
 
         self.semtimg_count = 0
@@ -197,6 +195,11 @@ class PCRenderer:
 
         if not self.env.config["use_filler"]:
             self.model = None
+
+        self.imgs_topk = None
+        self.depths_topk = None
+        self.relative_poses_topk = None
+        self.old_topk = None
 
         self.imgv = Variable(torch.zeros(1, 3 , self.showsz, self.showsz), volatile = True).cuda()
         self.maskv = Variable(torch.zeros(1,2, self.showsz, self.showsz), volatile = True).cuda()
@@ -412,10 +415,10 @@ class PCRenderer:
         #with Profiler("Render: render point cloud"):
         ## Speed bottleneck
 
-        _render_pc(opengl_arr, rgbs, show)
-
-        # Store prefilled rgb
-        show_prefilled[:] = show
+        if is_rgb:
+            _render_pc(opengl_arr, rgbs, show)
+            # Store prefilled rgb
+            show_prefilled[:] = show
 
         #with Profiler("Render: NN total time"):
         ## Speed bottleneck
@@ -477,11 +480,10 @@ class PCRenderer:
 
     def renderOffScreen(self, pose, k_views=None, rgb=True):
 
-
         if k_views is not None:
             all_dist, _ = self.getAllPoseDist(pose)
             k_views = (np.argsort(all_dist))[:self.k]
-        if set(k_views) != self.old_topk:
+        if rgb and set(k_views) != self.old_topk:
             self.imgs_topk = np.array([self.imgs[i] for i in k_views])
             self.depths_topk = np.array([self.depths[i] for i in k_views]).flatten()
             self.relative_poses_topk = [self.relative_poses[i] for i in k_views]
