@@ -10,7 +10,7 @@ is_discrete: true
 use_filler: true
 display_ui: false
 show_diagnostics: false
-ui_num: 2
+ui_num: 1
 ui_components: [RGB_FILLED]
 random:
   random_initial_pose : false
@@ -21,7 +21,7 @@ random:
   random_init_rot_range: [-0.1, 0.1]
 
 output: [nonviz_sensor, rgb_filled]
-resolution: 256
+resolution: 512
 
 speed:
   timestep: 0.001

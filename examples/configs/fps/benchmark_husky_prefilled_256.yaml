@@ -7,7 +7,7 @@ initial_pos: [0, 0, 1.2]
 fov: 1.57
 is_discrete: true
 
-use_filler: true
+use_filler: false
 display_ui: false
 show_diagnostics: true
 ui_num: 1

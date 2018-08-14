@@ -565,8 +565,9 @@ class CameraRobotEnv(BaseRobotEnv):
                 sources.append(target)
                 source_depths.append(target_depth)
         else:
-            all_data = self.dataset.get_multi_index([v for k, v in uuids])
-            for i, data in enumerate(all_data):
+            #all_data = self.dataset.get_multi_index([v for k, v in uuids])
+            #for i, data in enumerate(all_data):
+            for i, data in enumerate(tqdm(self.dataset)):
                 target, target_depth = data[1], data[3]
                 if not self._require_rgb:
                     continue

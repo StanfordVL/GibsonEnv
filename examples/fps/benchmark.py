@@ -47,18 +47,25 @@ def test_fps(fname, nframe=200):
         ts[frame] = time.time() - t
         score += r
     env.close()
-    #for port in range(5556-4, 5556+1):
-        #os.system("lsof -i tcp:" + str(port) + " | awk 'NR!=1 {print $2}' | xargs kill &")
-        #command = "lsof -i tcp:" + str(port) + " | awk 'NR!=1 {print $2}' | xargs kill &"
-        #subprocess.Popen(command.split(), shell=True)
-    print(np.mean(ts), "%.1f fps" % (1/np.mean(ts))) 
 
+    fps = "%.1f fps" % (1/np.mean(ts))
+    print(np.mean(ts), fps)
+    return fps 
+
+res = 512
 if __name__ == '__main__':
     agent = ["husky"]
-    res = [128, 256, 512]
-    #mode python = ["nonviz", "camera", "prefilled", "depth"]
-    mode = ["normal"]
+    #res = [128, 256, 512]
+    mode = ["smallfiller", "nonviz", "prefilled", "depth", "filled", "semantic", "normal"]
+    #mode = ["smallfiller", "normal"]
 
-    for a, r, m in itertools.product(agent, res, mode):
-        test_fps("benchmark_{}_{}_{}".format(a, m, r))
-    
+    result = {}
+    for a, m in itertools.product(agent, mode):
+        if m not in result.keys():
+            result[m] = {}
+        result[m][res] = test_fps("benchmark_{}_{}_{}".format(a, m, res))
+        time.sleep(1)
+    print(result)
+    import json
+    with open("fps_{}.json".format(res), "w+") as f:
+        json.dump(result, f, indent=2)

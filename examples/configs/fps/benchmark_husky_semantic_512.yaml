@@ -29,4 +29,5 @@ speed:
 
 mode: headless #gui|headless
 verbose: false
-#fast_lq_render: true
+semantic_source: 1 # Matterport 3D
+semantic_color: 1  # Randoms

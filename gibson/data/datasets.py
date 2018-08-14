@@ -416,7 +416,7 @@ class ViewDataSet3D(data.Dataset):
 
     def get_multi_index(self, uuids):
         indices = range(len(uuids))
-        p = Pool(16)
+        p = Pool(8)
         partial_fn = partial(get_item_fn, select=self.select, root=self.root, loader=multithread_loader, transform=self.transform, off_3d=self.off_3d, target_transform=self.target_transform, depth_trans=self.depth_trans, off_pc_render=self.off_pc_render, dll=self.dll, train=self.train, require_rgb=self._require_rgb)
         mapped_pairs = list(tqdm(p.imap(partial_fn, list(zip(uuids, indices))), total=len(uuids)))
         sorted_pairs = sorted(mapped_pairs, key=lambda x: x[0])
