@@ -212,7 +212,8 @@ struct EGLInternalData2 {
     EGLInternalData2()
     : m_isInitialized(false),
     m_windowWidth(0),
-    m_windowHeight(0) {}
+    m_windowHeight(0),
+     m_renderDevice(-1) {}
 };
 
 int main( int argc, char * argv[] )
@@ -241,6 +242,7 @@ int main( int argc, char * argv[] )
     int semantic_src = cmdp.get<int>("Semantic Source");
     int semantic_clr = cmdp.get<int>("Semantic Color");
     int ply;
+    int gpu_idx = cmdp.get<int>("GPU");
 
     float camera_fov = cmdp.get<float>("fov");
     windowHeight = cmdp.get<int>("Height");
@@ -322,38 +324,16 @@ int main( int argc, char * argv[] )
     }
 
     printf("number of devices found %d\n", num_devices);
-    m_data->m_renderDevice = -1;
-    // Query EGL Screens
-    if(m_data->m_renderDevice == -1) {
-        // Chose default screen, by trying all
-        for (EGLint i = 0; i < num_devices; ++i) {
-            // Set display
-            EGLDisplay display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
-                                                          egl_devices[i], NULL);
-            if (eglGetError() == EGL_SUCCESS && display != EGL_NO_DISPLAY) {
-                int major, minor;
-                EGLBoolean initialized = eglInitialize(display, &major, &minor);
-                if (eglGetError() == EGL_SUCCESS && initialized == EGL_TRUE) {
-                    m_data->egl_display = display;
-                }
-            }
-        }
-    } else {
-        // Chose specific screen, by using m_renderDevice
-        if (m_data->m_renderDevice < 0 || m_data->m_renderDevice >= num_devices) {
-            fprintf(stderr, "Invalid render_device choice: %d < %d.\n", m_data->m_renderDevice, num_devices);
-            exit(EXIT_FAILURE);
-        }
+    m_data->m_renderDevice = gpu_idx;
 
-        // Set display
-        EGLDisplay display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
-                                                      egl_devices[m_data->m_renderDevice], NULL);
-        if (eglGetError() == EGL_SUCCESS && display != EGL_NO_DISPLAY) {
-            int major, minor;
-            EGLBoolean initialized = eglInitialize(display, &major, &minor);
-            if (eglGetError() == EGL_SUCCESS && initialized == EGL_TRUE) {
-                m_data->egl_display = display;
-            }
+    // Set display
+    EGLDisplay display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
+                                                  egl_devices[m_data->m_renderDevice], NULL);
+    if (eglGetError() == EGL_SUCCESS && display != EGL_NO_DISPLAY) {
+        int major, minor;
+        EGLBoolean initialized = eglInitialize(display, &major, &minor);
+        if (eglGetError() == EGL_SUCCESS && initialized == EGL_TRUE) {
+            m_data->egl_display = display;
         }
     }
 

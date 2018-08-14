@@ -29,11 +29,11 @@ tracking_camera_top = {
 class TurtlebotNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
         self.config = self.parse_config(config)
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+        CameraRobotEnv.__init__(self, self.config, gpu_idx,
                                 scene_type="stadium" if self.config["model_id"]=="stadium" else "building",
                                 tracking_camera=tracking_camera)
 
@@ -184,11 +184,11 @@ class JRNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
 
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
         self.config = self.parse_config(config)
         assert (self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        CameraRobotEnv.__init__(self, self.config, gpu_count,
+        CameraRobotEnv.__init__(self, self.config, gpu_idx,
                                 scene_type="stadium" if self.config["model_id"] == "stadium" else "building",
                                 tracking_camera=tracking_camera)
 
@@ -341,9 +341,9 @@ def get_obstacle_penalty(robot, depth):
 class TurtlebotNavigateSpeedControlEnv(TurtlebotNavigateEnv):
     """Specfy navigation reward
     """
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
         #assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
-        TurtlebotNavigateEnv.__init__(self, config, gpu_count)
+        TurtlebotNavigateEnv.__init__(self, config, gpu_idx)
         self.robot.keys_to_action = {
             (ord('s'), ): [-0.1,0], ## backward
             (ord('w'), ): [0.1,0], ## forward
@@ -385,11 +385,11 @@ class JR2NavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
 
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
         self.config = self.parse_config(config)
         assert (self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        CameraRobotEnv.__init__(self, self.config, gpu_count,
+        CameraRobotEnv.__init__(self, self.config, gpu_idx,
                                 scene_type="stadium" if self.config["model_id"] == "stadium" else "building",
                                 tracking_camera=tracking_camera)
 

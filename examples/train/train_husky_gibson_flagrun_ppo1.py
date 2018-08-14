@@ -49,7 +49,7 @@ def train(num_timesteps, seed):
     print(config_file)
 
 
-    env = HuskyGibsonFlagRunEnv(config = config_file, gpu_count=args.gpu_count)
+    env = HuskyGibsonFlagRunEnv(config = config_file, gpu_idx=args.gpu_idx)
 
     print(env.sensor_space)
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="RGB")
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--gpu_count', type=int, default=0)
+    parser.add_argument('--gpu_idx', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
     parser.add_argument('--reload_name', type=str, default=None)
