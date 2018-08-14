@@ -21,6 +21,7 @@ import json
 from numpy.linalg import inv
 import pickle
 from gibson import assets
+import scipy.misc
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -38,6 +39,10 @@ def default_loader(path):
     #img = Image.open(path)
     return img
 
+def multithread_loader(path):
+    im = scipy.misc.imread(path)
+    return im
+
 
 def depth_loader(path):
     ## Heavy usage
@@ -46,6 +51,9 @@ def depth_loader(path):
     img = Image.open(path)
     return img
 
+def multithread_depth_loader(path):
+    im = scipy.misc.imread(path)
+    return im
 
 def get_model_path(model_id):
     data_path = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), 'dataset')
@@ -115,8 +123,8 @@ def get_item_fn(inds, select, root, loader, transform, off_3d, target_transform,
         org_img = imgs[0].copy()
 
     if not off_3d and require_rgb:
-        mist_imgs = [depth_loader(item) for item in mist_img_paths]
-        mist_target = depth_loader(mist_target_path)
+        mist_imgs = [multithread_depth_loader(item) for item in mist_img_paths]
+        mist_target = multithread_depth_loader(mist_target_path)
         if train:
             normal_imgs = [loader(item) for item in normal_img_paths]
             normal_target = loader(normal_target_path)
@@ -409,7 +417,7 @@ class ViewDataSet3D(data.Dataset):
     def get_multi_index(self, uuids):
         indices = range(len(uuids))
         p = Pool(16)
-        partial_fn = partial(get_item_fn, select=self.select, root=self.root, loader=self.loader, transform=self.transform, off_3d=self.off_3d, target_transform=self.target_transform, depth_trans=self.depth_trans, off_pc_render=self.off_pc_render, dll=self.dll, train=self.train, require_rgb=self._require_rgb)
+        partial_fn = partial(get_item_fn, select=self.select, root=self.root, loader=multithread_loader, transform=self.transform, off_3d=self.off_3d, target_transform=self.target_transform, depth_trans=self.depth_trans, off_pc_render=self.off_pc_render, dll=self.dll, train=self.train, require_rgb=self._require_rgb)
         mapped_pairs = list(tqdm(p.imap(partial_fn, list(zip(uuids, indices))), total=len(uuids)))
         sorted_pairs = sorted(mapped_pairs, key=lambda x: x[0])
         out_data = [key_pair[1] for key_pair in sorted_pairs]
