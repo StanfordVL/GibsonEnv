@@ -12,6 +12,7 @@ with open("fps_256.json", "r") as f:
 			data[m][r] = new_data[m][r] 
 
 with open("fps_512.json", "r") as f:
+	new_data = json.load(f)
 	for m in new_data.keys():
 		for r in new_data[m].keys():
 			data[m][r] = new_data[m][r] 
