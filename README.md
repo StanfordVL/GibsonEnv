@@ -12,22 +12,22 @@ You shouldn't play video games all day, so shouldn't your AI! We built a virtual
 
 **Naming**: Gibson environment is named after *James J. Gibson*, the author of "Ecological Approach to Visual Perception", 1979. “We must perceive in order to move, but we must also move in order to perceive” – JJ Gibson
 
-Please see the [website](http://gibson.vision/) (http://env.gibson.vision/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
+Please see the [website](http://gibson.vision/) (http://gibsonenv.stanford.edu/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
 
 #### Paper
-**["Embodied Real-World Active Perception"](http://gibson.vision/)**, in **CVPR 2018 [Spotlight]**.
+**["Gibson Env: Real-World Perception for Embodied Agents"](http://gibson.vision/)**, in **CVPR 2018 [Spotlight Oral]**.
 
 
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
 
 
 
-Beta
+Release
 =================
 **This is the 0.3.1 release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
 
-**Dataset**: To make the beta release lighter for the users, we are including a small subset (9) of the spaces in it. 
-The [full dataset](gibson/data/README.md) includes 572 spaces and 1440 floors. It will be made available if we dont get a major bug report during the brief beta release. 
+**Database**: To make the download package lighter for the users, we are including a small subset (9) of the spaces in the core assets. 
+The [full database](gibson/data/README.md) includes 572 spaces and 1440 floors. Users can download the rest of the spaces and add them to the assets folder. A diverse set of visualization of all spaces in Gibson can be seen [here](http://gibsonenv.stanford.edu/database/).
 
 Table of contents
 =================
@@ -71,7 +71,7 @@ For building from the source(B):
 
 #### Download data
 
-First, our environment assets data are available [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments.
+First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments. Visit the [database readme](gibson/data/README.md) for downloading more spaces. 
 
 
 A. Quick installation (docker)
