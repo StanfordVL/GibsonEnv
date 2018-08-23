@@ -233,7 +233,7 @@ More Advanced Starting Guide
 
 ### Starter Agents
 
-Gibson provides a base set of agents:
+Gibson provides a base set of agents. See videos of these agents and their corresponding perceptual observation [here](http://gibsonenv.stanford.edu/agents/). 
 <img src=misc/agents.gif>
 
 To enable (optionally) abstracting away low-level control and robot dynamics for high-level tasks, we also provide a set of practical and ideal controllers for each agent.
