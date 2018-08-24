@@ -82,7 +82,7 @@ class Goggle:
         tf = transforms.ToTensor()
         source = tf(img)
         mask = (torch.sum(source[:3, :, :], 0) > 0).float().unsqueeze(0)
-        source_depth = tf(np.expand_dims(depth, 2).astype(np.float32))
+        source_depth = tf(np.expand_dims(depth, 2).astype(np.float32) / 128.0 * 255)
         mask = torch.cat([source_depth, mask], 0)
 
         self.imgv.data.copy_(source)

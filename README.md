@@ -24,7 +24,7 @@ Please see the [website](http://gibson.vision/) (http://gibsonenv.stanford.edu/)
 
 Release
 =================
-**This is the 0.3.1 release. Bug reports and suggestions for improvement are appreciated.** [change log file](https://github.com/StanfordVL/GibsonEnv/blob/master/misc/CHANGELOG.md).  
+**This is the 0.3.1 release. Bug reports and suggestions for improvement are appreciated.** [change log file](misc/CHANGELOG.md).  
 
 **Database**: To make the download package lighter for the users, we are including a small subset (9) of the spaces in the core assets. 
 The [full database](gibson/data/README.md) includes 572 spaces and 1440 floors. Users can download the rest of the spaces and add them to the assets folder. A diverse set of visualization of all spaces in Gibson can be seen [here](http://gibsonenv.stanford.edu/database/).
@@ -360,3 +360,4 @@ Gibson includes a baked-in domain adaptation mechanism, named Goggles, for when 
 
 **More details:** With all the imperfections in point cloud rendering, it has been proven difficult to get completely photo-realistic rendering with neural network fixes. The remaining issues make a domain gap between the synthesized and real images. Therefore, we formulate the rendering problem as forming a joint space ensuring a correspondence between rendered and real images, rather than trying to (unsuccessfuly) render images that are identical to real ones. This provides a deterministic pathway for traversing across these domains and hence undoing the gap. We add another network "u" for target image (I_t) and define the rendering loss to minimize the distance between f(I_s) and u(I_t), where "f" and "I_s" represent the filler neural network and point cloud rendering output, respectively (see the loss in above figure). We use the same network structure for f and u. The function u(I) is trained to alter the observation in real-world, I_t, to look like the corresponding I_s and consequently dissolve the gap. We named the u network goggles, as it resembles corrective lenses for the anget for deploymen in real world. Detailed formulation and discussion of the mechanism can be found in the paper. You can download the function u and apply it when you deploy your trained agent in real-world.
 
+In order to use goggle, you will need a camera with depth sensor, we provide an example [here](examples/ros/gibson-ros/goggle.py) for kinect camera. The trained goggle functions are stored in `assets/unfiller_{resolution}.pth`, and each one is paired with one filler function. You need to use the correct one depending on which filler function is used. 
