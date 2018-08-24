@@ -1,6 +1,7 @@
 # Full Gibson Environment Dataset
 
-Full Gibson Environment Dataset consists of 572 models and 1440 floors. We cover a diverse set of models including households, offices, hotels, venues, museums, hospitals, construction sites etc. 
+Full Gibson Environment Dataset consists of 572 models and 1440 floors. We cover a diverse set of models including households, offices, hotels, venues, museums, hospitals, construction sites, etc. A diverse set of visualization of all spaces in Gibson can be seen [here](http://gibsonenv.stanford.edu/database/).
+ 
 <img src=../../misc/spaces.png width="800">
 
 Table of contents
@@ -34,7 +35,7 @@ If you use this dataset please cite:
 
 
 ## Dataset Modalities
-Each model in the dataset has its own folder in the dataset. All the modalities and metadata for each area are contained in that folder. 
+Each space in the database has its own folder. All the modalities and metadata for each space are contained in that folder. 
 ```
 /pano
   /points                 # camera metadata
@@ -47,7 +48,7 @@ semantic.obj (optional)   # 3d mesh with semantic annotation
 ```
 
 ## Dataset Splits
-We provide three different standard splits for our dataset, which are subsets of the full Gibson Dataset of 572 models. We recommend starting with tiny dataset, and then progressively adding more models. Each split is divided into `training/validation/testing` models. [You can download the standard split files here](https://storage.googleapis.com/gibsonassets/splits.tar.gz).
+Due to the sheer size of the database, We provide four different standard partitions which are subsets of the full Gibson database of 572 models. We recommend starting with tiny partition and progressively adding more models if you wish. Each partition is divided into `training/validation/testing` splits. [You can download the standard split files here](https://storage.googleapis.com/gibsonassets/splits.tar.gz).
 
 | Split Name   |      Train     |  Val  |  Test | Hole Filled | Total Size |
 |----------|:-------------:|-------------:|------:| ------:| -------------:|
@@ -61,7 +62,7 @@ We provide three different standard splits for our dataset, which are subsets of
 
 # Navigation Benchmark Scenarios
 
-We define navigation scenarios in [Gibson Standard Navigation Benchmark](https://storage.googleapis.com/gibsonassets/navigation_scenarios.tar.gz). The following column values are provided for each episode:
+We provide standard point-to-point navigation episodes in [Gibson Standard Navigation Benchmark](https://storage.googleapis.com/gibsonassets/navigation_scenarios.tar.gz). See the figure below for visualization of a sample episode. Each space includes 100 episodes along with their ground truth near-optimal path and waypoints. You can see random standard episodes visualized for each space in the [database webpage](http://gibsonenv.stanford.edu/database/). See [this paper](https://arxiv.org/abs/1807.06757) for a discussion on the navigation episodes and their application. The following column values are provided for each episode:
 
 - `split`: `train`, `val`, or `test` indicating split for the episode.
 - `task`: string id for task type, currently restricted to `p` for `point_goal`.
@@ -81,7 +82,7 @@ We define navigation scenarios in [Gibson Standard Navigation Benchmark](https:/
 
 **Floor Number** Total number of floors in each model.
 
-We calculate floor numbers by using camera sweeping locations. We use `sklearn.cluster.DBSCAN` to cluster these locations by height and set minimum cluster size to `5`. This means areas with at least `5` sweeps are treated as one single floor. This helps us capture small building spaces such as backyard, attics, basements.
+We calculate floor numbers using distinctive camera locations. We use `sklearn.cluster.DBSCAN` to cluster these locations by height and set minimum cluster size to `5`. This means areas with at least `5` sweeps are treated as one single floor. This helps us capture small building spaces such as backyard, attics, basements.
 
 **Area** Total floor area of each model.
 
@@ -106,7 +107,7 @@ For every navigation scenario, we provide navigation waypoints as an optional ch
 
 ### Visualization
 
-We also provide code for visualizing waypoints. In order to use it, you need to install the latest [Blender](https://www.blender.org/).
+We provide code for visualizing waypoints. In order to use it, you need to install the latest [Blender](https://www.blender.org/).
 
 ```bash
 ## Make sure that you can start blender in terminal
