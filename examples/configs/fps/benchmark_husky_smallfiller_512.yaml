@@ -9,7 +9,7 @@ is_discrete: true
 
 use_filler: true
 fast_lq_render: true
-display_ui: false
+display_ui: true
 show_diagnostics: false
 ui_num: 1
 ui_components: [RGB_FILLED]

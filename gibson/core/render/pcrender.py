@@ -393,6 +393,7 @@ class PCRenderer:
                 pose.dot(np.linalg.inv(poses[i])).astype(np.float32)
                 for i in range(len(imgs_pc))]
             #opengl_arr = np.zeros((h,w), dtype = np.float32)
+            print(imgs_pc.shape, show_pc.shape)
             cuda_pc.render(ct.c_int(len(imgs_pc)),
                            ct.c_int(imgs_pc[0].shape[0]),
                            ct.c_int(imgs_pc[0].shape[1]),
@@ -412,36 +413,37 @@ class PCRenderer:
         #[t.start() for t in threads]
         #[t.join() for t in threads]
 
-        #with Profiler("Render: render point cloud"):
-        ## Speed bottleneck
+        with Profiler("Render: render point cloud"):
+            ## Speed bottleneck
 
-        if is_rgb:
-            _render_pc(opengl_arr, rgbs, show)
-            # Store prefilled rgb
-            show_prefilled[:] = show
+            if is_rgb:
+                _render_pc(opengl_arr, rgbs, show)
+                # Store prefilled rgb
+                show_prefilled[:] = show
 
-        #with Profiler("Render: NN total time"):
-        ## Speed bottleneck
-        if self.use_filler and self.model and is_rgb and need_filler:
-            tf = transforms.ToTensor()
-            #from IPython import embed; embed()
-            source = tf(show)
-            mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
-            source += (1-mask.repeat(3,1,1)) * self.mean
-            source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
-            mask = torch.cat([source_depth, mask], 0)
-            #self.imgv.data.copy_(source)
-            #self.maskv.data.copy_(mask)
-            #print(torch.max(self.maskv), torch.max(self.imgv))
+        with Profiler("Render: NN total time"):
+            ## Speed bottleneck
+            if self.use_filler and self.model and is_rgb and need_filler:
+                print("Using model")
+                tf = transforms.ToTensor()
+                #from IPython import embed; embed()
+                source = tf(show)
+                mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
+                source += (1-mask.repeat(3,1,1)) * self.mean
+                source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
+                mask = torch.cat([source_depth, mask], 0)
+                #self.imgv.data.copy_(source)
+                #self.maskv.data.copy_(mask)
+                #print(torch.max(self.maskv), torch.max(self.imgv))
 
-            imgv = Variable(source).cuda().unsqueeze(0)
-            maskv = Variable(mask).cuda().unsqueeze(0)
+                imgv = Variable(source).cuda().unsqueeze(0)
+                maskv = Variable(mask).cuda().unsqueeze(0)
 
-            #print(imgv.size(), maskv.size())
+                #print(imgv.size(), maskv.size())
 
-            recon = model(imgv, maskv)
-            show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
-            show[:] = (show2[:] * 255).astype(np.uint8)
+                recon = model(imgv, maskv)
+                show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
+                show[:] = (show2[:] * 255).astype(np.uint8)
 
         self.target_depth = opengl_arr ## target depth
         #self.smooth_depth = smooth_arr

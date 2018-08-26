@@ -56,9 +56,9 @@ res = 512
 if __name__ == '__main__':
     agent = ["husky"]
     #res = [128, 256, 512]
-    mode = ["smallfiller", "nonviz", "prefilled", "depth", "filled", "semantic", "normal"]
-    #mode = ["smallfiller", "normal"]
-
+    #mode = ["smallfiller", "nonviz", "prefilled", "depth", "filled", "semantic", "normal"]
+    #mode = ["smallfiller", "prefilled"]
+    mode = ["smallfiller"]
     result = {}
     for a, m in itertools.product(agent, mode):
         if m not in result.keys():
