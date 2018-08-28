@@ -35,14 +35,16 @@ def load_model():
     return model
 
 model = load_model()
-imgv = Variable(torch.zeros(1, 3, 256, 256), volatile=True).cuda()
-maskv = Variable(torch.zeros(1, 2, 256, 256), volatile=True).cuda()
+imgv = Variable(torch.zeros(1, 3, 512, 512), volatile=True).cuda()
+maskv = Variable(torch.zeros(1, 2, 512, 512), volatile=True).cuda()
 
 while(cap.isOpened()):
     ret, frame = cap.read()
+    if frame is None:
+    	break
     w,h,_ = frame.shape
     frame = frame.transpose(1,0,2)
-    frame = cv2.resize(frame[h//2 - w//2:h//2 + w//2, :], (256,256))
+    frame = cv2.resize(frame[h//2 - w//2:h//2 + w//2, :], (512,512))
     tf = transforms.ToTensor()
     source = tf(frame)
     imgv.data.copy_(source)
