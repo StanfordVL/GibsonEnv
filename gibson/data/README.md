@@ -15,17 +15,17 @@ Table of contents
       * [Navigation Waypoints](#navigation-waypoints)
 
 # Download
-The link will first take you to a license agreement, and then to the data.
+The link will first take you to the license agreement and then to the data.
 
-### [[ Download the full Gibson Dataset ]](http://gibson.vision)  [[ checksums ]](https://github.com/StanfordVL/GibsonEnv/wiki/Checksum-Values-for-Data.md)
+### [[ Download the full Gibson Database of Spaces ]](https://goo.gl/forms/OxAQHbl1v97BJ3Sg1)  [[ checksums ]](https://github.com/StanfordVL/GibsonEnv/wiki/Checksum-Values-for-Data.md)
 
 #### License Note: The dataset license is included in the above link. The license in this repository covers only the provided software.
 
-### Citations
+### Citation
 If you use this dataset please cite:
 ```
 @inproceedings{xiazamirhe2018gibsonenv,
-  title={Gibson env: real-world perception for embodied agents},
+  title={Gibson {Env}: real-world perception for embodied agents},
   author={Xia, Fei and R. Zamir, Amir and He, Zhiyang and Sax, Alexander and Malik, Jitendra and Savarese, Silvio},
   booktitle={Computer Vision and Pattern Recognition (CVPR), 2018 IEEE Conference on},
   year={2018},
