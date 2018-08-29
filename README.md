@@ -1,6 +1,6 @@
 # GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception 
 
-You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment that offers real world experience for learning perception. 
+You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment simulator, Gibson, that offers real-world experience for learning perception.  
 
 <img src=misc/ui.gif width="600">
  
@@ -37,13 +37,16 @@ Table of contents
         * [Building from source](#b-building-from-source)
         * [Uninstalling](#uninstalling)
    * [Quick Start](#quick-start)
+        * [Gibson FPS](#gibson-framerate)
         * [Web User Interface](#web-user-interface)
         * [Rendering Semantics](#rendering-semantics)
-        * [Advanced Guide](#more-advanced-starting-guide)
+        * [Robotic Agents](#robotic-agents)
         * [ROS Configuration](#ros-configuration)
    * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
    * [Goggles: transferring the agent to real-world](#goggles-transferring-the-agent-to-real-world)
+   * [Citation](#citation)
+
 
 
 Installation
@@ -71,7 +74,7 @@ For building from the source(B):
 
 #### Download data
 
-First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments. Visit the [database readme](gibson/data/README.md) for downloading more spaces. 
+First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
 
 
 A. Quick installation (docker)
@@ -211,6 +214,116 @@ python examples/train/train_ant_navigate_ppo1.py ### Use PPO1 to train an ant to
 By running this command you will start training an ant to navigate in Gates building and go down the corridor with RGBD input. You will see some RL related statistics in the terminal after each episode.
 
 
+
+Gibson Framerate
+----
+Below is Gibson Environment's framerate benchmarked on different platforms. Please refer to [fps branch](https://github.com/StanfordVL/GibsonEnv/tree/fps) for code to reproduce the results.
+<table class="table">
+  <tr>
+    <th scope="row">Platform</th>
+    <td colspan="3">Tested on Intel E5-2697 v4 + NVIDIA Tesla V100</td>
+    <td colspan="3">Intel I7 7700 + NVIDIA GeForce GTX 1070Ti</td>
+    <td colspan="3">Tested on Intel I7 6580k + NVIDIA GTX 1080Ti</td>
+  </tr>
+  <tr>
+    <th scope="col">Resolution [nxn]</th>
+    <th scope="col">128</th>
+    <th scope="col">256</th>
+    <th scope="col">512</th>
+    <th scope="col">128</th>
+    <th scope="col">256</th>
+    <th scope="col">512</th>
+    <th scope="col">128</th>
+    <th scope="col">256</th>
+    <th scope="col">512</th>
+ </tr>
+  <tr>
+    <th scope="row">RGBD, pre network<code>f</code></th>
+    <td>109.1</td>
+    <td>58.5</td>
+    <td>26.5</td>
+    <td>134.3</td>
+    <td>61.9</td>
+    <td>20.5</td>
+    <td>108.1</td>
+    <td>60.0</td>
+    <td>21.9</td>
+  </tr>
+  <tr>
+    <th scope="row">RGBD, post network<code>f</code></th>
+    <td>77.7</td>
+    <td>30.6</td>
+    <td>14.5</td>
+    <td>80.9</td>
+    <td>30.2</td>
+    <td>8.5</td>
+    <td>75.6</td>
+    <td>35.9</td>
+    <td>12.0</td>
+  </tr>
+  <tr>
+    <th scope="row">RGBD, post small network<code>f</code></th>
+    <td>87.4</td>
+    <td>40.5</td>
+    <td>21.2</td>
+    <td>128.1</td>
+    <td>61.9</td>
+    <td>25.1</td>
+    <td>98.8</td>
+    <td>63.3</td>
+    <td>27.3</td>
+  </tr>
+  <tr>
+    <th scope="row">Depth only</th>
+    <td>253.0</td>
+    <td>197.9</td>
+    <td>124.7</td>
+    <td>362.8</td>
+    <td>319.1</td>
+    <td>183.0</td>
+    <td>209.4</td>
+    <td>141.2</td>
+    <td>104.3</td>
+  </tr>
+  <tr>
+    <th scope="row">Surface Normal only</th>
+    <td>207.7</td>
+    <td>129.7</td>
+    <td>57.2</td>
+    <td>282.5</td>
+    <td>186.9</td>
+    <td>81.6</td>
+    <td>175.0</td>
+    <td>110.5</td>
+    <td>57.6</td>
+  </tr>
+  <tr>
+    <th scope="row">Semantic only</th>
+    <td>190.0</td>
+    <td>144.2</td>
+    <td>55.6</td>
+    <td>304.5</td>
+    <td>194.8</td>
+    <td>73.7</td>
+    <td>139.3</td>
+    <td>134.1</td>
+    <td>63.1</td>
+  </tr>
+  <tr>
+    <th scope="row">Non-Visual Sensory</th>
+    <td>396.1</td>
+    <td>396.1</td>
+    <td>396.1</td>
+    <td>511.3</td>
+    <td>495.6</td>
+    <td>540.0</td>
+    <td>260.3</td>
+    <td>264.8</td>
+    <td>250.0</td>
+  </tr>
+</table>
+
+
 Web User Interface
 ----
 When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py python gibson/utils/web_ui.py 5552`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
@@ -228,10 +341,8 @@ For detailed instructions of rendering semantics in Gibson, see [semantic instru
 **Agreement**: If you choose to use the models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/) for rendering semantics, we ask you to agree to and sign their respective agreements. See [here](https://niessner.github.io/Matterport/) for Matterport3D and [here](https://github.com/alexsax/2D-3D-Semantics) for Stanford 2D3DS.
 
 
-More Advanced Starting Guide
+Robotic Agents
 ----
-
-### Starter Agents
 
 Gibson provides a base set of agents. See videos of these agents and their corresponding perceptual observation [here](http://gibsonenv.stanford.edu/agents/). 
 <img src=misc/agents.gif>
@@ -358,6 +469,21 @@ Gibson includes a baked-in domain adaptation mechanism, named Goggles, for when 
 <img src=http://gibson.vision/public/img/figure4.jpg width="600">
 
 
-**More details:** With all the imperfections in point cloud rendering, it has been proven difficult to get completely photo-realistic rendering with neural network fixes. The remaining issues make a domain gap between the synthesized and real images. Therefore, we formulate the rendering problem as forming a joint space ensuring a correspondence between rendered and real images, rather than trying to (unsuccessfuly) render images that are identical to real ones. This provides a deterministic pathway for traversing across these domains and hence undoing the gap. We add another network "u" for target image (I_t) and define the rendering loss to minimize the distance between f(I_s) and u(I_t), where "f" and "I_s" represent the filler neural network and point cloud rendering output, respectively (see the loss in above figure). We use the same network structure for f and u. The function u(I) is trained to alter the observation in real-world, I_t, to look like the corresponding I_s and consequently dissolve the gap. We named the u network goggles, as it resembles corrective lenses for the anget for deploymen in real world. Detailed formulation and discussion of the mechanism can be found in the paper. You can download the function u and apply it when you deploy your trained agent in real-world.
+**More details:** With all the imperfections in point cloud rendering, it has been proven difficult to get completely photo-realistic rendering with neural network fixes. The remaining issues make a domain gap between the synthesized and real images. Therefore, we formulate the rendering problem as forming a joint space ensuring a correspondence between rendered and real images, rather than trying to (unsuccessfuly) render images that are identical to real ones. This provides a deterministic pathway for traversing across these domains and hence undoing the gap. We add another network "u" for target image (I_t) and define the rendering loss to minimize the distance between f(I_s) and u(I_t), where "f" and "I_s" represent the filler neural network and point cloud rendering output, respectively (see the loss in above figure). We use the same network structure for f and u. The function u(I) is trained to alter the observation in real-world, I_t, to look like the corresponding I_s and consequently dissolve the gap. We named the u network goggles, as it resembles corrective lenses for the anget for deploymen in real-world. Detailed formulation and discussion of the mechanism can be found in the paper. You can download the function u and apply it when you deploy your trained agent in real-world.
 
-In order to use goggle, you will need a camera with depth sensor, we provide an example [here](examples/ros/gibson-ros/goggle.py) for kinect camera. The trained goggle functions are stored in `assets/unfiller_{resolution}.pth`, and each one is paired with one filler function. You need to use the correct one depending on which filler function is used. 
+In order to use goggle, you will need preferably a camera with depth sensor, we provide an example [here](examples/ros/gibson-ros/goggle.py) for Kinect. The trained goggle functions are stored in `assets/unfiller_{resolution}.pth`, and each one is paired with one filler function. You need to use the correct one depending on which filler function is used. If you don't have a camera with depth sensor, we also provide an example for RGB only [here](examples/demo/goggle_video.py).
+
+
+Citation
+=================
+
+If you use Gibson Environment's software or database, please cite:
+```
+@inproceedings{xiazamirhe2018gibsonenv,
+  title={Gibson {Env}: real-world perception for embodied agents},
+  author={Xia, Fei and R. Zamir, Amir and He, Zhi-Yang and Sax, Alexander and Malik, Jitendra and Savarese, Silvio},
+  booktitle={Computer Vision and Pattern Recognition (CVPR), 2018 IEEE Conference on},
+  year={2018},
+  organization={IEEE}
+}
+```
