@@ -334,11 +334,16 @@ class CameraRobotEnv(BaseRobotEnv):
 
         self.save_frame  = 0
         self.fps = 0
+        self.flagId = -1
 
 
     def robot_introduce(self, robot):
         BaseRobotEnv.robot_introduce(self, robot)
         self.setup_rendering_camera()
+        
+        pos = self.robot.get_position()
+        pos[2] += 4
+        #self.semantic_flagIds.append(flagId)
 
     def scene_introduce(self):
         BaseRobotEnv.scene_introduce(self)
@@ -358,6 +363,7 @@ class CameraRobotEnv(BaseRobotEnv):
             2: TwoViewUI,
             3: ThreeViewUI,
             4: FourViewUI,
+            6: SixViewUI,
         }
 
         assert self.config["ui_num"] == len(self.config['ui_components']), "In configuration, ui_num is not equal to the number of ui components"
@@ -372,6 +378,13 @@ class CameraRobotEnv(BaseRobotEnv):
         pose = [eye_pos, eye_quat]
         
         observations = self.render_observations(pose)
+
+        pos = self.robot.get_position()
+        pos[2] += 4
+
+        visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1], rgbaColor=[0, 0, 1, 0.7])
+        self.flagId = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=pos)
+        
         return observations #, sensor_state
 
 
@@ -413,8 +426,13 @@ class CameraRobotEnv(BaseRobotEnv):
         debugmode = 0
         if debugmode:
             print("Environment observation keys", observations.keys)
-        return observations, sensor_reward, done, sensor_meta
 
+        pos = self.robot.get_position()
+        pos[2] += 4
+        print(pos)
+        p.resetBasePositionAndOrientation(self.flagId, pos, [1, 0, 0, 0])
+        
+        return observations, sensor_reward, done, sensor_meta
 
     def render_component(self, tag):
         if tag == View.RGB_FILLED:
@@ -434,6 +452,8 @@ class CameraRobotEnv(BaseRobotEnv):
             return self.render_semantics
         if tag == View.PHYSICS:
             return self.render_physics()
+        if tag == View.MAP:
+            return self.render_map()
 
     def render_to_UI(self):
         '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO

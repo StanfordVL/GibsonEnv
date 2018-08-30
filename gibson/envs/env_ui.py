@@ -25,14 +25,15 @@ class View(Enum):
     NORMAL = 4
     SEMANTICS = 5
     PHYSICS = 6
+    MAP = 7
 
 
 class SimpleUI():
     '''Static UI'''
     def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=True):
         self.env = env
-        self.width  = width_col * windowsz
-        self.height = height_col * windowsz
+        self.width  = int(width_col * windowsz)
+        self.height = int(height_col * windowsz)
         self.windowsz = windowsz
         self.screen = pygame.display.set_mode([self.width, self.height], 0, 32)
         self.screen_arr = np.zeros([self.width, self.height, 3]).astype(np.uint8)
@@ -75,6 +76,8 @@ class SimpleUI():
 
     def _add_image(self, img, x, y):
         #self.screen.blit(img, (x, y))
+        if self.screen_arr.shape[0] - x < img.shape[0] or self.screen_arr.shape[1] - y < img.shape[1]:
+            img = img[::2, ::2, :]
         self.screen_arr[x: x + img.shape[0], y:y + img.shape[1], :] = img
 
     def clear(self):
@@ -297,8 +300,6 @@ if __name__ == "__main__":
     main4()
 
 
-"""
-##### Deprecated
 class SixViewUI(SimpleUI):
     '''UI with all modalities, default resolution
     RGB:       512x512, (top left)
@@ -314,11 +315,37 @@ class SixViewUI(SimpleUI):
     POS_MAP   = (512, 0)
     POS_DEPTH = (0, 512)
     POS_SEM   = (512, 512)
-    POS_SURF  = (256, 512)
-    def __init__(self):
-        SimpleUI.__init__(self, 768, 768)
-        self._add_all_images()
+    POS_NORMAL  = (256, 512)
 
+    def __init__(self, windowsz=768, env = None, port=-1):
+        self.POS = [
+            (0, 0),                 # RGB
+            (0, 512),               # Depth
+            (512, 0),               # Map
+            (512, 512),             # Semantics
+            (256, 512),             # Normal
+            (512, 256),             # Physics
+        ]
+        SimpleUI.__init__(self, 1.5, 1.5, windowsz, port, env)
+        self.components = [View.RGB_FILLED, View.DEPTH, View.MAP, View.SEMANTICS, View.NORMAL, View.PHYSICS]
+
+    def update_view(self, view, tag):
+        assert(tag in self.components), "Invalid view tag " + view
+        self.nframe += 1
+        if self.save_first and self.nframe <= len(self.POS):
+            import scipy.misc
+            img = np.zeros((view.shape[0], view.shape[1], 3))
+            img[:, :, :] = view
+            scipy.misc.imsave("Img%d.png" % self.nframe, img)
+        for index, component in enumerate(self.components):
+            if index > 0 and view.shape[0] > 256:
+                view = view[::2, ::2, :]
+            if tag == component:
+                self._add_image(
+                    np.swapaxes(view, 0, 1),
+                    self.POS[index][0],
+                    self.POS[index][1])
+                return
 
     def add_all_images(self):
         img_rgb = np.zeros((512, 512, 3))
@@ -339,7 +366,7 @@ class SixViewUI(SimpleUI):
         self.add_image(img_sem, self.POS_SEM[0], self.POS_SEM[1])
         self.add_image(img_depth, self.POS_DEPTH[0], self.POS_DEPTH[1])
         self.add_image(img_physics, self.POS_PHYSICS[0], self.POS_PHYSICS[1])
-        self.add_image(img_surf, self.POS_SURF[0], self.POS_SURF[1])
+        self.add_image(img_surf, self.POS_NORMAL[0], self.POS_NORMAL[1])
         self.add_image(img_map, self.POS_MAP[0], self.POS_MAP[1])
 
     def update_rgb(self, rgb):
@@ -358,9 +385,8 @@ class SixViewUI(SimpleUI):
         #depth = pygame.transform.rotate(depth, 90)
         self.add_image(np.swapaxes(depth, 0, 1), self.POS_DEPTH[0], self.POS_DEPTH[1])
 
-    def update_normal(self, surf):
-        self.add_image(np.swapaxes(surf, 0, 1), self.POS_SURF[0], self.POS_SURF[1])
+    def update_normal(self, normal):
+        self.add_image(np.swapaxes(normal, 0, 1), self.POS_NORMAL[0], self.POS_NORMAL[1])
 
     def update_map(self, map_img):
         self.add_image(np.swapaxes(map_img, 0, 1), self.POS_MAP[0], self.POS_MAP[1])
-"""

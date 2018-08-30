@@ -46,15 +46,15 @@ class BuildingScene(Scene):
         self.scene_obj_list = [(boundaryUid, -1)]       # baselink index -1
         
 
-        planeName = os.path.join(pybullet_data.getDataPath(), "mjcf/ground_plane.xml")
-        self.ground_plane_mjcf = p.loadMJCF(planeName)
+        #planeName = os.path.join(pybullet_data.getDataPath(), "mjcf/ground_plane.xml")
+        #self.ground_plane_mjcf = p.loadMJCF(planeName)
         
         if "z_offset" in self.env.config:
             z_offset = self.env.config["z_offset"]
         else:
             z_offset = -10 #with hole filling, we don't need ground plane to be the same height as actual floors
 
-        p.resetBasePositionAndOrientation(self.ground_plane_mjcf[0], posObj = [0,0,z_offset], ornObj = [0,0,0,1])
+        #p.resetBasePositionAndOrientation(self.ground_plane_mjcf[0], posObj = [0,0,z_offset], ornObj = [0,0,0,1])
         p.changeVisualShape(boundaryUid, -1, rgbaColor=[168 / 255.0, 164 / 255.0, 92 / 255.0, 1.0],
                             specularColor=[0.5, 0.5, 0.5])
         

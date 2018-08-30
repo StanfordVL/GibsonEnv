@@ -445,6 +445,13 @@ class PCRenderer:
                 show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
                 show[:] = (show2[:] * 255).astype(np.uint8)
 
+        hist_matching = True
+        if hist_matching and is_rgb:
+            template = (show_prefilled/255.0).astype(np.float32)
+            source = (show/255.0).astype(np.float32)
+            source_matched = hist_match3(source, template)
+            show[:] = (source_matched[:] * 255).astype(np.uint8)
+
         self.target_depth = opengl_arr ## target depth
         #self.smooth_depth = smooth_arr
         if self._require_normal:
