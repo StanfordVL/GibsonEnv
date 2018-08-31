@@ -19,6 +19,13 @@ tracking_camera = {
     'pitch': -20
 }
 
+tracking_camera_tb = {
+    'yaw': 20,
+    'z_offset': 0.2,
+    'distance': 0.8,
+    'pitch': -20
+}
+
 tracking_camera_top = {
     'yaw': 20,  # demo: living room, stairs
     'z_offset': 0.5,
@@ -35,7 +42,7 @@ class TurtlebotNavigateEnv(CameraRobotEnv):
 
         CameraRobotEnv.__init__(self, self.config, gpu_count, 
                                 scene_type="stadium" if self.config["model_id"]=="stadium" else "building",
-                                tracking_camera=tracking_camera)
+                                tracking_camera=tracking_camera_tb)
 
         self.robot_introduce(Turtlebot(self.config, env=self))
         self.scene_introduce()

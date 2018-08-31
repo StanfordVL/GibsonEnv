@@ -620,10 +620,10 @@ class Turtlebot(WalkerBase):
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
             self.vel = 0.1
-            self.action_list = [[self.vel, self.vel],
-                                [-self.vel, -self.vel],
-                                [self.vel, -self.vel],
-                                [-self.vel, self.vel],
+            self.action_list = [[self.vel/2, self.vel/2],
+                                [-self.vel/2, -self.vel/2],
+                                [self.vel/4, -self.vel/4],
+                                [-self.vel/4, self.vel/4],
                                 [0, 0]]
 
             self.setup_keys_to_action()
