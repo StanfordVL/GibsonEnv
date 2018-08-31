@@ -119,14 +119,21 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
             #print(info['sensor'])
             print("Play mode: reward %f" % rew)
         for p_key in pressed_keys:
-            action = keys_to_action[(p_key, )]
-            prev_obs = obs
-            with Profiler("Play Env: step"):
-                start = time.time()
-                obs, rew, env_done, info = env.step(action)
-                record_total += time.time() - start
-                record_num += 1
-            print("Play mode: reward %f" % rew)
+            if p_key == ord('m'):
+                env.UI.start_record()
+            elif p_key == ord('n'):
+                env.UI.end_record()
+            else:
+                if not key in relevant_keys:
+                    continue
+                action = keys_to_action[(p_key, )]
+                prev_obs = obs
+                with Profiler("Play Env: step"):
+                    start = time.time()
+                    obs, rew, env_done, info = env.step(action)
+                    record_total += time.time() - start
+                    record_num += 1
+                print("Play mode: reward %f" % rew)
         if callback is not None:
             callback(prev_obs, obs, action, rew, env_done, info)
         # process pygame events
@@ -145,6 +152,8 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
                 env.robot.move_forward()
             if key == ord('k') and key not in last_keys:
                 env.robot.move_backward()
+            if key == ord("m") or key == ord("n"):      ## Recording purpose
+                pressed_keys.append(key)     
             if key not in relevant_keys:
                 continue
             pressed_keys.append(key) 

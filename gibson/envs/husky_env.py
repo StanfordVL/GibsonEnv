@@ -16,7 +16,7 @@ tracking_camera = {
     'yaw': 110,
     'z_offset': 0.5,
     'distance': 1,
-    'pitch': -20
+    'pitch': -30
 }
 
 tracking_camera_top = {

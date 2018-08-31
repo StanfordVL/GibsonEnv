@@ -424,7 +424,6 @@ class PCRenderer:
         with Profiler("Render: NN total time"):
             ## Speed bottleneck
             if self.use_filler and self.model and is_rgb and need_filler:
-                print("Using model")
                 tf = transforms.ToTensor()
                 #from IPython import embed; embed()
                 source = tf(show)
@@ -445,7 +444,7 @@ class PCRenderer:
                 show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
                 show[:] = (show2[:] * 255).astype(np.uint8)
 
-        hist_matching = True
+        hist_matching = False
         if hist_matching and is_rgb:
             template = (show_prefilled/255.0).astype(np.float32)
             source = (show/255.0).astype(np.float32)

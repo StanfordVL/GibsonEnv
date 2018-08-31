@@ -2,7 +2,7 @@ from gibson.envs.husky_env import HuskyNavigateEnv
 from gibson.utils.play import play
 import os
 
-config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'play', 'play_husky_gif.yaml')
+config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'configs', 'gif', 'play_husky_gif.yaml')
 print(config_file)
 
 

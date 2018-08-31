@@ -19,6 +19,15 @@ tracking_camera = {
     # 'pitch': -24  # demo: stairs
 }
 
+tracking_camera2 = {
+    'yaw': 120,  # demo: living room, stairs
+    #'yaw'; 30,   # demo: kitchen
+    'z_offset': 0.5,
+    'distance': 1.2,
+    'pitch': -20
+    # 'pitch': -24  # demo: stairs
+}
+
 
 class HumanoidNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
@@ -31,12 +40,14 @@ class HumanoidNavigateEnv(CameraRobotEnv):
                                 scene_type="building",
                                 tracking_camera=tracking_camera)
 
+        self.tracking_camera2 = tracking_camera2
         self.robot_introduce(Humanoid(self.config, env=self))
         self.scene_introduce()
 
         self.gui = self.config["mode"] == "gui"
         self.total_reward = 0
         self.total_frame = 0
+        self.max_frame = 1000
 
     def _rewards(self, action=None, debugmode=False):
         a = action
@@ -83,7 +94,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         height = self.robot.get_position()[2]
         pitch = self.robot.get_rpy()[1]
         alive = float(self.robot.alive_bonus(height, pitch))
-        done = alive < 0
+        done = alive < 0 or self.nframe > self.max_frame
         if(debugmode):
             print("alive=")
             print(alive)

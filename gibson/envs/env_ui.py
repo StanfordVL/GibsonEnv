@@ -26,6 +26,7 @@ class View(Enum):
     SEMANTICS = 5
     PHYSICS = 6
     MAP = 7
+    PHYSICS2 = 8
 
 
 class SimpleUI():
@@ -65,7 +66,7 @@ class SimpleUI():
             import scipy.misc
             img = np.zeros((view.shape[0], view.shape[1], 3))
             img[:, :, :] = view
-            scipy.misc.imsave("Img%d.png" % self.nframe, img)
+            scipy.misc.imsave("Img{0:05d}.png".format(self.nframe), img)
         for index, component in enumerate(self.components):
             if tag == component:
                 self._add_image(
@@ -85,9 +86,14 @@ class SimpleUI():
         self.refresh()
 
     def refresh(self):
+        pygame.display.flip()
+        surfarray.blit_array(self.screen, self.screen_arr)
+        #print(self.screen_arr.shape)
+        screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1,0,2), cv2.COLOR_BGR2RGB)
+        screen = pickle.dumps(cv2.imencode('.jpg', screen_to_dump), protocol=0)
         if "enable_ui_recording" in self.env.config:
-            screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1, 0, 2), cv2.COLOR_BGR2RGB)
-            cv2.imshow("Recording", screen_to_dump)
+            #screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1, 0, 2), cv2.COLOR_BGR2RGB)
+            #cv2.imshow("Recording", screen_to_dump)
             cmd=cv2.waitKey(5)%256
             if cmd == ord('r'):
                 self.start_record()
@@ -99,14 +105,6 @@ class SimpleUI():
                 #from IPython import embed; embed()
                 cv2.imwrite(os.path.join(self.output_dir, "frame%06d.png" % self.record_nframe), screen_to_dump)
                 self.record_nframe += 1
-                #self.curr_output.write(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        
-        #with Profiler("Refreshing"):
-        pygame.display.flip()
-        surfarray.blit_array(self.screen, self.screen_arr)
-        #print(self.screen_arr.shape)
-        screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1,0,2), cv2.COLOR_BGR2RGB)
-        screen = pickle.dumps(cv2.imencode('.jpg', screen_to_dump), protocol=0)
 
         self.socket.send(b"ui" + screen)
 
@@ -126,10 +124,8 @@ class SimpleUI():
         file_keyword = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
         #filename = 'record-{}.mpeg'.format(file_keyword)
         self.output_dir = file_keyword
-        try:
-            os.mkdir(file_keyword)
-        except:
-            pass
+        
+        os.mkdir(file_keyword)
 
         #self.curr_output = cv2.VideoWriter(filename, fourcc, 22.0, (self.width, self.height))
 
@@ -140,6 +136,7 @@ class SimpleUI():
 
     def end_record(self):
         print("end recording")
+        os.system("ffmpeg -r 100 -i {out}/frame%6d.png -pix_fmt yuv420p -vcodec libx264 -vb 30M {out}/output.mp4".format(out=self.output_dir))
         #self.curr_output.release()
         self.is_recording = False
         return
@@ -317,7 +314,7 @@ class SixViewUI(SimpleUI):
     POS_SEM   = (512, 512)
     POS_NORMAL  = (256, 512)
 
-    def __init__(self, windowsz=768, env = None, port=-1):
+    def __init__(self, windowsz=768, env = None, port=-1, no_semantics=False):
         self.POS = [
             (0, 0),                 # RGB
             (0, 512),               # Depth
@@ -327,7 +324,10 @@ class SixViewUI(SimpleUI):
             (512, 256),             # Physics
         ]
         SimpleUI.__init__(self, 1.5, 1.5, windowsz, port, env)
-        self.components = [View.RGB_FILLED, View.DEPTH, View.MAP, View.SEMANTICS, View.NORMAL, View.PHYSICS]
+        if no_semantics:
+            self.components = [View.RGB_FILLED, View.DEPTH, View.MAP, View.PHYSICS2, View.NORMAL, View.PHYSICS]
+        else:
+            self.components = [View.RGB_FILLED, View.DEPTH, View.MAP, View.SEMANTICS, View.NORMAL, View.PHYSICS]
 
     def update_view(self, view, tag):
         assert(tag in self.components), "Invalid view tag " + view

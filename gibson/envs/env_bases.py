@@ -105,6 +105,8 @@ class BaseEnv(gym.Env):
         dump = 0
         state = self.robot.reset()
         self.scene.episode_restart()
+        #real_pos = self.robot.get_position()
+        #print("post reset Robot pos", real_pos)
         return state
 
     def _render(self, mode, close):
@@ -156,20 +158,44 @@ class BaseEnv(gym.Env):
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
 
+    def render_physic2(self):
+        robot_pos, _ = p.getBasePositionAndOrientation(self.robot_tracking_id)
+        
+        view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=robot_pos,
+            distance=self.tracking_camera2["distance"],
+            yaw=self.tracking_camera2["yaw"],
+            pitch=self.tracking_camera2["pitch"],
+            roll=0,
+            upAxisIndex=2)
+        proj_matrix = p.computeProjectionMatrixFOV(
+            fov=60, aspect=float(self._render_width)/self._render_height,
+            nearVal=0.1, farVal=100.0)
+        with Profiler("render physics: Get camera image"):
+            (_, _, px, _, _) = p.getCameraImage(
+            width=self._render_width, height=self._render_height, viewMatrix=view_matrix,
+                projectionMatrix=proj_matrix,
+                renderer=p.ER_TINY_RENDERER
+                )
+        rgb_array = np.array(px).reshape((self._render_height, self._render_width, -1))
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
 
     def render_map(self):
         base_pos=[0, 0, -3]
+        
+        pos = self.robot._get_scaled_position()
         if (hasattr(self,'robot')):
             if (hasattr(self.robot,'body_xyz')):
-                base_pos[0] = self.robot.body_xyz[0]
-                base_pos[1] = self.robot.body_xyz[1]
+                base_pos[0] = pos[0]
+                base_pos[1] = pos[1]
         
         view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=base_pos,
-            distance=35,
+            distance=25,
             yaw=0,
             pitch=-89,
-            roll=0,
+            roll=90,
             upAxisIndex=2)
         proj_matrix = p.computeProjectionMatrixFOV(
             fov=60, aspect=float(self._render_width)/self._render_height,
@@ -180,7 +206,6 @@ class BaseEnv(gym.Env):
             renderer=p.ER_BULLET_HARDWARE_OPENGL
             )
         rgb_array = np.array(px).reshape((self._render_height, self._render_width, -1))
-        print(rgb_array.shape)
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
 

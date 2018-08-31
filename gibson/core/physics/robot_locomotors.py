@@ -384,8 +384,7 @@ class Humanoid(WalkerBase):
         if self.is_discrete:
             self.action_space = gym.spaces.Discrete(5)
             self.torque = 0.1
-            self.action_list = np.concatenate((np.ones((1, 17)), np.zeros((1, 17)))).tolist()
-
+            self.action_list = np.concatenate((np.zeros(17)[None], np.eye(17), np.eye(17) * -1), axis=0).tolist()
             self.setup_keys_to_action()
 
     def robot_specific_reset(self):
@@ -398,12 +397,16 @@ class Humanoid(WalkerBase):
             if bodyInfo[1].decode("ascii") == 'humanoid':
                 humanoidId = i
         ## Spherical radiance/glass shield to protect the robot's camera
-        if self.glass_id is None:
+        '''if self.glass_id is None:
             glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))[0]
             #print("setting up glass", glass_id, humanoidId)
             p.changeVisualShape(glass_id, -1, rgbaColor=[0, 0, 0, 0])
-            cid = p.createConstraint(humanoidId, -1, glass_id,-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
-
+            pos = self._get_scaled_position()
+            pos[2] = 1
+            #print("r pos", real_pos)
+            p.resetBasePositionAndOrientation(glass_id, pos, [1, 0, 0, 0])
+            cid = p.createConstraint(humanoidId, -1, glass_id,-1,p.JOINT_FIXED,[0,0,0],[0, 0,1.4],[0,0,1])
+        '''
         self.motor_names  = ["abdomen_z", "abdomen_y", "abdomen_x"]
         self.motor_power  = [100, 100, 100]
         self.motor_names += ["right_hip_x", "right_hip_z", "right_hip_y", "right_knee"]
@@ -418,6 +421,7 @@ class Humanoid(WalkerBase):
         
 
     def apply_action(self, a):
+        #print("Action", a, self.action_list[a])
         if self.is_discrete:
             realaction = self.action_list[a]
         else:
@@ -427,12 +431,12 @@ class Humanoid(WalkerBase):
             #m.set_motor_torque(float(force_gain * power * self.power * np.clip(a[i], -1, +1)))
 
     def alive_bonus(self, z, pitch):
-        return +2 if z > 0.78 else -1   # 2 here because 17 joints produce a lot of electricity cost just from policy noise, living must be better than dying
+        return +2 if z > 0.2 else -1   # 2 here because 17 joints produce a lot of electricity cost just from policy noise, living must be better than dying
     
     def setup_keys_to_action(self):
         self.keys_to_action = {
-            (ord('w'), ): 0,
-            (): 1
+            (): 0,
+            (ord('w'), ): 1
         }
 
 

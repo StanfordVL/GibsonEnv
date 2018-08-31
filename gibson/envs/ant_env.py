@@ -19,7 +19,7 @@ Each class specifies:
 tracking_camera = {
     'yaw': 20,
     'z_offset': 0.3,
-    'distance': 0.5,
+    'distance': 3,
     'pitch': -20
 }
 
@@ -86,7 +86,7 @@ class AntNavigateEnv(CameraRobotEnv):
         pitch = self.robot.get_rpy()[1]
         alive = float(self.robot.alive_bonus(height, pitch))
         
-        done = self.nframe > 300
+        done = alive <0 or self.nframe > 1000
         #done = alive < 0
         if (debugmode):
             print("alive=")

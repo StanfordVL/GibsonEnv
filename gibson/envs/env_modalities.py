@@ -137,12 +137,15 @@ class BaseRobotEnv(BaseEnv):
     def _reset(self):
         assert(self._robot_introduced)
         assert(self._scene_introduced)
-        debugmode = 1
+        BaseEnv._reset(self)
+        debugmode = 0
         if debugmode:
             print("Episode: steps:{} score:{}".format(self.nframe, self.reward))
             body_xyz = self.robot.body_xyz
-            print("[{}, {}, {}],".format(body_xyz[0], body_xyz[1], body_xyz[2]))
+            #print("[{}, {}, {}],".format(body_xyz[0], body_xyz[1], body_xyz[2]))
             print("Episode count: {}".format(self.eps_count))
+            real_pos = self.robot.get_position()
+            #print("Robot pos", real_pos)
             self.eps_count += 1
         self.nframe = 0
         self.eps_reward = 0
@@ -217,7 +220,9 @@ class BaseRobotEnv(BaseEnv):
         if (debugmode):
             print("Camera env eye position", eye_pos)
             print("episode rewards", sum(self.rewards), "steps", self.nframe)
-
+        real_pos = self.robot.get_position()
+        #print("Robot pos", real_pos)
+        
         episode = None
         if done:
             episode = {'r': self.reward,
@@ -341,7 +346,7 @@ class CameraRobotEnv(BaseRobotEnv):
         BaseRobotEnv.robot_introduce(self, robot)
         self.setup_rendering_camera()
         
-        pos = self.robot.get_position()
+        pos = self.robot._get_scaled_position()
         pos[2] += 4
         #self.semantic_flagIds.append(flagId)
 
@@ -367,7 +372,9 @@ class CameraRobotEnv(BaseRobotEnv):
         }
 
         assert self.config["ui_num"] == len(self.config['ui_components']), "In configuration, ui_num is not equal to the number of ui components"
-        if self.config["display_ui"]:
+        if self.config["display_ui"] and "no_semantics" in self.config.keys():
+            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui, no_semantics=True)
+        elif self.config["display_ui"]:
             self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui)
 
 
@@ -379,11 +386,12 @@ class CameraRobotEnv(BaseRobotEnv):
         
         observations = self.render_observations(pose)
 
-        pos = self.robot.get_position()
+        pos = self.robot._get_scaled_position()
         pos[2] += 4
 
-        visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1, 1, 1], rgbaColor=[0, 0, 1, 0.7])
-        self.flagId = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=pos)
+        if self.gui:
+            visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1.5, 1.5, 1,5], rgbaColor=[0, 0, 1, 1])
+            self.flagId = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=pos)
         
         return observations #, sensor_state
 
@@ -427,10 +435,12 @@ class CameraRobotEnv(BaseRobotEnv):
         if debugmode:
             print("Environment observation keys", observations.keys)
 
-        pos = self.robot.get_position()
+        real_pos = self.robot.get_position()
+        pos = self.robot._get_scaled_position()
         pos[2] += 4
-        print(pos)
-        p.resetBasePositionAndOrientation(self.flagId, pos, [1, 0, 0, 0])
+        #print("r pos", real_pos)
+        if self.gui:
+            p.resetBasePositionAndOrientation(self.flagId, pos, [1, 0, 0, 0])
         
         return observations, sensor_reward, done, sensor_meta
 
@@ -452,6 +462,8 @@ class CameraRobotEnv(BaseRobotEnv):
             return self.render_semantics
         if tag == View.PHYSICS:
             return self.render_physics()
+        if tag == View.PHYSICS2:
+            return self.render_physics2()
         if tag == View.MAP:
             return self.render_map()
 
