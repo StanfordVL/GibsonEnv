@@ -14,8 +14,8 @@ CALC_OBSTACLE_PENALTY = 1
 
 tracking_camera = {
     'yaw': 20,
-    'z_offset': 0.5,
-    'distance': 1,
+    'z_offset': 0.75,
+    'distance': 1.5,
     'pitch': -20
 }
 

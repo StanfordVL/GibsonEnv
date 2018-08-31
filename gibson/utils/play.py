@@ -118,7 +118,8 @@ def play(env, transpose=True, zoom=None, callback=None, keys_to_action=None):
                 record_num += 1
             #print(info['sensor'])
             print("Play mode: reward %f" % rew)
-        for p_key in pressed_keys:
+        if len(pressed_keys) > 0:
+            p_key = sorted(pressed_keys)[0]
             if p_key == ord('m'):
                 env.UI.start_record()
             elif p_key == ord('n'):

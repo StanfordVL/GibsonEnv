@@ -137,7 +137,8 @@ class BaseEnv(gym.Env):
 
     def render_physics(self):
         robot_pos, _ = p.getBasePositionAndOrientation(self.robot_tracking_id)
-        
+        robot_pos = list(robot_pos)
+        robot_pos[2] += self.tracking_camera["z_offset"]
         view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=robot_pos,
             distance=self.tracking_camera["distance"],

@@ -13,9 +13,9 @@ import cv2
 CALC_OBSTACLE_PENALTY = 1
 
 tracking_camera = {
-    'yaw': 110,
-    'z_offset': 0.5,
-    'distance': 1,
+    'yaw': 200,
+    'z_offset': 0.1,
+    'distance': 0.8,
     'pitch': -30
 }
 
@@ -149,10 +149,10 @@ class HuskyNavigateEnv(CameraRobotEnv):
     def _flag_reposition(self):
         target_pos = self.robot.target_pos
 
-        self.flag = None
-        if self.gui and not self.config["display_ui"]:
+        #self.flag = None
+        '''if self.gui and not self.config["display_ui"]:
             self.visual_flagId = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.5, 0.5, 0.5], rgbaColor=[1, 0, 0, 0.7])
-            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[target_pos[0], target_pos[1], 0.5])
+            self.last_flagId = p.createMultiBody(baseVisualShapeIndex=self.visual_flagId, baseCollisionShapeIndex=-1, basePosition=[target_pos[0], target_pos[1], 0.5])'''
 
     def  _reset(self):
         self.total_frame = 0

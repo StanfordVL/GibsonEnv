@@ -54,7 +54,7 @@ class BaseRobotEnv(BaseEnv):
         self.camera_x = 0
         self.walk_target_x = 1e3  # kilometer away
         self.walk_target_y = 0
-        self.k = 5
+        self.k = 10
         self.robot_tracking_id = -1
 
         self.scale_up  = 4
@@ -221,7 +221,7 @@ class BaseRobotEnv(BaseEnv):
             print("Camera env eye position", eye_pos)
             print("episode rewards", sum(self.rewards), "steps", self.nframe)
         real_pos = self.robot.get_position()
-        #print("Robot pos", real_pos)
+        print("Robot pos", real_pos)
         
         episode = None
         if done:

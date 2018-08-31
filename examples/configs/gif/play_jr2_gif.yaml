@@ -1,10 +1,10 @@
-envname: HuskyNavigateEnv
-model_id: space3
+envname: JR2NavigateEnv
+model_id: space7
 target_orn: [0, 0, 1.57]
 target_pos: [-14.3, 45.07, 0.5]
-initial_orn: [0, 0, 1.6]
-#initial_pos: [1.18, 2.70, 0.2]
-initial_pos: [-0.1,-0.15, -0.2]
+initial_orn: [0, 0, 3]
+initial_pos: [-13.14, 4.9, 0.02]
+#initial_pos: [-8.2, 6.00, 0.9]
 fov: 1.57
 is_discrete: true
 
@@ -15,6 +15,7 @@ show_diagnostics: False
 ui_num: 6
 ui_components: [RGB_FILLED, DEPTH, MAP, SEMANTICS, NORMAL, PHYSICS]
 #ui_components: [PHYSICS, MAP]
+#ui_components: [PHYSICS, MAP, NORMAL]
 random:
   random_initial_pose : false
   random_target_pose : false
@@ -25,6 +26,7 @@ random:
 
 output: [nonviz_sensor, rgb_filled, depth, map, semantics, normal, physics]
 #output: [physics, map]
+#output: [physics, map, normal]
 resolution: 512
 #resolution: 512
 
@@ -39,3 +41,5 @@ verbose: false
 semantic_source: 1 # Matterport 3D
 semantic_color: 3
 enable_ui_recording: true
+
+no_semantis: True

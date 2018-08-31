@@ -774,7 +774,7 @@ class JR2(WalkerBase):
         self.config = config
         scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
         WalkerBase.__init__(self, "jr2_urdf/jr2.urdf", "base_link", action_dim=4,
-                            sensor_dim=20, power=2.5, scale=scale,
+                            sensor_dim=20, power=4, scale=scale,
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"],
                             resolution=config["resolution"],
@@ -798,6 +798,7 @@ class JR2(WalkerBase):
 
     def apply_action(self, action):
         if self.is_discrete:
+            print(action, self.action_list[action])
             realaction = self.action_list[action]
         else:
             realaction = action
