@@ -66,11 +66,11 @@ if __name__ == '__main__':
     #testEnv(HuskyGibsonFlagRunEnv, "test_depth.yaml", 10, is_discrete=True)
 
 
-    testEnv(AntGibsonFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
-    testEnv(AntFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
-    testEnv(AntClimbEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
-    testEnv(AntNavigateEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
-    testEnv(AntClimbEnv, "test_four_nondiscrete.yaml", 10, is_discrete=False)
+    #testEnv(AntGibsonFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
+    #testEnv(AntFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
+    #testEnv(AntClimbEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
+    #testEnv(AntNavigateEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
+    #testEnv(AntClimbEnv, "test_four_nondiscrete.yaml", 10, is_discrete=False)
     
     testEnv(HumanoidNavigateEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
     testEnv(HumanoidGibsonFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)

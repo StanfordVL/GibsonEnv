@@ -28,7 +28,7 @@ from PIL import Image
 from transforms3d.euler import euler2quat, euler2mat
 from transforms3d.quaternions import quat2mat, qmult
 import transforms3d.quaternions as quat
-
+import time
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
@@ -166,6 +166,7 @@ class BaseRobotEnv(BaseEnv):
         observations = self.render_observations(pose)
         pos = self.robot._get_scaled_position()
         orn = self.robot.get_orientation()
+
         pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
         p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
         return observations

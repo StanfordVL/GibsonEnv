@@ -374,7 +374,7 @@ class Humanoid(WalkerBase):
         scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
         self.mjcf_scaling = scale
         WalkerBase.__init__(self, "humanoid.xml", "torso", action_dim=17, 
-                            sensor_dim=44, power=2.5, scale=scale, 
+                            sensor_dim=44, power=0.41, scale=scale, 
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
                             resolution=config["resolution"], 
@@ -389,8 +389,6 @@ class Humanoid(WalkerBase):
             self.setup_keys_to_action()
 
     def robot_specific_reset(self):
-        WalkerBase.robot_specific_reset(self)
-        
         humanoidId = -1
         numBodies = p.getNumBodies()
         for i in range (numBodies):
@@ -398,12 +396,18 @@ class Humanoid(WalkerBase):
             if bodyInfo[1].decode("ascii") == 'humanoid':
                 humanoidId = i
         ## Spherical radiance/glass shield to protect the robot's camera
+        
+        WalkerBase.robot_specific_reset(self)
+
+        '''
         if self.glass_id is None:
             glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))[0]
-            #print("setting up glass", glass_id, humanoidId)
-            p.changeVisualShape(glass_id, -1, rgbaColor=[0, 0, 0, 0])
-            cid = p.createConstraint(humanoidId, -1, glass_id,-1,p.JOINT_FIXED,[0,0,0],[0,0,1.4],[0,0,1])
-
+            robot_pos = self._get_scaled_position()
+            p.resetBasePositionAndOrientation(glass_id, robot_pos, [1, 0, 0, 0])
+            p.changeVisualShape(glass_id, -1, rgbaColor=[0, 0, 0, 1])
+            cid = p.createConstraint(humanoidId, -1, glass_id,-1,p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,0])
+            self.glass_id = glass_id
+        '''
         self.motor_names  = ["abdomen_z", "abdomen_y", "abdomen_x"]
         self.motor_power  = [100, 100, 100]
         self.motor_names += ["right_hip_x", "right_hip_z", "right_hip_y", "right_knee"]
