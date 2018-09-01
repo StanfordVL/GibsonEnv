@@ -24,10 +24,12 @@ Please see the [website](http://gibson.vision/) (http://gibsonenv.stanford.edu/)
 
 Release
 =================
-**This is the 0.3.1 release. Bug reports and suggestions for improvement are appreciated.** [change log file](misc/CHANGELOG.md).  
+**This is the 0.3.1 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).  
 
-**Database**: To make the download package lighter for the users, we are including a small subset (9) of the spaces in the core assets. 
-The [full database](gibson/data/README.md) includes 572 spaces and 1440 floors. Users can download the rest of the spaces and add them to the assets folder. A diverse set of visualization of all spaces in Gibson can be seen [here](http://gibsonenv.stanford.edu/database/).
+
+Database
+=================
+The full database includes 572 spaces and 1440 floors and can be downloaded [here](gibson/data/README.md). A diverse set of visualizations of all spaces in Gibson can be seen [here](http://gibsonenv.stanford.edu/database/). To make the core assets download package lighter for the users, we are including a small subset (9) of the spaces. Users can download the rest of the spaces and add them to the assets folder. We also integrate [Stanford 2D3DS](http://3dsemantics.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/) as separate datasets if one wishes to use Gibson's simulator with those datasets.
 
 Table of contents
 =================
@@ -227,7 +229,7 @@ Gibson can provide pixel-wise frame-by-frame semantic masks when the model is se
 
 For detailed instructions of rendering semantics in Gibson, see [semantic instructions](gibson/utils/semantics.md). In the light beta release, the space `17DRP5sb8fy` includes Matterport 3D style semantic annotation and `space7` includes Stanford 2D3DS style annotation. 
 
-**Agreement**: If you choose to use the models from [Stanford 2D3DS](http://buildingparser.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/) for rendering semantics, we ask you to agree to and sign their respective agreements. See [here](https://niessner.github.io/Matterport/) for Matterport3D and [here](https://github.com/alexsax/2D-3D-Semantics) for Stanford 2D3DS.
+**Agreement**: If you choose to use the models from [Stanford 2D3DS](http://3dsemantics.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/) for rendering semantics, please sign their respective license agreements. Stanford 2D3DS's agreement is inclued in Gibson Database's agreement and does not need to be signed again. For Matterport3D, please see [here](https://niessner.github.io/Matterport/).
 
 
 More Advanced Starting Guide
