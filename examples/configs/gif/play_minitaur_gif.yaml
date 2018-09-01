@@ -39,3 +39,5 @@ verbose: false
 semantic_source: 2 # Matterport 3D
 semantic_color: 2
 enable_ui_recording: true
+
+start_record: true
