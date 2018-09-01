@@ -8,7 +8,7 @@ fov: 1.57
 is_discrete: false
 
 use_filler: true
-display_ui: true
+display_ui: false
 show_diagnostics: true
 ui_num: 2
 ui_components: [RGB_FILLED, DEPTH]
