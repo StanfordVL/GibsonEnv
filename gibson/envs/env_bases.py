@@ -186,7 +186,7 @@ class BaseEnv(gym.Env):
         base_pos=[0, 0, -3]
 
         #distance = 25 * 4 * self.robot.mjcf_scaling
-        distance = 25 * 0.6 / self.robot.mjcf_scaling
+        distance = 40 * 0.6 / self.robot.mjcf_scaling
         pos = self.robot._get_scaled_position()
         if (hasattr(self,'robot')):
             if (hasattr(self.robot,'body_xyz')):

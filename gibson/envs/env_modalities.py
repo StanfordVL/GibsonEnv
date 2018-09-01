@@ -220,7 +220,7 @@ class BaseRobotEnv(BaseEnv):
             print("Camera env eye position", eye_pos)
             print("episode rewards", sum(self.rewards), "steps", self.nframe)
         real_pos = self.robot.get_position()
-        #print("Robot pos", real_pos)
+        print("Robot pos", real_pos)
         episode = None
         if done:
             episode = {'r': self.reward,

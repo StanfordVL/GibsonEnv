@@ -98,6 +98,8 @@ class HumanoidNavigateEnv(CameraRobotEnv):
         height = self.robot.get_position()[2]
         pitch = self.robot.get_rpy()[1]
         alive = float(self.robot.alive_bonus(height, pitch))
+        if "enjoy_rl" in self.config.keys():
+            alive = 0.5
         done = alive < 0 or self.nframe > self.max_frame
         if(debugmode):
             print("alive=")

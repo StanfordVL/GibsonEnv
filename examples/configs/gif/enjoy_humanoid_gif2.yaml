@@ -44,3 +44,4 @@ enable_ui_recording: false
 
 #no_semantis: True
 start_record: True
+enjoy_rl: True
