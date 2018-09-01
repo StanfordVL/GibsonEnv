@@ -21,9 +21,9 @@ The link will first take you to the license agreement and then to the data.
 
 License Note: The dataset license is included in the above link. The license in this repository covers only the provided software.
 
-#### Stanford 2D-3D-Semantics Dataset: the download link of 2D-3D-Semantics as Gibson asset files is included in the [same link ](https://goo.gl/forms/OxAQHbl1v97BJ3Sg1) as above. 
+**Stanford 2D-3D-Semantics Dataset:** the download link of 2D-3D-Semantics as Gibson asset files is included in the [same link ](https://goo.gl/forms/OxAQHbl1v97BJ3Sg1) as above. 
 
-#### Matterport3D Dataset: the download link of Matterport3D processed as Gibson asset files is [here](https://storage.googleapis.com/gibsonassets/mp3d_for_gibson.tar.gz). Please sign Matterport3D's [license agreement](https://niessner.github.io/Matterport/) before using it.
+**Matterport3D Dataset:** the download link of Matterport3D processed as Gibson asset files is [here](https://storage.googleapis.com/gibsonassets/mp3d_for_gibson.tar.gz). Please sign Matterport3D's [license agreement](https://niessner.github.io/Matterport/) before using it.
 
 ### Citation
 If you use Gibson's database or software please cite:
