@@ -41,9 +41,9 @@ ACTION_EPS = 0.01
 
 tracking_camera = {
     'yaw': 40,
-    'z_offset': 0.3,
+    'z_offset': 0.1,
     'distance': 1,
-    'pitch': -0
+    'pitch': -15
 }
 
 

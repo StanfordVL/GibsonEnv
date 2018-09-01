@@ -11,10 +11,10 @@ import pybullet_data
 
 
 tracking_camera = {
-    'yaw': 20,  # demo: living room, stairs
+    'yaw': -20,  # demo: living room, stairs
     #'yaw'; 30,   # demo: kitchen
-    'z_offset': -0.2,
-    'distance': 1.2,
+    'z_offset': -0.15,
+    'distance': 1.7,
     'pitch': -20
     # 'pitch': -24  # demo: stairs
 }

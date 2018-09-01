@@ -294,8 +294,8 @@ class BaseRobotEnv(BaseEnv):
         pass
 
     # Gym v0.10.5 compatibility
-    reset = _reset
-    step  = _step
+    #reset = _reset
+    #step  = _step
 
 
 class CameraRobotEnv(BaseRobotEnv):
@@ -337,7 +337,7 @@ class CameraRobotEnv(BaseRobotEnv):
 
         self.save_frame  = 0
         self.fps = 0
-        self.flagId = -1
+        self.flagId = None
 
 
     def robot_introduce(self, robot):
@@ -387,8 +387,9 @@ class CameraRobotEnv(BaseRobotEnv):
         pos = self.robot._get_scaled_position()
         pos[2] += 4
 
-        if self.gui:
-            visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[1.5, 1.5, 1,5], rgbaColor=[0, 0, 1, 1])
+        if self.gui and self.flagId is None:
+            l = 1.5 * 0.6 / self.robot.mjcf_scaling
+            visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[l, l, l], rgbaColor=[0, 0, 1, 1])
             self.flagId = p.createMultiBody(baseVisualShapeIndex=visualid, baseCollisionShapeIndex=-1, basePosition=pos)
         
         return observations #, sensor_state
@@ -410,7 +411,11 @@ class CameraRobotEnv(BaseRobotEnv):
         sensor_meta.pop("eye_quat", None)
         #sensor_meta["sensor"] = sensor_state
 
-        if not self._require_camera_input or self.test_env:
+        skip_visual = False
+        if "skip_record" in self.config.keys() and self.nframe % self.config["skip_record"] != 0:
+            skip_visual = True
+
+        if not self._require_camera_input or self.test_env or skip_visual:
             return base_obs, sensor_reward, done, sensor_meta
 
         if self.config["show_diagnostics"]:
@@ -700,9 +705,9 @@ class CameraRobotEnv(BaseRobotEnv):
                 raise e
                 raise error.Error("Gibson initialization Error: port {} is in use".format(port))
     # Gym v0.10.5 compatibility
-    reset = _reset
-    step  = _step
-    close = _close
+    #reset = _reset
+    #step  = _step
+    #close = _close
 
 
 class SemanticRobotEnv(CameraRobotEnv):

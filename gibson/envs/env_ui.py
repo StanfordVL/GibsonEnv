@@ -50,6 +50,7 @@ class SimpleUI():
         self.socket = self.context.socket(zmq.PUB)
         self.socket.bind("tcp://*:%s" % self.port)
         self.record_nframe = 0
+        self.actual_nframe = 0
         if "start_record" in self.env.config.keys():
             self.start_record()
 
@@ -106,6 +107,7 @@ class SimpleUI():
             if self.is_recording:
                 #self.curr_output.write(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
                 #from IPython import embed; embed()
+                self.actual_nframe += 1
                 cv2.imwrite(os.path.join(self.output_dir, "frame%06d.png" % self.record_nframe), screen_to_dump)
                 self.record_nframe += 1
 
@@ -120,6 +122,7 @@ class SimpleUI():
 
     def start_record(self):
         self.record_nframe = 0
+        self.actual_nframe = 0
         print("start recording")
         if self.is_recording:
             return    # prevent double enter

@@ -8,13 +8,13 @@ initial_pos: [-3.3, -2.80, 0.4]
 fov: 1.57
 is_discrete: false
 
-use_filler: false
+use_filler: true
 display_ui: true
 show_diagnostics: False
-ui_num: 1
-#ui_num: 6
-#ui_components: [RGB_FILLED, DEPTH, MAP, PHYSICS2, NORMAL, PHYSICS]
-ui_components: [PHYSICS]
+#ui_num: 3
+ui_num: 6
+ui_components: [RGB_FILLED, DEPTH, MAP, PHYSICS2, NORMAL, PHYSICS]
+#ui_components: [PHYSICS]
 #ui_components: [PHYSICS, MAP, NORMAL]
 random:
   random_initial_pose : false
@@ -24,9 +24,9 @@ random:
   random_init_z_range: [-0.1, 0.1]
   random_init_rot_range: [-0.1, 0.1]
 
-#output: [nonviz_sensor, rgb_filled, depth, map, normal, physics]
-output: [nonviz_sensor]
-#output: [physics, map, normal]
+output: [nonviz_sensor, rgb_filled, depth, map, normal, physics]
+#output: [nonviz_sensor]
+#output: [nonviz_sensor, map, normal]
 resolution: 512
 #resolution: 512
 
@@ -39,7 +39,8 @@ verbose: false
 #fast_lq_render: true
 
 semantic_source: 2 # Matterport 3D
-semantic_color: 2
+semantic_color: 1
 enable_ui_recording: false
 
-no_semantis: True
+#no_semantis: True
+start_record: True

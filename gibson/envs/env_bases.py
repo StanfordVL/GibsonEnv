@@ -184,16 +184,17 @@ class BaseEnv(gym.Env):
 
     def render_map(self):
         base_pos=[0, 0, -3]
-        
+
+        #distance = 25 * 4 * self.robot.mjcf_scaling
+        distance = 25 * 0.6 / self.robot.mjcf_scaling
         pos = self.robot._get_scaled_position()
         if (hasattr(self,'robot')):
             if (hasattr(self.robot,'body_xyz')):
                 base_pos[0] = pos[0]
                 base_pos[1] = pos[1]
-        
         view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=base_pos,
-            distance=25,
+            distance=distance,
             yaw=0,
             pitch=-89,
             roll=90,

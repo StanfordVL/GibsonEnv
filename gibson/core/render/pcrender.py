@@ -415,7 +415,6 @@ class PCRenderer:
 
         with Profiler("Render: render point cloud"):
             ## Speed bottleneck
-
             if is_rgb:
                 _render_pc(opengl_arr, rgbs, show)
                 # Store prefilled rgb
@@ -442,7 +441,9 @@ class PCRenderer:
 
                 recon = model(imgv, maskv)
                 show2 = recon.data.clamp(0,1).cpu().numpy()[0].transpose(1,2,0)
+                print("Before", np.mean(show))
                 show[:] = (show2[:] * 255).astype(np.uint8)
+                print("After", np.mean(show))
 
         hist_matching = False
         if hist_matching and is_rgb:
