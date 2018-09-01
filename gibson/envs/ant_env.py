@@ -19,7 +19,7 @@ Each class specifies:
 tracking_camera = {
     'yaw': 20,
     'z_offset': 0.3,
-    'distance': 3,
+    'distance': 1,
     'pitch': -20
 }
 
@@ -41,6 +41,9 @@ class AntNavigateEnv(CameraRobotEnv):
 
     def _rewards(self, action=None, debugmode=False):
         a = action
+        height = self.robot.get_position()[2]
+        pitch = self.robot.get_rpy()[1]
+        alive = float(self.robot.alive_bonus(height, pitch))
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -86,7 +89,7 @@ class AntNavigateEnv(CameraRobotEnv):
         pitch = self.robot.get_rpy()[1]
         alive = float(self.robot.alive_bonus(height, pitch))
         
-        done = alive <0 or self.nframe > 1000
+        done = alive < 0.1 or self.nframe > 1000
         #done = alive < 0
         if (debugmode):
             print("alive=")

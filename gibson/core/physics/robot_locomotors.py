@@ -7,7 +7,7 @@ from transforms3d.euler import euler2quat, euler2mat
 from transforms3d.quaternions import quat2mat, qmult
 import transforms3d.quaternions as quat
 import sys
-
+import time
 OBSERVATION_EPS = 0.01
 
 
@@ -286,7 +286,7 @@ class Ant(WalkerBase):
         WalkerBase.robot_specific_reset(self)
 
     def alive_bonus(self, z, pitch):
-        return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
+        return +1 if z > 0.15 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
 
     def setup_keys_to_action(self):
         self.keys_to_action = {
@@ -374,7 +374,7 @@ class Humanoid(WalkerBase):
         scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
         self.mjcf_scaling = scale
         WalkerBase.__init__(self, "humanoid.xml", "torso", action_dim=17, 
-                            sensor_dim=44, power=2.5, scale=scale, 
+                            sensor_dim=44, power=0.41, scale=scale, 
                             initial_pos=config['initial_pos'],
                             target_pos=config["target_pos"], 
                             resolution=config["resolution"], 
@@ -431,7 +431,7 @@ class Humanoid(WalkerBase):
             #m.set_motor_torque(float(force_gain * power * self.power * np.clip(a[i], -1, +1)))
 
     def alive_bonus(self, z, pitch):
-        return +2 if z > 0.2 else -1   # 2 here because 17 joints produce a lot of electricity cost just from policy noise, living must be better than dying
+        return +2 if z > 0.78 * self.mjcf_scaling else -1   # 2 here because 17 joints produce a lot of electricity cost just from policy noise, living must be better than dying
     
     def setup_keys_to_action(self):
         self.keys_to_action = {

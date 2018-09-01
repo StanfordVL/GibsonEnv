@@ -3,7 +3,7 @@ from gibson.envs.humanoid_env import HumanoidNavigateEnv
 from gibson.utils.play import play
 import os
 
-config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'configs', 'gif', 'play_humanoid_gif.yaml')
+config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'configs', 'gif', 'play_humanoid_gif2.yaml')
 print(config_file)
 
 

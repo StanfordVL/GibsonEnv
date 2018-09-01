@@ -1,21 +1,21 @@
-envname: AntNavigateEnv
+envname: HumanoidNavigateEnv
 model_id: r1Q1Z4BcV1o
 target_orn: [0, 0, 1.57]
-target_pos: [-8.2, 6.00, 0.9]
-initial_orn: [0, 0, 2.27]
-initial_pos: [-3.3, -2.80, 0.4]
+target_pos: [-14.3, 45.07, 0.5]
+initial_orn: [0, 0, 1.87]
+initial_pos: [-3.3, -2.80, 0.9]
 #initial_pos: [-8.2, 6.00, 0.9]
 fov: 1.57
-is_discrete: true
+is_discrete: false
 
-use_filler: true
-display_ui: true
+use_filler: false
+display_ui: false
 show_diagnostics: False
-ui_num: 3
+ui_num: 1
 #ui_num: 6
 #ui_components: [RGB_FILLED, DEPTH, MAP, PHYSICS2, NORMAL, PHYSICS]
-#ui_components: [PHYSICS, MAP]
-ui_components: [PHYSICS, MAP, NORMAL]
+ui_components: [PHYSICS]
+#ui_components: [PHYSICS, MAP, NORMAL]
 random:
   random_initial_pose : false
   random_target_pose : false
@@ -25,8 +25,8 @@ random:
   random_init_rot_range: [-0.1, 0.1]
 
 #output: [nonviz_sensor, rgb_filled, depth, map, normal, physics]
-#output: [physics, map]
-output: [physics, map, normal]
+output: [nonviz_sensor]
+#output: [physics, map, normal]
 resolution: 512
 #resolution: 512
 
@@ -34,12 +34,12 @@ speed:
   timestep: 0.001
   frameskip: 10
 
-mode: gui #gui|headless
+mode: headless #gui|headless
 verbose: false
 #fast_lq_render: true
 
 semantic_source: 2 # Matterport 3D
 semantic_color: 2
-enable_ui_recording: true
+enable_ui_recording: false
 
 no_semantis: True

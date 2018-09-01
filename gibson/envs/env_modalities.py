@@ -183,7 +183,6 @@ class BaseRobotEnv(BaseEnv):
 
     def _step(self, a):
         self.nframe += 1
-
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
             self.scene.global_step()
@@ -221,8 +220,7 @@ class BaseRobotEnv(BaseEnv):
             print("Camera env eye position", eye_pos)
             print("episode rewards", sum(self.rewards), "steps", self.nframe)
         real_pos = self.robot.get_position()
-        print("Robot pos", real_pos)
-        
+        #print("Robot pos", real_pos)
         episode = None
         if done:
             episode = {'r': self.reward,

@@ -28,7 +28,7 @@ def train(num_timesteps, seed):
     set_global_seeds(workerseed)
 
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'configs', 'gif',
-                               'train_humanoid_gif.yaml')
+                               'train_humanoid_gif2.yaml')
     print(config_file)
 
     env = HumanoidNavigateEnv(config = config_file)
@@ -48,6 +48,7 @@ def train(num_timesteps, seed):
         schedule='linear',
         save_per_acts=50,
         save_name=args.save_name,
+        reload_name=args.reload_name
     )
     env.close()
 

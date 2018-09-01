@@ -50,6 +50,9 @@ class SimpleUI():
         self.socket = self.context.socket(zmq.PUB)
         self.socket.bind("tcp://*:%s" % self.port)
         self.record_nframe = 0
+        if "start_record" in self.env.config.keys():
+            self.start_record()
+
     def _close(self):
         self.context.destroy()
 

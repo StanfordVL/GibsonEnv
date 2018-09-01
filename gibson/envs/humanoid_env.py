@@ -13,7 +13,7 @@ import pybullet_data
 tracking_camera = {
     'yaw': 20,  # demo: living room, stairs
     #'yaw'; 30,   # demo: kitchen
-    'z_offset': 0.5,
+    'z_offset': -0.2,
     'distance': 1.2,
     'pitch': -20
     # 'pitch': -24  # demo: stairs
@@ -51,6 +51,10 @@ class HumanoidNavigateEnv(CameraRobotEnv):
 
     def _rewards(self, action=None, debugmode=False):
         a = action
+        height = self.robot.get_position()[2]
+        pitch = self.robot.get_rpy()[1]
+        alive = float(self.robot.alive_bonus(height, pitch))
+        
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
         progress = float(self.potential - potential_old)
@@ -82,7 +86,7 @@ class HumanoidNavigateEnv(CameraRobotEnv):
             print(feet_collision_cost)
 
         rewards =[
-            #alive,
+            alive,
             progress,
             electricity_cost,
             joints_at_limit_cost,
