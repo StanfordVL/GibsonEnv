@@ -161,6 +161,9 @@ class HuskyNavigateEnv(CameraRobotEnv):
         self._flag_reposition()
         return obs
 
+    ## openai-gym v0.10.5 compatibility
+    step  = CameraRobotEnv._step
+
 
 
 class HuskyNavigateSpeedControlEnv(HuskyNavigateEnv):
@@ -195,7 +198,7 @@ class HuskyNavigateSpeedControlEnv(HuskyNavigateEnv):
         self.olde_omage = 0
 
 
-    def step(self, action):
+    def _step(self, action):
         control_signal, control_signal_omega = action
         self.e = control_signal - self.v
         self.de = self.e - self.olde
@@ -208,12 +211,15 @@ class HuskyNavigateSpeedControlEnv(HuskyNavigateEnv):
         self.ie_omega += self.e_omega
         pid_omega = self.kp * self.e_omega + self.ki * self.ie_omega + self.kd * self.de_omega
 
-        obs, rew, env_done, info = HuskyNavigateEnv.step(self,action=pid_v * self.base_action_v + pid_omega * self.base_action_omage)
+        obs, rew, env_done, info = HuskyNavigateEnv.step(self, pid_v * self.base_action_v + pid_omega * self.base_action_omage)
 
         self.v = obs["nonviz_sensor"][3]
         self.omega = obs["nonviz_sensor"][-1]
 
         return obs,rew,env_done,info
+
+    ## openai-gym v0.10.5 compatibility
+    step  = _step
 
 
 
@@ -346,6 +352,9 @@ class HuskyGibsonFlagRunEnv(CameraRobotEnv):
 
         return state, reward, done, meta
 
+    ## openai-gym v0.10.5 compatibility
+    step  = _step
+
 
 class HuskySemanticNavigateEnv(SemanticRobotEnv):
     """Specfy navigation reward
@@ -446,7 +455,8 @@ class HuskySemanticNavigateEnv(SemanticRobotEnv):
         CameraRobotEnv._reset(self)
         for flagId in self.semantic_flagIds:
             p.changeVisualShape(flagId, -1, rgbaColor=[1, 0, 0, 1])
-        
+
+
 def get_obstacle_penalty(robot, depth):
     screen_sz = robot.obs_dim[0]
     screen_delta = int(screen_sz / 8)

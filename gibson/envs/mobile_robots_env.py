@@ -158,8 +158,6 @@ class TurtlebotNavigateEnv(CameraRobotEnv):
         self._flag_reposition()
         return obs
 
-
-
 def get_obstacle_penalty(robot, depth):
     screen_sz = robot.obs_dim[0]
     screen_delta = int(screen_sz / 8)

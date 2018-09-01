@@ -238,7 +238,6 @@ class AntClimbEnv(CameraRobotEnv):
         return obs
 
 
-
 class AntFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
@@ -336,6 +335,9 @@ class AntFlagRunEnv(CameraRobotEnv):
         self.flag_timeout -= 1
 
         return state, reward, done, meta
+
+    ## openai-gym v0.10.5 compatibility
+    step  = _step
 
 
 class AntGibsonFlagRunEnv(CameraRobotEnv):
@@ -439,3 +441,6 @@ class AntGibsonFlagRunEnv(CameraRobotEnv):
         self.flag_timeout -= 1
 
         return state, reward, done, meta
+
+    ## openai-gym v0.10.5 compatibility
+    step  = _step
