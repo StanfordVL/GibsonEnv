@@ -222,17 +222,9 @@ Below is Gibson Environment's framerate benchmarked on different platforms. Plea
   <tr>
     <th scope="row">Platform</th>
     <td colspan="3">Tested on Intel E5-2697 v4 + NVIDIA Tesla V100</td>
-    <td colspan="3">Intel I7 7700 + NVIDIA GeForce GTX 1070Ti</td>
-    <td colspan="3">Tested on Intel I7 6580k + NVIDIA GTX 1080Ti</td>
   </tr>
   <tr>
     <th scope="col">Resolution [nxn]</th>
-    <th scope="col">128</th>
-    <th scope="col">256</th>
-    <th scope="col">512</th>
-    <th scope="col">128</th>
-    <th scope="col">256</th>
-    <th scope="col">512</th>
     <th scope="col">128</th>
     <th scope="col">256</th>
     <th scope="col">512</th>
@@ -242,87 +234,100 @@ Below is Gibson Environment's framerate benchmarked on different platforms. Plea
     <td>109.1</td>
     <td>58.5</td>
     <td>26.5</td>
-    <td>134.3</td>
-    <td>61.9</td>
-    <td>20.5</td>
-    <td>108.1</td>
-    <td>60.0</td>
-    <td>21.9</td>
   </tr>
   <tr>
     <th scope="row">RGBD, post network<code>f</code></th>
     <td>77.7</td>
     <td>30.6</td>
     <td>14.5</td>
-    <td>80.9</td>
-    <td>30.2</td>
-    <td>8.5</td>
-    <td>75.6</td>
-    <td>35.9</td>
-    <td>12.0</td>
   </tr>
   <tr>
     <th scope="row">RGBD, post small network<code>f</code></th>
     <td>87.4</td>
     <td>40.5</td>
     <td>21.2</td>
-    <td>128.1</td>
-    <td>61.9</td>
-    <td>25.1</td>
-    <td>98.8</td>
-    <td>63.3</td>
-    <td>27.3</td>
   </tr>
   <tr>
     <th scope="row">Depth only</th>
     <td>253.0</td>
     <td>197.9</td>
     <td>124.7</td>
-    <td>362.8</td>
-    <td>319.1</td>
-    <td>183.0</td>
-    <td>209.4</td>
-    <td>141.2</td>
-    <td>104.3</td>
   </tr>
   <tr>
     <th scope="row">Surface Normal only</th>
     <td>207.7</td>
     <td>129.7</td>
     <td>57.2</td>
-    <td>282.5</td>
-    <td>186.9</td>
-    <td>81.6</td>
-    <td>175.0</td>
-    <td>110.5</td>
-    <td>57.6</td>
   </tr>
   <tr>
     <th scope="row">Semantic only</th>
     <td>190.0</td>
     <td>144.2</td>
     <td>55.6</td>
-    <td>304.5</td>
-    <td>194.8</td>
-    <td>73.7</td>
-    <td>139.3</td>
-    <td>134.1</td>
-    <td>63.1</td>
   </tr>
   <tr>
     <th scope="row">Non-Visual Sensory</th>
     <td>396.1</td>
     <td>396.1</td>
     <td>396.1</td>
-    <td>511.3</td>
-    <td>495.6</td>
-    <td>540.0</td>
-    <td>260.3</td>
-    <td>264.8</td>
-    <td>250.0</td>
   </tr>
 </table>
 
+We also tested on <code>Intel I7 7700 + NVIDIA GeForce GTX 1070Ti</code> and <code>Tested on Intel I7 6580k + NVIDIA GTX 1080Ti</code> platforms. The FPS difference is within 10% on each task.
+
+<table class="table">
+    <tr>
+        <th scope="row">Platform</th>
+        <td colspan="6">Multi-process FPS tested on Intel E5-2697 v4 + NVIDIA Tesla V100</td>
+    </tr>
+    <tr>
+      <th scope="col">Configuration</th>
+      <th scope="col">512x512 episode sync</th>
+      <th scope="col">512x512 frame sync</th>
+      <th scope="col">256x256 episode sync</th>
+      <th scope="col">256x256 frame sync</th>
+      <th scope="col">128x128 episode sync</th>
+      <th scope="col">128x128 frame sync</th>
+    </tr>
+    <tr>
+      <th scope="row">1 process</th>
+      <td>12.8</td>
+      <td>12.02</td>
+      <td>32.98</td>
+      <td>32.98</td>
+      <td>52</td>
+      <td>52</td>
+    </tr>
+    <tr>
+      <th scope="row">2 processes</th>
+      <td>23.4</td>
+      <td>20.9</td>
+      <td>60.89</td>
+      <td>53.63</td>
+      <td>86.1</td>
+      <td>101.8</td>
+    </tr>
+    <tr>
+      <th scope="row">4 processes</th>
+      <td>42.4</td>
+      <td>31.97</td>
+      <td>105.26</td>
+      <td>76.23</td>
+      <td>97.6</td>
+      <td>145.9</td>
+    </tr>
+    <tr>
+      <th scope="row">8 processes</th>
+      <td>72.5</td>
+      <td>48.1</td>
+      <td>138.5</td>
+      <td>97.72</td>
+      <td>113</td>
+      <td>151</td>
+    </tr>
+</table>
+
+<img src=misc/mpi_fps.png width="600">
 
 Web User Interface
 ----
