@@ -25,6 +25,7 @@ class View(Enum):
     NORMAL = 4
     SEMANTICS = 5
     PHYSICS = 6
+    MAP = 7
 
 
 class SimpleUI():

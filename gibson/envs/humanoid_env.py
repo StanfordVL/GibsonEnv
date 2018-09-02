@@ -231,3 +231,6 @@ class HumanoidGibsonFlagRunEnv(CameraRobotEnv):
         self.flag_timeout -= 1
 
         return state, reward, done, meta
+
+    ## openai-gym v0.10.5 compatibility
+    step  = _step

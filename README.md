@@ -39,9 +39,10 @@ Table of contents
         * [Building from source](#b-building-from-source)
         * [Uninstalling](#uninstalling)
    * [Quick Start](#quick-start)
+        * [Gibson FPS](#gibson-framerate)
         * [Web User Interface](#web-user-interface)
         * [Rendering Semantics](#rendering-semantics)
-        * [Advanced Guide](#more-advanced-starting-guide)
+        * [Robotic Agents](#robotic-agents)
         * [ROS Configuration](#ros-configuration)
    * [Coding your RL agent](#coding-your-rl-agent)
    * [Environment Configuration](#environment-configuration)
@@ -215,6 +216,121 @@ python examples/train/train_ant_navigate_ppo1.py ### Use PPO1 to train an ant to
 By running this command you will start training an ant to navigate in Gates building and go down the corridor with RGBD input. You will see some RL related statistics in the terminal after each episode.
 
 
+
+Gibson Framerate
+----
+Below is Gibson Environment's framerate benchmarked on different platforms. Please refer to [fps branch](https://github.com/StanfordVL/GibsonEnv/tree/fps) for code to reproduce the results.
+<table class="table">
+  <tr>
+    <th scope="row">Platform</th>
+    <td colspan="3">Tested on Intel E5-2697 v4 + NVIDIA Tesla V100</td>
+  </tr>
+  <tr>
+    <th scope="col">Resolution [nxn]</th>
+    <th scope="col">128</th>
+    <th scope="col">256</th>
+    <th scope="col">512</th>
+ </tr>
+  <tr>
+    <th scope="row">RGBD, pre network<code>f</code></th>
+    <td>109.1</td>
+    <td>58.5</td>
+    <td>26.5</td>
+  </tr>
+  <tr>
+    <th scope="row">RGBD, post network<code>f</code></th>
+    <td>77.7</td>
+    <td>30.6</td>
+    <td>14.5</td>
+  </tr>
+  <tr>
+    <th scope="row">RGBD, post small network<code>f</code></th>
+    <td>87.4</td>
+    <td>40.5</td>
+    <td>21.2</td>
+  </tr>
+  <tr>
+    <th scope="row">Depth only</th>
+    <td>253.0</td>
+    <td>197.9</td>
+    <td>124.7</td>
+  </tr>
+  <tr>
+    <th scope="row">Surface Normal only</th>
+    <td>207.7</td>
+    <td>129.7</td>
+    <td>57.2</td>
+  </tr>
+  <tr>
+    <th scope="row">Semantic only</th>
+    <td>190.0</td>
+    <td>144.2</td>
+    <td>55.6</td>
+  </tr>
+  <tr>
+    <th scope="row">Non-Visual Sensory</th>
+    <td>396.1</td>
+    <td>396.1</td>
+    <td>396.1</td>
+  </tr>
+</table>
+
+We also tested on <code>Intel I7 7700 + NVIDIA GeForce GTX 1070Ti</code> and <code>Tested on Intel I7 6580k + NVIDIA GTX 1080Ti</code> platforms. The FPS difference is within 10% on each task.
+
+<table class="table">
+    <tr>
+        <th scope="row">Platform</th>
+        <td colspan="6">Multi-process FPS tested on Intel E5-2697 v4 + NVIDIA Tesla V100</td>
+    </tr>
+    <tr>
+      <th scope="col">Configuration</th>
+      <th scope="col">512x512 episode sync</th>
+      <th scope="col">512x512 frame sync</th>
+      <th scope="col">256x256 episode sync</th>
+      <th scope="col">256x256 frame sync</th>
+      <th scope="col">128x128 episode sync</th>
+      <th scope="col">128x128 frame sync</th>
+    </tr>
+    <tr>
+      <th scope="row">1 process</th>
+      <td>12.8</td>
+      <td>12.02</td>
+      <td>32.98</td>
+      <td>32.98</td>
+      <td>52</td>
+      <td>52</td>
+    </tr>
+    <tr>
+      <th scope="row">2 processes</th>
+      <td>23.4</td>
+      <td>20.9</td>
+      <td>60.89</td>
+      <td>53.63</td>
+      <td>86.1</td>
+      <td>101.8</td>
+    </tr>
+    <tr>
+      <th scope="row">4 processes</th>
+      <td>42.4</td>
+      <td>31.97</td>
+      <td>105.26</td>
+      <td>76.23</td>
+      <td>97.6</td>
+      <td>145.9</td>
+    </tr>
+    <tr>
+      <th scope="row">8 processes</th>
+      <td>72.5</td>
+      <td>48.1</td>
+      <td>138.5</td>
+      <td>97.72</td>
+      <td>113</td>
+      <td>151</td>
+    </tr>
+</table>
+
+<img src=misc/mpi_fps.png width="600">
+
 Web User Interface
 ----
 When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py python gibson/utils/web_ui.py 5552`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment.
@@ -232,10 +348,8 @@ For detailed instructions of rendering semantics in Gibson, see [semantic instru
 **Agreement**: If you choose to use the models from [Stanford 2D3DS](http://3dsemantics.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/) for rendering semantics, please sign their respective license agreements. Stanford 2D3DS's agreement is inclued in Gibson Database's agreement and does not need to be signed again. For Matterport3D, please see [here](https://niessner.github.io/Matterport/).
 
 
-More Advanced Starting Guide
+Robotic Agents
 ----
-
-### Starter Agents
 
 Gibson provides a base set of agents. See videos of these agents and their corresponding perceptual observation [here](http://gibsonenv.stanford.edu/agents/). 
 <img src=misc/agents.gif>
@@ -374,7 +488,7 @@ If you use Gibson Environment's software or database, please cite:
 ```
 @inproceedings{xiazamirhe2018gibsonenv,
   title={Gibson {Env}: real-world perception for embodied agents},
-  author={Xia, Fei and R. Zamir, Amir and He, Zhiyang and Sax, Alexander and Malik, Jitendra and Savarese, Silvio},
+  author={Xia, Fei and R. Zamir, Amir and He, Zhi-Yang and Sax, Alexander and Malik, Jitendra and Savarese, Silvio},
   booktitle={Computer Vision and Pattern Recognition (CVPR), 2018 IEEE Conference on},
   year={2018},
   organization={IEEE}

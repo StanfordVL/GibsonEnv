@@ -28,7 +28,7 @@ from PIL import Image
 from transforms3d.euler import euler2quat, euler2mat
 from transforms3d.quaternions import quat2mat, qmult
 import transforms3d.quaternions as quat
-
+import time
 
 DEFAULT_TIMESTEP  = 1.0/(4 * 9)
 DEFAULT_FRAMESKIP = 4
@@ -166,6 +166,7 @@ class BaseRobotEnv(BaseEnv):
         observations = self.render_observations(pose)
         pos = self.robot._get_scaled_position()
         orn = self.robot.get_orientation()
+
         pos = (pos[0], pos[1], pos[2] + self.tracking_camera['z_offset'])
         p.resetDebugVisualizerCamera(self.tracking_camera['distance'],self.tracking_camera['yaw'], self.tracking_camera['pitch'],pos)
         return observations
@@ -180,7 +181,6 @@ class BaseRobotEnv(BaseEnv):
 
     def _step(self, a):
         self.nframe += 1
-
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
             self.scene.global_step()
@@ -336,6 +336,14 @@ class CameraRobotEnv(BaseRobotEnv):
         self.fps = 0
 
 
+    def reset_observations(self):
+        ## Initialize blank render image
+        self.render_rgb_filled = np.zeros((self.windowsz, self.windowsz, 3))
+        self.render_rgb_prefilled = np.zeros((self.windowsz, self.windowsz, 3))
+        self.render_depth = np.zeros((self.windowsz, self.windowsz, 1))
+        self.render_normal = np.zeros((self.windowsz, self.windowsz, 3))
+        self.render_semantics = np.zeros((self.windowsz, self.windowsz, 3))
+
     def robot_introduce(self, robot):
         BaseRobotEnv.robot_introduce(self, robot)
         self.setup_rendering_camera()
@@ -344,15 +352,13 @@ class CameraRobotEnv(BaseRobotEnv):
         BaseRobotEnv.scene_introduce(self)
 
     def setup_rendering_camera(self):
-        if self.test_env or not self._require_camera_input:
+        if self.test_env:
             return
         self.r_camera_rgb = None     ## Rendering engine
         self.r_camera_mul = None     ## Multi channel rendering engine
         self.r_camera_dep = None
         #self.check_port_available()
-        self.setup_camera_multi()
-        self.setup_camera_pc()
-        
+
         ui_map = {
             1: OneViewUI,
             2: TwoViewUI,
@@ -364,8 +370,13 @@ class CameraRobotEnv(BaseRobotEnv):
         if self.config["display_ui"]:
             self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui)
 
+        if self._require_camera_input:
+            self.setup_camera_multi()
+            self.setup_camera_pc()
+        
 
     def _reset(self):
+        self.reset_observations()
         sensor_state = BaseRobotEnv._reset(self)
         self.potential = self.robot.calc_potential()
         eye_pos, eye_quat = self.get_eye_pos_orientation()
@@ -391,29 +402,29 @@ class CameraRobotEnv(BaseRobotEnv):
         sensor_meta.pop("eye_quat", None)
         #sensor_meta["sensor"] = sensor_state
 
+        if self.gui:
+            if self.config["display_ui"]:
+                self.render_to_UI()
+                self.save_frame += 1
+            else:
+                # Use non-pygame GUI
+                self.r_camera_rgb.renderToScreen()
+
         if not self._require_camera_input or self.test_env:
+            ## No camera input (rgb/depth/normal/semantics)
             return base_obs, sensor_reward, done, sensor_meta
+        else:
+            if self.config["show_diagnostics"] and self._require_rgb:
+                self.render_rgb_filled = self.add_text(self.render_rgb_filled)
 
-        if self.config["show_diagnostics"]:
-            self.render_rgb_filled = self.add_text(self.render_rgb_filled)
-
-        if self.config["display_ui"]:
-            self.render_to_UI()
-            self.save_frame += 1
-
-        elif self.gui:
-            # Speed bottleneck 2, 116fps
-            self.r_camera_rgb.renderToScreen()
-
-        robot_pos = self.robot.get_position()
-
-        debugmode = 0
-        if debugmode:
-            print("Eye position", sensor_meta['eye_pos'])
-        debugmode = 0
-        if debugmode:
-            print("Environment observation keys", observations.keys)
-        return observations, sensor_reward, done, sensor_meta
+            robot_pos = self.robot.get_position()
+            debugmode = 0
+            if debugmode:
+                print("Eye position", sensor_meta['eye_pos'])
+            debugmode = 0
+            if debugmode:
+                print("Environment observation keys", observations.keys)
+            return observations, sensor_reward, done, sensor_meta
 
 
     def render_component(self, tag):
@@ -434,6 +445,8 @@ class CameraRobotEnv(BaseRobotEnv):
             return self.render_semantics
         if tag == View.PHYSICS:
             return self.render_physics()
+        if tag == View.MAP:
+            return self.render_map()
 
     def render_to_UI(self):
         '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO
@@ -450,17 +463,16 @@ class CameraRobotEnv(BaseRobotEnv):
     def _close(self):
         BaseEnv._close(self)
 
-        if not self._require_camera_input or self.test_env:
-            return
-        self.r_camera_mul.terminate()
-        self.r_camera_rgb._close()
+        if self._require_camera_input:
+            self.r_camera_mul.terminate()
+            self.r_camera_rgb._close()
 
-        if self.r_camera_dep is not None:
-            self.r_camera_dep.terminate()
-        if self._require_normal:
-            self.r_camera_norm.terminate()
-        if self._require_semantics:
-            self.r_camera_semt.terminate()
+            if self.r_camera_dep is not None:
+                self.r_camera_dep.terminate()
+            if self._require_normal:
+                self.r_camera_norm.terminate()
+            if self._require_semantics:
+                self.r_camera_semt.terminate()
 
         if self.config["display_ui"]:
             self.UI._close()
@@ -541,9 +553,11 @@ class CameraRobotEnv(BaseRobotEnv):
         source_semantics = []
 
         if not self.multiprocessing or self.config["envname"] == "TestEnv":
-            for k,v in tqdm((uuids)):
-                data = self.dataset[v]
+            all_data = self.dataset.get_multi_index([v for k, v in uuids])
+            for i, data in enumerate(all_data):
                 target, target_depth = data[1], data[3]
+                if not self._require_rgb:
+                    continue
                 ww = target.shape[0] // 8 + 2
                 target[:ww, :, :] = target[ww, :, :]
                 target[-ww:, :, :] = target[-ww, :, :]
@@ -600,11 +614,6 @@ class CameraRobotEnv(BaseRobotEnv):
                                        gpu_count=self.gpu_count, 
                                        windowsz=self.windowsz, 
                                        env = self)
-        
-        ## Initialize blank render image
-        self.render_rgb_filled = np.zeros((self.windowsz, self.windowsz, 3))
-        self.render_rgb_prefilled = np.zeros((self.windowsz, self.windowsz, 3))
-
 
     def setup_camera_multi(self):
         assert(self._require_camera_input)
@@ -648,11 +657,6 @@ class CameraRobotEnv(BaseRobotEnv):
             self.r_camera_semt = subprocess.Popen(shlex.split(render_semt), shell=False)
 
         os.chdir(cur_path)
-
-        ## Set up blank render images
-        self.render_depth = np.zeros((self.windowsz, self.windowsz, 1))
-        self.render_normal = np.zeros((self.windowsz, self.windowsz, 3))
-        self.render_semantics = np.zeros((self.windowsz, self.windowsz, 3))
 
 
     def check_port_available(self):

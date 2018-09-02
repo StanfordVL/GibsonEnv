@@ -191,6 +191,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
             state = CameraRobotEnv._step(self, action)
         return state
 
+    step  = _step
 
     def calc_rewards_and_done(self, action, state):
         ## TODO (hzyjerry): make use of action, state

@@ -46,7 +46,9 @@ def train(num_timesteps, seed):
         optim_epochs=4, optim_stepsize=1e-4, optim_batchsize=64,
         gamma=0.99, lam=0.95,
         schedule='linear',
-        save_per_acts=500
+        save_per_acts=500,
+        save_name=args.save_name,
+        reload_name=args.reload_name
     )
     env.close()
 

@@ -128,7 +128,7 @@ class BaseEnv(gym.Env):
             projectionMatrix=proj_matrix,
             renderer=p.ER_BULLET_HARDWARE_OPENGL
             )
-        rgb_array = np.array(px)
+        rgb_array = np.array(px).reshape((self._render_width, self._render_height, -1))
         if close: return None
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
@@ -152,7 +152,7 @@ class BaseEnv(gym.Env):
                 projectionMatrix=proj_matrix,
                 renderer=p.ER_TINY_RENDERER
                 )
-        rgb_array = np.array(px)
+        rgb_array = np.array(px).reshape((self._render_width, self._render_height, -1))
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
 
@@ -179,7 +179,7 @@ class BaseEnv(gym.Env):
             projectionMatrix=proj_matrix,
             renderer=p.ER_BULLET_HARDWARE_OPENGL
             )
-        rgb_array = np.array(px)
+        rgb_array = np.array(px).reshape((self._render_width, self._render_height, -1))
         rgb_array = rgb_array[:, :, :3]
         return rgb_array
 
