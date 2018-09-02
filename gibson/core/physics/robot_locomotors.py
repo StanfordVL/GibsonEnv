@@ -368,6 +368,7 @@ class Humanoid(WalkerBase):
     foot_list = ["right_foot", "left_foot"]  # "left_hand", "right_hand"
     model_type = "MJCF"
     default_scale = 0.6
+    glass_offset = 0.3
 
     def __init__(self, config, env=None):
         self.config = config
@@ -399,15 +400,23 @@ class Humanoid(WalkerBase):
         
         WalkerBase.robot_specific_reset(self)
 
-        '''
+
         if self.glass_id is None:
-            glass_id = p.loadMJCF(os.path.join(self.physics_model_dir, "glass.xml"))[0]
-            robot_pos = self._get_scaled_position()
-            p.resetBasePositionAndOrientation(glass_id, robot_pos, [1, 0, 0, 0])
-            p.changeVisualShape(glass_id, -1, rgbaColor=[0, 0, 0, 1])
-            cid = p.createConstraint(humanoidId, -1, glass_id,-1,p.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,0])
+            glass_path = os.path.join(self.physics_model_dir, "glass.xml")
+            glass_id = p.loadMJCF(glass_path)[0]
             self.glass_id = glass_id
-        '''
+            p.changeVisualShape(self.glass_id, -1, rgbaColor=[0, 0, 0, 0])
+            p.createMultiBody(baseVisualShapeIndex=glass_id, baseCollisionShapeIndex=-1)
+            cid = p.createConstraint(humanoidId, -1, self.glass_id,-1,p.JOINT_FIXED, 
+                jointAxis=[0,0,0], parentFramePosition=[0, 0, self.glass_offset],
+                childFramePosition=[0,0,0])
+        
+        robot_pos = list(self._get_scaled_position())
+        robot_pos[2] += self.glass_offset
+        robot_orn = self.get_orientation()
+        p.resetBasePositionAndOrientation(self.glass_id, robot_pos, robot_orn)
+                
+
         self.motor_names  = ["abdomen_z", "abdomen_y", "abdomen_x"]
         self.motor_power  = [100, 100, 100]
         self.motor_names += ["right_hip_x", "right_hip_z", "right_hip_y", "right_knee"]

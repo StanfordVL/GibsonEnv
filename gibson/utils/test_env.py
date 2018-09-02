@@ -54,23 +54,23 @@ def testEnv(Env, config="test_filled.yaml", frame_total=10, is_discrete=False):
 
     
 if __name__ == '__main__':
-    #testEnv(HuskyNavigateEnv, "test_semantics.yaml", 10, is_discrete=True)
-    #testEnv(HuskyNavigateEnv, "test_filled.yaml", 10, is_discrete=True)
-    #testEnv(HuskyNavigateEnv, "test_prefilled.yaml", 10, is_discrete=True)
-    #testEnv(HuskyNavigateEnv, "test_depth.yaml", 10, is_discrete=True)
-    #testEnv(HuskyNavigateEnv, "test_normal.yaml", 10, is_discrete=True)
-    #testEnv(HuskyNavigateEnv, "test_three.yaml", 10, is_discrete=True)
-    #testEnv(HuskyNavigateEnv, "test_four.yaml", 10, is_discrete=True)
-    #testEnv(HuskyNavigateEnv, "test_nonviz.yaml", 10, is_discrete=True)
-    #testEnv(HuskyGibsonFlagRunEnv, "test_nonviz.yaml", 10, is_discrete=True)
-    #testEnv(HuskyGibsonFlagRunEnv, "test_depth.yaml", 10, is_discrete=True)
+    testEnv(HuskyNavigateEnv, "test_semantics.yaml", 10, is_discrete=True)
+    testEnv(HuskyNavigateEnv, "test_filled.yaml", 10, is_discrete=True)
+    testEnv(HuskyNavigateEnv, "test_prefilled.yaml", 10, is_discrete=True)
+    testEnv(HuskyNavigateEnv, "test_depth.yaml", 10, is_discrete=True)
+    testEnv(HuskyNavigateEnv, "test_normal.yaml", 10, is_discrete=True)
+    testEnv(HuskyNavigateEnv, "test_three.yaml", 10, is_discrete=True)
+    testEnv(HuskyNavigateEnv, "test_four.yaml", 10, is_discrete=True)
+    testEnv(HuskyNavigateEnv, "test_nonviz.yaml", 10, is_discrete=True)
+    testEnv(HuskyGibsonFlagRunEnv, "test_nonviz.yaml", 10, is_discrete=True)
+    testEnv(HuskyGibsonFlagRunEnv, "test_depth.yaml", 10, is_discrete=True)
 
 
-    #testEnv(AntGibsonFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
-    #testEnv(AntFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
-    #testEnv(AntClimbEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
-    #testEnv(AntNavigateEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
-    #testEnv(AntClimbEnv, "test_four_nondiscrete.yaml", 10, is_discrete=False)
+    testEnv(AntGibsonFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
+    testEnv(AntFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
+    testEnv(AntClimbEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
+    testEnv(AntNavigateEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
+    testEnv(AntClimbEnv, "test_four_nondiscrete.yaml", 10, is_discrete=False)
     
     testEnv(HumanoidNavigateEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
     testEnv(HumanoidGibsonFlagRunEnv, "test_nonviz_nondiscrete.yaml", 10, is_discrete=False)
