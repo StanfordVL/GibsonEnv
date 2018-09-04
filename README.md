@@ -86,20 +86,14 @@ We use docker to distribute our software, you need to install [docker](https://d
 
 Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
 
-You can either 1. build your own docker image or 2. pull from our docker image. 1 is recommended because you have the freedom to include more or less enviroments into your docker image. For 2, we include a fixed number of 8 environments (space1-space8).
+You can either 1. build your own docker image or 2. pull from our docker image.
 
 1. Build your own docker image (recommended)
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
-cd GibsonEnv/gibson
-wget https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz
-tar -zxf assets_core_v2.tar.gz && rm assets_core_v2.tar.gz
-cd assets
-wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
-tar -zxf dataset.tar.gz && rm dataset.tar.gz
-### the commands above downloads assets data file and decpmpress it into gibson/assets folder
-cd ../.. # back to GibsonEnv dir
-docker build . -t gibson ### finish building inside docker
+cd GibsonEnv
+./download.sh # this script downloads assets data file and decpmpress it into gibson/assets folder
+docker build . -t gibson ### finish building inside docker, note by default, dataset will not be included in the docker images
 ```
 If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson` to create a container. Note that we don't include
 dataset files in docker image to keep our image slim, so you will need to mount it to the container when you start a container.
@@ -135,8 +129,8 @@ First, make sure you have Nvidia driver and CUDA installed. If you install from 
 ```bash
 apt-get update 
 apt-get install libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev \
-		mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \ 
-		xdotool libzmq3-dev zlib1g-dev\
+		mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
+		xdotool libzmq3-dev zlib1g-dev
 ```	
 
 Install required deep learning libraries: Using python3.5 is recommended. You can create a python3.5 environment first. 
@@ -152,14 +146,8 @@ pip install tensorflow==1.3
 Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
-cd GibsonEnv/gibson
-wget https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz
-tar -zxf assets_core_v2.tar.gz
-cd assets
-wget https://storage.googleapis.com/gibsonassets/dataset.tar.gz
-tar -zxf dataset.tar.gz
-#### the commands above downloads assets data file and decpmpress it into gibson/assets folder
-cd ../.. #back to GibsonEnv dir
+cd GibsonEnv
+./download.sh # this script downloads assets data file and decpmpress it into gibson/assets folder
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
 ```
