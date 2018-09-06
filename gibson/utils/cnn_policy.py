@@ -6,7 +6,7 @@ from gibson.core.render.profiler import Profiler
 
 class CnnPolicy(object):
     recurrent = False
-    def __init__(self, name, ob_space, ac_space, save_per_acts, session, kind='large'):
+    def __init__(self, name, ob_space, ac_space, session, save_per_acts=1e4, kind='large'):
         self.total_count = 0
         self.curr_count = 0
         self.save_per_acts = save_per_acts

@@ -141,7 +141,7 @@ class BaseRobotEnv(BaseEnv):
         if debugmode:
             print("Episode: steps:{} score:{}".format(self.nframe, self.reward))
             body_xyz = self.robot.body_xyz
-            print("[{}, {}, {}],".format(body_xyz[0], body_xyz[1], body_xyz[2]))
+            #print("[{}, {}, {}],".format(body_xyz[0], body_xyz[1], body_xyz[2]))
             print("Episode count: {}".format(self.eps_count))
             self.eps_count += 1
         self.nframe = 0
@@ -368,7 +368,8 @@ class CameraRobotEnv(BaseRobotEnv):
 
         assert self.config["ui_num"] == len(self.config['ui_components']), "In configuration, ui_num is not equal to the number of ui components"
         if self.config["display_ui"]:
-            self.UI = ui_map[self.config["ui_num"]](self.windowsz, self, self.port_ui)
+            ui_num = self.config["ui_num"]
+            self.UI = ui_map[ui_num](self.windowsz, self, self.port_ui)
 
         if self._require_camera_input:
             self.setup_camera_multi()
@@ -406,7 +407,7 @@ class CameraRobotEnv(BaseRobotEnv):
             if self.config["display_ui"]:
                 self.render_to_UI()
                 self.save_frame += 1
-            else:
+            elif self._require_camera_input:
                 # Use non-pygame GUI
                 self.r_camera_rgb.renderToScreen()
 

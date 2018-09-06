@@ -152,14 +152,20 @@ class WalkerBase(BaseRobot):
         if self.initial_z == None:
             self.initial_z = z
         r, p, yaw = self.body_rpy
+        robot_orn = self.get_rpy()
+
         self.walk_target_theta = np.arctan2(self.target_pos[1] - self.body_xyz[1],
                                             self.target_pos[0] - self.body_xyz[0])
         self.walk_target_dist = np.linalg.norm(
             [self.target_pos[1] - self.body_xyz[1], self.target_pos[0] - self.body_xyz[0]])
         self.walk_target_dist_xyz = np.linalg.norm(
             [self.target_pos[2] - self.body_xyz[2], self.target_pos[0] - self.body_xyz[1], self.target_pos[0] - self.body_xyz[0]])
-        angle_to_target = self.walk_target_theta - yaw
-        self.angle_to_target = angle_to_target
+        
+        self.angle_to_target = self.walk_target_theta - yaw
+        if self.angle_to_target > np.pi:
+            self.angle_to_target -= 2 * np.pi
+        elif self.angle_to_target < -np.pi:
+            self.angle_to_target += 2 * np.pi
 
         self.walk_height_diff = np.abs(self.target_pos[2] - self.body_xyz[2])
 
@@ -183,7 +189,7 @@ class WalkerBase(BaseRobot):
             print("Robot state", self.target_pos[1] - self.body_xyz[1], self.target_pos[0] - self.body_xyz[0])
 
         more = np.array([ z-self.initial_z,
-            np.sin(angle_to_target), np.cos(angle_to_target),
+            np.sin(self.angle_to_target), np.cos(self.angle_to_target),
             0.3* vx , 0.3* vy , 0.3* vz ,  # 0.3 is just scaling typical speed into -1..+1, no physical sense here
             r, p], dtype=np.float32)
 
@@ -212,6 +218,18 @@ class WalkerBase(BaseRobot):
 
     def dist_to_target(self):
         return np.linalg.norm(np.array(self.body_xyz) - np.array(self.get_target_position()))
+
+
+    def angle_cost(self):
+        angle_const = 0.2
+        is_forward = np.abs(self.angle_to_target) < 1.57
+        diff_angle = np.abs(self.angle_to_target)
+        debugmode = 0
+        if debugmode:
+            print("is forward", is_forward)
+            print("angle to target", self.angle_to_target)
+            print("diff angle", diff_angle)
+        return -angle_const* diff_angle
 
     def _is_close_to_goal(self):
         body_pose = self.robot_body.pose()
@@ -496,19 +514,6 @@ class Husky(WalkerBase):
         else:
             return 0
 
-    def angle_cost(self):
-        angle_const = 0.2
-        diff_to_half = np.abs(self.angle_to_target - 1.57)
-        is_forward = self.angle_to_target > 1.57
-        diff_angle = np.abs(1.57 - diff_to_half) if is_forward else 3.14 - np.abs(1.57 - diff_to_half)
-        debugmode = 0
-        if debugmode:
-            print("is forward", is_forward)
-            print("diff to half", diff_to_half)
-            print("angle to target", self.angle_to_target)
-            print("diff angle", diff_angle)
-        return -angle_const* diff_angle
-
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
@@ -655,19 +660,6 @@ class Turtlebot(WalkerBase):
         else:
             return 0
 
-    def angle_cost(self):
-        angle_const = 0.2
-        diff_to_half = np.abs(self.angle_to_target - 1.57)
-        is_forward = self.angle_to_target > 1.57
-        diff_angle = np.abs(1.57 - diff_to_half) if is_forward else 3.14 - np.abs(1.57 - diff_to_half)
-        debugmode = 0
-        if debugmode:
-            print("is forward", is_forward)
-            print("diff to half", diff_to_half)
-            print("angle to target", self.angle_to_target)
-            print("diff angle", diff_angle)
-        return -angle_const * diff_angle
-
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
 
@@ -738,19 +730,6 @@ class JR(WalkerBase):
         else:
             return 0
 
-    def angle_cost(self):
-        angle_const = 0.2
-        diff_to_half = np.abs(self.angle_to_target - 1.57)
-        is_forward = self.angle_to_target > 1.57
-        diff_angle = np.abs(1.57 - diff_to_half) if is_forward else 3.14 - np.abs(1.57 - diff_to_half)
-        debugmode = 0
-        if debugmode:
-            print("is forward", is_forward)
-            print("diff to half", diff_to_half)
-            print("angle to target", self.angle_to_target)
-            print("diff angle", diff_angle)
-        return -angle_const * diff_angle
-
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)
 
@@ -819,19 +798,6 @@ class JR2(WalkerBase):
             return -0.1
         else:
             return 0
-
-    def angle_cost(self):
-        angle_const = 0.2
-        diff_to_half = np.abs(self.angle_to_target - 1.57)
-        is_forward = self.angle_to_target > 1.57
-        diff_angle = np.abs(1.57 - diff_to_half) if is_forward else 3.14 - np.abs(1.57 - diff_to_half)
-        debugmode = 0
-        if debugmode:
-            print("is forward", is_forward)
-            print("diff to half", diff_to_half)
-            print("angle to target", self.angle_to_target)
-            print("diff angle", diff_angle)
-        return -angle_const * diff_angle
 
     def robot_specific_reset(self):
         WalkerBase.robot_specific_reset(self)

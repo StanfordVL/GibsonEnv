@@ -10,7 +10,7 @@ from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
 import cv2
 
-CALC_OBSTACLE_PENALTY = 1
+CALC_OBSTACLE_PENALTY = 0
 
 tracking_camera = {
     'yaw': 110,
@@ -107,12 +107,13 @@ class HuskyNavigateEnv(CameraRobotEnv):
 
         debugmode = 0
         if (debugmode):
-            print("Wall contact points", len(wall_contact))
+            #print("Wall contact points", len(wall_contact))
             print("Collision cost", wall_collision_cost)
-            print("electricity_cost", electricity_cost)
+            #print("electricity_cost", electricity_cost)
             print("close to target", close_to_target)
-            #print("progress")
-            #print(progress)
+            print("Obstacle penalty", obstacle_penalty)
+            print("Steering cost", steering_cost)
+            print("progress", progress)
             #print("electricity_cost")
             #print(electricity_cost)
             #print("joints_at_limit_cost")
@@ -123,11 +124,11 @@ class HuskyNavigateEnv(CameraRobotEnv):
         rewards = [
             #alive,
             progress,
-            #wall_collision_cost,
+            wall_collision_cost,
             close_to_target,
             steering_cost,
-            angle_cost,
-            obstacle_penalty
+            #angle_cost,
+            #obstacle_penalty
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
