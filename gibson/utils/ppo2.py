@@ -86,7 +86,7 @@ class Model(object):
 
 class Runner(object):
 
-    def __init__(self, *, env, model, nsteps, gamma, lam):
+    def __init__(self, *, env, model, nsteps, gamma, lam, sensor=False):
         self.env = env
         self.model = model
         #nenv = env.num_envs
@@ -96,8 +96,13 @@ class Runner(object):
         print(self.obs.shape)
         print(self.obs_sensor.shape)
         obs_all = self.env.reset()
-        self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
+
         self.obs_sensor[:] = obs_all['nonviz_sensor'] 
+        self.sensor = sensor
+        if sensor:
+            self.obs = self.obs_sensor
+        else:
+            self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
         self.gamma = gamma
         self.lam = lam
         self.nsteps = nsteps
@@ -121,14 +126,20 @@ class Runner(object):
 
             if self.dones:
                 obs_all = self.env.reset()
-                self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
                 self.obs_sensor[:] = obs_all['nonviz_sensor'] 
+                if self.sensor:
+                    self.obs = self.obs_sensor
+                else:
+                    self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
                 rewards = 0
                 self.dones = False
             else:
                 obs_all, rewards, self.dones, infos = self.env.step(actions)
-                self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
                 self.obs_sensor[:] = obs_all['nonviz_sensor'] 
+                if self.sensor:
+                    self.obs = self.obs_sensor
+                else:
+                    self.obs[:] = np.concatenate([obs_all['rgb_filled'], obs_all['depth']], axis=2)
                 #print("PPO2", rewards, self.dones)
                 if 'sensor' in infos:
                     ob_sensor = infos['sensor']
@@ -183,7 +194,7 @@ def constfn(val):
 def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr, 
             vf_coef=0.5,  max_grad_norm=0.5, gamma=0.99, lam=0.95, 
             log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
-            save_interval=0, reload_name=None):
+            save_interval=0, reload_name=None, sensor=False):
 
     if isinstance(lr, float): lr = constfn(lr)
     else: assert callable(lr)
@@ -193,10 +204,11 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
 
     #nenv = env.num_envs
     nenvs = 1
-    ob_space = env.observation_space
+    if sensor:
+        ob_space = env.sensor_space
+    else:
+        ob_space = env.observation_space
     ac_space = env.action_space
-
-
 
     nbatch = nenvs * nsteps
     nbatch_train = nbatch // nminibatches
@@ -207,14 +219,16 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
     
     if save_interval and logger.get_dir():
         import cloudpickle
-        with open(osp.join(logger.get_dir(), 'make_model.pkl'), 'wb') as fh:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        print(base_path)
+        with open(osp.join(base_path, "models", 'make_model.pkl'), 'wb') as fh:
             fh.write(cloudpickle.dumps(make_model))
     
     model = make_model()
     if reload_name:
         model.load(reload_name)
     
-    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam)
+    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam, sensor=sensor)
 
     epinfobuf = deque(maxlen=100)
     tfirststart = time.time()
@@ -274,11 +288,13 @@ def learn(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
                 logger.logkv(lossname, lossval)
             logger.dumpkvs()
         if save_interval and (update % save_interval == 0 or update == 1) and logger.get_dir():
-            checkdir = osp.join(logger.get_dir(), 'checkpoints')
+            checkdir = os.path.dirname(os.path.abspath(__file__))
+            print(checkdir)
             os.makedirs(checkdir, exist_ok=True)
-            savepath = osp.join(checkdir, '%.5i'%update)
-            #print('Saving to', savepath)
+            savepath = osp.join(checkdir, "models", '%.5i'%update)
+            print('Saving to', savepath)
             model.save(savepath)
+            print ("Saved model successfully.")
     env.close()
 
 def safemean(xs):
@@ -290,7 +306,7 @@ def safemean(xs):
 def enjoy(*, policy, env, nsteps, total_timesteps, ent_coef, lr, 
             vf_coef=0.5,  max_grad_norm=0.5, gamma=0.99, lam=0.95, 
             log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
-            save_interval=0, reload_name=None):
+            save_interval=0, reload_name=None, sensor=False):
 
     if isinstance(lr, float): lr = constfn(lr)
     else: assert callable(lr)
@@ -300,7 +316,10 @@ def enjoy(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
 
     #nenv = env.num_envs
     nenvs = 1
-    ob_space = env.observation_space
+    if sensor:
+        ob_space = env.sensor_space
+    else:
+        ob_space = env.observation_space
     ac_space = env.action_space
 
     print(env.observation_space)
@@ -316,7 +335,9 @@ def enjoy(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
     
     if save_interval and logger.get_dir():
         import cloudpickle
-        with open(osp.join(logger.get_dir(), 'make_model.pkl'), 'wb') as fh:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        print(base_path)
+        with open(osp.join(base_path, "models", 'make_model.pkl'), 'wb') as fh:
             fh.write(cloudpickle.dumps(make_model))
     
     model = make_model()

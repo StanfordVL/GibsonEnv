@@ -105,6 +105,10 @@ class HuskyNavigateEnv(CameraRobotEnv):
         if debugmode:
             print("angle cost", angle_cost)
 
+        height = self.robot.get_position()[2]
+        pitch = self.robot.get_rpy()[1]
+        alive = float(self.robot.alive_bonus(height, pitch))
+        
         debugmode = 0
         if (debugmode):
             #print("Wall contact points", len(wall_contact))
@@ -138,9 +142,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
     def _termination(self, debugmode=False):
         height = self.robot.get_position()[2]
         pitch = self.robot.get_rpy()[1]
-        alive = float(self.robot.alive_bonus(height, pitch))
-        
-        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
+        alive = float(self.robot.alive_bonus(height, pitch)) > 0
+        #alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
         done = not alive or self.nframe > 250 or height < 0
         #if done:

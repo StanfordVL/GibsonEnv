@@ -519,7 +519,10 @@ class Husky(WalkerBase):
         WalkerBase.robot_specific_reset(self)
 
     def alive_bonus(self, z, pitch):
-        return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
+        top_xyz = self.parts["top_bumper_link"].pose().xyz()
+        bottom_xyz = self.parts["base_link"].pose().xyz()
+        alive = top_xyz[2] > bottom_xyz[2]
+        return +1 if alive else -100  # 0.25 is central sphere rad, die if it scrapes the ground
 
     def setup_keys_to_action(self):
         self.keys_to_action = {

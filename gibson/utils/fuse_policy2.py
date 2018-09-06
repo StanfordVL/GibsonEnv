@@ -9,9 +9,17 @@ import gym.spaces
 
 class FusePolicy(object):
     def __init__(self, sess, ob_space, sensor_space, ac_space, nbatch, nsteps, reuse=False): #pylint: disable=W0613
+        if isinstance(ac_space, gym.spaces.Discrete):
+            self.is_discrete = True
+        else:
+            self.is_discrete = False
+
         ob_shape = (nbatch,) + ob_space.shape
         ob_sensor_shape = (nbatch,) + sensor_space.shape
-        actdim = ac_space.shape[0]
+        if self.is_discrete:
+            actdim = ac_space.n
+        else:
+            actdim =  ac_space.shape[0]
         X_camera = tf.placeholder(tf.uint8, ob_shape, name='Ob_camera') #obs
         X_sensor = tf.placeholder(tf.float32, ob_sensor_shape, name='Ob_sensor')
 
@@ -75,7 +83,6 @@ class CnnPolicy(object):
         else:
             self.is_discrete = False
 
-
         print("nbatch%d" % (nbatch))
 
         nh, nw, nc = ob_space.shape
@@ -130,8 +137,16 @@ class CnnPolicy(object):
 
 class MlpPolicy(object):
     def __init__(self, sess, ob_space, ac_space, nbatch, nsteps, reuse=False): #pylint: disable=W0613
+        if isinstance(ac_space, gym.spaces.Discrete):
+            self.is_discrete = True
+        else:
+            self.is_discrete = False
+
         ob_shape = (nbatch,) + ob_space.shape
-        actdim = ac_space.shape[0]
+        if self.is_discrete:
+            actdim = ac_space.n
+        else:
+            actdim =  ac_space.shape[0]
         X = tf.placeholder(tf.float32, ob_shape, name='Ob') #obs
         with tf.variable_scope("model", reuse=reuse):
             h1 = fc(X, 'pi_fc1', nh=64, init_scale=np.sqrt(2), act=tf.tanh)
@@ -146,14 +161,19 @@ class MlpPolicy(object):
         pdparam = tf.concat([pi, pi * 0.0 + logstd], axis=1)
 
         self.pdtype = make_pdtype(ac_space)
-        self.pd = self.pdtype.pdfromflat(pdparam)
+        if self.is_discrete:
+            self.pd = self.pdtype.pdfromflat(pi)
+            a0 = self.pd.sample()
+        else:
+            self.pd = self.pdtype.pdfromflat(pdparam)
+            a0 = self.pd.sample()
 
-        a0 = self.pd.sample()
         neglogp0 = self.pd.neglogp(a0)
         self.initial_state = None
 
         def step(ob, *_args, **_kwargs):
             a, v, neglogp = sess.run([a0, vf, neglogp0], {X:ob})
+            a = a[0]
             return a, v, self.initial_state, neglogp
 
         def value(ob, *_args, **_kwargs):
