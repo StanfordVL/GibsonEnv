@@ -23,7 +23,7 @@ License Note: The dataset license is included in the above link. The license in 
 
 **Stanford 2D-3D-Semantics Dataset:** the download link of 2D-3D-Semantics as Gibson asset files is included in the [same link ](https://goo.gl/forms/OxAQHbl1v97BJ3Sg1) as above. 
 
-**Matterport3D Dataset:** the download link of Matterport3D processed as Gibson asset files is [here](https://storage.googleapis.com/gibsonassets/mp3d_for_gibson.tar.gz). Please sign Matterport3D's [license agreement](https://niessner.github.io/Matterport/) before using it.
+**Matterport3D Dataset:** Please fill and sign the corresponding [Terms of Use agreement](http://dovahkiin.stanford.edu/matterport/public/MP_TOS.pdf) form and send it to [matterport3d@googlegroups.com](matterport3d@googlegroups.com). Please put "use with GIBSON simulator" in your email. You'll then recieve a python script via email in response. Use the invocation `python download_mp.py --task_data gibson -o .` with the received script to download the data (39.09GB). Matterport3D webpage: [link](https://niessner.github.io/Matterport/).
 
 ### Citation
 If you use Gibson's database or software please cite:
