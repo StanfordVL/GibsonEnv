@@ -9,7 +9,7 @@ from mpi4py import MPI
 from gibson.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
 import baselines.common.tf_util as U
-from gibson.utils.fuse_policy2 import CnnPolicy, MlpPolicy
+from gibson.utils.fuse_policy2 import MlpPolicy, MlpPolicy2, CnnPolicy2
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from gibson.utils import utils
 import datetime
@@ -58,12 +58,12 @@ def train(num_timesteps, seed):
 
     gym.logger.setLevel(logging.WARN)
 
-    policy_fn = MlpPolicy if args.mode == "SENSOR" else CnnPolicy
+    policy_fn = MlpPolicy if args.mode == "SENSOR" else CnnPolicy2
 
     ppo2.learn(policy=policy_fn, env=env, nsteps=3000, nminibatches=4,
         lam=0.95, gamma=0.99, noptepochs=4, log_interval=1,
         ent_coef=.1,
-        lr=lambda f : f * 2e-3,
+        lr=lambda f : f * 2e-4,
         cliprange=lambda f : f * 0.2,
         total_timesteps=int(num_timesteps * 1.1),
         save_interval=5,
