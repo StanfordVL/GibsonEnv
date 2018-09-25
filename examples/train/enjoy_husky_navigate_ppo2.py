@@ -9,7 +9,7 @@ from mpi4py import MPI
 from gibson.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
 import baselines.common.tf_util as U
-from gibson.utils.fuse_policy2 import CnnPolicy, MlpPolicy
+from gibson.utils.fuse_policy2 import CnnPolicy2, MlpPolicy
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from gibson.utils import utils
 import datetime
@@ -52,7 +52,7 @@ def enjoy(num_timesteps, seed):
 
     gym.logger.setLevel(logging.WARN)
 
-    policy_fn = MlpPolicy if args.mode == "SENSOR" else CnnPolicy
+    policy_fn = MlpPolicy if args.mode == "SENSOR" else CnnPolicy2
     print(args.mode, (args.mode == "SENSOR"))
 
     ppo2.enjoy(policy=policy_fn, env=env, nsteps=600, nminibatches=4,

@@ -21,7 +21,7 @@ random:
   random_init_rot_range: [-0.1, 0.1]
 
 output: [nonviz_sensor, rgb_filled, depth]
-resolution: 64
+resolution: 128
 
 speed:
   timestep: 0.001
