@@ -27,6 +27,6 @@ speed:
   timestep: 0.001
   frameskip: 10
 
-mode: headless #gui|headless
+mode: gui #gui|headless
 verbose: false
 #fast_lq_render: true

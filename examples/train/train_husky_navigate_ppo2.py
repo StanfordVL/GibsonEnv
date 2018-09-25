@@ -67,7 +67,7 @@ def train(num_timesteps, seed):
         cliprange=lambda f : f * 0.2,
         total_timesteps=int(num_timesteps * 1.1),
         save_interval=5,
-        sensor=args.mode == "SENSOR",
+        sensor= args.mode == "SENSOR",
         reload_name=args.reload_name)
     
     '''

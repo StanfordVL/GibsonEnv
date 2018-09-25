@@ -110,6 +110,7 @@ class Runner(object):
         #self.dones = [False for _ in range(nenv)]
         self.dones = False
 
+
     def run(self):
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [],[],[],[],[],[]
         mb_states = self.states
@@ -322,9 +323,8 @@ def enjoy(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
         ob_space = env.observation_space
     ac_space = env.action_space
 
-    print(env.observation_space)
-    print(env.action_space)
-
+    print(ob_space)
+    print(ac_space)
 
     nbatch = nenvs * nsteps
     nbatch_train = nbatch // nminibatches
@@ -344,7 +344,7 @@ def enjoy(*, policy, env, nsteps, total_timesteps, ent_coef, lr,
     if reload_name:
         model.load(reload_name)
     
-    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam)
+    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam, sensor=sensor)
 
     epinfobuf = deque(maxlen=100)
     tfirststart = time.time()

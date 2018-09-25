@@ -24,7 +24,7 @@ import sys
 
 ## Training code adapted from: https://github.com/openai/baselines/blob/master/baselines/ppo1/run_atari.py
 
-def train(num_timesteps, seed):
+def enjoy(num_timesteps, seed):
     rank = MPI.COMM_WORLD.Get_rank()
     #sess = U.single_threaded_session()
     sess = utils.make_gpu_session(args.num_gpu)
@@ -52,15 +52,17 @@ def train(num_timesteps, seed):
 
     gym.logger.setLevel(logging.WARN)
 
+    policy_fn = MlpPolicy if args.mode == "SENSOR" else CnnPolicy
+    print(args.mode, (args.mode == "SENSOR"))
 
-    ppo2.enjoy(policy=CnnPolicy, env=env, nsteps=600, nminibatches=4,
+    ppo2.enjoy(policy=policy_fn, env=env, nsteps=600, nminibatches=4,
         lam=0.95, gamma=0.996, noptepochs=4, log_interval=1,
         ent_coef=.01,
         lr=lambda f : f * 2.5e-4,
         cliprange=lambda f : f * 0.2,
         total_timesteps=int(num_timesteps * 1.1),
-        save_interval=0,
-        reload_name=args.reload_name)
+        save_interval=5,
+        reload_name=args.reload_name, sensor = (args.mode == "SENSOR"))
     
     '''
     pposgd_fuse.learn(env, policy_fn,
@@ -87,7 +89,7 @@ def callback(lcl, glb):
 
 
 def main():
-    train(num_timesteps=10000000, seed=5)
+    enjoy(num_timesteps=10000000, seed=5)
 
 if __name__ == '__main__':
     import argparse
