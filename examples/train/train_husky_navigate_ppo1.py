@@ -40,20 +40,21 @@ def train(num_timesteps, seed):
 
     use_filler = not args.disable_filler
 
-    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate.yaml')
+    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate_rgb_train.yaml')
+    if args.mode=="SENSOR":
+        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate_nonviz_train.yaml')
     print(config_file)
 
     raw_env = HuskyNavigateEnv(gpu_count=args.gpu_count,
                                config=config_file)
 
-#    def policy_fn(name, ob_space, sensor_space, ac_space):
     def policy_fn(name, ob_space, ac_space):
         if args.mode == "SENSOR":
             return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
         else:
-            #return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, session=sess, kind='small')
         #else:
-            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess, kind='small')
+            #return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
 
 
     env = Monitor(raw_env, logger.get_dir() and
@@ -65,12 +66,12 @@ def train(num_timesteps, seed):
     pposgd_simple.learn(env, policy_fn,
         max_timesteps=int(num_timesteps * 1.1),
         timesteps_per_actorbatch=3000,
-        clip_param=0.2, entcoeff=0.01,
+        clip_param=0.2, entcoeff=0.0,
         optim_epochs=4, optim_stepsize=3e-3, optim_batchsize=64,
         gamma=0.996, lam=0.95,
         schedule='linear',
         save_name="husky_navigate_ppo_{}".format(args.mode),
-        save_per_acts=50,
+        save_per_acts=10,
         sensor=args.mode=="SENSOR",
         reload_name=args.reload_name
     )

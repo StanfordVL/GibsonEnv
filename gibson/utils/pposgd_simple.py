@@ -55,7 +55,8 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
     ac = env.action_space.sample() # not used, just so we have the datatype
     new = True # marks if we're on first timestep of an episode
     ob_all = env.reset()
-    ob = np.concatenate([ob_all['rgb_filled'], ob_all['depth']], axis=2)
+    if not sensor:
+        ob = np.concatenate([ob_all['rgb_filled'], ob_all['depth']], axis=2)
     ob_sensor = ob_all['nonviz_sensor']
         
     cur_ep_ret = 0 # return in current episode
@@ -107,7 +108,8 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
         #with Profiler("environment step"):
         ob_all, rew, new, meta = env.step(ac)
         
-        ob = np.concatenate([ob_all['rgb_filled'], ob_all['depth']], axis=2)
+        if not sensor:
+            ob = np.concatenate([ob_all['rgb_filled'], ob_all['depth']], axis=2)
         ob_sensor = ob_all['nonviz_sensor']
         rews[i] = rew
 
@@ -119,7 +121,8 @@ def traj_segment_generator(pi, env, horizon, stochastic, sensor = False):
             cur_ep_ret = 0
             cur_ep_len = 0
             ob_all = env.reset()
-            ob = np.concatenate([ob_all['rgb_filled'], ob_all['depth']], axis=2)
+            if not sensor:
+                ob = np.concatenate([ob_all['rgb_filled'], ob_all['depth']], axis=2)
             ob_sensor = ob_all['nonviz_sensor']
         t += 1
 
@@ -160,8 +163,6 @@ def learn(env, policy_func, *,
     else:
         ob_space = env.observation_space
     ac_space = env.action_space
-
-
 
     pi = policy_func("pi", ob_space, ac_space) # Construct network for new policy
     oldpi = policy_func("oldpi", ob_space, ac_space) # Network for old policy
@@ -313,11 +314,15 @@ def enjoy(env, policy_func, *,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
         save_name=None,
         save_per_acts=3,
+        sensor=False,
         reload_name=None
         ):
     # Setup losses and stuff
     # ----------------------------------------
-    ob_space = env.observation_space
+    if sensor:
+        ob_space = env.sensor_space
+    else:
+        ob_space = env.observation_space
     ac_space = env.action_space
     pi = policy_func("pi", ob_space, ac_space) # Construct network for new policy
     oldpi = policy_func("oldpi", ob_space, ac_space) # Network for old policy
@@ -364,7 +369,7 @@ def enjoy(env, policy_func, *,
 
     # Prepare for rollouts
     # ----------------------------------------
-    seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True)
+    seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=True, sensor=sensor)
 
     episodes_so_far = 0
     timesteps_so_far = 0

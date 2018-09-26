@@ -10,7 +10,7 @@ from gibson.core.physics.scene_stadium import SinglePlayerStadiumScene
 import pybullet_data
 import cv2
 
-CALC_OBSTACLE_PENALTY = 1
+CALC_OBSTACLE_PENALTY = 0
 
 tracking_camera = {
     'yaw': 110,
@@ -105,14 +105,19 @@ class HuskyNavigateEnv(CameraRobotEnv):
         if debugmode:
             print("angle cost", angle_cost)
 
+        height = self.robot.get_position()[2]
+        pitch = self.robot.get_rpy()[1]
+        alive = float(self.robot.alive_bonus(height, pitch))
+        
         debugmode = 0
         if (debugmode):
-            print("Wall contact points", len(wall_contact))
+            #print("Wall contact points", len(wall_contact))
             print("Collision cost", wall_collision_cost)
-            print("electricity_cost", electricity_cost)
+            #print("electricity_cost", electricity_cost)
             print("close to target", close_to_target)
-            #print("progress")
-            #print(progress)
+            print("Obstacle penalty", obstacle_penalty)
+            print("Steering cost", steering_cost)
+            print("progress", progress)
             #print("electricity_cost")
             #print(electricity_cost)
             #print("joints_at_limit_cost")
@@ -123,11 +128,11 @@ class HuskyNavigateEnv(CameraRobotEnv):
         rewards = [
             #alive,
             progress,
-            #wall_collision_cost,
+            wall_collision_cost,
             close_to_target,
             steering_cost,
-            angle_cost,
-            obstacle_penalty
+            #angle_cost,
+            #obstacle_penalty
             #electricity_cost,
             #joints_at_limit_cost,
             #feet_collision_cost
@@ -137,9 +142,8 @@ class HuskyNavigateEnv(CameraRobotEnv):
     def _termination(self, debugmode=False):
         height = self.robot.get_position()[2]
         pitch = self.robot.get_rpy()[1]
-        alive = float(self.robot.alive_bonus(height, pitch))
-        
-        alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
+        alive = float(self.robot.alive_bonus(height, pitch)) > 0
+        #alive = len(self.robot.parts['top_bumper_link'].contact_list()) == 0
 
         done = not alive or self.nframe > 250 or height < 0
         #if done:
