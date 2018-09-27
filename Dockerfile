@@ -3,7 +3,7 @@
 # docker build -t gibson .
 # docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix gibson
 
-FROM nvidia/cudagl:9.0-base-ubuntu16.04
+FROM nvidia/cudagl:9.0-runtime-ubuntu16.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-samples-$CUDA_PKG_VERSION && \
