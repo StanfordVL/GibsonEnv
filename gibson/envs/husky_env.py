@@ -378,7 +378,7 @@ class HuskySemanticNavigateEnv(SemanticRobotEnv):
         self.visualid = -1
         self.lastid = None
         self.gui = self.config["mode"] == "gui"
-        
+
         if self.gui:
             self.visualid = p.createVisualShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2], rgbaColor=[1, 0, 0, 0.7])
         self.colisionid = p.createCollisionShape(p.GEOM_MESH, fileName=os.path.join(pybullet_data.getDataPath(), 'cube.obj'), meshScale=[0.2, 0.2, 0.2])
@@ -389,7 +389,7 @@ class HuskySemanticNavigateEnv(SemanticRobotEnv):
         self.semantic_flagIds = []
 
         debug_semantic = 1
-        if debug_semantic:
+        if debug_semantic and self.gui:
             for i in range(self.semantic_pos.shape[0]):
                 pos = self.semantic_pos[i]
                 pos[2] += 0.2   # make flag slight above object 
