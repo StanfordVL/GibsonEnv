@@ -86,12 +86,16 @@ We use docker to distribute our software, you need to install [docker](https://d
 
 Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
 
-You can either 1. pull from our docker image or 2. build your own docker image.
+You can either 1. pull from our docker image (recommended) or 2. build your own docker image.
 
 
 1. Pull from our docker image (recommended)
+
 ```bash
+# download the dataset from https://storage.googleapis.com/gibsonassets/dataset.tar.gz
 docker pull xf1280/gibson:0.3.1
+xhost +local:root
+docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset xf1280/gibson:0.3.1
 ```
 
 2. Build your own docker image 
@@ -100,10 +104,10 @@ git clone https://github.com/StanfordVL/GibsonEnv.git
 cd GibsonEnv
 ./download.sh # this script downloads assets data file and decpmpress it into gibson/assets folder
 docker build . -t gibson ### finish building inside docker, note by default, dataset will not be included in the docker images
+xhost +local:root ## enable display from docker
 ```
 If the installation is successful, you should be able to run `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson` to create a container. Note that we don't include
-dataset files in docker image to keep our image slim, so you will need to mount it to the container when you start a container.
-
+dataset files in docker image to keep our image slim, so you will need to mount it to the container when you start a container. 
 
 #### Notes on deployment on a headless server
 
