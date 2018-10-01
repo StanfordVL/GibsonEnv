@@ -4,7 +4,7 @@ You shouldn't play video games all day, so shouldn't your AI! We built a virtual
 
 <img src=misc/ui.gif width="600">
  
-**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in simulation which consequently casts a question on transferring to real-world. We developed Gibson environment with the following primary characteristics:  
+**Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in the simulation which consequently casts a question on transferring to real-world. We developed Gibson environment with the following primary characteristics:  
 
 **I.** being from the real-world and reflecting its semantic complexity through virtualizing real spaces,  
 **II.** having a baked-in mechanism for transferring to real-world (Goggles function), and  
@@ -29,7 +29,7 @@ Release
 
 Database
 =================
-The full database includes 572 spaces and 1440 floors and can be downloaded [here](gibson/data/README.md). A diverse set of visualizations of all spaces in Gibson can be seen [here](http://gibsonenv.stanford.edu/database/). To make the core assets download package lighter for the users, we are including a small subset (9) of the spaces. Users can download the rest of the spaces and add them to the assets folder. We also integrated [Stanford 2D3DS](http://3dsemantics.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/) as separate datasets if one wishes to use Gibson's simulator with those datasets (access [here](gibson/data/README.md)).
+The full database includes 572 spaces and 1440 floors and can be downloaded [here](gibson/data/README.md). A diverse set of visualizations of all spaces in Gibson can be seen [here](http://gibsonenv.stanford.edu/database/). To make the core assets download package lighter for the users, we  include a small subset (39) of the spaces. Users can download the rest of the spaces and add them to the assets folder. We also integrated [Stanford 2D3DS](http://3dsemantics.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/) as separate datasets if one wishes to use Gibson's simulator with those datasets (access [here](gibson/data/README.md)).
 
 Table of contents
 =================
@@ -56,7 +56,7 @@ Installation
 
 #### Installation Method
 
-There are two ways to instal gibson, A. using our docker image (recommended) and B. building from srouce. 
+There are two ways to install gibson, A. using our docker image (recommended) and B. building from source. 
 
 #### System requirements
 
@@ -102,7 +102,7 @@ docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd GibsonEnv
-./download.sh # this script downloads assets data file and decpmpress it into gibson/assets folder
+./download.sh # this script downloads assets data file and decompress it into gibson/assets folder
 docker build . -t gibson ### finish building inside docker, note by default, dataset will not be included in the docker images
 xhost +local:root ## enable display from docker
 ```
@@ -117,9 +117,9 @@ Instructions to run gibson on a headless server (requires X server running):
 
 1. Install nvidia-docker2 dependencies following the starter guide. Install `x11vnc` with `sudo apt-get install x11vnc`.
 2. Have xserver running on your host machine, and run `x11vnc` on DISPLAY :0.
-2. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset <gibson image name>`
-5. Run gibson with `python <gibson example or training>` inside docker.
-6. Visit your `host:5900` and you should be able to see the GUI.
+3. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset <gibson image name>`
+4. Run gibson with `python <gibson example or training>` inside docker.
+5. Visit your `host:5900` and you should be able to see the GUI.
 
 If you don't have X server running, you can still run gibson, see [this guide](https://github.com/StanfordVL/GibsonEnv/wiki/Running-GibsonEnv-on-headless-server) for more details.
 
@@ -150,12 +150,12 @@ Clone the repository, download data and build
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd GibsonEnv
-./download.sh # this script downloads assets data file and decpmpress it into gibson/assets folder
+./download.sh # this script downloads assets data file and decompress it into gibson/assets folder
 ./build.sh build_local ### build C++ and CUDA files
 pip install -e . ### Install python libraries
 ```
 
-Install OpenAI baselines if you need to run training demo.
+Install OpenAI baselines if you need to run the training demo.
 
 ```bash
 git clone https://github.com/fxia22/baselines.git
@@ -192,15 +192,15 @@ python examples/demo/play_husky_camera.py ### Use ASWD keys on your keyboard to 
 You will able to use ASWD keys on your keyboard to control a car to navigate around Gates building. You will also be able to see the RGB and depth camera outputs. 
 
 ```bash
-python examples/train/train_husky_navigate_ppo2.py ### Use PPO2 to train a car to navigate down the hall way in Gates building, using visual input from the camera.
+python examples/train/train_husky_navigate_ppo2.py ### Use PPO2 to train a car to navigate down the hallway in Gates building, using visual input from the camera.
 ```
 
 <img src=misc/husky_train.png width="800">
-By running this command you will start training a husky robot  to navigate in Gates building and go down the corridor with RGBD input. You will see some RL related statistics in the terminal after each episode.
+By running this command you will start training a husky robot to navigate in Gates building and go down the corridor with RGBD input. You will see some RL related statistics in the terminal after each episode.
 
 
 ```bash
-python examples/train/train_ant_navigate_ppo1.py ### Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera.
+python examples/train/train_ant_navigate_ppo1.py ### Use PPO1 to train an ant to navigate down the hallway in Gates building, using visual input from the camera.
 ```
 
 <img src=misc/ant_train.png width="800">
@@ -210,7 +210,7 @@ By running this command you will start training an ant to navigate in Gates buil
 
 Gibson Framerate
 ----
-Below is Gibson Environment's framerate benchmarked on different platforms. Please refer to [fps branch](https://github.com/StanfordVL/GibsonEnv/tree/fps) for code to reproduce the results.
+Below is Gibson Environment's framerate benchmarked on different platforms. Please refer to [fps branch](https://github.com/StanfordVL/GibsonEnv/tree/fps) for the code to reproduce the results.
 <table class="table">
   <tr>
     <th scope="row">Platform</th>
@@ -377,9 +377,9 @@ More training code can be found in `examples/train` folder.
 
 | Example        | Explanation          |
 |:-------------: |:-------------| 
-|`train_husky_navigate_ppo2.py`|   Use PPO2 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
-|`train_husky_navigate_ppo1.py`|   Use PPO1 to train a car to navigate down the hall way in Gates building, using RGBD input from the camera.|
-|`train_ant_navigate_ppo1.py`| Use PPO1 to train an ant to navigate down the hall way in Gates building, using visual input from the camera. |
+|`train_husky_navigate_ppo2.py`|   Use PPO2 to train a car to navigate down the hallway in Gates building, using RGBD input from the camera.|
+|`train_husky_navigate_ppo1.py`|   Use PPO1 to train a car to navigate down the hallway in Gates building, using RGBD input from the camera.|
+|`train_ant_navigate_ppo1.py`| Use PPO1 to train an ant to navigate down the hallway in Gates building, using visual input from the camera. |
 |`train_ant_climb_ppo1.py`| Use PPO1 to train an ant to climb down the stairs in Gates building, using visual input from the camera.  |
 |`train_ant_gibson_flagrun_ppo1.py`| Use PPO1 to train an ant to chase a target (a red cube) in Gates building. Everytime the ant gets to target(or time out), the target will change position.|
 |`train_husky_gibson_flagrun_ppo1.py`|Use PPO1 to train a car to chase a target (a red cube) in Gates building. Everytime the car gets to target(or time out), the target will change position. |
@@ -431,17 +431,17 @@ Each environment is configured with a `yaml` file. Examples of `yaml` files can 
 |initial_pos | [-7, 2.6, 0.5] | initial position (in meter) for navigating, the reference frame is world frame|
 |fov | 1.57  | field of view for the camera, in radian |
 | use_filler | true/false  | use neural network filler or not. It is recommended to leave this argument true. See [Gibson Environment website](http://gibson.vision/) for more information. |
-|display_ui | true/false  | Gibson has two ways of showing visual output, either in multiple windows, or aggregate them into a single pygame window. This argument determiens whether to show pygame ui or not, if in a production environment (training), you need to turn this off |
+|display_ui | true/false  | Gibson has two ways of showing visual output, either in multiple windows, or aggregate them into a single pygame window. This argument determines whether to show pygame ui or not, if in a production environment (training), you need to turn this off |
 |show_diagnostics | true/false  | show dignostics(including fps, robot position and orientation, accumulated rewards) overlaying on the RGB image |
 |ui_num |2  | how many ui components to show, this should be length of ui_components. |
 | ui_components | [RGB_FILLED, DEPTH]  | which are the ui components, choose from [RGB_FILLED, DEPTH, NORMAL, SEMANTICS, RGB_PREFILLED] |
 |output | [nonviz_sensor, rgb_filled, depth]  | output of the environment to the robot, choose from  [nonviz_sensor, rgb_filled, depth]. These values are independent of `ui_components`, as `ui_components` determines what to show and `output` determines what the robot receives. |
 |resolution | 512 | choose from [128, 256, 512] resolution of rgb/depth image |
 |initial_orn | [0, 0, 3.14] | initial orientation (in radian) for navigating, the reference frame is world frame |
-|speed : timestep | 0.01 | length of one physics simulation step in seconds(as defined in [Bullet](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit)). For example, if timestep=0.01 sec, frameskip=10, and the environment is running at 100fps, it will be 10x real time. Note: setting timestep above 0.1 can cause instability in current version of Bullet simulator since an object should not travel faster than its own radius within one timestep. You can keep timestep at a low value but increase frameskip to siumate at a faster speed. See [Bullet guide](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit) under "discrete collision detection" for more info.|
+|speed : timestep | 0.01 | length of one physics simulation step in seconds(as defined in [Bullet](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit)). For example, if timestep=0.01 sec, frameskip=10, and the environment is running at 100fps, it will be 10x real time. Note: setting timestep above 0.1 can cause instability in current version of Bullet simulator since an object should not travel faster than its own radius within one timestep. You can keep timestep at a low value but increase frameskip to simulate at a faster speed. See [Bullet guide](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit) under "discrete collision detection" for more info.|
 |speed : frameskip | 10 | how many timestep to skip when rendering frames. See above row for an example. For tasks that does not require high frequency control, you can set frameskip to larger value to gain further speed up. |
 |mode | gui/headless  | gui or headless, if in a production environment (training), you need to turn this to headless. In gui mode, there will be visual output; in headless mode, there will be no visual output. |
-|verbose |true/false  | show dignostics in terminal |
+|verbose |true/false  | show diagnostics in terminal |
 |fast_lq_render| true/false| if there is fast_lq_render in yaml file, Gibson will use a smaller filler network, this will render faster but generate slightly lower quality camera output. This option is useful for training RL agents fast. |
 
 #### Making Your Customized Environment
@@ -462,12 +462,12 @@ Gibson provides a set of methods for you to define your own environments. You ca
 
 Goggles: transferring the agent to real-world
 =================
-Gibson includes a baked-in domain adaptation mechanism, named Goggles, for when an agent trained in Gibson is going to be deployed in real-world (i.e. operate based on images coming from an onboard camera). The mechanims is essentially a learned inverse function that alters the frames coming from a real camera to what they would look like if they were rendered via Gibson, and hence, disolve the domain gap. 
+Gibson includes a baked-in domain adaptation mechanism, named Goggles, for when an agent trained in Gibson is going to be deployed in real-world (i.e. operate based on images coming from an onboard camera). The mechanisms is essentially a learned inverse function that alters the frames coming from a real camera to what they would look like if they were rendered via Gibson, and hence, disolve the domain gap. 
 
 <img src=http://gibson.vision/public/img/figure4.jpg width="600">
 
 
-**More details:** With all the imperfections in point cloud rendering, it has been proven difficult to get completely photo-realistic rendering with neural network fixes. The remaining issues make a domain gap between the synthesized and real images. Therefore, we formulate the rendering problem as forming a joint space ensuring a correspondence between rendered and real images, rather than trying to (unsuccessfuly) render images that are identical to real ones. This provides a deterministic pathway for traversing across these domains and hence undoing the gap. We add another network "u" for target image (I_t) and define the rendering loss to minimize the distance between f(I_s) and u(I_t), where "f" and "I_s" represent the filler neural network and point cloud rendering output, respectively (see the loss in above figure). We use the same network structure for f and u. The function u(I) is trained to alter the observation in real-world, I_t, to look like the corresponding I_s and consequently dissolve the gap. We named the u network goggles, as it resembles corrective lenses for the anget for deploymen in real-world. Detailed formulation and discussion of the mechanism can be found in the paper. You can download the function u and apply it when you deploy your trained agent in real-world.
+**More details:** With all the imperfections in point cloud rendering, it has been proven difficult to get completely photo-realistic rendering with neural network fixes. The remaining issues make a domain gap between the synthesized and real images. Therefore, we formulate the rendering problem as forming a joint space ensuring a correspondence between rendered and real images, rather than trying to (unsuccessfully) render images that are identical to real ones. This provides a deterministic pathway for traversing across these domains and hence undoing the gap. We add another network "u" for target image (I_t) and define the rendering loss to minimize the distance between f(I_s) and u(I_t), where "f" and "I_s" represent the filler neural network and point cloud rendering output, respectively (see the loss in above figure). We use the same network structure for f and u. The function u(I) is trained to alter the observation in real-world, I_t, to look like the corresponding I_s and consequently dissolve the gap. We named the u network goggles, as it resembles corrective lenses for the agent for deployment in real-world. Detailed formulation and discussion of the mechanism can be found in the paper. You can download the function u and apply it when you deploy your trained agent in real-world.
 
 In order to use goggle, you will need preferably a camera with depth sensor, we provide an example [here](examples/ros/gibson-ros/goggle.py) for Kinect. The trained goggle functions are stored in `assets/unfiller_{resolution}.pth`, and each one is paired with one filler function. You need to use the correct one depending on which filler function is used. If you don't have a camera with depth sensor, we also provide an example for RGB only [here](examples/demo/goggle_video.py).
 
