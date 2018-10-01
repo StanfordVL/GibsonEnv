@@ -86,9 +86,15 @@ We use docker to distribute our software, you need to install [docker](https://d
 
 Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
 
-You can either 1. build your own docker image or 2. pull from our docker image.
+You can either 1. pull from our docker image or 2. build your own docker image.
 
-1. Build your own docker image (recommended)
+
+1. Pull from our docker image (recommended)
+```bash
+docker pull xf1280/gibson:0.3.1
+```
+
+2. Build your own docker image 
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd GibsonEnv
@@ -99,26 +105,19 @@ If the installation is successful, you should be able to run `docker run --runti
 dataset files in docker image to keep our image slim, so you will need to mount it to the container when you start a container.
 
 
-2. Or pull from our docker image
-```bash
-docker pull xf1280/gibson:0.3.1
-```
 #### Notes on deployment on a headless server
 
-We have another docker file that supports deployment on a headless server and remote access with TurboVNC+virtualGL. 
-You can build your own docker image with the docker file `Dockerfile_server`.
+Gibson Env supports deployment on a headless server and remote access with `x11vnc`. 
+You can build your own docker image with the docker file `Dockerfile` as above.
 Instructions to run gibson on a headless server (requires X server running):
 
-1. Install nvidia-docker2 dependencies following the starter guide.
-2. Use `openssl req -new -x509 -days 365 -nodes -out self.pem -keyout self.pem` create `self.pem` file
-3. `docker build -f Dockerfile_server -t gibson_server .` use the `Dockerfile_server` to build a new docker image that support virtualgl and turbovnc
-4. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset -p 5901:5901 gibson_server`
-in docker terminal, start `/opt/websockify/run 5901 --web=/opt/noVNC --wrap-mode=ignore -- vncserver :1 -securitytypes otp -otp -noxstartup` in background, potentially with `tmux`
-5. Run gibson with `DISPLAY=:1 vglrun python <gibson example or training>`
-6. Visit your `host:5901` and type in one time password to see the GUI.
+1. Install nvidia-docker2 dependencies following the starter guide. Install `x11vnc` with `sudo apt-get install x11vnc`.
+2. Have xserver running on your host machine, and run `x11vnc` on DISPLAY :0.
+2. `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset <gibson image name>`
+5. Run gibson with `python <gibson example or training>` inside docker.
+6. Visit your `host:5900` and you should be able to see the GUI.
 
 If you don't have X server running, you can still run gibson, see [this guide](https://github.com/StanfordVL/GibsonEnv/wiki/Running-GibsonEnv-on-headless-server) for more details.
-
 
 B. Building from source
 -----
@@ -168,7 +167,7 @@ Uninstall gibson is easy. If you installed with docker, just run `docker images 
 Quick Start
 =================
 
-First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0.0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson`, you will get an interactive shell. Now you can run a few demos. 
+First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson`, you will get an interactive shell. Now you can run a few demos. 
 
 If you installed from source, you can run those directly using the following commands without using docker. 
 
