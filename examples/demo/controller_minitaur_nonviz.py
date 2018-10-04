@@ -50,12 +50,14 @@ class SinePolicyController:
       amplitude1 = self.amplitude_1_bound
       amplitude2 = self.amplitude_2_bound
       steering_amplitude = 0
+      """
       if t < 10:
         steering_amplitude = 0.1
       elif t < 20:
         steering_amplitude = -0.1
       else:
         steering_amplitude = 0
+     """
 
       # Applying asymmetrical sine gaits to different legs can steer the minitaur.
       a1 = math.sin(t * self.speed) * (amplitude1 + steering_amplitude)
@@ -132,8 +134,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     env = MinitaurNavigateEnv(config = args.config)
-    controller = SinePolicyLeftController()
+    #controller = SinePolicyController()
 
     env.reset()
+    action = [0]*8
     while True:
-      controller.act(env)
+      #controller.act(env)
+      env.step(action)

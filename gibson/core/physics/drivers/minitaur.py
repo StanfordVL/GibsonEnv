@@ -7,6 +7,7 @@ import numpy as np
 from gibson.core.physics import motor
 from gibson.core.physics.robot_locomotors import WalkerBase
 from gibson.core.physics.robot_bases import Joint, BodyPart
+from gibson.core.physics.drivers.minitaur_controllers import SinePolicyController
 import os, sys
 import pybullet as p
 import gym
@@ -60,13 +61,15 @@ class MinitaurBase(WalkerBase):
     applied_motor_torques = np.zeros(num_motors)
     max_force = 5.5
     joint_name_to_id = None
+    controller = None
         
     """The minitaur class that simulates a quadruped robot from Ghost Robotics.
     """
 
     def __init__(self, config, env=None,
                  pd_control_enabled=True,
-                 accurate_motor_model_enabled=True):
+                 accurate_motor_model_enabled=True,
+                 use_sine_controller=True):
         """Constructs a minitaur and reset it to the initial states.
 
         Properties:
@@ -120,6 +123,9 @@ class MinitaurBase(WalkerBase):
         else:
             self._kp = 1
             self._kd = 1
+
+        if use_sine_controller:
+            self.controller = SinePolicyController(self)
 
         if config["is_discrete"]:
             self.action_space = gym.spaces.Discrete(17)

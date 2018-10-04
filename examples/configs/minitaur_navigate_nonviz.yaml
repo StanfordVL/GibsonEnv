@@ -10,8 +10,8 @@ is_discrete: false
 use_filler: true
 display_ui: true
 show_diagnostics: false
-ui_num: 2
-ui_components: [RGB_FILLED, DEPTH]
+ui_num: 1
+ui_components: [RGB_FILLED]
 random:
   random_initial_pose : false
   random_target_pose : false
@@ -20,12 +20,13 @@ random:
   random_init_z_range: [-0.1, 0.1]
   random_init_rot_range: [-0.1, 0.1]
 
-output: [nonviz_sensor]
-resolution: 256
+output: [nonviz_sensor, rgb_filled]
+resolution: 128
 
 speed:
   timestep: 0.001
-  frameskip: 1
+  frameskip: 100
 
 mode: gui #gui|headless
 verbose: false
+fast_lq_render: true
