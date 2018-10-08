@@ -68,7 +68,7 @@ class MinitaurBase(WalkerBase):
     def __init__(self, config, env=None,
                  pd_control_enabled=True,
                  accurate_motor_model_enabled=True,
-                 use_sine_controller=True):
+                 use_controller='forward'):
         """Constructs a minitaur and reset it to the initial states.
 
         Properties:
@@ -123,8 +123,11 @@ class MinitaurBase(WalkerBase):
             self._kp = 1
             self._kd = 1
 
-        if use_sine_controller:
-            self.controller = ForwardSinePolicyController(time_step=self.time_step)
+        if use_controller:
+            if use_controller == 'forward':
+                self.controller = ForwardSinePolicyController(time_step=self.time_step)
+            elif use_controller == 'vector':
+                self.controller = VectorSinePolicyController(time_step=self.time_step)
 
         if config["is_discrete"]:
             self.action_space = gym.spaces.Discrete(17)
