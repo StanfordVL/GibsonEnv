@@ -6,12 +6,11 @@ class SinePolicyController:
     # Leg model enabled
     # Accurate model enabled
     # pd control enabled
-    def __init__(self, robot):
+    def __init__(self, time_step=.001):
         self.period = 40
         self.step_count = 0
-        self.time_step = 0.001
+        self.time_step = time_step
         self.t = 0
-        self.robot = robot
 
     def translate_action_to_motor_commands(self, a):
         self.t = self.step_count * self.time_step
@@ -30,7 +29,6 @@ class SinePolicyController:
 
         action = [a1, a2, a2, a1, a3, a4, a4, a3]
 
-        action = self.robot.ConvertFromLegModel(action)
         return action
 
 class VelocitySinePolicyController:

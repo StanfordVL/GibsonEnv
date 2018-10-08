@@ -124,7 +124,7 @@ class MinitaurBase(WalkerBase):
             self._kd = 1
 
         if use_sine_controller:
-            self.controller = SinePolicyController(self)
+            self.controller = SinePolicyController(time_step=self.time_step)
 
         if config["is_discrete"]:
             self.action_space = gym.spaces.Discrete(17)
@@ -398,6 +398,7 @@ class MinitaurBase(WalkerBase):
         """
         if self.controller:
             motor_commands = self.controller.translate_action_to_motor_commands(motor_commands)
+            motor_commands = self.ConvertFromLegModel(motor_commands)
         #print("motor commands 1", motor_commands)
         if self.motor_velocity_limit < np.inf:
             current_motor_angle = self.GetMotorAngles()
