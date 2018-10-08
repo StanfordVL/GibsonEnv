@@ -7,7 +7,7 @@ import numpy as np
 from gibson.core.physics import motor
 from gibson.core.physics.robot_locomotors import WalkerBase
 from gibson.core.physics.robot_bases import Joint, BodyPart
-from gibson.core.physics.drivers.minitaur_controllers import SinePolicyController
+from gibson.core.physics.drivers.minitaur_controllers import ForwardSinePolicyController
 import os, sys
 import pybullet as p
 import gym
@@ -124,7 +124,7 @@ class MinitaurBase(WalkerBase):
             self._kd = 1
 
         if use_sine_controller:
-            self.controller = SinePolicyController(time_step=self.time_step)
+            self.controller = ForwardSinePolicyController(time_step=self.time_step)
 
         if config["is_discrete"]:
             self.action_space = gym.spaces.Discrete(17)
