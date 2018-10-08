@@ -185,11 +185,7 @@ class BaseRobotEnv(BaseEnv):
         self.nframe += 1
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             for _ in range(self.frame_skip):
-                if self.robot.controller:
-                    motor_commands = self.robot.controller.translate_action_to_motor_commands(a)
-                else:
-                    motor_commands = a
-                self.robot.apply_action(motor_commands)
+                self.robot.apply_action(a)
                 self.scene.global_step()
 
         self.rewards = self._rewards(a)

@@ -29,4 +29,3 @@ speed:
 
 mode: gui #gui|headless
 verbose: false
-fast_lq_render: true

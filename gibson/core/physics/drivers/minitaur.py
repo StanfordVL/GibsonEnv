@@ -61,7 +61,6 @@ class MinitaurBase(WalkerBase):
     applied_motor_torques = np.zeros(num_motors)
     max_force = 5.5
     joint_name_to_id = None
-    controller = None
         
     """The minitaur class that simulates a quadruped robot from Ghost Robotics.
     """
@@ -397,6 +396,8 @@ class MinitaurBase(WalkerBase):
         Args:
           motor_commands: The eight desired motor angles.
         """
+        if self.controller:
+            motor_commands = self.controller.translate_action_to_motor_commands(motor_commands)
         #print("motor commands 1", motor_commands)
         if self.motor_velocity_limit < np.inf:
             current_motor_angle = self.GetMotorAngles()
