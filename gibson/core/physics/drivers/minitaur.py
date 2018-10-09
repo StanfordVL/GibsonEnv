@@ -7,6 +7,7 @@ import numpy as np
 from gibson.core.physics import motor
 from gibson.core.physics.robot_locomotors import WalkerBase
 from gibson.core.physics.robot_bases import Joint, BodyPart
+from gibson.core.physics.drivers.minitaur_controllers import ForwardSinePolicyController
 import os, sys
 import pybullet as p
 import gym
@@ -66,7 +67,8 @@ class MinitaurBase(WalkerBase):
 
     def __init__(self, config, env=None,
                  pd_control_enabled=True,
-                 accurate_motor_model_enabled=True):
+                 accurate_motor_model_enabled=True,
+                 use_controller='forward'):
         """Constructs a minitaur and reset it to the initial states.
 
         Properties:
@@ -120,6 +122,12 @@ class MinitaurBase(WalkerBase):
         else:
             self._kp = 1
             self._kd = 1
+
+        if use_controller:
+            if use_controller == 'forward':
+                self.controller = ForwardSinePolicyController(time_step=self.time_step)
+            elif use_controller == 'vector':
+                self.controller = VectorSinePolicyController(time_step=self.time_step)
 
         if config["is_discrete"]:
             self.action_space = gym.spaces.Discrete(17)
@@ -391,6 +399,9 @@ class MinitaurBase(WalkerBase):
         Args:
           motor_commands: The eight desired motor angles.
         """
+        if self.controller:
+            motor_commands = self.controller.translate_action_to_motor_commands(motor_commands)
+            motor_commands = self.ConvertFromLegModel(motor_commands)
         #print("motor commands 1", motor_commands)
         if self.motor_velocity_limit < np.inf:
             current_motor_angle = self.GetMotorAngles()

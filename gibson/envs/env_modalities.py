@@ -56,6 +56,8 @@ class BaseRobotEnv(BaseEnv):
         self.walk_target_y = 0
         self.k = 5
         self.robot_tracking_id = -1
+        self.time_step = self.config["speed"]["timestep"]
+        self.frame_skip = self.config["speed"]["frameskip"]
 
         self.scale_up  = 4
         self.dataset = None
@@ -182,8 +184,9 @@ class BaseRobotEnv(BaseEnv):
     def _step(self, a):
         self.nframe += 1
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
-            self.robot.apply_action(a)
-            self.scene.global_step()
+            for _ in range(self.frame_skip):
+                self.robot.apply_action(a)
+                self.scene.global_step()
 
         self.rewards = self._rewards(a)
         done = self._termination()
