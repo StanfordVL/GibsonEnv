@@ -14,7 +14,6 @@ class Scene:
         self.frame_skip = frame_skip
         self.env = env
 
-        self.dt = self.timestep * self.frame_skip
         self.cpp_world = World(gravity, timestep, frame_skip)
 
         self.test_window_still_open = True  # or never opened
@@ -68,7 +67,7 @@ class World:
         #p.resetSimulation()
         p.setGravity(0, 0, -self.gravity)
         #p.setDefaultContactERP(0.9)
-        p.setPhysicsEngineParameter(fixedTimeStep=self.timestep*self.frame_skip, numSolverIterations=50, numSubSteps=(self.frame_skip-1))
+        p.setPhysicsEngineParameter(fixedTimeStep=self.timestep, numSolverIterations=50)
 
     def step(self, frame_skip):
         if self._is_render:

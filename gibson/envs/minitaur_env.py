@@ -177,7 +177,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
           ValueError: The magnitude of actions is out of bounds.
         """
         #print("Env apply raw action", action)
-        action = self._transform_action_to_motor_command(action)
+        #action = self._transform_action_to_motor_command(action)
         #print("Env apply action", action)
     
         #for _ in range(self._action_repeat):

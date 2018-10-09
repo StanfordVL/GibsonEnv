@@ -61,7 +61,7 @@ RUN apt-get update && apt-get install -y \
 	apt-get autoremove && \
 	rm -rf /var/cache/apk/*
 
-RUN  apt-get install -y vim wget unzip 
+RUN  apt-get install -y vim wget unzip tmux
 
 RUN  apt-get install -y libzmq3-dev
 
