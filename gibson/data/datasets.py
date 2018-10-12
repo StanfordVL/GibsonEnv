@@ -190,7 +190,7 @@ class ViewDataSet3D(data.Dataset):
         self.depth_trans = mist_transform
         self.semantic_trans = semantic_transform
         self._require_semantics = "SEMANTICS" in self.env.config["ui_components"]
-        self._require_rgb = "RGB_FILLED" in self.env.config["ui_components"] or "RGB_PREFILLED" in self.env.config["ui_components"]
+        self._require_rgb = "RGB_FILLED" in self.env.config["ui_components"] or "RGB_PREFILLED" in self.env.config["ui_components"] or "rgb_filled" in self.env.config["output"] or "rgb_prefill" in self.env.config["output"]
         self.off_3d = off_3d
         self.select = []
         self.fofn = self.root + '_fofn' + str(int(train)) + '.pkl'

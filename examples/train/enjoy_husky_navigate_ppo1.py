@@ -11,9 +11,10 @@ from baselines.common import set_global_seeds
 from gibson.utils import pposgd_simple
 import baselines.common.tf_util as U
 from gibson.utils import utils
+from gibson.utils import cnn_policy, mlp_policy
 import datetime
 from baselines import logger
-from baselines import bench
+from gibson.utils.monitor import Monitor
 import os.path as osp
 import tensorflow as tf
 import random
@@ -39,25 +40,20 @@ def train(num_timesteps, seed):
 
     use_filler = not args.disable_filler
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
-                               'husky_navigate_train.yaml')
+                               'husky_navigate_enjoy.yaml')
     print(config_file)
 
     env = HuskyNavigateEnv(gpu_idx=args.gpu_idx, config = config_file)
 
-    policy = policy_fn("pi", env.observation_space, env.action_space) # Construct network for new policy
-    def execute_policy(env):
-        ob, ob_sensor = env.reset()
-        stochastic=True
-        while True:
-            #with Profiler("agent act"):
-            ac, vpred = policy.act(stochastic, ob)
-            ob, rew, new, meta = env.step(ac)
+    def policy_fn(name, ob_space, ac_space):
+        if args.mode == "SENSOR":
+            return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space, hid_size=64, num_hid_layers=2)
+        else:
+            #return fuse_policy.FusePolicy(name=name, ob_space=ob_space, sensor_space=sensor_space, ac_space=ac_space, save_per_acts=10000, session=sess)
+        #else:
+            return cnn_policy.CnnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, save_per_acts=10000, session=sess, kind='small')
 
-            if new:
-                ob, ob_sensor = env.reset()
-
-
-    env = bench.Monitor(env, logger.get_dir() and
+    env = Monitor(env, logger.get_dir() and
         osp.join(logger.get_dir(), str(rank)))
     env.seed(workerseed)
     gym.logger.setLevel(logging.WARN)
@@ -70,6 +66,7 @@ def train(num_timesteps, seed):
         gamma=0.99, lam=0.95,
         schedule='linear',
         save_per_acts=50,
+        sensor=args.mode=="SENSOR",
         reload_name=args.reload_name
     )
     env.close()

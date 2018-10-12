@@ -9,13 +9,14 @@ from mpi4py import MPI
 from gibson.envs.husky_env import HuskyNavigateEnv
 from baselines.common import set_global_seeds
 import baselines.common.tf_util as U
-from gibson.utils.fuse_policy2 import CnnPolicy, MlpPolicy
+from gibson.utils.fuse_policy2 import MlpPolicy, MlpPolicy2, CnnPolicy2
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from gibson.utils import utils
 import datetime
 from baselines import logger
 #from baselines.ppo2 import ppo2
 from gibson.utils import ppo2
+from gibson.utils import ppo2_imgs
 from gibson.utils.monitor import Monitor
 import os.path as osp
 import tensorflow as tf
@@ -42,7 +43,10 @@ def train(num_timesteps, seed):
 
     use_filler = not args.disable_filler
 
-    config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate_train.yaml')
+    if args.mode == "SENSOR":
+        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate_nonviz_train.yaml')
+    else:
+        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs', 'husky_navigate_rgb_train.yaml')
     print(config_file)
 
     raw_env = HuskyNavigateEnv(gpu_idx=args.gpu_idx,
@@ -54,14 +58,16 @@ def train(num_timesteps, seed):
 
     gym.logger.setLevel(logging.WARN)
 
+    policy_fn = MlpPolicy if args.mode == "SENSOR" else CnnPolicy2
 
-    ppo2.learn(policy=CnnPolicy, env=env, nsteps=1500, nminibatches=4,
+    ppo2.learn(policy=policy_fn, env=env, nsteps=3000, nminibatches=4,
         lam=0.95, gamma=0.99, noptepochs=4, log_interval=1,
-        ent_coef=.01,
-        lr=lambda f : f * 2.5e-4,
+        ent_coef=.1,
+        lr=lambda f : f * 2e-4,
         cliprange=lambda f : f * 0.2,
         total_timesteps=int(num_timesteps * 1.1),
         save_interval=5,
+        sensor= args.mode == "SENSOR",
         reload_name=args.reload_name)
     
     '''
