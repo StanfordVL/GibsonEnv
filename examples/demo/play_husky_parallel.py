@@ -20,5 +20,5 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, default=config_file)
     parser.add_argument('--gpu', type=int, default=0)
     args = parser.parse_args()
-    env = HuskyNavigateEnv(config=args.config, gpu_count = args.gpu)
+    env = HuskyNavigateEnv(config=args.config, gpu_idx = args.gpu)
     play(env, zoom=4)

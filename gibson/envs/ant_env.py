@@ -24,12 +24,12 @@ tracking_camera = {
 }
 
 class AntNavigateEnv(CameraRobotEnv):
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
 
         self.config = self.parse_config(config)
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+        CameraRobotEnv.__init__(self, self.config, gpu_idx,
                                 scene_type="building",
                                 tracking_camera=tracking_camera)
 
@@ -111,11 +111,11 @@ class AntNavigateEnv(CameraRobotEnv):
 
 
 class AntClimbEnv(CameraRobotEnv):
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
         self.config = self.parse_config(config)
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+        CameraRobotEnv.__init__(self, self.config, gpu_idx,
                                 scene_type="building",
                                 tracking_camera=tracking_camera)
 
@@ -241,11 +241,11 @@ class AntClimbEnv(CameraRobotEnv):
 class AntFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
         self.config = self.parse_config(config)
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+        CameraRobotEnv.__init__(self, self.config, gpu_idx,
                                 scene_type="building",
                                 tracking_camera=tracking_camera)
 
@@ -343,11 +343,11 @@ class AntFlagRunEnv(CameraRobotEnv):
 class AntGibsonFlagRunEnv(CameraRobotEnv):
     """Specfy flagrun reward
     """
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
         self.config = self.parse_config(config)
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+        CameraRobotEnv.__init__(self, self.config, gpu_idx,
                                 scene_type="building",
                                 tracking_camera=tracking_camera)
 
