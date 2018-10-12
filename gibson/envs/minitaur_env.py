@@ -73,7 +73,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
     NUM_SUBSTEPS = 5     # PD control needs smaller time step for stability.
 
 
-    def __init__(self, config, gpu_count=0):
+    def __init__(self, config, gpu_idx=0):
         """Initialize the minitaur gym environment.
         Args:
             distance_weight: The weight of the distance term in the reward.
@@ -94,7 +94,7 @@ class MinitaurNavigateEnv(CameraRobotEnv):
         self.config = self.parse_config(config)
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
-        CameraRobotEnv.__init__(self, self.config, gpu_count, 
+        CameraRobotEnv.__init__(self, self.config, gpu_idx,
                                 scene_type="building",
                                 tracking_camera=tracking_camera)
 
