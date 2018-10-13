@@ -305,7 +305,7 @@ class CameraRobotEnv(BaseRobotEnv):
         BaseRobotEnv.__init__(self, config, tracking_camera, scene_type, gpu_idx)
 
         if self.gui:
-            self.screen_arr = np.zeros([612, 512, 3])
+            self.screen_arr = np.zeros([512, 512, 3])
         
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
         self._use_filler = config["use_filler"]
@@ -374,7 +374,10 @@ class CameraRobotEnv(BaseRobotEnv):
         if self._require_camera_input:
             self.setup_camera_multi()
             self.setup_camera_pc()
-        
+
+        if self.config["mode"] == "web_ui":
+            ui_num = self.config["ui_num"]
+            self.webUI = ui_map[ui_num](self.windowsz, self, self.port_ui, use_pygame=False)
 
     def _reset(self):
         self.reset_observations()
@@ -406,10 +409,14 @@ class CameraRobotEnv(BaseRobotEnv):
         if self.gui:
             if self.config["display_ui"]:
                 self.render_to_UI()
+                print('render to ui')
                 self.save_frame += 1
             elif self._require_camera_input:
                 # Use non-pygame GUI
                 self.r_camera_rgb.renderToScreen()
+
+        if self.config["mode"] == 'web_ui':
+            self.render_to_webUI()
 
         if not self._require_camera_input or self.test_env:
             ## No camera input (rgb/depth/normal/semantics)
@@ -459,6 +466,18 @@ class CameraRobotEnv(BaseRobotEnv):
 
         for component in self.UI.components:
             self.UI.update_view(self.render_component(component), component)
+
+    def render_to_webUI(self):
+        '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO
+        '''
+        if not self.config["mode"] == 'web_ui':
+            return
+
+        self.webUI.refresh()
+
+        for component in self.webUI.components:
+            self.webUI.update_view(self.render_component(component), component)
+
 
 
     def _close(self):

@@ -19,7 +19,7 @@ if __name__ == '__main__':
     env = HuskyNavigateEnv(config=args.config, gpu_idx=args.gpu)
     env.reset()
     frame = 0
-    while frame < 1000:
+    while frame < 10000:
         with Profiler("env step"):
             env.step(2)
 
