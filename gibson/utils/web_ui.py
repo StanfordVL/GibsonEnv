@@ -6,15 +6,15 @@ import zmq
 
 app = Flask(__name__)
 
-port = "6666"
+port = "5552"
 if len(sys.argv) > 1:
     port =  sys.argv[1]
-    int(port)
 
 if len(sys.argv) > 2:
-    port1 =  sys.argv[2]
-    int(port1)
-
+    port_web =  sys.argv[2]
+    port_web = int(port_web)
+else:
+    port_web = 5001
 # Socket to talk to server
 context = zmq.Context()
 socket = context.socket(zmq.SUB)
@@ -22,8 +22,6 @@ socket = context.socket(zmq.SUB)
 print("Collecting updates from server...")
 socket.connect ("tcp://localhost:%s" % port)
 
-if len(sys.argv) > 2:
-    socket.connect ("tcp://localhost:%s" % port1)
 
 topicfilter = b"ui"
 socket.setsockopt(zmq.SUBSCRIBE, topicfilter)
@@ -51,4 +49,4 @@ def video_feed():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=False)
+    app.run(host='0.0.0.0', port=port_web, debug=False)

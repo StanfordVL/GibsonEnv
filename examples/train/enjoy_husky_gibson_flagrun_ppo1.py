@@ -36,7 +36,7 @@ def enjoy(num_timesteps, seed):
 
     config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'configs',
                                'husky_gibson_flagrun_train.yaml')
-    env = HuskyGibsonFlagRunEnv(gpu_count=0, config=config_file)
+    env = HuskyGibsonFlagRunEnv(gpu_idx=0, config=config_file)
     #env = bench.Monitor(env, logger.get_dir() and
     #                    osp.join(logger.get_dir(), str(rank)))
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--mode', type=str, default="DEPTH")
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--gpu_count', type=int, default=0)
+    parser.add_argument('--gpu_idx', type=int, default=0)
     parser.add_argument('--disable_filler', action='store_true', default=False)
     parser.add_argument('--meta', type=str, default="")
     args = parser.parse_args()

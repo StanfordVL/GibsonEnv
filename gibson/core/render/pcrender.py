@@ -98,7 +98,7 @@ def hist_match3(source, template):
 class PCRenderer:
     ROTATION_CONST = np.array([[0,1,0,0],[0,0,1,0],[-1,0,0,0],[0,0,0,1]])
     def __init__(self, port, imgs, depths, target, target_poses, scale_up, semantics=None, \
-                 gui=True,  use_filler=True, gpu_count=0, windowsz=256, env = None):
+                 gui=True,  use_filler=True, gpu_idx=0, windowsz=256, env = None):
 
         self.env = env
         self.roll, self.pitch, self.yaw = 0, 0, 0

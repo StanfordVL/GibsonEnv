@@ -85,7 +85,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--num_gpu', type=int, default=1)
-    parser.add_argument('--gpu_count', type=int, default=0)
+    parser.add_argument('--gpu_idx', type=int, default=0)
     parser.add_argument('--meta', type=str, default="")
     parser.add_argument('--reload_name', type=str, default=None)
     parser.add_argument('--save_name', type=str, default=None)

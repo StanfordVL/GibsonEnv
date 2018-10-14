@@ -48,7 +48,7 @@ class BaseRobotEnv(BaseEnv):
     """
     DEFAULT_PORT = 5556
 
-    def __init__(self, config, tracking_camera, scene_type="building", gpu_count=0):
+    def __init__(self, config, tracking_camera, scene_type="building", gpu_idx=0):
         BaseEnv.__init__(self, config, scene_type, tracking_camera)
 
         self.camera_x = 0
@@ -62,7 +62,7 @@ class BaseRobotEnv(BaseEnv):
         self.ground_ids = None
         if self.gui:
             assert(self.tracking_camera is not None)
-        self.gpu_count = gpu_count
+        self.gpu_idx = gpu_idx
         self.assign_ports()
         self.nframe = 0
         self.eps_reward = 0
@@ -85,7 +85,7 @@ class BaseRobotEnv(BaseEnv):
         | UI        | Default - 4  |
         Default depends on how many Gibson environments are running simultanously
         '''
-        self.port_rgb = self.DEFAULT_PORT - self.gpu_count * 5
+        self.port_rgb = self.DEFAULT_PORT - self.gpu_idx * 5
         self.port_depth = self.port_rgb - 1
         self.port_normal = self.port_rgb - 2
         self.port_sem  = self.port_rgb - 3
@@ -300,12 +300,12 @@ class CameraRobotEnv(BaseRobotEnv):
     PC renderer is not initialized to save time.
     """
     multiprocessing = True
-    def __init__(self, config, gpu_count, scene_type, tracking_camera):
+    def __init__(self, config, gpu_idx, scene_type, tracking_camera):
         ## The following properties are already instantiated inside xxx_env.py:
-        BaseRobotEnv.__init__(self, config, tracking_camera, scene_type, gpu_count)
+        BaseRobotEnv.__init__(self, config, tracking_camera, scene_type, gpu_idx)
 
         if self.gui:
-            self.screen_arr = np.zeros([612, 512, 3])
+            self.screen_arr = np.zeros([512, 512, 3])
         
         self.test_env = "TEST_ENV" in os.environ.keys() and os.environ['TEST_ENV'] == "True"
         self._use_filler = config["use_filler"]
@@ -374,7 +374,10 @@ class CameraRobotEnv(BaseRobotEnv):
         if self._require_camera_input:
             self.setup_camera_multi()
             self.setup_camera_pc()
-        
+
+        if self.config["mode"] == "web_ui":
+            ui_num = self.config["ui_num"]
+            self.webUI = ui_map[ui_num](self.windowsz, self, self.port_ui, use_pygame=False)
 
     def _reset(self):
         self.reset_observations()
@@ -406,10 +409,14 @@ class CameraRobotEnv(BaseRobotEnv):
         if self.gui:
             if self.config["display_ui"]:
                 self.render_to_UI()
+                print('render to ui')
                 self.save_frame += 1
             elif self._require_camera_input:
                 # Use non-pygame GUI
                 self.r_camera_rgb.renderToScreen()
+
+        if self.config["mode"] == 'web_ui':
+            self.render_to_webUI()
 
         if not self._require_camera_input or self.test_env:
             ## No camera input (rgb/depth/normal/semantics)
@@ -459,6 +466,18 @@ class CameraRobotEnv(BaseRobotEnv):
 
         for component in self.UI.components:
             self.UI.update_view(self.render_component(component), component)
+
+    def render_to_webUI(self):
+        '''Works for different UI: UI_SIX, UI_FOUR, UI_TWO
+        '''
+        if not self.config["mode"] == 'web_ui':
+            return
+
+        self.webUI.refresh()
+
+        for component in self.webUI.components:
+            self.webUI.update_view(self.render_component(component), component)
+
 
 
     def _close(self):
@@ -612,7 +631,7 @@ class CameraRobotEnv(BaseRobotEnv):
                                        semantics=source_semantics,
                                        gui=self.gui, 
                                        use_filler=self._use_filler,  
-                                       gpu_count=self.gpu_count, 
+                                       gpu_idx=self.gpu_idx,
                                        windowsz=self.windowsz, 
                                        env = self)
 
@@ -645,10 +664,9 @@ class CameraRobotEnv(BaseRobotEnv):
         cur_path = os.getcwd()
         os.chdir(dr_path)
 
-        render_main  = "./depth_render --modelpath {} -w {} -h {} -f {} -p {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_depth)
-        #render_depth = "./depth_render --modelpath {} -s {} -w {} -h {} -f {}".format(self.model_path, enable_render_smooth ,self.windowsz, self.windowsz, self.config["fov"]/np.pi*180)
-        render_norm  = "./depth_render --modelpath {} -n 1 -w {} -h {} -f {} -p {}".format(self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_normal)
-        render_semt  = "./depth_render --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {} -p {}".format(self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_sem)
+        render_main  = "./depth_render --GPU {} --modelpath {} -w {} -h {} -f {} -p {}".format(self.gpu_idx, self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_depth)
+        render_norm  = "./depth_render --GPU {} --modelpath {} -n 1 -w {} -h {} -f {} -p {}".format(self.gpu_idx, self.model_path, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_normal)
+        render_semt  = "./depth_render --GPU {} --modelpath {} -t 1 -r {} -c {} -w {} -h {} -f {} -p {}".format(self.gpu_idx, self.model_path, self._semantic_source, self._semantic_color, self.windowsz, self.windowsz, self.config["fov"]/np.pi*180, self.port_sem)
         
         self.r_camera_mul = subprocess.Popen(shlex.split(render_main), shell=False)
         #self.r_camera_dep = subprocess.Popen(shlex.split(render_depth), shell=False)
@@ -681,8 +699,8 @@ class CameraRobotEnv(BaseRobotEnv):
 
 
 class SemanticRobotEnv(CameraRobotEnv):
-    def __init__(self, config, gpu_count, scene_type, tracking_camera):
-        CameraRobotEnv.__init__(self, config, gpu_count, scene_type, tracking_camera)
+    def __init__(self, config, gpu_idx, scene_type, tracking_camera):
+        CameraRobotEnv.__init__(self, config, gpu_idx, scene_type, tracking_camera)
 
     def robot_introduce(self, robot):
         CameraRobotEnv.robot_introduce(self, robot)

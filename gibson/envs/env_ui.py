@@ -30,12 +30,14 @@ class View(Enum):
 
 class SimpleUI():
     '''Static UI'''
-    def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=True):
+    def __init__(self, width_col, height_col, windowsz, port, env=None, save_first=True, use_pygame=True):
         self.env = env
         self.width  = width_col * windowsz
         self.height = height_col * windowsz
         self.windowsz = windowsz
-        self.screen = pygame.display.set_mode([self.width, self.height], 0, 32)
+        self.use_pygame = use_pygame
+        if self.use_pygame:
+            self.screen = pygame.display.set_mode([self.width, self.height], 0, 32)
         self.screen_arr = np.zeros([self.width, self.height, 3]).astype(np.uint8)
         self.screen_arr.fill(255)
         self.is_recording = False
@@ -100,14 +102,14 @@ class SimpleUI():
                 #self.curr_output.write(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         
         #with Profiler("Refreshing"):
-        pygame.display.flip()
-        surfarray.blit_array(self.screen, self.screen_arr)
+        if self.use_pygame:
+            pygame.display.flip()
+            surfarray.blit_array(self.screen, self.screen_arr)
         #print(self.screen_arr.shape)
         screen_to_dump = cv2.cvtColor(self.screen_arr.transpose(1,0,2), cv2.COLOR_BGR2RGB)
         screen = pickle.dumps(cv2.imencode('.jpg', screen_to_dump), protocol=0)
 
         self.socket.send(b"ui" + screen)
-
 
 
         #surf = pygame.surfarray.make_surface(self.screen_arr)
@@ -146,23 +148,23 @@ class OneViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Center,
     '''
-    def __init__(self, windowsz=256, env = None, port=-1):
+    def __init__(self, windowsz=256, env = None, port=-1, use_pygame=True):
         self.POS = [
             (0, 0)                 # One
         ]
-        SimpleUI.__init__(self, 1, 1, windowsz, port, env)
+        SimpleUI.__init__(self, 1, 1, windowsz, port, env, use_pygame=use_pygame)
 
 class TwoViewUI(SimpleUI):
     '''UI with four modalities, default resolution
     One: Left,
     Two: Right
     '''
-    def __init__(self, windowsz=256, env = None, port=-1):
+    def __init__(self, windowsz=256, env = None, port=-1, use_pygame=True):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0)           # Two
         ]
-        SimpleUI.__init__(self, 2, 1, windowsz, port, env)
+        SimpleUI.__init__(self, 2, 1, windowsz, port, env, use_pygame=use_pygame)
 
 class ThreeViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -170,13 +172,13 @@ class ThreeViewUI(SimpleUI):
     Two:    center
     Three:  right
     '''
-    def __init__(self, windowsz=256, env = None, port=-1):
+    def __init__(self, windowsz=256, env = None, port=-1, use_pygame=True):
         self.POS = [
             (0, 0),                 # One
             (windowsz, 0),          # Two
             (windowsz * 2, 0)       # Three
         ]
-        SimpleUI.__init__(self, 3, 1, windowsz, port, env)
+        SimpleUI.__init__(self, 3, 1, windowsz, port, env, use_pygame=use_pygame)
 
 class FourViewUI(SimpleUI):
     '''UI with four modalities, default resolution
@@ -185,14 +187,14 @@ class FourViewUI(SimpleUI):
     Three:  bottom left
     Four:   bottom right
     '''
-    def __init__(self, windowsz=256, env = None, port=-1):
+    def __init__(self, windowsz=256, env = None, port=-1, use_pygame=True):
         self.POS = [
             (0, 0),                 # One
             (0, windowsz),          # Two
             (windowsz, 0),          # Three
             (windowsz, windowsz)    # Four
         ]
-        SimpleUI.__init__(self, 2, 2, windowsz, port, env)
+        SimpleUI.__init__(self, 2, 2, windowsz, port, env, use_pygame=use_pygame)
 
 
 def main6():
