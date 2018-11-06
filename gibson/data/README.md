@@ -41,16 +41,16 @@ If you use Gibson's database or software please cite:
 ## Dataset Metadata
 Each space in the database has some metadata with the following attributes associated with it. The metadata is available in this [JSON file](https://raw.githubusercontent.com/StanfordVL/GibsonEnv/master/gibson/data/data.json). 
 ```
-id							# the name of the space, e.g. ""Albertville""
-area						# total metric area of the building, e.g. "266.125" sq. meters
-floor						# number of floors in the space, e.g. "4"
-navigation_complexity		# navigation complexity metric, e.g. "3.737" (see [paper](https://storage.googleapis.com/gibson_material/Gibson_CVPR2018.pdf) for definition)
-room						# number of rooms, e.g. "16"
-ssa							# Specific Surface Area (A measure of clutter), e.g. "1.297" (see [paper](https://storage.googleapis.com/gibson_material/Gibson_CVPR2018.pdf) for definition)
-split_full:					# whether the space is in train/val/test/none split of Full partition 
-split_full+:				# whether the space is in train/val/test/none split of Full+ partition 
-split_medium:				# whether the space is in train/val/test/none split of Medium partition 
-split_tiny:					# whether the space is in train/val/test/none split of Tiny partition 
+id                      # the name of the space, e.g. ""Albertville""
+area                    # total metric area of the building, e.g. "266.125" sq. meters
+floor                   # number of floors in the space, e.g. "4"
+navigation_complexity   # navigation complexity metric, e.g. "3.737" (see the paper for definition)
+room                    # number of rooms, e.g. "16"
+ssa                     # Specific Surface Area (A measure of clutter), e.g. "1.297" (see the paper for definition)
+split_full              # if the space is in train/val/test/none split of Full partition 
+split_full+             # if the space is in train/val/test/none split of Full+ partition 
+split_medium            # if the space is in train/val/test/none split of Medium partition 
+split_tiny              # if the space is in train/val/test/none split of Tiny partition 
 ```
 
 ## Dataset Modalities
