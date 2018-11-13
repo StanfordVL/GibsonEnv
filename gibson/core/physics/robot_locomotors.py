@@ -616,6 +616,37 @@ class Quadrotor(WalkerBase):
         }
 
 
+class VirtualCamera(WalkerBase):
+    model_type = "URDF"
+    default_scale=1
+    mjcf_scaling=1
+
+    def __init__(self, config, env=None):
+        self.config = config
+        scale = config["robot_scale"] if "robot_scale" in config.keys() else self.default_scale
+        self.is_discrete = False
+        WalkerBase.__init__(self, "virtual_cam.urdf", "base_link", action_dim=6,
+                            sensor_dim=20, power=2.5, scale = scale,
+                            initial_pos=config['initial_pos'],
+                            target_pos=config["target_pos"],
+                            resolution=config["resolution"],
+                            env = env)
+
+        action_high = float("inf") * np.ones([7])
+        self.action_space = gym.spaces.Box(-action_high, action_high)
+        self.foot_list = []
+        self.setup_keys_to_action()
+
+    def apply_action(self, action):
+        p.setGravity(0, 0, 0)
+        p.resetBasePositionAndOrientation(self.robot_ids[0], action[:3], action[3:])
+
+    def robot_specific_reset(self):
+        WalkerBase.robot_specific_reset(self)
+
+    def setup_keys_to_action(self):
+        self.keys_to_action = {
+        }
 class Turtlebot(WalkerBase):
     foot_list = []
     mjcf_scaling = 1

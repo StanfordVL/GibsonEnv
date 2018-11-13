@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+
+<robot xmlns="http://drake.mit.edu"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://drake.mit.edu ../../../../pods/drake/doc/drakeURDF.xsd" name="virtual_camera">
+  <link name="base_link">
+    <inertial>
+      <mass value="0"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </visual>
+
+  </link>
+
+
+  <link name="eyes">
+
+    <inertial>
+      <mass value="0"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+  </link>
+
+  <joint name="eyes_joint" type="fixed">
+    <origin rpy="1.57079632679 0 -1.57079632679" xyz="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="eyes"/>
+  </joint>
+
+</robot>
+
