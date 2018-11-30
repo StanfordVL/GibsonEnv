@@ -9,7 +9,7 @@ is_discrete: true
 
 use_filler: true
 display_ui: true
-show_diagnostics: true
+show_diagnostics: false
 ui_num: 2
 ui_components: [RGB_FILLED, DEPTH]
 random:
