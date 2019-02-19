@@ -9,10 +9,14 @@
 #include <chrono>
 #include "boost/multi_array.hpp"
 #include "boost/timer.hpp"
-#include  <glad/egl.h>
+//#include  <glad/egl.h>
 #include  <glad/gl.h>
 // Include GLEW
 //#include <GL/glew.h>
+
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
 #include <GL/glut.h>
 #include "lodepng.h"
 
@@ -218,6 +222,20 @@ struct EGLInternalData2 {
 
 int main( int argc, char * argv[] )
 {
+ PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+               (PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");
+    if(!eglQueryDevicesEXT) {
+         printf("ERROR: extension eglQueryDevicesEXT not available");
+         return(-1);
+    }
+
+    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+               (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+    if(!eglGetPlatformDisplayEXT) {
+         printf("ERROR: extension eglGetPlatformDisplayEXT not available");
+         return(-1);
+    }
+
 
     cmdline::parser cmdp;
     cmdp.add<std::string>("modelpath", 'd', "data model directory", true, "");
@@ -304,14 +322,6 @@ int main( int argc, char * argv[] )
 
     EGLInternalData2* m_data = new EGLInternalData2();
 
-    // Load EGL functions
-    int egl_version = gladLoaderLoadEGL(NULL);
-    if(!egl_version) {
-        fprintf(stderr, "failed to EGL with glad.\n");
-        exit(EXIT_FAILURE);
-
-    };
-
     // Query EGL Devices
     const int max_devices = 32;
     EGLDeviceEXT egl_devices[max_devices];
@@ -341,15 +351,6 @@ int main( int argc, char * argv[] )
         fprintf(stderr, "Unable to initialize EGL\n");
         exit(EXIT_FAILURE);
     }
-
-    egl_version = gladLoaderLoadEGL(m_data->egl_display);
-    if (!egl_version) {
-        fprintf(stderr, "Unable to reload EGL.\n");
-        exit(EXIT_FAILURE);
-    }
-    printf("Loaded EGL %d.%d after reload.\n", GLAD_VERSION_MAJOR(egl_version),
-           GLAD_VERSION_MINOR(egl_version));
-
 
     m_data->success = eglBindAPI(EGL_OPENGL_API);
     if (!m_data->success) {

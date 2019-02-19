@@ -90,6 +90,7 @@ set(ALL_LIBS
     glfw
     dl
     pthread
+    EGL
 )
 
 add_definitions(
