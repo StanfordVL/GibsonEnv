@@ -18,7 +18,7 @@ Table of contents
 # Download Gibson Database of Spaces
 The link will first take you to the license agreement and then to the data.
 
-### [[ Download the full Gibson Database of Spaces ]](https://goo.gl/forms/OxAQHbl1v97BJ3Sg1)  [[ checksums ]](https://github.com/StanfordVL/GibsonEnv/wiki/Checksum-Values-for-Data.md)
+### [[ Download the full Gibson Database of Spaces ]](https://goo.gl/forms/OxAQHbl1v97BJ3Sg1)  [[ Download Gibson Database for Habitat-sim ]](https://goo.gl/forms/OxAQHbl1v97BJ3Sg1) [[ checksums ]](https://github.com/StanfordVL/GibsonEnv/wiki/Checksum-Values-for-Data.md)
 
 License Note: The dataset license is included in the above link. The license in this repository covers only the provided software.
 
