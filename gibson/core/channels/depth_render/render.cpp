@@ -36,7 +36,6 @@ using namespace std;
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
 #include <common/cmdline.h>
-#include <common/render_cuda_f.h>
 #include <common/controls.hpp>
 #include <common/semantic_color.hpp>
 
@@ -702,25 +701,6 @@ int main( int argc, char * argv[] )
     // std::cout << "CUDA DEVICE:" << cudaDevice << std::endl;
     int pose_idx = 0;
     zmq::message_t request;
-
-    std::vector<unsigned int> cubeMapCoordToPanoCoord;
-    for(size_t ycoord = 0; ycoord < panoHeight; ycoord++){
-        for(size_t xcoord = 0; xcoord < panoWidth; xcoord++){
-            size_t ind = 0;   //reordering[ycoord][xcoord][0];
-            size_t corrx = 0; //reordering[ycoord][xcoord][1];
-            size_t corry = 0; //reordering[ycoord][xcoord][2];
-
-            cubeMapCoordToPanoCoord.push_back(
-                ind * windowWidth * windowHeight +
-                (windowHeight - 1 - corry) * windowWidth +
-                corrx);
-        }
-    }
-
-    unsigned int *d_cubeMapCoordToPanoCoord = copyToGPU(&(cubeMapCoordToPanoCoord[0]), cubeMapCoordToPanoCoord.size());
-
-    float *cubeMapGpuBuffer = allocateBufferOnGPU(windowHeight * windowWidth * 6);
-    cudaMemset(cubeMapGpuBuffer, 0, windowHeight * windowWidth * 6 * sizeof(float));
 
     do{
 

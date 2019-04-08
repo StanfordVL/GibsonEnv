@@ -105,8 +105,8 @@ add_definitions(
 cuda_add_executable(depth_render
     glad/egl.c glad/gl.c
     depth_render/render.cpp
-    common/render_cuda_f.cu
-    common/render_cuda_f.h
+    #common/render_cuda_f.cu
+    #common/render_cuda_f.h
     common/shader.cpp
     common/shader.hpp
     common/controls.cpp
