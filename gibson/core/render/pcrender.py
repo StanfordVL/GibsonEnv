@@ -428,7 +428,7 @@ class PCRenderer:
             source = tf(show)
             mask = (torch.sum(source[:3,:,:],0)>0).float().unsqueeze(0)
             source += (1-mask.repeat(3,1,1)) * self.mean
-            source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0 * 255)
+            source_depth = tf(np.expand_dims(opengl_arr, 2).astype(np.float32)/128.0)
             mask = torch.cat([source_depth, mask], 0)
             #self.imgv.data.copy_(source)
             #self.maskv.data.copy_(mask)

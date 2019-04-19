@@ -37,7 +37,7 @@ setup(name='gibson',
             'cloudpickle>=0.4.1',
             'pygame>=1.9.3',
             'opencv-python',
-            'torchvision==0.2.0',
+            'torchvision==0.2.2',
             'aenum'
     ],
     tests_require=[],
