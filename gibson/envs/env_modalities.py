@@ -409,7 +409,6 @@ class CameraRobotEnv(BaseRobotEnv):
         if self.gui:
             if self.config["display_ui"]:
                 self.render_to_UI()
-                print('render to ui')
                 self.save_frame += 1
             elif self._require_camera_input:
                 # Use non-pygame GUI
