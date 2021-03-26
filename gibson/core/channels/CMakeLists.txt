@@ -203,3 +203,4 @@ add_custom_command(
    TARGET semantic POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/semantic${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
+add_definitions(-D GLM_ENABLE_EXPERIMENTAL)
