@@ -133,10 +133,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </inertial>
 
   </link>
+
   <joint name="eyes_joint" type="fixed">
     <!-- camera is located at front bar -->
     <!-- Default orientation (rpy="0 0 0"): looking at -z with y as up -->
-    <origin rpy="1.57 0 -1.57" xyz="0.4 0 0.149"/>
+    <origin rpy="1.57 0 -1.57" xyz="0.4 0 1.0"/>
     <parent link="base_link"/>
     <child link="eyes"/>
   </joint>
