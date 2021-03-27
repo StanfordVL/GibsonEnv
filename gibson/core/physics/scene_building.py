@@ -10,7 +10,7 @@ import pybullet as p
 
 
 class BuildingScene(Scene):
-    def __init__(self, robot, model_id, gravity, timestep, frame_skip, env = None):
+    def __init__(self, robot, model_id, gravity, timestep, frame_skip, collision_enabled=True, env = None):
         Scene.__init__(self, gravity, timestep, frame_skip, env)
 
         # contains cpp_world.clean_everything()
@@ -29,18 +29,25 @@ class BuildingScene(Scene):
             scaling  = [1, 1, 1]
         magnified = [2, 2, 2]
 
-        collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+        if collision_enabled:
+            collisionId = p.createCollisionShape(p.GEOM_MESH, fileName=filename, meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
 
 
-        view_only_mesh = os.path.join(get_model_path(model_id), "mesh_view_only_z_up.obj")
-        if os.path.exists(view_only_mesh):
-            visualId = p.createVisualShape(p.GEOM_MESH,
+            view_only_mesh = os.path.join(get_model_path(model_id), "mesh_view_only_z_up.obj")
+            if os.path.exists(view_only_mesh):
+                visualId = p.createVisualShape(p.GEOM_MESH,
                                        fileName=view_only_mesh,
                                        meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-        else:
-            visualId = -1
+            else:
+                visualId = -1
 
-        boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
+            boundaryUid = p.createMultiBody(baseCollisionShapeIndex = collisionId, baseVisualShapeIndex = visualId)
+        else:
+            visualId = p.createVisualShape(p.GEOM_MESH,
+                                           fileName=filename,
+                                           meshScale=scaling, flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+            boundaryUid = p.createMultiBody(baseCollisionShapeIndex = -1, baseVisualShapeIndex = visualId)
+
         p.changeDynamics(boundaryUid, -1, lateralFriction=1)
         #print(p.getDynamicsInfo(boundaryUid, -1))
         self.scene_obj_list = [(boundaryUid, -1)]       # baselink index -1
@@ -64,8 +71,9 @@ class BuildingScene(Scene):
 
 class SinglePlayerBuildingScene(BuildingScene):
     multiplayer = False
-    def __init__(self, robot, model_id, gravity, timestep, frame_skip, env = None):
-        BuildingScene.__init__(self, robot, model_id, gravity, timestep, frame_skip, env)
+    def __init__(self, robot, model_id, gravity, timestep, frame_skip, collision_enabled=True, env = None):
+        BuildingScene.__init__(self, robot=robot, model_id=model_id, gravity=gravity,
+                               timestep=timestep, frame_skip=frame_skip, collision_enabled=collision_enabled, env=env)
 
 
 

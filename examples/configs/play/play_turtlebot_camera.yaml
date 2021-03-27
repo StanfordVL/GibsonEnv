@@ -3,7 +3,7 @@ model_id: Allensville
 target_orn: [0, 0, 0.0]
 target_pos: [0.0, 0.0, 0.0]
 initial_orn: [0, 0, 4.71]
-initial_pos: [0.0, 0.0, 0.0]
+initial_pos: [0.0, 0.0, 0.4]
 fov: 1.57
 is_discrete: true
 

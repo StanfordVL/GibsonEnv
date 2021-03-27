@@ -66,19 +66,19 @@ class BaseEnv(gym.Env):
             config_data = yaml.load(f)
         return config_data
         
-    def create_scene(self, gravity=9.8):
+    def create_scene(self, gravity=9.8, collision_enabled=True):
         if self.scene is not None:
             return
         if self.scene_type == "stadium":
             self.scene = self.create_single_player_stadium_scene()
         elif self.scene_type == "building":
-            self.scene = self.create_single_player_building_scene(gravity=gravity)
+            self.scene = self.create_single_player_building_scene(gravity=gravity, collision_enabled=collision_enabled)
         else:
             raise AssertionError()
         self.robot.scene = self.scene
     
-    def create_single_player_building_scene(self, gravity=9.8):
-        return SinglePlayerBuildingScene(self.robot, model_id=self.model_id, gravity=gravity, timestep=self.timestep, frame_skip=self.frame_skip, env=self)
+    def create_single_player_building_scene(self, gravity=9.8, collision_enabled=True):
+        return SinglePlayerBuildingScene(self.robot, model_id=self.model_id, gravity=gravity, timestep=self.timestep, frame_skip=self.frame_skip, collision_enabled=collision_enabled, env=self)
 
     def create_single_player_stadium_scene(self):
         return SinglePlayerStadiumScene(self.robot, gravity=9.8, timestep=self.timestep, frame_skip=self.frame_skip, env=self)
