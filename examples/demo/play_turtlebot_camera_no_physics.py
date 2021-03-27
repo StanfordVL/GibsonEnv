@@ -15,3 +15,12 @@ if __name__ == '__main__':
     env.reset()
     while True:
         env.step([0.0, 0.0])
+
+        # Now you can move the robot in space without constraints
+        env.robot.set_position([1, 1, 1])
+
+        #env.robot.move_forward(forward=1)
+        #env.robot.move_backward(backward=0.2)
+
+        #env.robot.turn_right(delta=0.1)
+        #env.robot.turn_left(delta=0.1)
