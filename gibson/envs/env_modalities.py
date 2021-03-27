@@ -126,9 +126,9 @@ class BaseRobotEnv(BaseEnv):
         self._render_width = self.windowsz
         self._render_height = self.windowsz
 
-    def scene_introduce(self):
+    def scene_introduce(self, gravity=9.8):
         assert(self._robot_introduced)
-        self.create_scene()
+        self.create_scene(gravity=gravity)
         self._scene_introduced = True
 
     def get_keys_to_action(self):
@@ -348,8 +348,8 @@ class CameraRobotEnv(BaseRobotEnv):
         BaseRobotEnv.robot_introduce(self, robot)
         self.setup_rendering_camera()
 
-    def scene_introduce(self):
-        BaseRobotEnv.scene_introduce(self)
+    def scene_introduce(self, gravity=9.8):
+        BaseRobotEnv.scene_introduce(self, gravity=gravity)
 
     def setup_rendering_camera(self):
         if self.test_env:
