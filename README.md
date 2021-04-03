@@ -24,7 +24,7 @@ Please see the [website](http://gibson.vision/) (http://gibsonenv.stanford.edu/)
 
 Release
 =================
-**This is the 0.3.1 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).  
+**This is the 0.5.0 release. In this version, a new particular simulation environment has been added. It is called TurtlebotNavigateNoPhysics. In this environment, the gravity is null and the collisions are disabled. In this way, the robot can be moved inside the environment without constraints.
 
 
 Database
