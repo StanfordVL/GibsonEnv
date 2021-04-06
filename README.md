@@ -133,7 +133,8 @@ First, make sure you have Nvidia driver and CUDA installed. If you install from 
 apt-get update 
 apt-get install doxygen libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev \
 		mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
-		xdotool libzmq3-dev zlib1g-dev
+		xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev \
+		libportmidi-dev libfreetype6-dev
 ```	
 
 Install required deep learning libraries: Using python3.5 is recommended. You can create a python3.5 environment first. 
