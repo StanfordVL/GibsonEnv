@@ -752,7 +752,7 @@
     </inertial>
   </link>
   <joint name="camera_rgb_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="-0.087 -0.0125 1.000"/>
+    <origin rpy="0 0 0" xyz="-0.087 -0.0125 0.287"/>
     <parent link="base_link"/>
     <child link="camera_rgb_frame"/>
   </joint>
