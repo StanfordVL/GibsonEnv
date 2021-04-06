@@ -2771,12 +2771,12 @@ PFNGLVIDEOCAPTURESTREAMPARAMETERDVNVPROC __glewVideoCaptureStreamParameterdvNV =
 PFNGLVIDEOCAPTURESTREAMPARAMETERFVNVPROC __glewVideoCaptureStreamParameterfvNV = NULL;
 PFNGLVIDEOCAPTURESTREAMPARAMETERIVNVPROC __glewVideoCaptureStreamParameterivNV = NULL;
 
-PFNGLCLEARDEPTHFOESPROC __glewClearDepthfOES = NULL;
-PFNGLCLIPPLANEFOESPROC __glewClipPlanefOES = NULL;
-PFNGLDEPTHRANGEFOESPROC __glewDepthRangefOES = NULL;
-PFNGLFRUSTUMFOESPROC __glewFrustumfOES = NULL;
-PFNGLGETCLIPPLANEFOESPROC __glewGetClipPlanefOES = NULL;
-PFNGLORTHOFOESPROC __glewOrthofOES = NULL;
+PFNGLCLEARDEPTHFPROC __glewClearDepthfOES = NULL;
+PFNGLCLIPPLANEFPROC __glewClipPlanefOES = NULL;
+PFNGLDEPTHRANGEFPROC __glewDepthRangefOES = NULL;
+PFNGLFRUSTUMFPROC __glewFrustumfOES = NULL;
+PFNGLGETCLIPPLANEFPROC __glewGetClipPlanefOES = NULL;
+PFNGLORTHOFPROC __glewOrthofOES = NULL;
 
 PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC __glewFramebufferTextureMultiviewOVR = NULL;
 
@@ -8748,12 +8748,12 @@ static GLboolean _glewInit_GL_OES_single_precision (GLEW_CONTEXT_ARG_DEF_INIT)
 {
   GLboolean r = GL_FALSE;
 
-  r = ((glClearDepthfOES = (PFNGLCLEARDEPTHFOESPROC)glewGetProcAddress((const GLubyte*)"glClearDepthfOES")) == NULL) || r;
-  r = ((glClipPlanefOES = (PFNGLCLIPPLANEFOESPROC)glewGetProcAddress((const GLubyte*)"glClipPlanefOES")) == NULL) || r;
-  r = ((glDepthRangefOES = (PFNGLDEPTHRANGEFOESPROC)glewGetProcAddress((const GLubyte*)"glDepthRangefOES")) == NULL) || r;
-  r = ((glFrustumfOES = (PFNGLFRUSTUMFOESPROC)glewGetProcAddress((const GLubyte*)"glFrustumfOES")) == NULL) || r;
-  r = ((glGetClipPlanefOES = (PFNGLGETCLIPPLANEFOESPROC)glewGetProcAddress((const GLubyte*)"glGetClipPlanefOES")) == NULL) || r;
-  r = ((glOrthofOES = (PFNGLORTHOFOESPROC)glewGetProcAddress((const GLubyte*)"glOrthofOES")) == NULL) || r;
+  r = ((glClearDepthfOES = (PFNGLCLEARDEPTHFPROC)glewGetProcAddress((const GLubyte*)"glClearDepthfOES")) == NULL) || r;
+  r = ((glClipPlanefOES = (PFNGLCLIPPLANEFPROC)glewGetProcAddress((const GLubyte*)"glClipPlanefOES")) == NULL) || r;
+  r = ((glDepthRangefOES = (PFNGLDEPTHRANGEFPROC)glewGetProcAddress((const GLubyte*)"glDepthRangefOES")) == NULL) || r;
+  r = ((glFrustumfOES = (PFNGLFRUSTUMFPROC)glewGetProcAddress((const GLubyte*)"glFrustumfOES")) == NULL) || r;
+  r = ((glGetClipPlanefOES = (PFNGLGETCLIPPLANEFPROC)glewGetProcAddress((const GLubyte*)"glGetClipPlanefOES")) == NULL) || r;
+  r = ((glOrthofOES = (PFNGLORTHOFPROC)glewGetProcAddress((const GLubyte*)"glOrthofOES")) == NULL) || r;
 
   return r;
 }

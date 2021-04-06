@@ -7,7 +7,7 @@ add_definitions(
 )
 
 ### GLFW ###
-add_subdirectory (glfw-3.1.2)
+add_subdirectory (glfw-3.3.3)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 set(OPENGL_LIBRARY

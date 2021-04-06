@@ -72,7 +72,7 @@ add_definitions(-DGLEW_EGL)
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
-    external/glfw-3.1.2/include/GLFW
+    external/glfw-3.3.3/include/GLFW
     external/lodepng/
     ${GLUT_INCLUDE_DIRS}
     .

@@ -91,10 +91,10 @@ install() {
 
 build_local() {
     ## Core renderer
-    if [ ! -d ./gibson/core/channels/external/glfw-3.1.2 ]; then
-        wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
-        unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
-        mv glfw-3.1.2 ./gibson/core/channels/external/glfw-3.1.2
+    if [ ! -d ./gibson/core/channels/external/glfw-3.3.3 ]; then
+        wget --quiet https://github.com/glfw/glfw/releases/download/3.3.3/glfw-3.3.3.zip
+        unzip glfw-3.3.3.zip && rm glfw-3.3.3.zip
+        mv glfw-3.3.3 ./gibson/core/channels/external/glfw-3.3.3
     fi
     [ ! -d ./gibson/core/channels/build ] || rm -rf ./gibson/core/channels/build
 
