@@ -38,7 +38,8 @@ setup(name='gibson',
             'pygame>=1.9.3',
             'opencv-python',
             'torchvision==0.2.0',
-            'aenum'
+            'aenum',
+            'imageio'
     ],
     tests_require=[],
     # cmdclass={
