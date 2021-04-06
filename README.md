@@ -131,7 +131,7 @@ First, make sure you have Nvidia driver and CUDA installed. If you install from 
 
 ```bash
 apt-get update 
-apt-get install libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev \
+apt-get install doxygen libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev \
 		mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
 		xdotool libzmq3-dev zlib1g-dev
 ```	
