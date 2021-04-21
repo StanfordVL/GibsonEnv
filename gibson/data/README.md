@@ -67,7 +67,7 @@ semantic.obj (optional)   # 3d mesh with semantic annotation
 ```
 
 ## Dataset Splits
-Due to the sheer size of the database, We provide four different standard partitions which are subsets of the full Gibson database of 572 models. We recommend starting with tiny partition and progressively adding more models if you wish. Each partition is divided into `training/validation/testing` splits. [You can download the standard split files here](https://storage.googleapis.com/gibsonassets/splits.tar.gz).
+Due to the sheer size of the database, We provide four different standard partitions which are subsets of the full Gibson database of 572 models. We recommend starting with tiny partition and progressively adding more models if you wish. Each partition is divided into `training/validation/testing` splits. [You can download the standard split files here](https://storage.googleapis.com/gibson_scenes/splits.tar.gz).
 
 | Split Name   |      Train     |  Val  |  Test | Hole Filled | Total Size |
 |----------|:-------------:|-------------:|------:| ------:| -------------:|
@@ -81,7 +81,7 @@ Due to the sheer size of the database, We provide four different standard partit
 
 # Navigation Benchmark Scenarios
 
-We provide standard point-to-point navigation episodes in [Gibson Standard Navigation Benchmark](https://storage.googleapis.com/gibsonassets/navigation_scenarios.tar.gz). See the figure below for visualization of a sample episode. Each space includes 100 episodes along with their ground truth near-optimal path and waypoints. You can see random standard episodes visualized for each space in the [database webpage](http://gibsonenv.stanford.edu/database/). See [this paper](https://arxiv.org/abs/1807.06757) for a discussion on the navigation episodes and their application. The following column values are provided for each episode:
+We provide standard point-to-point navigation episodes in [Gibson Standard Navigation Benchmark (to be updated)](https://storage.googleapis.com/gibsonassets/navigation_scenarios.tar.gz). See the figure below for visualization of a sample episode. Each space includes 100 episodes along with their ground truth near-optimal path and waypoints. You can see random standard episodes visualized for each space in the [database webpage](http://gibsonenv.stanford.edu/database/). See [this paper](https://arxiv.org/abs/1807.06757) for a discussion on the navigation episodes and their application. The following column values are provided for each episode:
 
 - `split`: `train`, `val`, or `test` indicating split for the episode.
 - `task`: string id for task type, currently restricted to `p` for `point_goal`.
