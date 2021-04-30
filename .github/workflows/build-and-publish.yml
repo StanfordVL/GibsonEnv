@@ -19,5 +19,11 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y nvidia-cuda-toolkit
+          sudo apt-get install -y doxygen libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev \
+          		mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
+          		xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev \
+          		libportmidi-dev libfreetype6-dev
           python -m pip install --upgrade pip
+      - name: Build
+        run: |
           ./build.sh build_local
