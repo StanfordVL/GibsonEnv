@@ -38,6 +38,7 @@ SET(CMAKE_C_FLAGS_DEBUG "-O0")
 find_package(PkgConfig)
 ## use pkg-config to get hints for 0mq locations
 pkg_check_modules(PC_ZeroMQ QUIET zmq)
+pkg_search_module(GLFW REQUIRED glfw3)
 ## use the hint from above to find where 'zmq.hpp' is located
 find_path(ZeroMQ_INCLUDE_DIR
         NAMES zmq.hpp
@@ -72,9 +73,10 @@ add_definitions(-DGLEW_EGL)
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
-    external/glfw-3.3.3/include/GLFW
+    #external/glfw-3.3.3/include/GLFW
     external/lodepng/
     ${GLUT_INCLUDE_DIRS}
+    ${GLFW_INCLUDE_DIRS}
     .
     ${ZeroMQ_INCLUDE_DIR}
     glad
@@ -87,7 +89,7 @@ set(ALL_LIBS
     GLEW_1130
     ${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
-    glfw
+    ${GLFW_LIBRARIES}
     dl
     pthread
 )
