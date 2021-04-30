@@ -23,6 +23,9 @@ jobs:
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
           sudo apt-get update
           sudo apt-get -y install cuda
+          echo 'export PATH=/usr/local/cuda-11.0/bin${PATH:+:${PATH}}' >> ~/.bashrc
+          echo 'export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}' >> ~/.bashrc
+          source ~/.bashrc
       - name: Install dependencies
         run: |
           sudo apt-get install -y doxygen libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev \
