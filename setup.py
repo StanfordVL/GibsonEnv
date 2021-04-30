@@ -20,6 +20,7 @@ setup(name='gibson',
     url='https://github.com/fxia22/realenv',
     author='Stanford University',
     zip_safe=False,
+    packages=find_packages(),
     install_requires=[
             'numpy>=1.10.4',
             'pyglet>=1.2.0',
@@ -41,6 +42,7 @@ setup(name='gibson',
             'aenum',
             'imageio'
     ],
+    include_package_data=True,
     tests_require=[],
     # cmdclass={
     #    'install': PostInstallCommand

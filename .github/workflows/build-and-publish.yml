@@ -1,0 +1,22 @@
+name: Build
+
+on: [push, pull_request, pull_request_review]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt install -y nvidia-cuda-toolkit
+          python -m pip install --upgrade pip
+          ./build.sh build_local
