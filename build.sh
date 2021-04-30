@@ -91,9 +91,9 @@ install() {
 
 build_local() {
 
-    mkdir -p ./gibson/core/channels/build
-    cd ./gibson/core/channels/build
-    cmake -DCMAKE_BUILD_TYPE=Debug .. && make clean && make -j 10
+    mkdir -p ./build
+    cd ./build
+    cmake -DCMAKE_BUILD_TYPE=Debug ../gibson/core/channels/ && make clean && make -j 10
     cd -
 
 
