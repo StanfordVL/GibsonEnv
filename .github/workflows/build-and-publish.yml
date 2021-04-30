@@ -23,6 +23,9 @@ jobs:
           		mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
           		xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev \
           		libportmidi-dev libfreetype6-dev
+          sudo apt -y install gcc-8 g++-8
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 8
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 8
           python -m pip install --upgrade pip
       - name: Build
         run: |
