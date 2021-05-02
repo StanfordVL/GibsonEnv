@@ -3,7 +3,7 @@
 You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment simulator, Gibson, that offers real-world experience for learning perception.  
 
 <img src=misc/ui.gif width="600">
- 
+
 **Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in the simulation which consequently casts a question on transferring to real-world. We developed Gibson environment with the following primary characteristics:  
 
 **I.** being from the real-world and reflecting its semantic complexity through virtualizing real spaces,  
@@ -75,7 +75,7 @@ For building from the source(B):
 
 #### Download data
 
-First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
+First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. The folder that stores necessary data (agent models, environments, etc) to run Gibson environment must be set by the user. After installing Gibson, simply run this command ```gibson-set-assets-path``` in a terminal and then insert the path where Gibson data will be stored. Users can add more environments within the `dataset` folder located in the previously set path. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
 
 
 A. Quick installation (docker)
@@ -134,7 +134,7 @@ apt-get install doxygen libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-me
 		mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
 		xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev \
 		libportmidi-dev libfreetype6-dev libglfw3 libglfw3-dev
-```	
+```
 
 Install required deep learning libraries: Using python3.5 is recommended. You can create a python3.5 environment first. 
 
@@ -349,7 +349,7 @@ Gibson provides a base set of agents. See videos of these agents and their corre
 To enable (optionally) abstracting away low-level control and robot dynamics for high-level tasks, we also provide a set of practical and ideal controllers for each agent.
 
 | Agent Name     | DOF | Information      | Controller |
-|:-------------: | :-------------: |:-------------: |:-------------| 
+|:-------------: | :-------------: |:-------------: |:-------------|
 | Mujoco Ant      | 8   | [OpenAI Link](https://blog.openai.com/roboschool/) | Torque |
 | Mujoco Humanoid | 17  | [OpenAI Link](https://blog.openai.com/roboschool/) | Torque |
 | Husky Robot     | 4   | [ROS](http://wiki.ros.org/Robots/Husky), [Manufacturer](https://www.clearpathrobotics.com/) | Torque, Velocity, Position |
@@ -364,7 +364,7 @@ To enable (optionally) abstracting away low-level control and robot dynamics for
 More demonstration examples can be found in `examples/demo` folder
 
 | Example        | Explanation          |
-|:-------------: |:-------------| 
+|:-------------: |:-------------|
 |`play_ant_camera.py`|Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building, while RGB and depth camera outputs are also shown. |
 |`play_ant_nonviz.py`| Use 1234567890qwerty keys on your keyboard to control an ant to navigate around Gates building.|
 |`play_drone_camera.py`| Use ASWDZX keys on your keyboard to control a drone to navigate around Gates building, while RGB and depth camera outputs are also shown.|
@@ -377,7 +377,7 @@ More demonstration examples can be found in `examples/demo` folder
 More training code can be found in `examples/train` folder.
 
 | Example        | Explanation          |
-|:-------------: |:-------------| 
+|:-------------: |:-------------|
 |`train_husky_navigate_ppo2.py`|   Use PPO2 to train a car to navigate down the hallway in Gates building, using RGBD input from the camera.|
 |`train_husky_navigate_ppo1.py`|   Use PPO1 to train a car to navigate down the hallway in Gates building, using RGBD input from the camera.|
 |`train_ant_navigate_ppo1.py`| Use PPO1 to train an ant to navigate down the hallway in Gates building, using visual input from the camera. |
@@ -455,9 +455,9 @@ Gibson provides a set of methods for you to define your own environments. You ca
 | robot.get_position() | Get current robot position. |
 | robot.get_orientation() | Get current robot orientation. |
 | robot.eyes.get_position() | Get current robot perceptive camera position. |
-| robot.eyes.get_orientation() | Get current robot perceptive camera orientation. | 
+| robot.eyes.get_orientation() | Get current robot perceptive camera orientation. |
 | robot.get_target_position() | Get robot target position. |
-| robot.apply_action(action) | Apply action to robot. |  
+| robot.apply_action(action) | Apply action to robot. |
 | robot.reset_new_pose(pos, orn) | Reset the robot to any pose. |
 | robot.dist_to_target() | Get current distance from robot to target. |
 

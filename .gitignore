@@ -1,3 +1,4 @@
+gibson/assets/assets_config.yaml
 build/
 dist/
 gibson-*/
@@ -70,5 +71,5 @@ examples/scripts/plot*
 #models
 nav_models
 
-gibson/assets
+gibson/assets/assets_data
 *.pdf

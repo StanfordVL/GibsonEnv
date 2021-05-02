@@ -5,6 +5,8 @@ import os, time
 import os.path
 from multiprocessing import Pool
 from functools import partial
+
+from gibson.assets.assets_manager import AssetsManager
 from gibson.core.render.profiler import Profiler
 import errno
 import torch
@@ -48,7 +50,7 @@ def depth_loader(path):
 
 
 def get_model_path(model_id):
-    data_path = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), 'dataset')
+    data_path = os.path.join(AssetsManager().get_assets_path(), 'dataset')
     assert (model_id in os.listdir(data_path)) or model_id == 'stadium', "Model {} does not exist".format(model_id)
     return os.path.join(data_path, model_id)
 
@@ -178,7 +180,7 @@ class ViewDataSet3D(data.Dataset):
                  semantic_transform=np.array, env = None, only_load = None):
         print('Processing the data:')
         if not root:
-            self.root = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), "dataset")
+            self.root = os.path.join(AssetsManager().get_assets_path(), "dataset")
         else:
             self.root = root
         self.train = train

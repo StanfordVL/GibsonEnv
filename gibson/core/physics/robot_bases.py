@@ -4,6 +4,9 @@ import pybullet as p
 import gym, gym.spaces, gym.utils
 import numpy as np
 import os, inspect
+
+from gibson.assets.assets_manager import AssetsManager
+
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0,parentdir)
@@ -44,7 +47,7 @@ class BaseRobot:
         self.robot_ids = None
         self.model_file = model_file
         self.robot_name = robot_name
-        self.physics_model_dir = os.path.join(os.path.dirname(os.path.abspath(assets.__file__)), "models")
+        self.physics_model_dir = os.path.join(AssetsManager().get_assets_path(), 'models')
         self.scale = scale
         self._load_model()
         self.eyes = self.parts["eyes"]

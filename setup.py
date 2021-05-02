@@ -40,14 +40,19 @@ setup(name='gibson',
             'opencv-python',
             'torchvision==0.2.0',
             'aenum',
-            'imageio'
+            'imageio',
     ],
     include_package_data=True,
     tests_require=[],
+    entry_points={
+          'console_scripts': [
+              'gibson-set-assets-path = gibson.assets.assets_actions:set_assets_path',
+              'gibson-download-assets-core = gibson.assets.assets_actions:download_assets_core',
+          ],
+      },
     # cmdclass={
     #    'install': PostInstallCommand
     #}
 )
-
 
 # check_call("bash realenv/envs/build.sh".split())
