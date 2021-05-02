@@ -5,11 +5,9 @@ add_definitions(
     -DGLEW_STATIC
     -D_CRT_SECURE_NO_WARNINGS
 )
-find_package(PkgConfig REQUIRED)
-pkg_search_module(GLFW REQUIRED glfw3)
 
 ### GLFW ###
-#add_subdirectory (glfw-3.3.3)
+add_subdirectory (glfw)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 set(OPENGL_LIBRARY
@@ -40,5 +38,4 @@ add_library( GLEW_1130 SHARED
 
 target_link_libraries(GLEW_1130
     ${OPENGL_LIBRARY}
-    ${GLFW_LIBRARIES}
 )

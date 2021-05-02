@@ -5,6 +5,8 @@ from subprocess import check_call
 from distutils.command.build_py import build_py as _build_py
 import sys, os.path
 
+from gibson.assets.assets_manager import AssetsManager
+
 '''
 class PostInstallCommand(install):
         """Post-installation for installation mode."""

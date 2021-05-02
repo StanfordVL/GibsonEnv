@@ -1,0 +1,3 @@
+[submodule "gibson/core/channels/external/glfw"]
+	path = gibson/core/channels/external/glfw
+	url = https://github.com/glfw/glfw
