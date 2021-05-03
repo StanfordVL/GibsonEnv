@@ -64,6 +64,9 @@ class PostInstallCommand(install):
                 check_call("bash realenv/envs/build.sh".split())
                 install.run(self)
 '''
+# Read requirements.txt
+with open(os.path.abspath('requirements.txt'), mode='r') as f:
+    requirements = [line.rstrip() for line in f]
 
 setup(name='gibson',
     version='0.4.0',
@@ -80,27 +83,7 @@ setup(name='gibson',
       ],
     zip_safe=False,
     packages=find_packages(),
-    install_requires=[
-            'numpy>=1.10.4',
-            'pyglet>=1.2.0',
-            'gym==0.9.4',
-            'Pillow>=3.3.0',
-            'PyYAML>=3.12',
-            'numpy>=1.13',
-            'pybullet==1.9.4',
-            'transforms3d>=0.3.1',
-            'tqdm>=4',
-            'pyzmq>=16.0.2',
-            'Pillow>=4.2.1',
-            'matplotlib>=2.1.0',
-            'mpi4py>=2.0.0',
-            'cloudpickle>=0.4.1',
-            'pygame==1.9.6',
-            'opencv-python',
-            'torchvision==0.2.0',
-            'aenum',
-            'imageio',
-    ],
+    install_requires=requirements,
     include_package_data=True,
     tests_require=[],
     entry_points={

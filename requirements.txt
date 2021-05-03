@@ -1,0 +1,17 @@
+numpy>=1.13
+pyglet>=1.2.0
+gym==0.9.4
+PyYAML>=3.12
+pybullet==1.9.4
+transforms3d>=0.3.1
+tqdm>=4
+pyzmq>=16.0.2
+Pillow>=4.2.1
+matplotlib>=2.1.0
+mpi4py>=2.0.0
+cloudpickle>=0.4.1
+pygame==1.9.6
+opencv-python
+torchvision==0.2.0
+aenum
+imageio
