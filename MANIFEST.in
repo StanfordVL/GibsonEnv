@@ -1,0 +1,9 @@
+recursive-include gibson/ *
+
+global-exclude *.pyc
+exclude gibson/assets/assets_config.yaml
+exclude gibson/core/channels/depth_render/depth_render
+exclude gibson/core/channels/depth_render/semantic
+exclude gibson/core/render/render_cuda_f.so
+recursive-exclude gibson/assets/assets_data/ *
+recursive-exclude gibson/core/channels/build/ *

@@ -1,3 +1,7 @@
+import subprocess
+from distutils.command.build_ext import build_ext
+from distutils.extension import Extension
+
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
@@ -6,6 +10,52 @@ from distutils.command.build_py import build_py as _build_py
 import sys, os.path
 
 from gibson.assets.assets_manager import AssetsManager
+
+class CMakeExtension(Extension):
+    def __init__(self, name, source_dir=''):
+        Extension.__init__(self, name, sources=[])
+        self.source_dir = os.path.abspath(source_dir)
+
+
+class CMakeBuild(build_ext):
+    def run(self):
+        try:
+            subprocess.check_output(['cmake', '--version'])
+        except OSError:
+            raise RuntimeError("CMake must be installed to build the following extensions: " +
+                               ", ".join(e.name for e in self.extensions))
+
+        for ext in self.extensions:
+            self.build_extension(ext)
+
+    def build_extension(self, ext):
+        ext_dir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+
+        cmake_args = [
+            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' +
+            os.path.join(ext_dir, 'channels'),
+            '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' +
+            os.path.join(ext_dir, 'channels', 'build'),
+            '-DPYTHON_EXECUTABLE=' + sys.executable
+        ]
+
+        cfg = 'Debug' if self.debug else 'Release'
+        build_args = ['--config', cfg]
+
+        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
+        build_args += ['--', '-j2']
+
+        env = os.environ.copy()
+        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
+                                                              self.distribution.get_version())
+
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
+
+        print(cmake_args)
+        subprocess.check_call(['cmake', 'gibson'] + cmake_args, cwd=self.build_temp, env=env)
+        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+
 
 '''
 class PostInstallCommand(install):
@@ -51,7 +101,9 @@ setup(name='gibson',
               'gibson-set-assets-path = gibson.assets.assets_actions:set_assets_path',
               'gibson-download-assets-core = gibson.assets.assets_actions:download_assets_core',
           ],
-      },
+    },
+    #ext_modules=[CMakeExtension('gibson/core/channels', source_dir='gibson/core/channels')],
+    #cmdclass=dict(build_ext=CMakeBuild),
     # cmdclass={
     #    'install': PostInstallCommand
     #}
