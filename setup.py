@@ -1,3 +1,5 @@
+import setuptools
+from setuptools import setup, find_packages, Extension
 import subprocess
 from distutils.command.build_ext import build_ext
 from distutils.extension import Extension
