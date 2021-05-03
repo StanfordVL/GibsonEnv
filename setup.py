@@ -43,7 +43,7 @@ class CMakeBuild(build_ext):
         build_args = ['--config', cfg]
 
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        build_args += ['--', '-j2']
+        build_args += ['-j2']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
@@ -52,8 +52,7 @@ class CMakeBuild(build_ext):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
 
-        print(cmake_args)
-        subprocess.check_call(['cmake', 'gibson'] + cmake_args, cwd=self.build_temp, env=env)
+        subprocess.check_call(['cmake', ext.source_dir], cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 
@@ -102,8 +101,8 @@ setup(name='gibson',
               'gibson-download-assets-core = gibson.assets.assets_actions:download_assets_core',
           ],
     },
-    #ext_modules=[CMakeExtension('gibson/core/channels', source_dir='gibson/core/channels')],
-    #cmdclass=dict(build_ext=CMakeBuild),
+    ext_modules=[CMakeExtension('gibson/core/channels', source_dir='gibson/core/channels')],
+    cmdclass=dict(build_ext=CMakeBuild),
     # cmdclass={
     #    'install': PostInstallCommand
     #}
