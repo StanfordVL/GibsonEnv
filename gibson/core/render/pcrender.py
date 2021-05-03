@@ -34,7 +34,7 @@ coords = np.load(os.path.join(AssetsManager().get_assets_path(), 'coord.npy'))
 
 
 try:
-    cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
+    cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'librender_cuda_f'),'.')
 except:
     print("Error: cuda renderer is not loaded, rendering will not work")
 

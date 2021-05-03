@@ -101,7 +101,9 @@ setup(name='gibson',
               'gibson-download-assets-core = gibson.assets.assets_actions:download_assets_core',
           ],
     },
-    ext_modules=[CMakeExtension('gibson/core/channels', source_dir='gibson/core/channels')],
+    ext_modules=[CMakeExtension('GibsonChannel', source_dir='gibson/core'),
+                 #CMakeExtension('GibsonRender', source_dir='gibson/core/render')
+    ],
     cmdclass=dict(build_ext=CMakeBuild),
     # cmdclass={
     #    'install': PostInstallCommand
