@@ -2,7 +2,7 @@ import subprocess
 from distutils.command.build_ext import build_ext
 from distutils.extension import Extension
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 from subprocess import check_call
@@ -101,9 +101,7 @@ setup(name='gibson',
               'gibson-download-assets-core = gibson.assets.assets_actions:download_assets_core',
           ],
     },
-    ext_modules=[CMakeExtension('GibsonChannel', source_dir='gibson/core'),
-                 #CMakeExtension('GibsonRender', source_dir='gibson/core/render')
-    ],
+    ext_modules=[CMakeExtension('GibsonChannel', source_dir='gibson/core')],
     cmdclass=dict(build_ext=CMakeBuild),
     # cmdclass={
     #    'install': PostInstallCommand
