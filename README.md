@@ -24,7 +24,7 @@ Please see the [website](http://gibson.vision/) (http://gibsonenv.stanford.edu/)
 
 Release
 =================
-**This is the 0.4.0 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).
+**This is the 0.5.0 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).
 
 Database
 =================
@@ -122,9 +122,20 @@ Instructions to run gibson on a headless server (requires X server running):
 
 If you don't have X server running, you can still run gibson, see [this guide](https://github.com/StanfordVL/GibsonEnv/wiki/Running-GibsonEnv-on-headless-server) for more details.
 
-B. Building from source
+## B. Installing precompiled version from pip
+
+If you don't want to use our docker image, you can install the precompiled version from pip. This version only works on a Linux machine (tested on the latest Ubuntu version).
+
+```
+pip install gibson
+```
+
+
+
+C. Building from source
 -----
-If you don't want to use our docker image, you can also install gibson locally. This will require some dependencies to be installed. 
+
+If you don't want to use the precompiled version, you can also install gibson locally. This will require some dependencies to be installed. 
 
 First, make sure you have Nvidia driver and CUDA installed. If you install from source, CUDA 9 is not necessary, as that is for nvidia-docker 2.0. Then, let's install some dependencies:
 

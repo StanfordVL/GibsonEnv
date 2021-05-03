@@ -36,3 +36,10 @@ jobs:
       - name: Create binary wheel dist
         run: |
           python setup.py bdist_wheel
+      - name: Publish on test-pypi
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: |
+          twine upload --repository testpypi --skip-existing dist/*

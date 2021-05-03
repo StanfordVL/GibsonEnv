@@ -13,6 +13,12 @@ import sys, os.path
 
 from gibson.assets.assets_manager import AssetsManager
 
+
+# Get the long description from the relevant file
+with copen(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
+
 class CMakeExtension(Extension):
     def __init__(self, name, source_dir=''):
         Extension.__init__(self, name, sources=[])
@@ -71,8 +77,9 @@ with open(os.path.abspath('requirements.txt'), mode='r') as f:
     requirements = [line.rstrip() for line in f]
 
 setup(name='gibson',
-    version='0.4.0',
+    version='0.5.0',
     description='Real Environment Developed by Stanford University',
+    long_description=long_description,
     url='https://github.com/fxia22/realenv',
     author='Stanford University',
       classifiers=[

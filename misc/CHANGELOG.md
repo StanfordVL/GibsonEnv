@@ -4,6 +4,18 @@ Notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 https://github.com/StanfordVL/GibsonEnv/blob/master/README.md
+## 0.5.0 - 2021-05-03
+### Added
+ - **Improved the build procedure and published the compiled version on pypi (for now test pypi)**
+ - Improve build procedure: now it is performed in setup.py
+ - Added a github action which builds the project (using Python 2.7, 3.6, 3.7, 3.8, 3.9) and publishes the compiled version on pypi
+ - Changed the assets default path: now it must be chosen by the user using `gibson-set-assets-path` command
+ - Deleted the assets data folder: all files are contained in assets-core-v2.tar.gz
+ - Created AssetsManager: it stores the assets path and other configuration parameters
+### Issues
+
+The docker image must and the related procedure to install Gibson must be fixed.
+
 ## 0.4.0 - 2021-04-29
 ### Added
  - Build procedure tested in Ubuntu 20.04 LTS
@@ -17,7 +29,7 @@ https://github.com/StanfordVL/GibsonEnv/blob/master/README.md
  - OpenAI Gym 0.10.5 compatibility
  - Updated rendering filler models, added unfiller models
  - Bug fixes
- 
+
 ## 0.3.0 - 2018-06-18
 ### Added
  - Full dataset
