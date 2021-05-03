@@ -10,7 +10,7 @@ Pillow>=4.2.1
 matplotlib>=2.1.0
 mpi4py>=2.0.0
 cloudpickle>=0.4.1
-pygame==1.9.4
+pygame>=2.0
 opencv-python
 torchvision==0.2.0
 aenum
