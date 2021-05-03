@@ -15,7 +15,6 @@ import sys
 import zmq
 import pickle
 import scipy
-import imageio
 
 
 class View(Enum):
