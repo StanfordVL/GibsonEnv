@@ -10,11 +10,14 @@ from setuptools.command.install import install
 from subprocess import check_call
 from distutils.command.build_py import build_py as _build_py
 import sys, os.path
+from codecs import open as copen
+
 
 from gibson.assets.assets_manager import AssetsManager
 
 
 # Get the long description from the relevant file
+here = os.path.abspath(os.path.dirname(__file__))
 with copen(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
