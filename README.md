@@ -78,8 +78,7 @@ For building from the source(B):
 First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. The folder that stores necessary data (agent models, environments, etc) to run Gibson environment must be set by the user. After installing Gibson, simply run this command ```gibson-set-assets-path``` in a terminal and then insert the path where Gibson data will be stored. Users can add more environments within the `dataset` folder located in the previously set path. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
 
 
-A. Quick installation (docker)
------
+## A. Quick installation (docker)
 
 We use docker to distribute our software, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
 
@@ -132,8 +131,8 @@ pip install gibson
 
 
 
-C. Building from source
------
+## C. Building from source
+
 
 If you don't want to use the precompiled version, you can also install gibson locally. This will require some dependencies to be installed. 
 
@@ -173,14 +172,14 @@ git clone https://github.com/fxia22/baselines.git
 pip install -e baselines
 ```
 
-Uninstalling
-----
+## Uninstalling
+
 
 Uninstall gibson is easy. If you installed with docker, just run `docker images -a | grep "gibson" | awk '{print $3}' | xargs docker rmi` to clean up the image. If you installed from source, uninstall with `pip uninstall gibson`
 
 
-Quick Start
-=================
+## Quick Start
+
 
 First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson`, you will get an interactive shell. Now you can run a few demos. 
 
@@ -219,8 +218,8 @@ By running this command you will start training an ant to navigate in Gates buil
 
 
 
-Gibson Framerate
-----
+## Gibson Framerate
+
 Below is Gibson Environment's framerate benchmarked on different platforms. Please refer to [fps branch](https://github.com/StanfordVL/GibsonEnv/tree/fps) for the code to reproduce the results.
 <table class="table">
   <tr>
@@ -333,14 +332,14 @@ We also tested on <code>Intel I7 7700 + NVIDIA GeForce GTX 1070Ti</code> and <co
 
 <img src=misc/mpi_fps.png width="600">
 
-Web User Interface
-----
+## Web User Interface
+
 When running Gibson, you can start a web user interface with `python gibson/utils/web_ui.py python gibson/utils/web_ui.py 5552`. This is helpful when you cannot physically access the machine running gibson or you are running on a headless cloud environment. You need to change `mode` in configuration file to `web_ui` to use the web user interface.
 
 <img src=misc/web_ui.png width="600">
 
-Rendering Semantics
-----
+## Rendering Semantics
+
 <img src=misc/instance_colorcoding_semantics.png width="600">
 
 Gibson can provide pixel-wise frame-by-frame semantic masks when the model is semantically annotated. As of now we have incorporated models from [Stanford 2D-3D-Semantics Dataset](http://buildingparser.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/) for this purpose. You can access them within Gibson [here](https://github.com/StanfordVL/GibsonEnv/blob/master/gibson/data/README.md#download-gibson-database-of-spaces). We refer you to the original dataset's reference for the list of their semantic classes and annotations. 
@@ -351,8 +350,8 @@ For detailed instructions of rendering semantics in Gibson, see [semantic instru
 **Agreement**: If you choose to use the models from [Stanford 2D3DS](http://3dsemantics.stanford.edu/) or [Matterport 3D](https://niessner.github.io/Matterport/) for rendering semantics, please sign their respective license agreements. Stanford 2D3DS's agreement is inclued in Gibson Database's agreement and does not need to be signed again. For Matterport3D, please see [here](https://niessner.github.io/Matterport/).
 --->
 
-Robotic Agents
-----
+## Robotic Agents
+
 
 Gibson provides a base set of agents. See videos of these agents and their corresponding perceptual observation [here](http://gibsonenv.stanford.edu/agents/). 
 <img src=misc/agents.gif>
@@ -396,16 +395,16 @@ More training code can be found in `examples/train` folder.
 |`train_ant_gibson_flagrun_ppo1.py`| Use PPO1 to train an ant to chase a target (a red cube) in Gates building. Everytime the ant gets to target(or time out), the target will change position.|
 |`train_husky_gibson_flagrun_ppo1.py`|Use PPO1 to train a car to chase a target (a red cube) in Gates building. Everytime the car gets to target(or time out), the target will change position. |
 
-ROS Configuration
----------
+## ROS Configuration
+
 
 We provide examples of configuring Gibson with ROS [here](examples/ros/gibson-ros). We use turtlebot as an example, after a policy is trained in Gibson, it requires minimal changes to deploy onto a turtlebot. See [README](examples/ros/gibson-ros) for more details.
 
 
 
 
-Coding Your RL Agent
-====
+## Coding Your RL Agent
+
 You can code your RL agent following our convention. The interface with our environment is very simple (see some examples in the end of this section).
 
 First, you can create an environment by creating an instance of classes in `gibson/core/envs` folder. 
@@ -429,8 +428,8 @@ provide some examples at [examples/train](examples/train). The RL algorithms tha
 In particular, we used [PPO](https://github.com/openai/baselines/tree/master/baselines/ppo1) and a speed optimized version of [PPO](https://github.com/openai/baselines/tree/master/baselines/ppo2).
 
 
-Environment Configuration
-=================
+## Environment Configuration
+
 Each environment is configured with a `yaml` file. Examples of `yaml` files can be found in `examples/configs` folder. Parameters for the file is explained below. For more informat specific to Bullet Physics engine, you can see the documentation [here](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit).
 
 | Argument name        | Example value           | Explanation  |
@@ -472,8 +471,8 @@ Gibson provides a set of methods for you to define your own environments. You ca
 | robot.reset_new_pose(pos, orn) | Reset the robot to any pose. |
 | robot.dist_to_target() | Get current distance from robot to target. |
 
-Goggles: transferring the agent to real-world
-=================
+## Goggles: transferring the agent to real-world
+
 Gibson includes a baked-in domain adaptation mechanism, named Goggles, for when an agent trained in Gibson is going to be deployed in real-world (i.e. operate based on images coming from an onboard camera). The mechanisms is essentially a learned inverse function that alters the frames coming from a real camera to what they would look like if they were rendered via Gibson, and hence, disolve the domain gap. 
 
 <img src=http://gibson.vision/public/img/figure4.jpg width="600">
@@ -484,8 +483,8 @@ Gibson includes a baked-in domain adaptation mechanism, named Goggles, for when 
 In order to use goggle, you will need preferably a camera with depth sensor, we provide an example [here](examples/ros/gibson-ros/goggle.py) for Kinect. The trained goggle functions are stored in `assets/unfiller_{resolution}.pth`, and each one is paired with one filler function. You need to use the correct one depending on which filler function is used. If you don't have a camera with depth sensor, we also provide an example for RGB only [here](examples/demo/goggle_video.py).
 
 
-Citation
-=================
+## Citation
+
 
 If you use Gibson Environment's software or database, please cite:
 ```

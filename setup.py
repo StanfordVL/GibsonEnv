@@ -83,6 +83,7 @@ setup(name='gibson',
     version='0.5.0',
     description='Real Environment Developed by Stanford University',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     url='https://github.com/fxia22/realenv',
     author='Stanford University',
       classifiers=[
