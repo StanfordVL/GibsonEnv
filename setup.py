@@ -70,6 +70,14 @@ setup(name='gibson',
     description='Real Environment Developed by Stanford University',
     url='https://github.com/fxia22/realenv',
     author='Stanford University',
+      classifiers=[
+          'Programming Language :: Python :: 2.7',
+          'License :: OSI Approved :: MIT License',
+          'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9'
+      ],
     zip_safe=False,
     packages=find_packages(),
     install_requires=[
@@ -81,7 +89,7 @@ setup(name='gibson',
             'numpy>=1.13',
             'pybullet==1.9.4',
             'transforms3d>=0.3.1',
-            'tqdm >= 4',
+            'tqdm>=4',
             'pyzmq>=16.0.2',
             'Pillow>=4.2.1',
             'matplotlib>=2.1.0',
@@ -103,9 +111,7 @@ setup(name='gibson',
     },
     ext_modules=[CMakeExtension('GibsonChannel', source_dir='gibson/core')],
     cmdclass=dict(build_ext=CMakeBuild),
-    # cmdclass={
-    #    'install': PostInstallCommand
-    #}
+    python_requires='>2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, < 4',
 )
 
 # check_call("bash realenv/envs/build.sh".split())
