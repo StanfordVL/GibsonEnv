@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6]
+        python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -25,6 +25,12 @@ jobs:
         run: |
           sudo apt-get install -y doxygen libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libportmidi-dev libfreetype6-dev
           python -m pip install --upgrade pip
-      - name: Build
+      - name: Create source dist
         run: |
-          ./build.sh build_local
+          python setup.py sdist
+      - name: Build and install
+        run: |
+          pip install -e .
+      - name: Create binary wheel dist
+        run: |
+          python setup.py bdist_wheel
