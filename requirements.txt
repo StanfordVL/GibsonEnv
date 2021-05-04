@@ -1,6 +1,6 @@
 numpy>=1.13
 pyglet>=1.2.0
-gym==0.9.4
+gym==0.7.4
 PyYAML>=3.12
 pybullet
 transforms3d>=0.3.1
