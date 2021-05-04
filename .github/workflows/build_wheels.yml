@@ -36,3 +36,4 @@ jobs:
         env:
           CIBW_BUILD_VERBOSITY: 1
           CIBW_BUILD: cp36-manylinux_x86_64
+          CIBW_BEFORE_BUILD: bash configure_system.sh
