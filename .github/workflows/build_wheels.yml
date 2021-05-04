@@ -1,0 +1,38 @@
+name: Build and upload to PyPI
+
+# Build on every branch push, tag push, and pull request change:
+on: [push, pull_request]
+
+jobs:
+  build_wheels:
+    name: Build wheels
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ 3.6 ]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install depencecies
+        run: |
+          python -m pip install --upgrade pip
+          sudo apt-get install -y doxygen libglew-dev libglm-dev libassimp-dev xorg-dev libglu1-mesa-dev libboost-dev mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libportmidi-dev libfreetype6-dev
+          pip install wheel twine
+          pip install -r requirements.txt
+      - uses: Jimver/cuda-toolkit@v0.2.1
+        id: cuda-toolkit
+        with:
+          cuda: '11.2.2'
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==1.11.0
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_BUILD: cp36-manylinux_x86_64
