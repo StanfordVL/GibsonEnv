@@ -61,31 +61,35 @@ else()
     message("GLEW NOT FOUND")
 endif()
 
-find_package(ASSIMP REQUIRED)
-if(ASSIMP_FOUND)
-    include_directories(${ASSIMP_INCLUDE_DIR})
-endif()
+add_subdirectory(assimp)
 
+add_subdirectory(glfw)
 
-add_subdirectory (external)
+#add_subdirectory (external)
 
 add_definitions(-DGLEW_EGL)
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
-    external/glfw/include/GLFW
-    external/lodepng/
+    glfw/include/GLFW
+    lodepng/
+    assimp/include/assimp
     ${GLUT_INCLUDE_DIRS}
     .
     ${ZeroMQ_INCLUDE_DIR}
     glad
 )
 
+set(OPENGL_LIBRARY
+    ${OPENGL_LIBRARY}
+    -lGL -lGLU -lXrandr -lXext -lX11 -lrt
+    ${CMAKE_DL_LIBS}
+    ${GLFW_LIBRARIES}
+)
 
 set(ALL_LIBS
     ${OPENGL_LIBRARY}
     ${GLEW_LIBRARY}
-    GLEW_1130
     ${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
     glfw
