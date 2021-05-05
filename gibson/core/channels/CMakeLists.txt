@@ -82,7 +82,6 @@ include_directories(
 set(ALL_LIBS
     ${OPENGL_LIBRARY}
     ${GLEW_LIBRARY}
-    GLEW_1130
     ${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
     glfw
