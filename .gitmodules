@@ -7,3 +7,6 @@
 [submodule "gibson/core/channels/external/lodepng"]
 	path = gibson/core/channels/external/lodepng
 	url = https://github.com/lvandeve/lodepng
+[submodule "gibson/core/channels/glm"]
+	path = gibson/core/channels/glm
+	url = https://github.com/g-truc/glm

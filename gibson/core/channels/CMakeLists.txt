@@ -65,6 +65,8 @@ add_subdirectory(assimp)
 
 add_subdirectory(glfw)
 
+include_directories("glm")
+
 #add_subdirectory (external)
 
 add_definitions(-DGLEW_EGL)
