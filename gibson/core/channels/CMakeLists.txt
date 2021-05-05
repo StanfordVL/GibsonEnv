@@ -36,8 +36,9 @@ SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 ## load in pkg-config support
 find_package(PkgConfig)
-## use pkg-config to get hints for 0mq locations
-pkg_check_modules(PC_ZeroMQ QUIET zmq)
+## use pkg-config to get hints for zmq locations
+add_subdirectory(cppzmq)
+pkg_check_modules(PC_ZeroMQ REQUIRED)
 
 ## use the hint from above to find where 'zmq.hpp' is located
 find_path(ZeroMQ_INCLUDE_DIR
@@ -62,7 +63,9 @@ else()
 endif()
 
 add_subdirectory(assimp)
-
+SET(GLFW_BUILD_DOCS OFF CACHE BOOL "Build libfoo shared library")
+option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
+option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
 add_subdirectory(glfw)
 
 include_directories("glm")
