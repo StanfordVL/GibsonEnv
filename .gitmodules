@@ -4,6 +4,6 @@
 [submodule "gibson/core/channels/glfw"]
 	path = gibson/core/channels/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "gibson/core/channels/lodepng"]
-	path = gibson/core/channels/lodepng
-	url = https://github.com/lvandeve/lodepng.git
+[submodule "gibson/core/channels/external/lodepng"]
+	path = gibson/core/channels/external/lodepng
+	url = https://github.com/lvandeve/lodepng
