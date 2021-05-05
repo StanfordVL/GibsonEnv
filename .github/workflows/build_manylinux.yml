@@ -43,4 +43,5 @@ jobs:
           CIBW_ARCHS: x86_64
           CIBW_BUILD: cp36-manylinux_x86_64
           CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux2010_x86_64
-          CIBW_BEFORE_BUILD_LINUX: bash build_scripts/configure_system.sh
+          CIBW_BEFORE_ALL_LINUX: bash build_scripts/before_all_linux.sh
+          CIBW_BEFORE_BUILD_LINUX: bash build_script/before_build_linux.sh
