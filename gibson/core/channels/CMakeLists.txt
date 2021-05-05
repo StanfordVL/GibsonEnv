@@ -63,14 +63,16 @@ endif()
 
 add_subdirectory(assimp)
 
-add_subdirectory (external)
+add_subdirectory(glfw)
+
+#add_subdirectory (external)
 
 add_definitions(-DGLEW_EGL)
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
-    external/glfw/include/GLFW
-    external/lodepng/
+    glfw/include/GLFW
+    lodepng/
     assimp/include/assimp
     ${GLUT_INCLUDE_DIRS}
     .
@@ -78,6 +80,12 @@ include_directories(
     glad
 )
 
+set(OPENGL_LIBRARY
+    ${OPENGL_LIBRARY}
+    -lGL -lGLU -lXrandr -lXext -lX11 -lrt
+    ${CMAKE_DL_LIBS}
+    ${GLFW_LIBRARIES}
+)
 
 set(ALL_LIBS
     ${OPENGL_LIBRARY}
