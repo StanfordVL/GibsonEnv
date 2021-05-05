@@ -41,10 +41,7 @@ add_subdirectory(cppzmq)
 pkg_check_modules(PC_ZeroMQ REQUIRED)
 
 ## use the hint from above to find where 'zmq.hpp' is located
-find_path(ZeroMQ_INCLUDE_DIR
-        NAMES zmq.hpp
-        PATHS ${PC_ZeroMQ_INCLUDE_DIRS}
-        )
+
 
 ## use the hint from about to find the location of libzmq
 find_library(ZeroMQ_LIBRARY
@@ -82,6 +79,7 @@ include_directories(
     ${GLUT_INCLUDE_DIRS}
     .
     ${ZeroMQ_INCLUDE_DIR}
+    cppzmq/
     glad
 )
 
