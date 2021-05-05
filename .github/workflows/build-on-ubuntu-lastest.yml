@@ -1,4 +1,4 @@
-name: Build
+name: BuildOnUbuntuLastest
 
 on: [push, pull_request, pull_request_review]
 
@@ -36,12 +36,3 @@ jobs:
       - name: Create binary wheel dist
         run: |
           python setup.py bdist_wheel
-      - name: Publish on test-pypi
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-          skip_existing: true
-          verify_metadata: false
