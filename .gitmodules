@@ -1,3 +1,6 @@
 [submodule "gibson/core/channels/external/glfw"]
 	path = gibson/core/channels/external/glfw
 	url = https://github.com/glfw/glfw
+[submodule "gibson/core/channels/assimp"]
+	path = gibson/core/channels/assimp
+	url = https://github.com/assimp/assimp

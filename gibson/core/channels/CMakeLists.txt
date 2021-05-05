@@ -61,11 +61,7 @@ else()
     message("GLEW NOT FOUND")
 endif()
 
-find_package(ASSIMP REQUIRED)
-if(ASSIMP_FOUND)
-    include_directories(${ASSIMP_INCLUDE_DIR})
-endif()
-
+add_subdirectory(assimp)
 
 add_subdirectory (external)
 
@@ -75,6 +71,7 @@ include_directories(
     ${GLEW_INCLUDE_DIRS}
     external/glfw/include/GLFW
     external/lodepng/
+    assimp/include/assimp
     ${GLUT_INCLUDE_DIRS}
     .
     ${ZeroMQ_INCLUDE_DIR}
