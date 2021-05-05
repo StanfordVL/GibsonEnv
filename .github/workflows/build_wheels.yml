@@ -18,6 +18,7 @@ jobs:
           root-reserve-mb: 512
           swap-size-mb: 1024
           remove-dotnet: 'true'
+      - name: Print disk space
         run: |
           echo "Free space:"
           df -h
