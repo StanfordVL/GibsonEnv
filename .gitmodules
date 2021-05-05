@@ -1,9 +1,9 @@
-[submodule "gibson/core/channels/glfw"]
-	path = gibson/core/channels/glfw
-	url = https://github.com/glfw/glfw
 [submodule "gibson/core/channels/assimp"]
 	path = gibson/core/channels/assimp
 	url = https://github.com/assimp/assimp
+[submodule "gibson/core/channels/glfw"]
+	path = gibson/core/channels/glfw
+	url = https://github.com/glfw/glfw.git
 [submodule "gibson/core/channels/lodepng"]
 	path = gibson/core/channels/lodepng
-	url = https://github.com/lvandeve/lodepng
+	url = https://github.com/lvandeve/lodepng.git
