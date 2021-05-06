@@ -15,7 +15,8 @@ jobs:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
-      - run: |
+      - name: Build manylinux wheel
+        run: |
           export P_VERSION=${{ matrix.python-version }}
           /bin/bash build_scripts/setup_python/setup_python_$P_VERSION.sh
           /bin/bash build_scripts/configure_linux.sh
