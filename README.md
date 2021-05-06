@@ -22,16 +22,16 @@ Please see the [website](http://gibson.vision/) (http://gibsonenv.stanford.edu/)
 
 
 
-Release
-=================
+## Release
+
 **This is the 0.5.0 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).
 
-Database
-=================
+## Database
+
 The full database includes 572 spaces and 1440 floors and can be downloaded [here](gibson/data/README.md). A diverse set of visualizations of all spaces in Gibson can be seen [here](http://gibsonenv.stanford.edu/database/). To make the core assets download package lighter for the users, we  include a small subset (39) of the spaces. Users can download the rest of the spaces and add them to the assets folder. We also integrated [Stanford 2D3DS](http://3dsemantics.stanford.edu/) and [Matterport 3D](https://niessner.github.io/Matterport/) as separate datasets if one wishes to use Gibson's simulator with those datasets (access [here](gibson/data/README.md)).
 
-Table of contents
-=================
+## Table of contents
+
 
    * [Installation](#installation)
         * [Quick Installation (docker)](#a-quick-installation-docker)
@@ -50,8 +50,8 @@ Table of contents
 
 
 
-Installation
-=================
+##Installation
+
 
 #### Installation Method
 
