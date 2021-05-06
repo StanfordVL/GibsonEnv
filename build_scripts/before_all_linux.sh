@@ -9,7 +9,7 @@ yum install openmpi-devel -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
 # Install cmake requirements
-yum install -y freeglut* yum-utils glew* libXrandr* yum install libXinerama* install libXcursor* boost boost-devel minizip* asciidoc zeromq3*
+yum install -y freeglut* yum-utils glew* libXrandr* yum install libXinerama* install libXcursor* boost boost-devel minizip* asciidoc zeromq3* wget
 
 # Install zeromq
 wget https://github.com/zeromq/libzmq/releases/download/v4.2.5/zeromq-4.2.5.zip
