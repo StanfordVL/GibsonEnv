@@ -17,4 +17,6 @@ jobs:
           submodules: recursive
       - run: |
           export P_VERSION=${{ matrix.python-version }}
-          /bin/bash build_scripts/setup_python.sh
+          /bin/bash build_scripts/setup_python/setup_python_$P_VERSION.sh
+          /bin/bash build_scripts/configure_linux.sh
+          /bin/bash build_scripts/build_wheel.sh
