@@ -5,7 +5,7 @@
 yum check-update
 
 # Upgrade cmake
-yum install cmake wget
+yum install -y cmake wget
 wget https://cmake.org/files/v3.5/cmake-3.5.2.tar.gz
 tar -zxvf cmake-3.5.2.tar.gz
 cd cmake-3.5.2
