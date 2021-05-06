@@ -5,7 +5,7 @@
 yum check-update
 
 # Install dependency for mpi4pi
-yum install openmpi-devel -y
+yum install openmpi* libmpi* -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
 # Install cmake requirements

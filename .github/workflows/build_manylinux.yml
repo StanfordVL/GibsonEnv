@@ -12,16 +12,6 @@ jobs:
         python-version: [ 3.6 ]
 
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 512
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-      - name: Print disk space
-        run: |
-          echo "Free space:"
-          df -h
       - uses: actions/checkout@v2
         with:
           submodules: recursive
@@ -44,4 +34,4 @@ jobs:
           CIBW_BUILD: cp36-manylinux_x86_64
           CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux2010_x86_64
           CIBW_BEFORE_ALL_LINUX: bash build_scripts/before_all_linux.sh
-          CIBW_BEFORE_BUILD_LINUX: bash build_script/before_build_linux.sh
+          CIBW_BEFORE_BUILD_LINUX: bash build_scripts/before_build_linux.sh
