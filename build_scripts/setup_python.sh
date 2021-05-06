@@ -9,9 +9,10 @@ cd Python-3.6.4
 make
 make install
 cd -
-alias python='/usr/local/bin/python3.6'
+ln -fs /usr/local/bin/python3.6 /usr/bin/python
 python3.6 --version
 python --version
+python -m pip install --upgrade pip
 
 
 
