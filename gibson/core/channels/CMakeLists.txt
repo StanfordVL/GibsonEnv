@@ -37,11 +37,8 @@ SET(CMAKE_C_FLAGS_DEBUG "-O0")
 ## load in pkg-config support
 find_package(PkgConfig)
 ## use pkg-config to get hints for zmq locations
-add_subdirectory(cppzmq)
+# add_subdirectory(cppzmq)
 pkg_check_modules(PC_ZeroMQ REQUIRED)
-
-## use the hint from above to find where 'zmq.hpp' is located
-
 
 ## use the hint from about to find the location of libzmq
 find_library(ZeroMQ_LIBRARY

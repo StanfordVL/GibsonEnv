@@ -9,7 +9,16 @@ yum install openmpi-devel -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
 # Install cmake requirements
-yum install -y freeglut* yum-utils glew* libXrandr* yum install libXinerama* install libXcursor* zeromq-devel boost boost-devel minizip* asciidoc
+yum install -y freeglut* yum-utils glew* libXrandr* yum install libXinerama* install libXcursor* boost boost-devel minizip* asciidoc zeromq3*
+
+# Install zeromq
+wget https://github.com/zeromq/libzmq/releases/download/v4.2.5/zeromq-4.2.5.zip
+unzip zeromq-4.2.5.zip
+cd zeromq-4.2.5
+./configure
+make -j8
+make install
+cd ..
 
 # Install cuda
 yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel6/x86_64/cuda-rhel6.repo
