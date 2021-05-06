@@ -2,6 +2,7 @@
 #!/bin/bash
 
 # Install pip requirements
+export CC=/usr/lib64/openmpi/bin/mpicc
 pip install wheel auditwheel twine
 pip install -r build_scripts/requirements.txt
 pip install -e .
