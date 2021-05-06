@@ -29,12 +29,3 @@ yum install -y cuda
 export PATH=/usr/local/cuda-10.2/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda-10.2/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 nvcc --version
-
-
-wget https://cmake.org/files/v3.5/cmake-3.5.2.tar.gz
-tar -zxvf cmake-3.5.2.tar.gz
-cd cmake-3.5.2
-./bootstrap
-gmake
-gmake install
-cd ..
