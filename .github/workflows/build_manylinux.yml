@@ -8,9 +8,13 @@ jobs:
     name: Build wheels
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2010_x86_64
+    strategy:
+      matrix:
+        python-version: [3.6]
     steps:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
       - run: |
+          export P_VERSION=${{ matrix.python-version }}
           /bin/bash build_scripts/setup_python.sh

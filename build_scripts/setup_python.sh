@@ -9,10 +9,9 @@ cd Python-3.6.4
 make
 make install
 cd -
-ln -fs /usr/local/bin/python3.6 /usr/bin/python
 python3.6 --version
-python --version
-python -m pip install --upgrade pip
+python$P_VERSION --version
+python$P_VERSION -m pip install --upgrade pip
 
 
 
