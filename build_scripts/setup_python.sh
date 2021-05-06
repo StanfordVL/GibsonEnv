@@ -10,6 +10,7 @@ make
 make install
 cd -
 alias python='/usr/local/bin/python3.6'
+python3.6 --version
 python --version
 
 

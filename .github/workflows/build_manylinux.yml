@@ -9,10 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2010_x86_64
     steps:
-      - name: Configure libc
-        run: |
-          yum install -y glibc*
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           submodules: recursive
       - run: |
