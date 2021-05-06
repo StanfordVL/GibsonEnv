@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Configure libc
         run: |
-          yum install -y libc*
+          yum install -y glibc*
       - uses: actions/checkout@v2
         with:
           submodules: recursive
