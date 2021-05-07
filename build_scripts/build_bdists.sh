@@ -3,6 +3,7 @@
 
 # Install pip requirements
 export CC=/usr/lib64/openmpi/bin/mpicc
+
 for version in "${!python_versions[@]}"; do
   pip$version install wheel auditwheel twine
   pip$version install -r build_scripts/requirements.txt
