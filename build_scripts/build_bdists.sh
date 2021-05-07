@@ -10,5 +10,5 @@ for version in "${!python_versions[@]}"; do
   python$version setup.py bdist_wheel
 done
 
-auditwheel repair dist/*
+auditwheel repair dist/*.whl
 

@@ -26,4 +26,4 @@ jobs:
           python3 setup.py sdist
       - name: Build bdists
         run: |
-          /bin/bash build_scripts/build_wheel.sh
+          /bin/bash build_scripts/build_bdists.sh
