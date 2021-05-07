@@ -23,6 +23,7 @@ jobs:
       - name: Build sdist
         run: |
           pip3 install wheel
+          pip3 install -r build_scripts/requirements.txt
           python3 setup.py sdist
       - name: Build bdists
         run: |
