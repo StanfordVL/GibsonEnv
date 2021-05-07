@@ -20,6 +20,6 @@ done
 cd dist
 ls
 cd ..
-pip3 install auditwheel
-python3 -m auditwheel repair dist/*.whl
+pip3.6 install auditwheel
+python3.6 -m auditwheel repair dist/*.whl
 
