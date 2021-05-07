@@ -16,10 +16,10 @@ jobs:
         run: |
           cd ..
           /bin/bash GibsonEnv/build_scripts/setup_python_versions.sh
-          cd GibsonEnv
       - name: Configure system
         run: |
           /bin/bash build_scripts/configure_linux.sh
+          cd GibsonEnv
       - name: Build sdist
         run: |
           pip3 install wheel

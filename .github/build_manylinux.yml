@@ -25,4 +25,4 @@ jobs:
           CIBW_ARCHS: x86_64
           CIBW_BUILD: cp36-manylinux_x86_64
           CIBW_BEFORE_ALL_LINUX: bash build_scripts/configure_linux.sh
-          CIBW_BEFORE_BUILD_LINUX: bash build_scripts/build_wheel.sh
+          CIBW_BEFORE_BUILD_LINUX: bash build_scripts/build_bdists.sh
