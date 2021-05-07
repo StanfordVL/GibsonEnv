@@ -17,6 +17,9 @@ for version in "${!python_versions[@]}"; do
   pip$version install -e .
   python$version setup.py bdist_wheel
 done
-
-auditwheel repair dist/*.whl
+cd dist
+ls
+cd ..
+pip3 install auditwheel
+python3 -m auditwheel repair dist/*.whl
 
