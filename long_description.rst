@@ -1,5 +1,5 @@
 GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception
-******************************************
+**************************************************************************
 
 |ImageLink|_
 
