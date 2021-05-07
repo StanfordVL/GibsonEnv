@@ -12,14 +12,14 @@ jobs:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
-      - name: Configure pythons environments
+      - name: Configure python environments
         run: |
           cd ..
           /bin/bash GibsonEnv/build_scripts/setup_python_versions.sh
       - name: Configure system
         run: |
+          cd ..
           /bin/bash build_scripts/configure_linux.sh
-          cd GibsonEnv
       - name: Build sdist
         run: |
           pip3 install wheel
