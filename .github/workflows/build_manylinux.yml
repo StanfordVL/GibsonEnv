@@ -19,7 +19,7 @@ jobs:
       - name: Configure system
         run: |
           cd ..
-          /bin/bash build_scripts/configure_linux.sh
+          /bin/bash GibsonEnv/build_scripts/configure_linux.sh
       - name: Build sdist
         run: |
           pip3 install wheel
