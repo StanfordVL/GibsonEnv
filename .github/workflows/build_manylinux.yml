@@ -8,16 +8,22 @@ jobs:
     name: Build wheels
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2010_x86_64
-    strategy:
-      matrix:
-        python-version: [3.6]
     steps:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
-      - name: Build manylinux wheel
+      - name: Configure pythons environments
         run: |
-          export P_VERSION=${{ matrix.python-version }}
-          /bin/bash build_scripts/setup_python/setup_python_$P_VERSION.sh
+          cd ..
+          /bin/bash GibsonEnv/build_scripts/setup_python_versions.sh
+          cd GibsonEnv
+      - name: Configure system
+        run: |
           /bin/bash build_scripts/configure_linux.sh
+      - name: Build sdist
+        run: |
+          pip3 install wheel
+          python3 setup.py sdist
+      - name: Build bdists
+        run: |
           /bin/bash build_scripts/build_wheel.sh
