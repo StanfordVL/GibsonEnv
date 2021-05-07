@@ -22,6 +22,7 @@ jobs:
           /bin/bash GibsonEnv/build_scripts/configure_linux.sh
       - name: Build sdist
         run: |
+          export CC=/usr/lib64/openmpi/bin/mpicc
           pip3 install wheel
           pip3 install -r build_scripts/requirements.txt
           python3 setup.py sdist
