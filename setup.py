@@ -18,7 +18,7 @@ from gibson.assets.assets_manager import AssetsManager
 
 # Get the long description from the relevant file
 here = os.path.abspath(os.path.dirname(__file__))
-with copen(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+with copen(os.path.join(here, 'long_description.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 
@@ -83,7 +83,7 @@ setup(name='gibson',
     version='0.5.0',
     description='Real Environment Developed by Stanford University',
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type='text/x-rst',
     url='https://github.com/fxia22/realenv',
     author='Stanford University',
       classifiers=[
