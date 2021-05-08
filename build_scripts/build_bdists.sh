@@ -14,12 +14,8 @@ declare -A python_versions=(
 for version in "${!python_versions[@]}"; do
   pip$version install wheel auditwheel twine
   pip$version install -r build_scripts/requirements.txt
-  pip$version install -e .
   python$version setup.py bdist_wheel
+  pip$version install -e .
+  python$version -m auditwheel repair dist/gibson-0.5.0-cp"${version//.}"*
 done
-cd dist
-ls
-cd ..
-pip3.6 install auditwheel
-python3.6 -m auditwheel repair dist/*.whl
 

@@ -29,3 +29,12 @@ jobs:
       - name: Build bdists
         run: |
           /bin/bash build_scripts/build_bdists.sh
+      - name: Upload to testpypi
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: |
+          pip3 install twine
+          python3 -m twine upload --repository testpypi dist/gibson*.tar.gz --skip-existing
+          python3 -m twine upload --repository testpypi wheelhouse/* --skip-existing
