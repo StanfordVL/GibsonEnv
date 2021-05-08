@@ -3,6 +3,9 @@
 
 # Upgrade the system
 yum check-update
+yum update
+
+yum groupinstall -y "Development Tools"
 
 # Install dependency for mpi4pi
 yum install openmpi* libmpi* -y

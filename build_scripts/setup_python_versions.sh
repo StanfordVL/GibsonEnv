@@ -18,7 +18,6 @@ function install_python() {
   cd ..
 }
 
-yum groupinstall -y "Development Tools"
 yum install -y gcc bzip2-devel sqlite-devel zlib-devel wget libffi-devel openssl-devel
 
 declare -A python_versions=(

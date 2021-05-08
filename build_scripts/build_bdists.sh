@@ -16,6 +16,6 @@ for version in "${!python_versions[@]}"; do
   pip$version install -r build_scripts/requirements.txt
   python$version setup.py bdist_wheel
   pip$version install -e .
-  python$version -m auditwheel repair dist/gibson-0.5.0-cp"${version//.}"*
+  python$version -m auditwheel repair dist/gibson-*-cp"${version//.}"*
 done
 
