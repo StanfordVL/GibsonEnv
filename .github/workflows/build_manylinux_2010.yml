@@ -16,7 +16,7 @@ jobs:
         run: |
           cd ..
           /bin/bash GibsonEnv/build_scripts/manylinux2010/configure_linux.sh
-      - name: Configure python environments
+      - name: Configure python environment
         run: |
           cd ..
           /bin/bash GibsonEnv/build_scripts/manylinux2010/setup_python_versions.sh

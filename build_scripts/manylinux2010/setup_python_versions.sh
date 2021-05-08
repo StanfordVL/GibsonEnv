@@ -40,7 +40,7 @@ git submodule update --init
 ./config
 make
 make install
-cd..
+cd ..
 
 for version in "${!python_versions[@]}"; do
   if [ $version != "3.6" ]; then
