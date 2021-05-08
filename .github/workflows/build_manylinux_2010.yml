@@ -16,16 +16,16 @@ jobs:
         run: |
           cd ..
           /bin/bash GibsonEnv/build_scripts/manylinux2010/configure_linux.sh
-      - name: Configure python environment
+      - name: Configure python environments
         run: |
           cd ..
           /bin/bash GibsonEnv/build_scripts/manylinux2010/setup_python_versions.sh
       - name: Build sdist
         run: |
           export CC=/usr/lib64/openmpi/bin/mpicc
-          pip3 install wheel
-          pip3 install -r build_scripts/manylinux2010/requirements.txt
-          python3 setup.py sdist
+          pip3.6 install wheel
+          pip3.6 install -r build_scripts/manylinux2010/requirements.txt
+          python3.6 setup.py sdist
       - name: Build bdists
         run: |
           /bin/bash build_scripts/manylinux2010/build_bdists.sh
