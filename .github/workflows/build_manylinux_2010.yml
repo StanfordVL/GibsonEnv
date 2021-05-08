@@ -1,4 +1,4 @@
-name: BuildManylinux
+name: BuildManylinux2010
 
 # Build on every branch push, tag push, and pull request change:
 on: [push, pull_request]

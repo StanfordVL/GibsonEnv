@@ -57,8 +57,8 @@ Then, cloning the repository and install the package using pip
 
 Install required deep learning libraries: Using python3 is recommended. You can create a python3 environment first.
 
-.. |ImageLink| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux.yml/badge.svg?branch=pip-build
-.. _ImageLink: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux.yml
+.. |ImageLink| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml/badge.svg?branch=pip-build
+.. _ImageLink: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml
 .. _Github repository: https://github.com/StanfordVL/GibsonEnv
 .. _Website: http://gibsonenv.stanford.edu/
 .. _Bulletphysics: http://bulletphysics.org/wordpress/
