@@ -28,7 +28,7 @@ jobs:
           python3 setup.py sdist
       - name: Build bdists
         run: |
-          /bin/bash build_scripts/build_bdists.sh
+          /bin/bash build_scripts/manylinux2010/build_bdists.sh
       - name: Upload to testpypi
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         env:
