@@ -8,18 +8,46 @@ yum update
 yum groupinstall -y "Development Tools"
 
 # Install dependency for mpi4pi
-yum install openmpi* libmpi* -y
+yum install openmpi* libmpi* libX* wget yum-utils boost boost-devel -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
-# Install cmake requirements
-yum install -y freeglut* yum-utils glew* libXrandr* yum install libXinerama* install libXcursor* boost boost-devel minizip* asciidoc zeromq3* wget
+# Install pkg-config
+wget https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz
+tar xvfz pkg-config-0.29.2.tar.gz
+cd pkg-config-0.29.2
+./configure --with-internal-glib
+make
+make install
+cd ..
+
+# Install glew
+wget https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.zip
+unzip glew-2.2.0.zip
+cd glew-2.2.0
+make
+make install
+
+# Install libglut
+git clone https://github.com/funchal/libglu.git
+cd libglu
+./autogen.sh
+make install
+cd..
+
+# Install freeglut
+wget https://github.com/dcnieho/FreeGLUT/archive/refs/tags/FG_3_2_1.zip
+unzip FG_3_2_1.zip
+cd FreeGLUT-FG_3_2_1/
+cmake .
+make install
+cd ..
 
 # Install zeromq
 wget https://github.com/zeromq/libzmq/releases/download/v4.2.5/zeromq-4.2.5.zip
 unzip zeromq-4.2.5.zip
 cd zeromq-4.2.5
 ./configure
-make -j8
+make
 make install
 cd ..
 
