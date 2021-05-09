@@ -18,6 +18,12 @@ function install_python() {
   cd ..
 }
 
+# Upgrade the system
+yum check-update
+yum update
+
+yum groupinstall -y "Development Tools"
+
 yum install -y gcc bzip2-devel sqlite-devel zlib-devel wget libffi-devel openssl-devel
 
 declare -A python_versions=(
@@ -47,8 +53,3 @@ for version in "${!python_versions[@]}"; do
     install_python $version
   fi
 done
-
-
-
-
-

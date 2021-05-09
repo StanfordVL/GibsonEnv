@@ -15,7 +15,6 @@ for version in "${!python_versions[@]}"; do
   pip$version install wheel auditwheel twine
   pip$version install -r build_scripts/manylinux2010/requirements.txt
   python$version setup.py bdist_wheel
-  pip$version install -e .
   python$version -m auditwheel repair dist/gibson-*-cp"${version//.}"*
 done
 

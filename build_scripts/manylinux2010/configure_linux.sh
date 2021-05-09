@@ -1,14 +1,8 @@
 # vi /var/tmp/test_script.sh
 #!/bin/bash
 
-# Upgrade the system
-yum check-update
-yum update
-
-yum groupinstall -y "Development Tools"
-
 # Install dependency for mpi4pi
-yum install openmpi* libmpi* libX* wget yum-utils boost boost-devel -y
+yum install openmpi* libmpi* libX* wget yum-utils boost boost-devel minizip* -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
 # Install pkg-config
@@ -26,13 +20,15 @@ unzip glew-2.2.0.zip
 cd glew-2.2.0
 make
 make install
+cd ..
+
 
 # Install libglut
 git clone https://github.com/funchal/libglu.git
 cd libglu
 ./autogen.sh
 make install
-cd..
+cd ..
 
 # Install freeglut
 wget https://github.com/dcnieho/FreeGLUT/archive/refs/tags/FG_3_2_1.zip
