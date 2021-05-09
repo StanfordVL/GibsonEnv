@@ -47,8 +47,3 @@ for version in "${!python_versions[@]}"; do
     install_python $version
   fi
 done
-
-
-
-
-
