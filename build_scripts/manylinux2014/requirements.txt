@@ -6,7 +6,7 @@ pybullet
 transforms3d>=0.3.1
 tqdm>=4
 pyzmq>=16.0.2
-Pillow>=4.2.1
+Pillow
 matplotlib>=2.1.0
 mpi4py
 cloudpickle>=0.4.1

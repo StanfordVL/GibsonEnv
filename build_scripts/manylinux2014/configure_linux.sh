@@ -8,7 +8,7 @@ yum update
 yum groupinstall -y "Development Tools"
 
 # Install dependency for mpi4pi
-yum install openmpi3* libX* wget yum-utils boost boost-devel -y
+yum install openmpi3* libmpi* libX* wget yum-utils boost boost-devel -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
 # Install pkg-config
