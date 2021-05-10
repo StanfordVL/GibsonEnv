@@ -7,22 +7,8 @@ jobs:
   build_wheels:
     name: Build wheels
     runs-on: ubuntu-latest
-
+    container: quay.io/pypa/manylinux2010_x86_64
     steps:
-      - name: Increase disk space
-        uses: easimon/maximize-build-space@master
-        with:
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-      - name: Build
-        run: |
-          echo "Free space:"
-          df -h
-      - name: Start docker image
-        run: |
-          sudo docker run -i -t -v `pwd`:/io quay.io/pypa/manylinux2010_x86_64 /bin/bash
       - uses: actions/checkout@v1
         with:
           submodules: recursive
