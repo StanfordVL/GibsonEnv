@@ -1,7 +1,8 @@
 GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception
 **************************************************************************
 
-|ImageLink|_
+|BuildManylinux2010|_
+|BuildManylinux2014|_
 
 `Github repository`_
 
@@ -34,22 +35,23 @@ Gibson can be simply installed from pip. The pip version of Gibson is precompile
 
     pip install gibson
 
-C. Building from source
+Building from source
 _______________________
 
 If you don't want to use the precompiled version, you can also install gibson locally. This will require some dependencies to be installed.
 
-First, make sure you have Nvidia driver and CUDA installed. If you install from source, CUDA 9 is not necessary, as that is for nvidia-docker 2.0. Then, let's install some dependencies:
+First, make sure you have Nvidia driver and CUDA installed. If you install from source, CUDA 9 is not necessary, as that is for nvidia-docker 2.0.
+Then, clone this repository recursively to download the submodules  and install the following dependencies:
 
 .. code-block:: bash
-
+    git clone https://github.com/micheleantonazzi/GibsonEnv.git --recursive
     apt-get update
     apt-get install doxygen libglew-dev xorg-dev libglu1-mesa-dev libboost-dev \
       mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
       xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev \
       libportmidi-dev libfreetype6-dev
 
-Then, cloning the repository and install the package using pip
+Finally install the package using pip (during this process, Gibson is automatically compiled):
 .. code-block:: bash
 
     pip install -e .
@@ -57,8 +59,10 @@ Then, cloning the repository and install the package using pip
 
 Install required deep learning libraries: Using python3 is recommended. You can create a python3 environment first.
 
-.. |ImageLink| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml/badge.svg?branch=pip-build
-.. _ImageLink: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml
+.. |BuildManylinux2010| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml/badge.svg?branch=pip-build
+.. |BuildManylinux2014| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml/badge.svg?branch=pip-build
+.. _BuildManylinux2010: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml
+.. _BuildManylinux2014: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml
 .. _Github repository: https://github.com/StanfordVL/GibsonEnv
 .. _Website: http://gibsonenv.stanford.edu/
 .. _Bulletphysics: http://bulletphysics.org/wordpress/

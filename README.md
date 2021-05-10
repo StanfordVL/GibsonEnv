@@ -1,5 +1,8 @@
 # GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception 
 
+[![BuildManylinux2010](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml/badge.svg?branch=pip-build)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml)
+[![BuildManylinux2014](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml/badge.svg?branch=pip-build)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml)
+
 You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment simulator, Gibson, that offers real-world experience for learning perception.  
 
 <img src=misc/ui.gif width="600">
@@ -125,11 +128,10 @@ If you don't have X server running, you can still run gibson, see [this guide](h
 
 If you don't want to use our docker image, you can install the precompiled version from pip. This version only works on a Linux machine (tested on the latest Ubuntu version).
 
+**NB:** The pip version is not available for python2.7, please build Gibson from source.
 ```
 pip install gibson
 ```
-
-
 
 ## C. Building from source
 
@@ -137,8 +139,10 @@ pip install gibson
 If you don't want to use the precompiled version, you can also install gibson locally. This will require some dependencies to be installed. 
 
 First, make sure you have Nvidia driver and CUDA installed. If you install from source, CUDA 9 is not necessary, as that is for nvidia-docker 2.0. Then, let's install some dependencies:
+Then clone this repo recursively and install some dependencies:
 
 ```bash
+git clone https://github.com/micheleantonazzi/GibsonEnv.git --recursive
 apt-get update 
 apt-get install doxygen libglew-dev xorg-dev libglu1-mesa-dev libboost-dev \
       mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
@@ -156,13 +160,9 @@ pip install http://download.pytorch.org/whl/cu90/torch-0.3.1-cp35-cp35m-linux_x8
 pip install torchvision==0.2.0
 pip install tensorflow==1.3
 ```
-Clone the repository, download data and build
+Finally, build and install the package using pip:
 ```bash
-git clone https://github.com/StanfordVL/GibsonEnv.git
-cd GibsonEnv
-./download.sh # this script downloads assets data file and decompress it into gibson/assets folder
-./build.sh build_local ### build C++ and CUDA files
-pip install -e . ### Install python libraries
+pip install -e . ### Gibson build
 ```
 
 Install OpenAI baselines if you need to run the training demo.
