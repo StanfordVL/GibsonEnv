@@ -1,17 +1,15 @@
 name: CancelGithubActions
-on:
-  workflow_run:
-    workflows: ['CI']
-    types: ['requested']
+on: [push, pull_request]
 
 jobs:
-  cancel-duplicate-workflow-runs:
-    name: "Cancel duplicate workflow runs"
+  cancel-multiple-workflow-runs:
+    name: "Cancel the self CI workflow run"
     runs-on: ubuntu-latest
     steps:
-      - uses: potiuk/cancel-workflow-runs@master
-        name: "Cancel duplicate workflow runs"
+      - name: "Cancel workflow 1"
+        uses: potiuk/cancel-workflow-runs@master
         with:
           cancelMode: allDuplicates
           cancelFutureDuplicates: true
           token: ${{ secrets.GITHUB_TOKEN }}
+          workflowFileName: build_manylinux_2010.yml
