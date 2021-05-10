@@ -16,6 +16,8 @@ function install_python() {
   python$1 --version
   pip$1 --version
   cd ..
+
+  rm -rf $file_name
 }
 
 yum install -y gcc bzip2-devel sqlite-devel zlib-devel wget libffi-devel openssl-devel
