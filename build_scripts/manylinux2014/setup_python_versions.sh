@@ -24,8 +24,8 @@ yum install -y gcc bzip2-devel sqlite-devel zlib-devel wget libffi-devel openssl
 
 declare -A python_versions=(
   ['3.6']='https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tar.xz'
-  ['3.7']='https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz'
-  ['3.8']='https://www.python.org/ftp/python/3.8.9/Python-3.8.9.tar.xz'
+  #['3.7']='https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz'
+  #['3.8']='https://www.python.org/ftp/python/3.8.9/Python-3.8.9.tar.xz'
   ['3.9']='https://www.python.org/ftp/python/3.9.4/Python-3.9.4.tar.xz'
 )
 
