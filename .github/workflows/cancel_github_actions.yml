@@ -13,3 +13,10 @@ jobs:
           cancelFutureDuplicates: true
           token: ${{ secrets.GITHUB_TOKEN }}
           workflowFileName: build_manylinux_2010.yml
+      - name: "Cancel workflow 2"
+        uses: potiuk/cancel-workflow-runs@master
+        with:
+          cancelMode: allDuplicates
+          cancelFutureDuplicates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflowFileName: build_manylinux_2014.yml
