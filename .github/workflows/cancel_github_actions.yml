@@ -6,17 +6,17 @@ jobs:
     name: "Cancel the self CI workflow run"
     runs-on: ubuntu-latest
     steps:
-      - name: "Cancel workflow 1"
+      - name: Cancel build manylinux2010
         uses: potiuk/cancel-workflow-runs@master
         with:
-          cancelMode: allDuplicates
+          cancelMode: duplicates
           cancelFutureDuplicates: true
           token: ${{ secrets.GITHUB_TOKEN }}
           workflowFileName: build_manylinux_2010.yml
-      - name: "Cancel workflow 2"
+      - name: Cancel build manylinux2014
         uses: potiuk/cancel-workflow-runs@master
         with:
-          cancelMode: allDuplicates
+          cancelMode: duplicates
           cancelFutureDuplicates: true
           token: ${{ secrets.GITHUB_TOKEN }}
           workflowFileName: build_manylinux_2014.yml
