@@ -1,0 +1,5 @@
+recursive-include gibson/ *
+
+global-exclude *.pyc
+exclude gibson/assets/assets_config.yaml
+recursive-exclude gibson/assets/assets_data/ *

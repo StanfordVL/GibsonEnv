@@ -1,0 +1,40 @@
+name: BuildManylinux2014
+
+# Build on every branch push, tag push, and pull request change:
+on: [push, pull_request]
+
+jobs:
+  build_wheels:
+    name: Build manylinux2014 wheels
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux2014_x86_64
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: recursive
+      - name: Configure python environments
+        run: |
+          cd ..
+          /bin/bash GibsonEnv/build_scripts/manylinux2014/setup_python_versions.sh
+      - name: Configure system
+        run: |
+          cd ..
+          /bin/bash GibsonEnv/build_scripts/manylinux2014/configure_linux.sh
+      - name: Build sdist
+        run: |
+          export CC=/usr/lib64/openmpi/bin/mpicc
+          pip3 install wheel
+          pip3 install -r build_scripts/manylinux2014/requirements.txt
+          python3 setup.py sdist
+      - name: Build bdists
+        run: |
+          /bin/bash build_scripts/manylinux2014/build_bdists.sh
+      - name: Upload to testpypi
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: |
+          pip3 install twine
+          python3 -m twine upload --repository testpypi dist/gibson*.tar.gz --skip-existing
+          python3 -m twine upload --repository testpypi wheelhouse/* --skip-existing

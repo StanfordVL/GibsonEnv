@@ -17,6 +17,8 @@ from gibson import assets
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 from numpy import cos, sin
+
+from gibson.assets.assets_manager import AssetsManager
 from gibson.core.render.profiler import Profiler
 from multiprocessing import Process
 
@@ -24,16 +26,15 @@ from gibson.data.datasets import ViewDataSet3D
 from gibson.learn.completion import CompletionNet
 import torch.nn as nn
 
-import pdb
-
+assetsManager = AssetsManager()
 file_dir = os.path.dirname(os.path.abspath(__file__))
-assets_file_dir = os.path.dirname(assets.__file__)
+assets_file_dir = assetsManager.get_assets_path()
 
-coords  = np.load(os.path.join(assets_file_dir, 'coord.npy'))
+coords = np.load(os.path.join(AssetsManager().get_assets_path(), 'coord.npy'))
 
 
 try:
-    cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'render_cuda_f'),'.')
+    cuda_pc = np.ctypeslib.load_library(os.path.join(file_dir, 'librender_cuda_f'),'.')
 except:
     print("Error: cuda renderer is not loaded, rendering will not work")
 

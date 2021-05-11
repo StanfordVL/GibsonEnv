@@ -4,13 +4,36 @@ Notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 https://github.com/StanfordVL/GibsonEnv/blob/master/README.md
+## 0.6.0 - 2021-05-11
+- **Improved the build procedure and published the Gibson compiled version on pypi (for now test pypi)**
+- The build procedure is performed directly from setup.py
+- Added submodule to the repository
+- Added a github action which builds the project (using Python 3.6, 3.7, 3.8, 3.9) and publishes the compiled version on pypi
+- Added Github actions to build Gibson following the manylinux standard. In particular, Gibson is compiled following [PEP 571](https://www.python.org/dev/peps/pep-0571/) (manylinux2010) and [PEP 599](https://www.python.org/dev/peps/pep-0599/) (manylinux2014).
+## 0.5.0 - 2021-05-03
+### Added
+ - Changed the assets default path: now it must be chosen by the user using `gibson-set-assets-path` command
+ - Deleted the assets data folder: all files are contained in assets-core-v2.tar.gz
+ - Created AssetsManager: it stores the assets path and other configuration parameters
+### Issues
+
+* The docker image must be fixed.
+* The docker procedure to install Gibson must be updated.
+
+## 0.4.0 - 2021-04-29
+### Added
+ - Build procedure tested in Ubuntu 20.04 LTS
+ - Fixed build issues
+ - Fixed dependencies issues
+ - Fixed CMake issues
+ - Added new environment: TurtlebotNavigateNoPhysicsEnv. In this environment, all physical constraints are deleted. The gravity is set to zero and the collisions between the agent and the environment are ignored. Therefore, the only way to move the agent is to manually set its position at each stage of the simulation.
 ## 0.3.1 - 2018-08-11
 ### Added
  - EGL integration, remove X server dependency (solve #16 #24 #25)
  - OpenAI Gym 0.10.5 compatibility
  - Updated rendering filler models, added unfiller models
  - Bug fixes
- 
+
 ## 0.3.0 - 2018-06-18
 ### Added
  - Full dataset

@@ -29,7 +29,7 @@ tracking_camera_top = {
 class TurtlebotNavigateEnv(CameraRobotEnv):
     """Specfy navigation reward
     """
-    def __init__(self, config, gpu_idx=0):
+    def __init__(self, config, gpu_idx=0, gravity=9.8, collision_enabled=True):
         self.config = self.parse_config(config)
         assert(self.config["envname"] == self.__class__.__name__ or self.config["envname"] == "TestEnv")
 
@@ -38,7 +38,7 @@ class TurtlebotNavigateEnv(CameraRobotEnv):
                                 tracking_camera=tracking_camera)
 
         self.robot_introduce(Turtlebot(self.config, env=self))
-        self.scene_introduce()
+        self.scene_introduce(gravity=gravity, collision_enabled=collision_enabled)
         self.total_reward = 0
         self.total_frame = 0
 

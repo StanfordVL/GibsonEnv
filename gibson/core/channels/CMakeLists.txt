@@ -36,13 +36,9 @@ SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 ## load in pkg-config support
 find_package(PkgConfig)
-## use pkg-config to get hints for 0mq locations
-pkg_check_modules(PC_ZeroMQ QUIET zmq)
-## use the hint from above to find where 'zmq.hpp' is located
-find_path(ZeroMQ_INCLUDE_DIR
-        NAMES zmq.hpp
-        PATHS ${PC_ZeroMQ_INCLUDE_DIRS}
-        )
+## use pkg-config to get hints for zmq locations
+# add_subdirectory(cppzmq)
+pkg_check_modules(PC_ZeroMQ REQUIRED)
 
 ## use the hint from about to find the location of libzmq
 find_library(ZeroMQ_LIBRARY
@@ -60,31 +56,40 @@ else()
     message("GLEW NOT FOUND")
 endif()
 
-find_package(ASSIMP REQUIRED)
-if(ASSIMP_FOUND)
-    include_directories(${ASSIMP_INCLUDE_DIR})
-endif()
+add_subdirectory(assimp)
+SET(GLFW_BUILD_DOCS OFF CACHE BOOL "Build libfoo shared library")
+option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
+option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
+add_subdirectory(glfw)
 
+include_directories("glm")
 
-add_subdirectory (external)
+#add_subdirectory (external)
 
 add_definitions(-DGLEW_EGL)
 
 include_directories(
     ${GLEW_INCLUDE_DIRS}
-    external/glfw-3.1.2/include/GLFW
+    glfw/include/GLFW
     external/lodepng/
+    assimp/include/assimp
     ${GLUT_INCLUDE_DIRS}
     .
     ${ZeroMQ_INCLUDE_DIR}
+    cppzmq/
     glad
 )
 
+set(OPENGL_LIBRARY
+    ${OPENGL_LIBRARY}
+    -lGL -lGLU -lXrandr -lXext -lX11 -lrt
+    ${CMAKE_DL_LIBS}
+    ${GLFW_LIBRARIES}
+)
 
 set(ALL_LIBS
     ${OPENGL_LIBRARY}
     ${GLEW_LIBRARY}
-    GLEW_1130
     ${GLUT_LIBRARY}
     ${ZeroMQ_LIBRARY}
     glfw
@@ -203,3 +208,4 @@ add_custom_command(
    TARGET semantic POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/semantic${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/depth_render/"
 )
+add_definitions(-D GLM_ENABLE_EXPERIMENTAL)

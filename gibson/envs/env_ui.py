@@ -67,7 +67,8 @@ class SimpleUI():
             import scipy.misc
             img = np.zeros((view.shape[0], view.shape[1], 3))
             img[:, :, :] = view
-            scipy.misc.imsave("Img%d.png" % self.nframe, img)
+            #imageio.imwrite("Img%d.png" % self.nframe, img)
+            #scipy.misc.imsave("Img%d.png" % self.nframe, img)
         for index, component in enumerate(self.components):
             if tag == component:
                 self._add_image(

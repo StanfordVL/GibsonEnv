@@ -90,17 +90,10 @@ install() {
 }
 
 build_local() {
-    ## Core renderer
-    if [ ! -d ./gibson/core/channels/external/glfw-3.1.2 ]; then
-        wget --quiet https://github.com/glfw/glfw/releases/download/3.1.2/glfw-3.1.2.zip
-        unzip glfw-3.1.2.zip && rm glfw-3.1.2.zip
-        mv glfw-3.1.2 ./gibson/core/channels/external/glfw-3.1.2
-    fi
-    [ ! -d ./gibson/core/channels/build ] || rm -rf ./gibson/core/channels/build
 
-    mkdir -p ./gibson/core/channels/build
-    cd ./gibson/core/channels/build
-    cmake -DCMAKE_BUILD_TYPE=Debug .. && make clean && make -j 10
+    mkdir -p ./build
+    cd ./build
+    cmake -DCMAKE_BUILD_TYPE=Debug ../gibson/core/channels/ && make clean && make -j 10
     cd -
 
 

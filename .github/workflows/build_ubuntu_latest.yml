@@ -1,0 +1,33 @@
+name: BuildOnUbuntuLatest
+
+on: [push, pull_request, pull_request_review]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: Jimver/cuda-toolkit@v0.2.1
+        id: cuda-toolkit
+        with:
+          cuda: '11.2.1'
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt-get install -y doxygen cmake libglew-dev libglm-dev xorg-dev libglu1-mesa-dev libboost-dev mesa-common-dev freeglut3-dev libopenmpi-dev golang libjpeg-turbo8-dev wmctrl xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libportmidi-dev libfreetype6-dev
+          python -m pip install --upgrade pip
+          pip install wheel twine
+          pip install -r requirements.txt
+      - name: Build and install
+        run: |
+          pip install -e .
