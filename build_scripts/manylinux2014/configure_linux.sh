@@ -16,7 +16,7 @@ wget https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz
 tar xvfz pkg-config-0.29.2.tar.gz
 cd pkg-config-0.29.2
 ./configure --with-internal-glib
-make
+make -j2
 make install
 cd ..
 
