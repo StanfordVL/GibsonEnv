@@ -27,7 +27,7 @@ Please see the [website](http://gibson.vision/) (http://gibsonenv.stanford.edu/)
 
 ## Release
 
-**This is the 0.5.0 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).
+**This is the 0.6.0 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).
 
 ## Database
 
