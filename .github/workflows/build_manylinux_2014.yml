@@ -23,9 +23,9 @@ jobs:
       - name: Build sdist
         run: |
           export CC=/usr/lib64/openmpi/bin/mpicc
-          pip3.6 install wheel
-          pip3.6 install -r build_scripts/manylinux2014/requirements.txt
-          python3.6 setup.py sdist
+          pip3 install wheel
+          pip3 install -r build_scripts/manylinux2014/requirements.txt
+          python3 setup.py sdist
       - name: Build bdists
         run: |
           /bin/bash build_scripts/manylinux2014/build_bdists.sh
