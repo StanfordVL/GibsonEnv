@@ -17,7 +17,6 @@ for version in "${!python_versions[@]}"; do
   pip$version install -e .
   python$version setup.py bdist_wheel
   python$version -m auditwheel repair dist/gibson-*-cp"${version//.}"*
-  pip$version uninstall -r build_scripts/manylinux2010/requirements.txt -y
   rm -rf /tmp/pip*
 done
 
