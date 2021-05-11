@@ -9,7 +9,7 @@ function install_python() {
   cd $dir_name
 
   ./configure
-  make
+  make -j2
   make install
 
   python$1 -m pip install --upgrade pip
