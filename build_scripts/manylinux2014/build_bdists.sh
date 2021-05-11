@@ -13,9 +13,10 @@ declare -A python_versions=(
 
 for version in "${!python_versions[@]}"; do
   pip$version install wheel auditwheel
-  pip$version install -r build_scripts/manylinux2014/requirements.txt
+  pip$version install -r build_scripts/manylinux2014/requirements.txt --no-cache-dir
   pip$version install -e .
   python$version setup.py bdist_wheel
   python$version -m auditwheel repair dist/gibson-*-cp"${version//.}"*
-  rm -rf ~/.cache/pip/
+  pip$version uninstall -r build_scripts/manylinux2014/requirements.txt -y
+  rm -rf /tmp/pip*
 done
