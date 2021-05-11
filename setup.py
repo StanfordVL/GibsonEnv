@@ -80,14 +80,13 @@ with open(os.path.abspath('requirements.txt'), mode='r') as f:
     requirements = [line.rstrip() for line in f]
 
 setup(name='gibson',
-    version='0.6.1',
+    version='0.6.2',
     description='Real Environment Developed by Stanford University',
     long_description=long_description,
     long_description_content_type='text/x-rst',
     url='https://github.com/fxia22/realenv',
     author='Stanford University',
       classifiers=[
-          'Programming Language :: Python :: 2.7',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
