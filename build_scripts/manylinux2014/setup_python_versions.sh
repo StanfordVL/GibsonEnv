@@ -40,7 +40,7 @@ cd openssl
 git checkout OpenSSL_1_1_1-stable
 git submodule update --init
 ./config
-make
+make -j2
 make install
 cd ..
 
