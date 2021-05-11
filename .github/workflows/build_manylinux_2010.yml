@@ -5,7 +5,7 @@ on: [push, pull_request]
 
 jobs:
   build_wheels:
-    name: Build wheels
+    name: Build manylinux2010 wheels
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2010_x86_64
     steps:
