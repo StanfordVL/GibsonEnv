@@ -24,13 +24,14 @@ cd ..
 wget https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.zip
 unzip glew-2.2.0.zip
 cd glew-2.2.0
-make
+make -j2
 make install
 
 # Install libglut
 git clone https://github.com/funchal/libglu.git
 cd libglu
 ./autogen.sh
+make -j2
 make install
 cd..
 
@@ -39,6 +40,8 @@ wget https://github.com/dcnieho/FreeGLUT/archive/refs/tags/FG_3_2_1.zip
 unzip FG_3_2_1.zip
 cd FreeGLUT-FG_3_2_1/
 cmake .
+make
+-j2
 make install
 cd ..
 
@@ -47,7 +50,7 @@ wget https://github.com/zeromq/libzmq/releases/download/v4.2.5/zeromq-4.2.5.zip
 unzip zeromq-4.2.5.zip
 cd zeromq-4.2.5
 ./configure
-make
+make -j2
 make install
 cd ..
 
