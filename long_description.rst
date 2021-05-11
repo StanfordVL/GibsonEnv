@@ -44,6 +44,7 @@ First, make sure you have Nvidia driver and CUDA installed. If you install from 
 Then, clone this repository recursively to download the submodules  and install the following dependencies:
 
 .. code-block:: bash
+
     git clone https://github.com/micheleantonazzi/GibsonEnv.git --recursive
     apt-get update
     apt-get install doxygen libglew-dev xorg-dev libglu1-mesa-dev libboost-dev \
