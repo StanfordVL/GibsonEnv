@@ -17,5 +17,6 @@ for version in "${!python_versions[@]}"; do
   pip$version install -e .
   python$version setup.py bdist_wheel
   python$version -m auditwheel repair dist/gibson-*-cp"${version//.}"*
+  rm -rf ~/.cache/pip/
 done
 

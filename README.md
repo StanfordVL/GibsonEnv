@@ -1,5 +1,5 @@
 # GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception 
-
+[![BuildOnUbuntuLastest](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml/badge.svg?branch=pip-build)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml)
 [![BuildManylinux2010](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml/badge.svg?branch=pip-build)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml)
 [![BuildManylinux2014](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml/badge.svg?branch=pip-build)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml)
 

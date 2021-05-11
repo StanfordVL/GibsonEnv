@@ -1,6 +1,6 @@
 GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception
 **************************************************************************
-
+|BuildOnUbuntuLatest|_
 |BuildManylinux2010|_
 |BuildManylinux2014|_
 
@@ -61,8 +61,10 @@ Install required deep learning libraries: Using python3 is recommended. You can 
 
 .. |BuildManylinux2010| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml/badge.svg?branch=pip-build
 .. |BuildManylinux2014| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml/badge.svg?branch=pip-build
+.. |BuildOnUbuntuLatest| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml/badge.svg?branch=pip-build
 .. _BuildManylinux2010: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml
 .. _BuildManylinux2014: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml
+.. _BuildOnUbuntuLatest: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml/badge.svg
 .. _Github repository: https://github.com/StanfordVL/GibsonEnv
 .. _Website: http://gibsonenv.stanford.edu/
 .. _Bulletphysics: http://bulletphysics.org/wordpress/
