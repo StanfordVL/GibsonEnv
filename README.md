@@ -76,7 +76,7 @@ For building from the source(B):
 
 #### Download data
 
-First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
+First, our environment core assets data are available [here](https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. `gibson/assets` folder stores necessary data (agent models, environments, etc) to run gibson environment. Users can add more environments files into `gibson/assets/dataset` to run gibson on more environments. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
 
 
 A. Quick installation (docker)
@@ -92,7 +92,7 @@ You can either 1. pull from our docker image (recommended) or 2. build your own 
 1. Pull from our docker image (recommended)
 
 ```bash
-# download the dataset from https://storage.googleapis.com/gibsonassets/dataset.tar.gz
+# download the dataset from https://storage.googleapis.com/gibson_scenes/dataset.tar.gz
 docker pull xf1280/gibson:0.3.1
 xhost +local:root
 docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset xf1280/gibson:0.3.1
