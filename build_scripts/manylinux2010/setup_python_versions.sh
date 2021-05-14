@@ -29,6 +29,7 @@ else
   cd ..
 fi
 
+# Build and install python
 file_name=$(basename ${python_versions[$python_version]})
 dir_name=${file_name%.*.*}
 

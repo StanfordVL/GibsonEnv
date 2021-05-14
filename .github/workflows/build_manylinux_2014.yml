@@ -8,6 +8,9 @@ jobs:
     name: Build manylinux2014 wheels
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2014_x86_64
+    strategy:
+      matrix:
+        python_version: [3.6, 3.7, 3.8, 3.9]
     steps:
       - uses: actions/checkout@v1
         with:
@@ -16,6 +19,8 @@ jobs:
         run: |
           cd ..
           /bin/bash GibsonEnv/build_scripts/manylinux2014/setup_python_versions.sh
+        env:
+          python_version: ${{ matrix.python_version }}
       - name: Configure system
         run: |
           cd ..
