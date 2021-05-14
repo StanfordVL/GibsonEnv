@@ -6,7 +6,7 @@ yum update
 
 yum groupinstall -y "Development Tools"
 
-yum install -y gcc bzip2-devel sqlite-devel zlib-devel wget libffi-devel openssl-devel
+yum install -y gcc bzip2-devel sqlite-devel zlib-devel wget libffi-devel
 
 declare -A python_versions=(
   ['3.6']='https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tar.xz'
