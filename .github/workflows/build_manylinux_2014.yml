@@ -24,6 +24,7 @@ jobs:
           /bin/bash GibsonEnv/build_scripts/manylinux2014/configure_linux.sh
       - name: Build sdist
         run: |
+          export CC=/usr/lib64/openmpi/bin/mpicc
           pip${{ matrix.python_version }} install wheel
           pip${{ matrix.python_version }} install -r build_scripts/manylinux2014/requirements.txt
           python${{ matrix.python_version }} setup.py sdist
