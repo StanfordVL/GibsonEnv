@@ -8,14 +8,16 @@ jobs:
     name: Build manylinux2014 wheels
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2014_x86_64
+    strategy:
+      matrix:
+        python_version: [3.6, 3.7, 3.8, 3.9]
     steps:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
-      - name: Configure python environments
+      - name: Import python binaries
         run: |
-          cd ..
-          /bin/bash GibsonEnv/build_scripts/manylinux2014/setup_python_versions.sh
+          export PATH=/opt/python/cp*/bin${PATH:+:${PATH}}
       - name: Configure system
         run: |
           cd ..
@@ -23,18 +25,22 @@ jobs:
       - name: Build sdist
         run: |
           export CC=/usr/lib64/openmpi/bin/mpicc
-          pip3 install wheel
-          pip3 install -r build_scripts/manylinux2014/requirements.txt
-          python3 setup.py sdist
+          pip${{ matrix.python_version }} install wheel
+          pip${{ matrix.python_version }} install -r build_scripts/manylinux2014/requirements.txt
+          python${{ matrix.python_version }} setup.py sdist
       - name: Build bdists
         run: |
-          /bin/bash build_scripts/manylinux2014/build_bdists.sh
+          export CC=/usr/lib64/openmpi/bin/mpicc
+          pip${{ matrix.python_version }} install -r build_scripts/manylinux2014/requirements.txt
+          pip${{ matrix.python_version }} install -e .
+          python${{ matrix.python_version }} setup.py bdist_wheel
+          auditwheel repair dist/gibson-*-cp*
       - name: Upload to testpypi
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
         run: |
-          pip3 install twine
-          python3 -m twine upload --repository testpypi dist/gibson*.tar.gz --skip-existing
-          python3 -m twine upload --repository testpypi wheelhouse/* --skip-existing
+          pip${{ matrix.python_version }} install twine
+          python${{ matrix.python_version }} -m twine upload --repository testpypi dist/gibson*.tar.gz --skip-existing
+          python${{ matrix.python_version }} -m twine upload --repository testpypi wheelhouse/* --skip-existing
