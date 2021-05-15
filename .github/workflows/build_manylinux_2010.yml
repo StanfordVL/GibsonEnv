@@ -34,7 +34,7 @@ jobs:
           pip${{ matrix.python_version }} install -r build_scripts/manylinux2010/requirements.txt
           pip${{ matrix.python_version }} install -e .
           python${{ matrix.python_version }} setup.py bdist_wheel
-          python${{ matrix.python_version }} -m auditwheel repair dist/gibson-*-cp*
+          auditwheel repair dist/gibson-*-cp*
       - name: Upload to testpypi
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         env:
