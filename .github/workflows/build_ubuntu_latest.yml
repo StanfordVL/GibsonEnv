@@ -28,6 +28,8 @@ jobs:
         with:
           path: ~/.cache/pip/wheels
           key: ${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+      - run: which node
+      - run: node --version
       - name: Install dependencies
         run: |
           sudo apt update
