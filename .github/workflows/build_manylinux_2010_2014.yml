@@ -12,7 +12,7 @@ jobs:
         manylinux_images: [manylinux2010, manylinux2014]
         python_version: [3.6, 3.7, 3.8, 3.9]
         exclude:
-          - manylinux_images: manylinux2010
+          - manylinux_image: manylinux2010
             python_version: 3.9
     container: micheleantonazzi/manylinux-extended:${{ matrix.manylinux_image }}_x86_64_extended_latest
     steps:
