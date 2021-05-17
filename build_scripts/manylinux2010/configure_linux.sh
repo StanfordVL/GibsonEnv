@@ -1,8 +1,7 @@
-# vi /var/tmp/test_script.sh
 #!/bin/bash
 
 # Install dependency for mpi4pi
-yum install openmpi* libmpi* libX* wget yum-utils boost boost-devel minizip* -y
+yum install openmpi* boost boost-devel minizip* -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
 # Install pkg-config
