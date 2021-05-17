@@ -14,7 +14,7 @@ jobs:
         exclude:
           - manylinux_image: manylinux2010
             python_version: 3.9
-    container: micheleantonazzi/manylinux-extended:${{ matrix.manylinux_image }}_x86_64_extended_latest
+    container: micheleantonazzi/manylinux-extended:${{ matrix.manylinux_image }}_x86_64_extended_0.5.0
     steps:
       - uses: actions/checkout@v1
         with:
