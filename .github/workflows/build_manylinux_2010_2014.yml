@@ -9,14 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        manylinux_image: [manylinux2010]
+        manylinux_image: [manylinux2014]
         python_version: [3.6]
         exclude:
           - manylinux_image: manylinux2010
             python_version: 3.9
     container: micheleantonazzi/manylinux-extended:${{ matrix.manylinux_image }}_x86_64_extended_latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           submodules: recursive
       - name: Setup pip cache
