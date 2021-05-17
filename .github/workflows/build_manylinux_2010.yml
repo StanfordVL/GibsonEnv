@@ -7,7 +7,7 @@ jobs:
   build_wheels:
     name: Build manylinux2010 wheels
     runs-on: ubuntu-latest
-    container: quay.io/pypa/manylinux2010_x86_64
+    container: micheleantonazzi/manylinux-extended:manylinux2010_x86_64_extended_latest
     strategy:
       matrix:
         python_version: [3.6, 3.7, 3.8]
@@ -15,9 +15,6 @@ jobs:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
-      - name: Import python binaries
-        run: |
-          export PATH=/opt/python/cp*/bin${PATH:+:${PATH}}
       - name: Configure system
         run: |
           cd ..
@@ -31,7 +28,6 @@ jobs:
       - name: Build bdists
         run: |
           export CC=/usr/lib64/openmpi/bin/mpicc
-          pip${{ matrix.python_version }} install -r build_scripts/manylinux2010/requirements.txt
           pip${{ matrix.python_version }} install -e .
           python${{ matrix.python_version }} setup.py bdist_wheel
           auditwheel repair dist/gibson-*-cp*
