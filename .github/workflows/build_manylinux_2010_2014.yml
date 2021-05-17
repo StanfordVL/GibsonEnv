@@ -1,16 +1,20 @@
-name: BuildManylinux2010
+name: BuildManylinux2010-2014
 
 # Build on every branch push, tag push, and pull request change:
 on: [push, pull_request]
 
 jobs:
   build_wheels:
-    name: Build manylinux2010 wheels
+    name: Build manylinux2010-2014 wheels
     runs-on: ubuntu-latest
-    container: micheleantonazzi/manylinux-extended:manylinux2010_x86_64_extended_latest
     strategy:
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        manylinux_images: [manylinux2010, manylinux2014]
+        python_version: [3.6, 3.7, 3.8, 3.9]
+        exclude:
+          - manylinux_images: manylinux2010
+            python_version: 3.9
+    container: micheleantonazzi/manylinux-extended:${{ matrix.manylinux_image }}_x86_64_extended_latest
     steps:
       - uses: actions/checkout@v1
         with:
@@ -18,12 +22,12 @@ jobs:
       - name: Configure system
         run: |
           cd ..
-          /bin/bash GibsonEnv/build_scripts/manylinux2010/configure_linux.sh
+          /bin/bash GibsonEnv/build_scripts/${{ matrix.manylinux_image }}/configure_linux.sh
       - name: Build sdist
         run: |
           export CC=/usr/lib64/openmpi/bin/mpicc
           pip${{ matrix.python_version }} install wheel
-          pip${{ matrix.python_version }} install -r build_scripts/manylinux2010/requirements.txt
+          pip${{ matrix.python_version }} install -r build_scripts/${{ matrix.manylinux_image }}/requirements.txt
           python${{ matrix.python_version }} setup.py sdist
       - name: Build bdists
         run: |
