@@ -16,7 +16,7 @@ jobs:
             python_version: 3.9
     container: micheleantonazzi/manylinux-extended:${{ matrix.manylinux_image }}_x86_64_extended_latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           submodules: recursive
       - name: Setup pip cache
