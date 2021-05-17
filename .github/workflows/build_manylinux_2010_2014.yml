@@ -20,7 +20,7 @@ jobs:
         with:
           submodules: recursive
       - name: Setup pip cache
-        uses: actions/cache@v2
+        uses: actions/cache@v1
         with:
           path: ~/.cache/pip/wheels
           key: ${{ matrix.manylinux_image }}-${{ matrix.python_version }}-${{ hashFiles('**/requirements.txt') }}
