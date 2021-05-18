@@ -1,11 +1,18 @@
 import os.path
 
 import yaml
+from termcolor import colored
+
+
+class AssetsPathNotSetException(Exception):
+    pass
 
 
 class AssetsManager:
     CONFIG_FILE_NAME = 'assets_config.yaml'
     KEY_ASSET_PATH = 'assets_path'
+
+    CORE_ASSETS_URL = 'https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz'
 
     def __init__(self):
         self._config_file_path = os.path.join(os.path.dirname(__file__), AssetsManager.CONFIG_FILE_NAME)
@@ -41,13 +48,17 @@ class AssetsManager:
     def get_assets_path(self):
         """
         Returns the assets path
+        :raise AssetsPathNotSetException if the assets path empty.
         :return:
         """
+        if self._assets_information[AssetsManager.KEY_ASSET_PATH] == '':
+            print(colored('The assets path is empty!! Before using Gibson, type in a terminal "gibson-set-assets-path" to set thew assets path!', 'red'))
+            raise AssetsPathNotSetException
         return self._assets_information[AssetsManager.KEY_ASSET_PATH]
 
     def save_assets_information(self):
         """
-        Saves the assets configration parameter to disk
+        Saves the assets configuration parameter to disk
         :return: the assets manager instance
         :rtype: AssetsManager
         """
