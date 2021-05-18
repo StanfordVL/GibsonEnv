@@ -79,10 +79,48 @@ For building from the source(B):
 
 First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. The folder that stores necessary data (agent models, environments, etc) to run Gibson environment must be set by the user. After installing Gibson, simply run this command ```gibson-set-assets-path``` in a terminal and then insert the path where Gibson data will be stored. Users can add more environments within the `dataset` folder located in the previously set path. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
 
+# A. Quick installation (pip)
 
-## A. Quick installation (docker)
+The easiest way to install Gibson is to use the precompiled version, stored on pip. 
+This version only works on Linux machines. Remember to install CUDA Toolkit before using Gibson.
 
-We use docker to distribute our software, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
+**NB:** The pip version is not available for python2.7, please build Gibson from source.
+```
+pip install gibson
+```
+
+## B. Building from source
+
+If you don't want to use the precompiled version, you can also install gibson locally. This will require some dependencies to be installed.
+
+First, make sure you have Nvidia driver and CUDA installed. Then, let's install some dependencies:
+Then clone this repo recursively and install some dependencies:
+
+```bash
+git clone https://github.com/micheleantonazzi/GibsonEnv.git --recursive
+apt-get update 
+apt-get install doxygen libglew-dev xorg-dev libglu1-mesa-dev libboost-dev \
+      mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
+      xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev \
+      libportmidi-dev libfreetype6-dev
+```
+
+Finally, build and install the package using pip:
+```bash
+pip install -e . ### Gibson build
+```
+
+Install OpenAI baselines if you need to run the training demo.
+
+```bash
+git clone https://github.com/fxia22/baselines.git
+pip install -e baselines
+```
+
+
+## C. Docker installation
+
+If yuo want ot use docker, you need to install [docker](https://docs.docker.com/engine/installation/) and [nvidia-docker2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) first. 
 
 Run `docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi` to verify your installation. 
 
@@ -123,54 +161,6 @@ Instructions to run gibson on a headless server (requires X server running):
 
 If you don't have X server running, you can still run gibson, see [this guide](https://github.com/StanfordVL/GibsonEnv/wiki/Running-GibsonEnv-on-headless-server) for more details.
 
-## B. Installing precompiled version from pip
-
-If you don't want to use our docker image, you can install the precompiled version from pip. This version only works on a Linux machine (tested on the latest Ubuntu version).
-
-**NB:** The pip version is not available for python2.7, please build Gibson from source.
-```
-pip install gibson
-```
-
-## C. Building from source
-
-
-If you don't want to use the precompiled version, you can also install gibson locally. This will require some dependencies to be installed. 
-
-First, make sure you have Nvidia driver and CUDA installed. If you install from source, CUDA 9 is not necessary, as that is for nvidia-docker 2.0. Then, let's install some dependencies:
-Then clone this repo recursively and install some dependencies:
-
-```bash
-git clone https://github.com/micheleantonazzi/GibsonEnv.git --recursive
-apt-get update 
-apt-get install doxygen libglew-dev xorg-dev libglu1-mesa-dev libboost-dev \
-      mesa-common-dev freeglut3-dev libopenmpi-dev cmake golang libjpeg-turbo8-dev wmctrl \
-      xdotool libzmq3-dev zlib1g-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev \
-      libportmidi-dev libfreetype6-dev
-```
-
-Install required deep learning libraries: Using python3.5 is recommended. You can create a python3.5 environment first. 
-
-```bash
-conda create -n py35 python=3.5 anaconda 
-source activate py35 # the rest of the steps needs to be performed in the conda environment
-conda install -c conda-forge opencv
-pip install http://download.pytorch.org/whl/cu90/torch-0.3.1-cp35-cp35m-linux_x86_64.whl 
-pip install torchvision==0.2.0
-pip install tensorflow==1.3
-```
-Finally, build and install the package using pip:
-```bash
-pip install -e . ### Gibson build
-```
-
-Install OpenAI baselines if you need to run the training demo.
-
-```bash
-git clone https://github.com/fxia22/baselines.git
-pip install -e baselines
-```
-
 ## Uninstalling
 
 
@@ -179,10 +169,11 @@ Uninstall gibson is easy. If you installed with docker, just run `docker images 
 
 ## Quick Start
 
+First of all, setup the assets data path typing `gibson-set-assets-path` in a terminal. 
 
 First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson`, you will get an interactive shell. Now you can run a few demos. 
 
-If you installed from source, you can run those directly using the following commands without using docker. 
+If you installed from pip or from source, you can run those directly using the following commands without using docker. 
 
 
 ```bash
