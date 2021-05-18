@@ -4,9 +4,12 @@ GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception
 |BuildManylinux20102014|_
 |Gibson|_
 
-`Github repository`_
+The source code is available on this `Github repository`_.
 
-`Website`_
+
+
+*This package is generated starting from GibsonEnv project.
+You can find the original source code* `here <https://github.com/StanfordVL/GibsonEnv>`_ *or you can visit the* `official website`_ .
 
 **Summary**: Perception and being active (i.e. having a certain level of motion freedom) are closely tied. Learning active perception and sensorimotor control in the physical world is cumbersome as existing algorithms are too slow to efficiently learn in real-time and robots are fragile and costly. This has given a fruitful rise to learning in the simulation which consequently casts a question on transferring to real-world. We developed Gibson environment with the following primary characteristics:
 
@@ -53,6 +56,7 @@ Then, clone this repository recursively to download the submodules  and install 
       libportmidi-dev libfreetype6-dev
 
 Finally install the package using pip (during this process, Gibson is automatically compiled):
+
 .. code-block:: bash
 
     pip install -e .
@@ -60,12 +64,34 @@ Finally install the package using pip (during this process, Gibson is automatica
 
 Install required deep learning libraries: Using python3 is recommended. You can create a python3 environment first.
 
+Download Gibson assets
+=======================
+
+After the installation of Gibson, you have to set up the assets data (agent models, environments, etc).
+The folder that stores the necessary data to run Gibson environment must be set by the user.
+To do this, simply run this command `gibson-set-assets-path` in a terminal and then follow the printed instructions.
+This script asks you to insert the path where to save the Gibson assets.
+Inside this folder, you have to copy the environment core assets data
+(available `here <https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz>`_ ~= 300MB)
+and the environments data (downloadable from `here <https://storage.googleapis.com/gibson_scenes/dataset.tar.gz>`_ ~= 10GB).
+The environment data must be located inside a sub-directory called `dataset`.
+You can add more environments by adding them inside the `dataset` folder located in the previously set path.
+Users can download and copy manually these data inside the correct path or they can use dedicated python utilities.
+To easily download Gibson assets, typing in a terminal:
+
+.. code-block:: bash
+
+    gibson-set-assets-path # This command allows you to set the default Gibson assets folder
+    gibson-download-assets-core
+    gibson-download-dataset
+
+
 .. |BuildManylinux20102014| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010_2014.yml/badge.svg?branch=master
 .. |BuildOnUbuntuLatest| image:: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml/badge.svg?branch=master
 .. |Gibson| image:: https://img.shields.io/pypi/v/gibson.svg
 .. _BuildManylinux20102014: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010_2014.yml
 .. _BuildOnUbuntuLatest: https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml/badge.svg
 .. _Gibson: https://pypi.org/project/gibson
-.. _Github repository: https://github.com/StanfordVL/GibsonEnv
-.. _Website: http://gibsonenv.stanford.edu/
+.. _Github repository: https://github.com/micheleantonazzi/GibsonEnv
+.. _official website: http://gibsonenv.stanford.edu/
 .. _Bulletphysics: http://bulletphysics.org/wordpress/

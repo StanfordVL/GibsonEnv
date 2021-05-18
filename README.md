@@ -27,7 +27,7 @@ Please see the [website](http://gibson.vision/) (http://gibsonenv.stanford.edu/)
 
 ## Release
 
-**This is the 0.6.0 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).
+**This is the 0.7.0 release. Bug reports, suggestions for improvement, as well as community developments are encouraged and appreciated.** [change log file](misc/CHANGELOG.md).
 
 ## Database
 
@@ -37,8 +37,11 @@ The full database includes 572 spaces and 1440 floors and can be downloaded [her
 
 
    * [Installation](#installation)
-        * [Quick Installation (docker)](#a-quick-installation-docker)
+
+           * [Download data](#download-data)
+        * [Quick installation (pip)](#a-quick-installation))
         * [Building from source](#b-building-from-source)
+        * [Docker installation](#c-docker-installation)
         * [Uninstalling](#uninstalling)
    * [Quick Start](#quick-start)
         * [Gibson FPS](#gibson-framerate)
@@ -67,19 +70,21 @@ For building from the source(B):
 - Nvidia driver >= 375
 - CUDA >= 8.0, CuDNN >= v5
 
-#### Download data
+# Installation
 
-After the installation of Gibson, you have to set up the assets data (agent models, environments, etc). The folder that stores necessary data to run Gibson environment must be set by the user. To do this, simply run this command ```gibson-set-assets-path``` in a terminal and then follow the printed instructions. This script asks you to insert the path where to save the Gibson assets. Inside this folder you have to copy the environment core assets data (available [here](https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz) ~= 300MB) and the environments data (downloadable from [here](https://storage.googleapis.com/gibson_scenes/dataset.tar.gz) ~= 10GB). The environment data must be located inside a sub-directory called `dataset`. You can add more environments by adding them inside the `dataset` folder located in the previously set path. Users can download and copy manually these data inside the correct path or they can use dedicated python script. To easily download Gibson assets, typing in a terminal:
+## Download data
+
+After the installation of Gibson, you have to set up the assets data (agent models, environments, etc). The folder that stores the necessary data to run Gibson environment must be set by the user. To do this, simply run this command ```gibson-set-assets-path``` in a terminal and then follow the printed instructions. This script asks you to insert the path where to save the Gibson assets. Inside this folder, you have to copy the environment core assets data (available [here](https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz) ~= 300MB) and the environments data (downloadable from [here](https://storage.googleapis.com/gibson_scenes/dataset.tar.gz) ~= 10GB). The environment data must be located inside a sub-directory called `dataset`. You can add more environments by adding them inside the `dataset` folder located in the previously set path. Users can download and copy manually these data inside the correct path or they can use dedicated python utilities. To easily download Gibson assets, typing in a terminal:
 
 ```bash
-gibson-set-assets-path # This command allows you to set the Gibson assets folder
+gibson-set-assets-path # This command allows you to set the default Gibson assets folder
 gibson-download-assets-core
 gibson-download-dataset
 ```
 
  Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
 
-# A. Quick installation (pip)
+## A. Quick installation (pip)
 
 The easiest way to install Gibson is to use the precompiled version, stored on pip. 
 This version only works on Linux machines. Remember to install CUDA Toolkit before using Gibson.
@@ -116,7 +121,6 @@ Install OpenAI baselines if you need to run the training demo.
 git clone https://github.com/fxia22/baselines.git
 pip install -e baselines
 ```
-
 
 ## C. Docker installation
 
@@ -163,12 +167,16 @@ If you don't have X server running, you can still run gibson, see [this guide](h
 ## Uninstalling
 
 
-Uninstall gibson is easy. If you installed with docker, just run `docker images -a | grep "gibson" | awk '{print $3}' | xargs docker rmi` to clean up the image. If you installed from source, uninstall with `pip uninstall gibson`
+Uninstall gibson is easy. If you installed with docker, just run `docker images -a | grep "gibson" | awk '{print $3}' | xargs docker rmi` to clean up the image. If you installed from source or from pip, uninstall with `pip uninstall gibson`
 
+# Quick Start
 
-## Quick Start
+First of all, setup the assets data path typing `gibson-set-assets-path` in a terminal. Then, download the assets data and the environments dataset using these commands:
 
-First of all, setup the assets data path typing `gibson-set-assets-path` in a terminal. 
+```bash
+gibson-download-assets-core
+gibson-download-dataset
+```
 
 First run `xhost +local:root` on your host machine to enable display. You may need to run `export DISPLAY=:0` first. After getting into the docker container with `docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset gibson`, you will get an interactive shell. Now you can run a few demos. 
 

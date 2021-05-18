@@ -3,7 +3,18 @@ Notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
-https://github.com/StanfordVL/GibsonEnv/blob/master/README.md
+https://github.com/StanfordVL/GibsonEnv/blob/master/README.md#
+## 0.7.0 - 2021-05-19
+- Now Gibson is published in PYPI
+- Added python utilities to download the core assets data and environments dataset.
+  You can easily download them typing
+  ```bash
+    gibson-set-assets-path # This command allows you to set the default Gibson assets folder
+    gibson-download-assets-core
+    gibson-download-dataset
+  ```
+  on a terminal after Gibson installation. The downloaded data are automatically copied inside the default assets folder (set by the user).
+- Optimized the Github actions for continuous integration.
 ## 0.6.0 - 2021-05-11
 - **Improved the build procedure and published the Gibson compiled version on pypi (for now test pypi)**
 - The build procedure is performed directly from setup.py
