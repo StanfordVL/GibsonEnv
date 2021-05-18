@@ -71,9 +71,8 @@ After the installation of Gibson, you have to set up the assets data (agent mode
 The folder that stores the necessary data to run Gibson environment must be set by the user.
 To do this, simply run this command `gibson-set-assets-path` in a terminal and then follow the printed instructions.
 This script asks you to insert the path where to save the Gibson assets.
-Inside this folder, you have to copy the environment core assets data
-(available `here <https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz>`_ ~= 300MB)
-and the environments data (downloadable from `here <https://storage.googleapis.com/gibson_scenes/dataset.tar.gz>`_ ~= 10GB).
+Inside this folder, you have to copy the environment `core assets data <https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz>`_ (~= 300MB)
+and the `environments dataset <https://storage.googleapis.com/gibson_scenes/dataset.tar.gz>`_ (~= 10GB).
 The environment data must be located inside a sub-directory called `dataset`.
 You can add more environments by adding them inside the `dataset` folder located in the previously set path.
 Users can download and copy manually these data inside the correct path or they can use dedicated python utilities.
