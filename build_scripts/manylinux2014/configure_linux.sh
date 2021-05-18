@@ -46,13 +46,3 @@ cd zeromq-4.2.5
 make -j2
 make install
 cd ..
-
-# Install cuda
-yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo
-yum clean all
-yum install -y cuda-11-0
-
-# Setup cuda
-export PATH=/usr/local/cuda-11.0/bin${PATH:+:${PATH}}
-export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-nvcc --version
