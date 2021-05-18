@@ -51,15 +51,6 @@ The full database includes 572 spaces and 1440 floors and can be downloaded [her
    * [Goggles: transferring the agent to real-world](#goggles-transferring-the-agent-to-real-world)
    * [Citation](#citation)
 
-
-
-##Installation
-
-
-#### Installation Method
-
-There are two ways to install gibson, A. using our docker image (recommended) and B. building from source. 
-
 #### System requirements
 
 The minimum system requirements are the following:
@@ -78,7 +69,7 @@ For building from the source(B):
 
 #### Download data
 
-First, our environment core assets data are available [here](https://storage.googleapis.com/gibsonassets/assets_core_v2.tar.gz). You can follow the installation guide below to download and set up them properly. The folder that stores necessary data (agent models, environments, etc) to run Gibson environment must be set by the user. After installing Gibson, simply run this command ```gibson-set-assets-path``` in a terminal and then insert the path where Gibson data will be stored. Users can add more environments within the `dataset` folder located in the previously set path. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
+After the installation of Gibson, you have to set up the assets data (agent models, environments, etc). The folder that stores necessary data to run Gibson environment must be set by the user. To do this, simply run this command ```gibson-set-assets-path``` in a terminal and then follow the printed instructions. This script asks you to insert the path where to save the Gibson assets. Inside this folder you have to copy the environment core assets data (available [here](https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz)) and the environments data (downloadable from [here](https://storage.googleapis.com/gibson_scenes/dataset.tar.gz)). The environment data must be located inside a sub-directory called `dataset`. You can add more environments by adding them inside the `dataset` folder located in the previously set path. Users can download and copy manually these data inside the correct path or they can use dedicated python script. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
 
 # A. Quick installation (pip)
 
