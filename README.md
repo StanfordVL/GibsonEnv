@@ -38,8 +38,8 @@ The full database includes 572 spaces and 1440 floors and can be downloaded [her
 
    * [Installation](#installation)
 
-           * [Download data](#download-data)
-        * [Quick installation (pip)](#a-quick-installation))
+        * [Download data](#download-data)
+        * [Quick installation (pip)](#a-quick-installation)
         * [Building from source](#b-building-from-source)
         * [Docker installation](#c-docker-installation)
         * [Uninstalling](#uninstalling)
