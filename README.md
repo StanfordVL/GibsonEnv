@@ -69,7 +69,15 @@ For building from the source(B):
 
 #### Download data
 
-After the installation of Gibson, you have to set up the assets data (agent models, environments, etc). The folder that stores necessary data to run Gibson environment must be set by the user. To do this, simply run this command ```gibson-set-assets-path``` in a terminal and then follow the printed instructions. This script asks you to insert the path where to save the Gibson assets. Inside this folder you have to copy the environment core assets data (available [here](https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz)) and the environments data (downloadable from [here](https://storage.googleapis.com/gibson_scenes/dataset.tar.gz)). The environment data must be located inside a sub-directory called `dataset`. You can add more environments by adding them inside the `dataset` folder located in the previously set path. Users can download and copy manually these data inside the correct path or they can use dedicated python script. Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
+After the installation of Gibson, you have to set up the assets data (agent models, environments, etc). The folder that stores necessary data to run Gibson environment must be set by the user. To do this, simply run this command ```gibson-set-assets-path``` in a terminal and then follow the printed instructions. This script asks you to insert the path where to save the Gibson assets. Inside this folder you have to copy the environment core assets data (available [here](https://storage.googleapis.com/gibson_scenes/assets_core_v2.tar.gz) ~= 300MB) and the environments data (downloadable from [here](https://storage.googleapis.com/gibson_scenes/dataset.tar.gz) ~= 10GB). The environment data must be located inside a sub-directory called `dataset`. You can add more environments by adding them inside the `dataset` folder located in the previously set path. Users can download and copy manually these data inside the correct path or they can use dedicated python script. To easily download Gibson assets, typing in a terminal:
+
+```bash
+gibson-set-assets-path # This command allows you to set the Gibson assets folder
+gibson-download-assets-core
+gibson-download-dataset
+```
+
+ Visit the [database readme](gibson/data/README.md) for downloading more spaces. Please sign the [license agreement](gibson/data/README.md#download) before using Gibson's database.
 
 # A. Quick installation (pip)
 
@@ -122,7 +130,7 @@ You can either 1. pull from our docker image (recommended) or 2. build your own 
 1. Pull from our docker image (recommended)
 
 ```bash
-# download the dataset from https://storage.googleapis.com/gibsonassets/dataset.tar.gz
+# download the dataset from https://storage.googleapis.com/gibson_scenes/dataset.tar.gz
 docker pull xf1280/gibson:0.3.1
 xhost +local:root
 docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v <host path to dataset folder>:/root/mount/gibson/gibson/assets/dataset xf1280/gibson:0.3.1
@@ -132,7 +140,6 @@ docker run --runtime=nvidia -ti --rm -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix
 ```bash
 git clone https://github.com/StanfordVL/GibsonEnv.git
 cd GibsonEnv
-./download.sh # this script downloads assets data file and decompress it into gibson/assets folder
 docker build . -t gibson ### finish building inside docker, note by default, dataset will not be included in the docker images
 xhost +local:root ## enable display from docker
 ```
