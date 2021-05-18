@@ -1,6 +1,4 @@
-from gibson.core.physics.robot_locomotors import Turtlebot
 from gibson.envs.mobile_robots_env import TurtlebotNavigateEnv
-from gibson.envs.mobile_robots_env import tracking_camera
 
 
 class TurtlebotNavigateNoPhysicsEnv(TurtlebotNavigateEnv):
