@@ -1,7 +1,6 @@
 # GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception 
 [![BuildOnUbuntuLastest](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml/badge.svg?branch=master)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml)
-[![BuildManylinux2010](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml/badge.svg?branch=master)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010.yml)
-[![BuildManylinux2014](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml/badge.svg?branch=master)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2014.yml)
+[![BuildManylinux20102014](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010_2014.yml/badge.svg?branch=master)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010_2014.yml)
 
 You shouldn't play video games all day, so shouldn't your AI! We built a virtual environment simulator, Gibson, that offers real-world experience for learning perception.  
 
