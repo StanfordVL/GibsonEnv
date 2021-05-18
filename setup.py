@@ -102,6 +102,7 @@ setup(name='gibson',
           'console_scripts': [
               'gibson-set-assets-path = gibson.assets.assets_actions:set_assets_path',
               'gibson-download-assets-core = gibson.assets.assets_actions:download_assets_core',
+              'gibson-download-dataset = gibson.assets.assets_actions:download_dataset',
           ],
     },
     ext_modules=[CMakeExtension('GibsonChannel', source_dir='gibson/core')],

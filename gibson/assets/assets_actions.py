@@ -34,7 +34,7 @@ def _download_archive(url, save_path, archive_name):
             resume_header = {'Range': 'bytes=%d-' % downloaded_bytes}
             mode = 'wb'
 
-        response = requests.get(AssetsManager.CORE_ASSETS_URL, stream=True,  headers=resume_header, allow_redirects=True)
+        response = requests.get(url, stream=True,  headers=resume_header, allow_redirects=True)
 
         with open(os.path.join(save_path, archive_name_temp), mode=mode) as file, tqdm(
                 desc='Downloading Gibson assets core',
@@ -91,10 +91,20 @@ def download_assets_core():
 
 def download_dataset():
     assets_manager = AssetsManager()
-    assets_path = assets_manager.get_assets_path()
+    assets_path = assets_manager.get_assets_path() + '/dataset'
 
-    if not os.path.exists('/tmp/gibson'):
-        os.makedirs('/tmp/gibson')
+    if not os.path.exists(assets_path):
+        os.mkdir(assets_path)
 
-    assets_core_path = '/tmp/gibson/assets_core_v2.tar.gz'
-    assets_core_path_temp = '/tmp/gibson/assets_core_v2.tar.gz.tmp'
+    path = '/tmp/gibson'
+    archive_name = 'dataset.tar.gz'
+
+    _download_archive(AssetsManager.DATASET_URL, path, archive_name)
+
+    print('Starting to extract files')
+    _decompress_archive(path, archive_name)
+
+    print('Copy assets to Gibson dataset folder at ' + assets_path)
+
+    _copy_tree(os.path.join(path, 'dataset'), assets_path)
+    print('Completed!')
