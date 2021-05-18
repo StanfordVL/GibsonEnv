@@ -41,7 +41,7 @@ jobs:
           pip${{ matrix.python_version }} install -e .
           python${{ matrix.python_version }} setup.py bdist_wheel
           auditwheel repair dist/gibson-*-cp*
-      - name: Upload to testpypi
+      - name: Upload to pypi
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         env:
           TWINE_USERNAME: __token__
