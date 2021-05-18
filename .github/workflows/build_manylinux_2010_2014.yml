@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        manylinux_image: [manylinux2010, manylinux2014]
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        manylinux_image: [manylinux2014]
+        python_version: [3.6]
         exclude:
           - manylinux_image: manylinux2010
             python_version: 3.9
@@ -20,7 +20,8 @@ jobs:
         with:
           submodules: recursive
       - name: Setup pip cache
-        uses: actions/cache@v1
+        if: ${{ matrix.manylinux_image == 'manylinux2014' }}
+        uses: actions/cache@v2
         with:
           path: ~/.cache/pip/wheels
           key: ${{ matrix.manylinux_image }}-${{ matrix.python_version }}-${{ hashFiles('**/requirements.txt') }}

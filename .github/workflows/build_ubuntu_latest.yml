@@ -10,11 +10,9 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
-      - run: which node
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-      - run: which node
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -28,8 +26,6 @@ jobs:
         with:
           path: ~/.cache/pip/wheels
           key: ${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
-      - run: which node
-      - run: node --version
       - name: Install dependencies
         run: |
           sudo apt update
