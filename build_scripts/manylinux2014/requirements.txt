@@ -14,3 +14,4 @@ pygame
 opencv-python
 torchvision==0.2.0
 aenum
+termcolor
