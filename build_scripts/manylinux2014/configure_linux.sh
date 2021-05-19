@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install dependency for mpi4pi
-yum install openmpi3* openmpi* minizip* boost boost-devel SDL* libjpeg* portmidi* -y
+yum install openmpi3* openmpi* minizip* boost boost-devel SDL* libjpeg* portmidi* freetype freetype-devel libpng-devel -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
 # Install pkg-config
