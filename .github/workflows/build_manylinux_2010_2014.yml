@@ -14,7 +14,7 @@ jobs:
         exclude:
           - manylinux_image: manylinux2010
             python_version: 3.9
-    container: micheleantonazzi/manylinux-extended:${{ matrix.manylinux_image }}_x86_64_extended_0.7.0
+    container: micheleantonazzi/manylinux-extended:${{ matrix.manylinux_image }}_x86_64_extended_0.7.1
     steps:
       - uses: actions/checkout@v1
         with:
@@ -25,11 +25,6 @@ jobs:
         with:
           path: ~/.cache/pip/wheels
           key: ${{ matrix.manylinux_image }}-${{ matrix.python_version }}-${{ hashFiles('**/requirements.txt') }}
-      - name: Install pygame for Python2.7
-        if: ${{ matrix.python_version == '2.7' }}
-        run: |
-          yum install -y SDL* libjpeg* portmidi* freetype freetype-devel libpng-devel
-          pip2.7 install pygame==1.9.5
       - name: Configure system
         run: |
           cd ..
