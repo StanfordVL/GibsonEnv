@@ -10,10 +10,9 @@ Pillow
 matplotlib>=2.1.0
 mpi4py
 cloudpickle>=0.4.1
-pygame==1.9.5; python_version == '2.7.x'
-pygame; python_version > '2.7.x'
-opencv-python==4.2.0.32; python_version == '2.7.x'
-opencv-python; python_version > '2.7.x'
+pygame
+opencv-python==4.2.0.32; python_version == '2.7'
+opencv-python; python_version > '2.7'
 torchvision==0.2.0
 aenum
 termcolor

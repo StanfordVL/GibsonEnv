@@ -25,6 +25,11 @@ jobs:
         with:
           path: ~/.cache/pip/wheels
           key: ${{ matrix.manylinux_image }}-${{ matrix.python_version }}-${{ hashFiles('**/requirements.txt') }}
+      - name: Install pygame for Python2.7
+        if: ${{ matrix.python_version == '2.7' }}
+        run: |
+          yum install -y SDL* libjpeg* portmidi* freetype freetype-devel libpng-devel
+          pip2.7 install pygame==1.9.5
       - name: Configure system
         run: |
           cd ..
