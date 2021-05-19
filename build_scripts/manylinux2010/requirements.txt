@@ -10,8 +10,8 @@ Pillow>=4.2.1
 matplotlib>=2.1.0
 mpi4py
 cloudpickle>=0.4.1
-pygame==1.9.5; python_version == '2.7.x'
-pygame; python_version > '2.7.x'
+pygame==1.9.4; python_version == '2.7'
+pygame; python_version > '2.7'
 opencv-python==4.2.0.32
 torchvision==0.2.0
 aenum
