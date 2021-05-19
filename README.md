@@ -89,7 +89,6 @@ gibson-download-dataset
 The easiest way to install Gibson is to use the precompiled version, stored on pip. 
 This version only works on Linux machines. Remember to install CUDA Toolkit before using Gibson.
 
-**NB:** The pip version is not available for python2.7, please build Gibson from source.
 ```
 pip install gibson
 ```

@@ -10,8 +10,8 @@ Pillow
 matplotlib>=2.1.0
 mpi4py
 cloudpickle>=0.4.1
-pygame
-opencv-python
+pygame==1.9.5
+opencv-python==4.2.0.32
 torchvision==0.2.0
 aenum
 termcolor
