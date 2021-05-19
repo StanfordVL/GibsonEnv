@@ -1,6 +1,6 @@
 numpy
 pyglet>=1.2.0
-gym==0.9.4
+gym>=0.9.4
 PyYAML>=3.12
 pybullet
 transforms3d>=0.3.1
@@ -12,6 +12,6 @@ mpi4py
 cloudpickle>=0.4.1
 pygame
 opencv-python
-torchvision==0.2.0
+torchvision>=0.2.0
 aenum
 termcolor
