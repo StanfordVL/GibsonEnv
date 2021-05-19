@@ -1,4 +1,4 @@
-name: BuildManylinux2010-2014
+name: BuildManylinux20102014
 
 # Build on every branch push, tag push, and pull request change:
 on: [push, pull_request]
@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         manylinux_image: [manylinux2010, manylinux2014]
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: [2.7, 3.6, 3.7, 3.8, 3.9]
         exclude:
           - manylinux_image: manylinux2010
             python_version: 3.9
