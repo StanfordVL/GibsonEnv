@@ -36,6 +36,7 @@ Gibson can be simply installed from pip. The pip version of Gibson is precompile
 
 .. code-block:: bash
 
+    sudo apt install libopenmpi-dev # Required to compile mpi4pi
     pip install gibson
 
 Building from source

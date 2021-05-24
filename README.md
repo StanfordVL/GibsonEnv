@@ -88,8 +88,8 @@ gibson-download-dataset
 
 The easiest way to install Gibson is to use the precompiled version, stored on pip. 
 This version only works on Linux machines. Remember to install CUDA Toolkit before using Gibson.
-
-```
+```bash
+sudo apt install libopenmpi-dev # Required to compile mpi4pi
 pip install gibson
 ```
 
