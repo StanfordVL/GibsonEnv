@@ -1,5 +1,5 @@
 numpy
-pyglet>=1.2.0
+pyglet<=1.5.15
 gym>=0.9.4
 PyYAML>=3.12
 pybullet
