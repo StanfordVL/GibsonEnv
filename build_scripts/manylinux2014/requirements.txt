@@ -16,3 +16,4 @@ opencv-python; python_version > '2.7'
 torchvision==0.2.0
 aenum
 termcolor
+requests
