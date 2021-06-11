@@ -105,6 +105,10 @@ class WalkerBase(BaseRobot):
         orn = self.robot_body.get_orientation()
         new_orn = qmult((euler2quat(delta, 0, 0)), orn)
         self.robot_body.set_orientation(new_orn)
+
+    def set_orientation(self, x, y=np.pi, z=0):
+        new_orn = euler2quat(x, y, z)
+        self.robot_body.set_orientation(new_orn)
         
     def get_rpy(self):
         return self.robot_body.bp_pose.rpy()
