@@ -448,7 +448,7 @@ class CameraRobotEnv(BaseRobotEnv):
         if tag == View.NORMAL:
             return self.render_normal
         if tag == View.SEMANTICS:
-            print("Render components: semantics", np.mean(self.render_semantics))
+            #print("Render components: semantics", np.mean(self.render_semantics))
             return self.render_semantics
         if tag == View.PHYSICS:
             return self.render_physics()
