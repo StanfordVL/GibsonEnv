@@ -13,7 +13,7 @@ cloudpickle>=0.4.1
 pygame
 opencv-python==4.2.0.32; python_version == '2.7'
 opencv-python; python_version > '2.7'
-torchvision>=0.2.0
+torchvision==0.2.0
 aenum
 termcolor
 requests
