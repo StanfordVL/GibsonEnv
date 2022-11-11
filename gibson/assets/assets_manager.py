@@ -38,9 +38,9 @@ class AssetsManager:
         if not os.path.exists(path):
             os.mkdir(path)
 
-        dataset_path = os.path.exists(os.path.join(path, 'dataset'))
-        if not dataset_path:
-            os.mkdir(path)
+        dataset_path = os.path.join(path, 'dataset')
+        if not os.path.exists(dataset_path):
+            os.mkdir(dataset_path)
 
         self._assets_information[AssetsManager.KEY_ASSET_PATH] = path
 
