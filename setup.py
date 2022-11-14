@@ -80,7 +80,7 @@ with open(os.path.abspath('requirements.txt'), mode='r') as f:
     requirements = [line.rstrip() for line in f]
 
 setup(name='gibson',
-    version='0.8.1',
+    version='0.8.2',
     description='Real Environment Developed by Stanford University',
     long_description=long_description,
     long_description_content_type='text/x-rst',
