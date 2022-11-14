@@ -17,3 +17,4 @@ torchvision==0.2.0
 aenum
 termcolor
 requests
+cryptography==2.8

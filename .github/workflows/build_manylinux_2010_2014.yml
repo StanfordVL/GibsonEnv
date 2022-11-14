@@ -47,7 +47,6 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
-          pip${{ matrix.python_version }} install cryptography===36.0.0
           pip${{ matrix.python_version }} install twine
           python${{ matrix.python_version }} -m twine upload dist/gibson*.tar.gz --skip-existing
           python${{ matrix.python_version }} -m twine upload wheelhouse/* --skip-existing

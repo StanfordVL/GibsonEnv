@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install dependency for mpi4pi
-yum install openmpi* boost boost-devel minizip* -y
+yum install openmpi* boost boost-devel minizip* libffi-devel -y
 export CC=/usr/lib64/openmpi/bin/mpicc
 
 # Install pkg-config
