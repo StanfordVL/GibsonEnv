@@ -6,7 +6,8 @@ pybullet
 transforms3d>=0.3.1
 tqdm>=4
 pyzmq>=16.0.2
-Pillow==8; python_version > '2.7'
+Pillow==8.3.2; python_version == '3.10'
+Pillow==8; python_version > '2.7' and python_version < '3.10'
 Pillow==6; python_version == '2.7'
 matplotlib>=2.1.0
 mpi4py
