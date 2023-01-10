@@ -77,7 +77,7 @@ with open(os.path.abspath('requirements.txt'), mode='r') as f:
 print(requirements)
 
 setup(name='gibson',
-    version='0.8.5',
+    version='0.9.0',
     description='Real Environment Developed by Stanford University',
     long_description=long_description,
     long_description_content_type='text/x-rst',
