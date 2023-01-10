@@ -12,10 +12,6 @@ from distutils.command.build_py import build_py as _build_py
 import sys, os.path
 from codecs import open as copen
 
-
-from gibson.assets.assets_manager import AssetsManager
-
-
 # Get the long description from the relevant file
 here = os.path.abspath(os.path.dirname(__file__))
 with copen(os.path.join(here, 'long_description.rst'), encoding='utf-8') as f:
@@ -78,6 +74,7 @@ class PostInstallCommand(install):
 # Read requirements.txt
 with open(os.path.abspath('requirements.txt'), mode='r') as f:
     requirements = [line.rstrip() for line in f]
+print(requirements)
 
 setup(name='gibson',
     version='0.8.4',
@@ -91,7 +88,8 @@ setup(name='gibson',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
-          'Programming Language :: Python :: 3.9'
+          'Programming Language :: Python :: 3.9',
+          'Programming Language :: Python :: 3.10'
       ],
     zip_safe=False,
     packages=find_packages(),
