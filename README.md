@@ -1,3 +1,8 @@
+# A new version of Gibson Environment
+This is a new (and enhanced) version of the Gibson simulator originally developed by the Stanford Vision and Learning Lab, forked from this [repo](https://github.com/StanfordVL/GibsonEnv)). 
+New features:
+* **New simulation modality:** the inaccuracies of the 3D meshes of the environments often produce robot failures, affecting a fast data collection procedure using a robot navigating multiple scenes. To address this, we develop a new simulation modality (by modifying the internal of Gibson) in which the physics is disabled and the robot can be teleported to any possible location of the virtualized scene. To use this new modality, please refer to this script.
+
 # GIBSON ENVIRONMENT for Embodied Active Agents with Real-World Perception 
 [![BuildOnUbuntuLastest](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml/badge.svg?branch=master)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_ubuntu_latest.yml)
 [![BuildManylinux20102014](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010_2014.yml/badge.svg?branch=master)](https://github.com/micheleantonazzi/GibsonEnv/actions/workflows/build_manylinux_2010_2014.yml)
