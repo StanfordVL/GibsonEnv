@@ -2,7 +2,7 @@
 This is a new (and enhanced) version of the Gibson simulator originally developed by the Stanford Vision and Learning Lab, forked from this [repo](https://github.com/StanfordVL/GibsonEnv)). 
 New features:
 * **New simulation modality:** the inaccuracies of the 3D meshes of the environments often produce robot failures, affecting a fast data collection procedure using a robot navigating multiple scenes. To address this, we develop a new simulation modality (by modifying the internal of Gibson) in which the physics is disabled and the robot can be teleported to any possible location of the virtualized scene. To use this new modality, please refer to this script.
-* **Optimized build:** we fix some building errors of the original Gibson and the building procedure has been included in the ```setup.py``` (see the [documentation](#B.-building-from-source)).
+* **Optimized build:** we fix some building errors of the original Gibson and the building procedure has been included in the ```setup.py``` (see the [documentation](#b.-building-from-source)).
 * **Compiled version in PyPI:** we release a compiled version of Gibson in PyPI, so now the simulator can be easily installed by typing ```pip install gibson```. To do this, we implement a complex continuous integration workflow through the Github Actions that build and pubish this new version of Gibson to PyPI. In particular, Gibson is compiled following [PEP 571](https://www.python.org/dev/peps/pep-0571/) (manylinux2010) and [PEP 599](https://www.python.org/dev/peps/pep-0599/) (manylinux2014).
 * **New assets manager:** we provide a command-line tool to automatically download and unzip the necessary assets the simulator needs. Please refer to the [documentation](#download-data)
 
