@@ -63,7 +63,7 @@ class BaseEnv(gym.Env):
 
     def parse_config(self, config):
         with open(config, 'r') as f:
-            config_data = yaml.load(f)
+            config_data = yaml.load(f, Loader=yaml.FullLoader)
         return config_data
         
     def create_scene(self, gravity=9.8, collision_enabled=True):
