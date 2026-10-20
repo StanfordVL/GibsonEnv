@@ -15,7 +15,7 @@ You shouldn't play video games all day, so shouldn't your AI! We built a virtual
 Please see the [website](http://gibsonenv.stanford.edu/) for more technical details. This repository is intended for distribution of the environment and installation/running instructions.
 
 #### Paper
-**["Gibson Env: Real-World Perception for Embodied Agents"](http://gibsonenv.stanford.edu/)**, in **CVPR 2018 [Spotlight Oral]**.
+**["Gibson Env: Real-World Perception for Embodied Agents"](https://arxiv.org/abs/1808.10654)**, in **CVPR 2018 [Spotlight Oral]**.
 
 
 [![Gibson summary video](misc/vid_thumbnail_600.png)](https://youtu.be/KdxuZjemyjc "Click to watch the video summarizing Gibson environment!")
